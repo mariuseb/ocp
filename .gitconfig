@@ -1,0 +1,6 @@
+[user]
+	email = marius@NTNU24923
+[submodule]
+	recurse = true
+[credential]
+	helper = "!f() { /home/marius/.vscode-server/bin/3b889b090b5ad5793f524b5d1d39fda662b96a2a/node /tmp/vscode-remote-containers-acc4b7f08c7dafac01d36f0ee31583aef92fb5eb.js $*; }; f"

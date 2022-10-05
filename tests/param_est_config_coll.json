@@ -1,0 +1,43 @@
+{
+    "model": {
+        "ode": {
+            "x1dot": "dx1",
+            "dx1dot": "(u1-k_NL*x1**3-k*x1-c*dx1)/M"
+        },
+        "p": [
+            "M",
+            "c",
+            "k",
+            "k_NL"
+        ],
+        "u": [
+            "u1"
+        ],
+        "x": [
+            "x1",
+            "dx1"
+            ]
+    },
+    "n_steps": 10,
+    "solver": "gauss-newton",
+    "Q": [1,1,1],
+    "R": [1],
+    "stochastic": 0,
+    "transcription": 
+        {
+            "method": "collocation",
+            "roots": "radau",
+            "finite_elements": 1,
+            "degree": 3,
+            "non_uniform_gain": 0
+        },
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma86",
+        "ipopt.max_iter": 500,
+        "ipopt.ma57_pre_alloc": 3,
+        "enable_reverse": true,
+        "enable_forward": true,
+        "enable_jacobian": true
+    }
+}

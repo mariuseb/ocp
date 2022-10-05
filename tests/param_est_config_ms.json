@@ -1,0 +1,49 @@
+{
+    "model": {
+        "ode": {
+            "x1dot": "dx1 + w1",
+            "dx1dot": "(u1-k_NL*x1**3-k*x1-c*dx1)/M + w2"
+        },
+        "alg": {
+            "h": "y1 - x1 - v1"
+        },
+        "p": [
+            "M",
+            "c",
+            "k",
+            "k_NL"
+        ],
+        "u": [
+            "u1"
+        ],
+        "x": [
+            "x1",
+            "dx1"
+        ],
+        "w": [
+            "w1",
+            "w2"
+        ],
+        "v": [
+            "v1"
+        ],
+        "y": [
+            ["y1", "x1"]
+       ]
+    },
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma27"
+    },
+    "codegen": true
+}
