@@ -3,7 +3,7 @@ from sysid.param_est import ParameterEstimation
 import numpy as np
 import json
 import casadi as ca
-import dae
+import sysid.dae as dae
 import sysid.integrators as integrators
 import pandas as pd
 

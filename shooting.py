@@ -11,7 +11,8 @@ class Shooting(metaclass=ABCMeta):
     #def __init__(self, integrator, U, Y, Q, R, N, scale):
     # Q and R should also be variable entities
     # for eventual sensitivity calculation.
-    def __init__(self, integrator, Q, R, N, scale):
+    #def __init__(self, integrator, Q, R, N, scale):
+    def __init__(self, integrator, N, scale):
         """
         Entities for NLP.
         """
@@ -49,7 +50,19 @@ class Shooting(metaclass=ABCMeta):
     def n_z(self):
         return self.F.dae.n_z
 
+    @property
+    def n_w(self):
+        return self.F.dae.n_w
 
+    @property
+    def n_v(self):
+        return self.F.dae.n_v
+
+    @property
+    def n_r(self):
+        return self.F.dae.n_r
+
+# TODO: pass in order as from dae.
 class NLPParser(object):
     """
     Purpose:
@@ -66,7 +79,7 @@ class NLPParser(object):
         """
         
         d = {}
-        varnames = ("x", "z", "u", "p", "w", "v", "y")
+        varnames = ("x", "z", "u", "p", "w", "v", "y", "r")
         #varnames = ("x", "z", "p", "w", "v")
         
         prev = 0
@@ -84,6 +97,18 @@ class NLPParser(object):
             prev += dim
             
         self.vars = d
+        
+    def __getitem__(self, k):
+        return self.vars[k]
+    
+    def set_g(self, g):
+        self.g = g
+    
+    def set_x_gaps(self, x_gaps):
+        self.x_gaps = x_gaps
+        
+    def set_h_gaps(self, h_gaps):
+        self.h_gaps = h_gaps
 
 class MultipleShooting(Shooting):
     
@@ -99,12 +124,15 @@ class MultipleShooting(Shooting):
         y = self.get_y()
         u = self.get_u()
         z = self.get_z()
+        r = self.get_r()
         # TODO: init p here instead (for TVP etc.):
         p = self.F.p
         
         self.F_map = self.map_F()
         self.h_map = self.map_h()
         self.g_map = self.map_g()
+        
+        
         
         # if 1-D U:
         
@@ -122,38 +150,38 @@ class MultipleShooting(Shooting):
                         z=z,
                         u=u,
                         p=self.scale*ca.repmat(p, 1, self.N),
-                        w=w
+                        w=w,
+                        r=r
                         )["xf"]
         
-        # TODO: generalize constraints.
         x_gaps = xn[:,:-1]-x[:,1:] 
-        #h_gaps = self.h_map(x=xn, y=y, v=v)["h"]
+        #x_gaps = xn - x[:,1:] 
+        
         h_gaps = self.h_map(
                             y=y,
                             x=x,
                             z=z,
                             u=u,
-                            p=p,
-                            v=v
+                            #p=p,
+                            p=self.scale*ca.repmat(p, 1, self.N),
+                            v=v,
+                            r=r
                             )["h"]
         
         g_gaps = self.g_map(
                             x=x,
                             z=z,
                             u=u,
-                            p=p,
-                            v=v
+                            #p=p,
+                            p=self.scale*ca.repmat(p, 1, self.N),
+                            v=v,
+                            r=r
                             )["g"]
         
         ###################################################
         
         # constraints:
         g = ca.vertcat(ca.vec(x_gaps), ca.vec(g_gaps), ca.vec(h_gaps))
-        # variables:
-        
-        # this is parameter estimation specific:
-        
-        #V = ca.veccat(p, x, v, w)
         
         """
         vars in same order as the system def:
@@ -163,39 +191,52 @@ class MultipleShooting(Shooting):
             y = h(x, p, v)            (3)
         
         """
+        V = ca.veccat(x, z, u, p, w, v, y, r)
         
-        V = ca.veccat(x, z, u, p, w, v, y)
-        #V = ca.veccat(x, z, p, w, v)
+        nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
+        # keep orig g:
+        nlp_parser.set_g(g)  
         
-        # check dimensions:
-        #if v.shape[1] == 1:
-        #    v = v.T
-        #if w.shape[1] == 1:
-        #    w = w.T
+        """
+        Gaps without noise, scaling for covariance estimation:
+        """
         
-        nlp_parser = NLPParser((x, z, u, p, w, v, y))
-        #nlp_parser = NLPParser((x, z, p, w, v))
-           
-        obj, nlp_p = self.get_nlp_obj(v, w) 
-           
-        ''' nlp = {
-               'x': V,
-               'f': self.get_nlp_obj(v, w),
-               'g': g
-               } '''
+        xn = self.F_map(
+                        x0=x,
+                        z=z,
+                        u=u,
+                        p=ca.repmat(p, 1, self.N),
+                        w=0,
+                        r=r
+                        )["xf"]
+        
+        x_gaps = xn[:,:-1]-x[:,1:] 
+        
+        h_gaps = self.h_map(
+                            y=y,
+                            x=x,
+                            z=z,
+                            u=u,
+                            #p=p,
+                            p=ca.repmat(p, 1, self.N),
+                            v=0,
+                            r=r
+                            )["h"]
+        
+        nlp_parser.set_x_gaps(x_gaps)
+        nlp_parser.set_h_gaps(h_gaps)
+        
         nlp = {
                'x': V,
-               'f': obj,
-               'g': g,
-               'p': nlp_p
+               #'f': obj,
+               'g': g
+               #'p': nlp_p
                }
         
         return nlp, nlp_parser
     
+    """
     def get_nlp_obj(self, v, w):
-        """ 
-        Get objective for NLP.
-        """
         #R_rep = ca.repmat(ca.inv(self.R), self.N, self.N)
         #Q_rep = ca.repmat(ca.inv(self.Q), self.N, self.N)
         
@@ -213,26 +254,15 @@ class MultipleShooting(Shooting):
                 0.5*ca.dot(ca.mtimes(Q_square_root, w),
                            ca.mtimes(w.T, Q_square_root).T), \
                 ca.veccat(self.Q, self.R)
-        
-        #return 0.5*ca.dot(v,v) + 0.5*ca.dot(w, w)
-               
-        
-        
-    def get_u(self):
-        """ Input data. """     
-        return self.U
-    
-    def get_y(self):
-        """ Output trajectory. """
-        return self.Y
+    """
     
     def get_v(self):
         """ Measurement noise. """
-        return ca.MX.sym("v", self.n_y, self.N)
+        return ca.MX.sym("v", self.n_v, self.N)
     
     def get_w(self):
         """ Process noise. """
-        return ca.MX.sym("w", self.n_x, self.N)
+        return ca.MX.sym("w", self.n_w, self.N)
 
     def get_y(self):
         """ Process noise. """
@@ -249,23 +279,24 @@ class MultipleShooting(Shooting):
     def get_x(self):
         """ Process noise. """
         return ca.MX.sym("x", self.n_x, self.N)
+
+    def get_r(self):
+        """ Process noise. """
+        return ca.MX.sym("r", self.n_r, self.N)
     
     def map_F(self):
         return self.F.one_sample.map(self.N, "openmp")
+        #return self.F.one_sample.map(self.N)
     
     def map_h(self):
         """ Paralell map of measurement eqs """
         return self.F.h.map(self.N, "openmp")
+        #return self.F.h.map(self.N)
     
     def map_g(self):
         """ Paralell map of algebraic eqs """
         return self.F.g.map(self.N, "openmp")
-    
-    def propagate_x(self, x, u, p, w):
-        """
-        Propagate x through one-step symbolic map.
-        """
-        pass
+        #return self.F.g.map(self.N)
         
     
 class SingleShooting(object):

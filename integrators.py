@@ -26,21 +26,29 @@ class Integrator(metaclass=ABCMeta):
          return vertcat(*self.dae.dae.p)
      
     @property
-    def v(self):
-        return vertcat(*[getattr(self.dae, name) for name in self.dae.v_names])
-
-    @property
     def z(self):
          return vertcat(*self.dae.dae.z)
      
     @property
     def y(self):
          return vertcat(*self.dae.dae.y)
+    
+    @property
+    def v(self):
+        return vertcat(*[getattr(self.dae, name) for name in self.dae.v_names])
      
     @property
     def w(self):
         return vertcat(*[getattr(self.dae, name) for name in self.dae.w_names])
+
+    @property
+    def r(self):
+        return vertcat(*[getattr(self.dae, name) for name in self.dae.r_names])
         
+
+    @property
+    def all_vars(self):
+        return [getattr(self, name) for name in self.dae.order]
 
 class Cvodes(Integrator):
     """
@@ -162,9 +170,9 @@ class IRK(Integrator):
         
     def set_h(self):
         self.h = Function('h',
-                          [self.y, self.x, self.z, self.u, self.p, self.v],
+                          [self.y, self.x, self.z, self.u, self.p, self.v, self.r],
                           [self.h_expr],
-                          ["y", "x", "z", "u", "p", "v"],
+                          ["y", "x", "z", "u", "p", "v", "r"],
                           ["h"])
     
     def set_g_expr(self):
@@ -181,13 +189,13 @@ class IRK(Integrator):
         
     def set_g(self):
         self.g = Function('g',
-                          [self.x, self.z, self.u, self.p, self.v],
+                          [self.x, self.z, self.u, self.p, self.v, self.r],
                           [self.g_expr],
-                          ["x", "z", "u", "p", "v"],
+                          ["x", "z", "u", "p", "v", "r"],
                           ["g"])
         
     def set_ode_func(self):
-        self.f = Function('f', [self.x, self.z, self.u, self.p, self.w], [self.ode], ["x", "z", "u", "p", "w"], ["f"])
+        self.f = Function('f', [self.x, self.z, self.u, self.p, self.w, self.r], [self.ode], ["x", "z", "u", "p", "w", "r"], ["f"])
         
     def set_coll_coeffs(self):
         """
@@ -235,20 +243,17 @@ class IRK(Integrator):
         d, C, D, h, n, f = self.d, self.C, self.D, self.dt_n, self.n, self.f
         
         nx = len(self.dae.dae.x)
-        #nu = (len(self.dae.dae.u) + len(self.dae.dae.p) + len(self.dae.w_names))
         nu = len(self.dae.dae.u)
         nz = len(self.dae.dae.z)        
         np = len(self.dae.dae.p)
         nw = len(self.dae.w_names)
-        #nv = len(self.dae.v_names)
+        nr = len(self.dae.r_names)
         
-        # keep:
-        #self.X0 = X0 = MX.sym('X0',nx)
+        # x0, p, u, r, z, w, v:
         X0 = MX.sym('X0',nx)
-        # u, p:
-        #self.P = P = MX.sym('P',nu)
         P = MX.sym('P',np)
         U = MX.sym('U',nu)
+        R = MX.sym('U',nr)
         Z = MX.sym('Z',nz)
         W = MX.sym('W',nw)
         V = MX.sym('V', d*nx)
@@ -268,21 +273,25 @@ class IRK(Integrator):
                 xp_j += C[r,j]*X[r]
 
             # Append collocation equations
-            f_j = f(X[j], Z, U, P, W)
+            f_j = f(X[j], Z, U, P, W, R)
             V_eq.append(h*f_j - xp_j)
 
         # Concatenate constraints
         V_eq = vertcat(*V_eq)
 
         # Root-finding function, implicitly defines V as a function of X0 and P
-        vfcn = Function('vfcn', [V, X0, Z, U, P, W], [V_eq])
+        vfcn = Function(
+                        'vfcn',
+                        [V, X0, Z, U, P, W, R],
+                        [V_eq]
+                        )
 
         # Convert to SX to decrease overhead
         vfcn_sx = vfcn.expand()
 
         # Create a implicit function instance to solve the system of equations
         ifcn = rootfinder('ifcn', 'fast_newton', vfcn_sx)
-        V = ifcn(MX(), X0, Z, U, P, W)
+        V = ifcn(MX(), X0, Z, U, P, W, R)
         X = [X0 if r==0 else V[(r-1)*nx:r*nx] for r in range(d+1)]
 
         # Get an expression for the state at the end of the finie element
@@ -291,24 +300,20 @@ class IRK(Integrator):
             XF += D[r]*X[r]
 
         # Get the discrete time dynamics
-        F = Function('F', [X0, Z, U, P, W], [XF])
+        F = Function('F', [X0, Z, U, P, W, R], [XF])
 
         # Do this iteratively for all finite elements
         X = X0
         for i in range(n):
-            X = F(X, Z, U, P, W)       
-        # keep X:
-        #self.X = X
+            X = F(X, Z, U, P, W, R)       
         
-        #self.one_sample = Function('irk_integrator', {'x0': X0, \
-        #                                              'p': P, \
-        #                                              'xf': X \
-        #                                              },
-        #                                            integrator_in(), \
-        #                                            integrator_out())
-        
-        #self.one_sample = Function('irk_integrator', [X0, U, P, W, v], [X, self.h], ["x0", "u", "p", "w", "v"], ["xf", "zf"])
-        self.one_sample = Function('irk_integrator', [X0, Z, U, P, W], [X], ["x0", "z", "u", "p", "w"], ["xf"])
+        self.one_sample = Function(
+                                   'irk_integrator',
+                                   [X0, Z, U, P, W, R],
+                                   [X],
+                                   ["x0", "z", "u", "p", "w", "r"],
+                                   ["xf"]
+                                   )
         
     def simulate(self, x0, U, params):
         """ 
@@ -337,7 +342,7 @@ class IRK(Integrator):
         
         #### TODO: fix handling of 'z'
         
-        x = all_samples(x0, 0, U.T, repmat(params, 1, N), w_vals)
+        x = all_samples(x0, 0, U.T, repmat(params, 1, N), w_vals, 0)
         return horzcat(x0, x)
         #return x
         

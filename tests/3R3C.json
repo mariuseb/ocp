@@ -1,0 +1,73 @@
+{
+    "model": {
+        "ode": {
+            "dTi": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + w1",
+            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + w2", 
+            "dTh": "(Ti - Th)/(Rih*Ch) + phi_h*(1/Ch) + w3"
+        },
+        "dae": {
+        },
+        "alg": {
+            "yTi": "yTi - Ti",
+            "w1": "w1 - w1",
+            "w2": "w2 - w2",
+            "w3": "w3 - w3"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Ria",
+            "Ci",
+            "Ch",
+            "Ce",
+            "Ai"
+        ],
+        "z": [
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s", 
+            "Ta"
+        ],
+        "x": [
+            "Ti",
+            "Te", 
+            "Th"
+        ],
+        "y": [
+             ["yTi", "Ti"]
+        ]
+    },
+    "dt": 900,
+    "p0": [1.443e-3, 1.958e-2, 6.034e-3, 4.458e-2, 6.319e3, 2.453e5, 6.799e6, 8.165e-1],
+    "lbp": [1.443e-4, 1.958e-3, 6.034e-4, 4.458e-3, 6.319e2, 2.453e4, 6.799e5, 8.165e-2],
+    "ubp": [1.443e-2, 1.958e-1, 6.034e-2, 4.458e-1, 6.319e4, 2.453e6, 6.799e7, 8.165e0],
+    "N": 1,
+    "n_steps": 1,
+    "Q": [1,1,1],
+    "R": [1],
+    "transcription": 
+        {
+            "method": "collocation",
+            "roots": "radau",
+            "degree": 3,
+            "non_uniform_gain": 0
+        },
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": true,
+        "ipopt.linear_solver": "ma97",
+        "ipopt.max_iter": 1000,
+        "ipopt.print_level": 5,
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.hessian_approximation": "limited-memory",
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "enable_reverse": true,
+        "enable_forward": true,
+        "enable_jacobian": true
+    }
+}

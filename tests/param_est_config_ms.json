@@ -45,5 +45,5 @@
         "verbose": false,
         "ipopt.linear_solver": "ma27"
     },
-    "codegen": true
+    "codegen": false
 }

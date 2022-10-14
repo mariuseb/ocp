@@ -13,7 +13,9 @@ class DAE(object):
         self.add_alg_states()
         self.add_controls()
         self.add_meas()
-        self.add_noise()
+        self.add_process_noise()
+        self.add_meas_noise()
+        self.add_refs()
         self.add_odes()
         self.add_algs()
         #self.add_meas()
@@ -27,27 +29,54 @@ class DAE(object):
 
         self.__setattr__("p", self.config["p"])
         
-    def add_noise(self):
+    def add_process_noise(self):
         """
         Add:
             - process noise/disturbance.
-            - measurement noise.
         """
-        for name in self.config["w"]:
-            # can't add to dae:
-            # state = self.dae.add_x(name)
-            noise = MX.sym(name)
-            self.__setattr__(name, noise)
+        try:
+            for name in self.config["w"]:
+                # can't add to dae:
+                # state = self.dae.add_x(name)
+                noise = MX.sym(name)
+                self.__setattr__(name, noise)
 
-        self.__setattr__("w_names", self.config["w"])
+            self.__setattr__("w_names", self.config["w"])
+        except KeyError:
+            self.__setattr__("w_names", [])
+            
         
-        for name in self.config["v"]:
-            # can't add to dae:
-            # state = self.dae.add_x(name)
-            noise = MX.sym(name)
-            self.__setattr__(name, noise)
+    def add_meas_noise(self):
+        """
+        Add:
+            - measurement noise
+        """
+        try:
+            for name in self.config["v"]:
+                # can't add to dae:
+                # state = self.dae.add_x(name)
+                noise = MX.sym(name)
+                self.__setattr__(name, noise)
 
-        self.__setattr__("v_names", self.config["v"])
+            self.__setattr__("v_names", self.config["v"])
+        except KeyError:
+            self.__setattr__("v_names", [])
+            
+    def add_refs(self):
+        """
+        Add:
+            - externally supplied references
+        """
+        try:
+            for name in self.config["r"]:
+                # can't add to dae:
+                # state = self.dae.add_x(name)
+                noise = MX.sym(name)
+                self.__setattr__(name, noise)
+
+            self.__setattr__("r_names", self.config["r"])
+        except KeyError:
+            self.__setattr__("r_names", [])
 
 
     def add_controls(self):
@@ -92,22 +121,49 @@ class DAE(object):
 
         repl_table = {k: "self." + k for k in self.__dict__.keys() if k not in ["dae", "config"]}
         pattern = re.compile(r'\b(' + '|'.join(repl_table.keys()) + r')\b')
+        try:
+            for name, eq_string in self.config["y"]:
+                # expects name, definition:
 
-        for name, eq_string in self.config["y"]:
-            # expects name, definition:
+                eq_string = pattern.sub(lambda x: repl_table[x.group()], eq_string)
+                
+                #exec(f'self.algs["{alg_name}"] =' + alg_string)
 
-            eq_string = pattern.sub(lambda x: repl_table[x.group()], eq_string)
+                exec("meas_exprs[name] = " + eq_string)
+
+                meas_eq = self.dae.add_y(name, meas_exprs[name])
+                #noise = MX.sym(name)
+                self.__setattr__(name, meas_eq)
+
+            # keep for later lookup:
+            self.__setattr__("y", meas_exprs)
+        except KeyError:
+            self.__setattr__("y", dict())
             
-            #exec(f'self.algs["{alg_name}"] =' + alg_string)
+        
+    
+    # names:
+    '''     
+    @property
+    def x_names(self):
+        return self.x
 
-            exec("meas_exprs[name] = " + eq_string)
+    @property
+    def z_names(self):
+        return self.z
 
-            meas_eq = self.dae.add_y(name, meas_exprs[name])
-            #noise = MX.sym(name)
-            self.__setattr__(name, meas_eq)
+    @property
+    def p_names(self):
+        return self.x
 
-        # keep for later lookup:
-        self.__setattr__("y", meas_exprs)
+    @property
+    def u_names(self):
+        return self.z
+    
+    @property
+    def z_names(self):
+        return self.z 
+    '''
     
     @property
     def n_x(self):
@@ -128,6 +184,10 @@ class DAE(object):
     @property
     def n_v(self):
         return len(self.v_names)
+    
+    @property
+    def n_r(self):
+        return len(self.r_names)
 
     @property
     def n_u(self):
@@ -139,13 +199,13 @@ class DAE(object):
     
     @property
     def order(self):
-        return ("x", "z", "u", "p", "w", "v", "y")
+        return ("x", "z", "u", "p", "w", "v", "y", "r")
     
     @property
     def all_names(self):
         """
         Order:
-            x, z, u, p, w, v, y
+            x, z, u, p, w, v, y, r
         """
         return self.x + \
                self.z + \
@@ -153,7 +213,8 @@ class DAE(object):
                self.p + \
                self.w_names + \
                self.v_names + \
-               list(self.y.keys()) 
+               list(self.y.keys()) + \
+               self.r_names
 
     @property
     def g(self):
@@ -208,16 +269,19 @@ class DAE(object):
             self.algs = expr_dict = {}
             method = self.dae.add_alg
             
-        for expr_name, _string in self.config[kind].items():
-            
-            pattern = re.compile(r'\b(' + '|'.join(repl_table.keys()) + r')\b')
-            expr_string = pattern.sub(lambda x: repl_table[x.group()], _string)
+        try:
+            for expr_name, _string in self.config[kind].items():
+                
+                pattern = re.compile(r'\b(' + '|'.join(repl_table.keys()) + r')\b')
+                expr_string = pattern.sub(lambda x: repl_table[x.group()], _string)
 
-            #exec('ode =' + ode_string, globals())
-            #exec(f'self.%s["{expr_name}"] =' + expr_string)
-            exec(f'expr_dict["{expr_name}"] =' + expr_string)
-            #self.dae.add_ode(expr_name, expr_dict[expr_name])
-            method(expr_name, expr_dict[expr_name])
+                #exec('ode =' + ode_string, globals())
+                #exec(f'self.%s["{expr_name}"] =' + expr_string)
+                exec(f'expr_dict["{expr_name}"] =' + expr_string)
+                #self.dae.add_ode(expr_name, expr_dict[expr_name])
+                method(expr_name, expr_dict[expr_name])
+        except KeyError:
+            pass
             
     def add_odes(self):
         self._init_exprs("ode")

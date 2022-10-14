@@ -1,0 +1,21 @@
+{
+  "ZEBLL":
+    {
+      "misc": {
+        "h": 900,
+        "N": 12,
+        "start_time": 0,
+        "warmup_period": 0
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "u" : {"phi_h": "oveAct"},
+        "y": {"Ti": "TRooAir_y"},
+        "boptest_to_ocp": {"phi_h": "PHea_y", "Ti": "TRooAir_y"},
+        "sampling": {
+                     "integrate": ["phi_h"],
+                     "point": ["Ta", "phi_s", "Ti"]
+                    }
+      }
+    }
+}
