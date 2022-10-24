@@ -8,6 +8,12 @@ import sysid.integrators as integrators
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
+from matplotlib import rc
+# text:
+rc('mathtext', default='regular')
+# datetime:
+#plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
+import matplotlib.dates as mdates
 
 if __name__ == "__main__":
     
@@ -42,7 +48,16 @@ if __name__ == "__main__":
         y_data = data
         y_data["y1"] = y_data.Ti
         y_data.index = np.arange(0, len(y_data)*30, 30)
-        
+    
+    
+    fig, ax = plt.subplots(2,1)
+    (y_data.Ti-273.15).plot(color="k", ax=ax[0])
+    y_data.phi_h.plot(color="k", ax=ax[1])
+    ax[0].set_ylabel(r"Temperature [$^\circ$C]")
+    ax[1].set_ylabel(r"Power [W]")
+    fig.tight_layout()
+    plt.show()
+     
     #y_data = y_data.iloc[0:2]
     
     N = len(y_data)

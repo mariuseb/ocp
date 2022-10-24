@@ -34,7 +34,7 @@
             ["y1", "Ti"]
         ]
     },
-    "N": 12,
+    "N": 96,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
@@ -49,7 +49,8 @@
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma27",
-        "ipopt.ma57_pre_alloc": 3
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.max_cpu_time": 1
     },
     "codegen": false
 }

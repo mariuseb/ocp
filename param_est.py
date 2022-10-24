@@ -197,21 +197,48 @@ class OCP(metaclass=ABCMeta):
         for bound_dict, (k, v) in zip((x, z, u, p, w, v, y, r), self.nlp_parser.vars.items()):
         #for arr, (k, v) in zip((x, z, p, w, v), self.nlp_parser.vars.items()):
             # TODO: check also lb
-            if bound_dict["ub"] is None:
+            #if bound_dict["ub"] is None:
+            if all(map(lambda x: x is None, \
+                   (bound_dict["ub"], bound_dict["lb"]))
+                   ):
                 
-                if k == "p": # positive semi-definite params
-                    val = 0
-                else:
-                    val = -np.inf
-                    
-                lbx = np.append(lbx, np.repeat([val], v["dim"]))
                 ubx = np.append(ubx, np.repeat([np.inf], v["dim"]))
-                x0 = np.append(x0, np.repeat([0], v["dim"]))
+                lbx = np.append(lbx, np.repeat([-np.inf], v["dim"]))
+                
+                #if k == "p": # positive semi-definite params
+                #    val = 0
+                #else:
+                #    val = -np.inf
+            elif bound_dict["lb"] is None:
+                #lbx = np.append(lbx, np.repeat([val], v["dim"]))
+                lbx = np.append(lbx, np.repeat([-np.inf], v["dim"]))
+                ubx = np.append(ubx, bound_dict["ub"])
+            
+            # only ub is None:
+            elif bound_dict["ub"] is None:
+                lbx = np.append(lbx, bound_dict["lb"])
+                ubx = np.append(ubx, np.repeat([np.inf], v["dim"]))
+            
             else:
                 lbx = np.append(lbx, bound_dict["lb"])
                 ubx = np.append(ubx, bound_dict["ub"])
                 
-                if k == "x":
+            ######## handle x0 #######:
+            if bound_dict["x0"] is None:
+                if bound_dict["lb"] is None:
+                    x0 = np.append(x0, np.repeat([0], v["dim"]))
+                else:
+                    x0 = np.append(x0, bound_dict["lb"])
+                    
+            else:
+                if k == "p":
+                    print(bound_dict["x0"])
+                x0 = np.append(x0, bound_dict["x0"])
+                    #else:
+                    #lbx = np.append(lbx, bound_dict["lb"])
+                    #ubx = np.append(ubx, bound_dict["ub"])
+                
+                    #if k == "x":
                     
                     #lslack = MX.sym("lslack", v["dim"], 1)
                     #uslack = MX.sym("uslack", v["dim"], 1)
@@ -221,7 +248,7 @@ class OCP(metaclass=ABCMeta):
                     
                     # add slack to x in nlp:
                     #self.nlp["x"][v["range"]["a"]:v["range"]["b"]] = self.nlp["x"][v["range"]["a"]:v["range"]["b"]] + slack
-                    pass 
+                    #      pass 
                     # add to nlp struct
                     #self.nlp["x"] = ca.veccat(self.nlp["x"], lslack, uslack)
                     #self.nlp["x"] = ca.veccat(self.nlp["x"], slack)
@@ -238,7 +265,7 @@ class OCP(metaclass=ABCMeta):
                     #uslack_dict["range"]["a"] = lslack_dict["range"]["b"]
                     #uslack_dict["range"]["b"] = lslack_dict["range"]["b"] + uslack_dict["dim"]
                 # set lb to initial guess:
-                x0 = np.append(x0, bound_dict["lb"])
+                #x0 = np.append(x0, bound_dict["lb"])
     
         # add to nlp parser
         #self.nlp_parser.vars["uslack"] = uslack_dict
@@ -452,9 +479,16 @@ class OCP(metaclass=ABCMeta):
             varnames = list(set(varnames).difference(set("p")))
             bounds["p"] = {}
     
-            bounds["p"]["ub"] = ubp/self.scale
-            bounds["p"]["lb"] = lbp/self.scale
-            
+            if lbp is not None:
+                bounds["p"]["lb"] = lbp/self.scale
+            else:
+                bounds["p"]["lb"] = None
+                
+            if ubp is not None:
+                bounds["p"]["ub"] = ubp/self.scale
+            else:
+                bounds["p"]["ub"] = None
+                
             if p_init is None:
                 bounds["p"]["x0"] = lbp/self.scale
             else:
@@ -801,9 +835,11 @@ class MHE(OCP):
         # define Q, R here:
         self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
         self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
+        self.P0_SX = ca.SX.sym("R", self.n_y, self.n_y)
         # actual:
         self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        self.P0 = ca.MX.sym("P0", self.n_x + self.n_p, self.n_x + self.n_p)
         
         self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
                                    [self.Q_SX],
@@ -822,40 +858,47 @@ class MHE(OCP):
                                      [ca.sqrt(ca.inv(self.R_SX))],
                                      ["R"],
                                      ["R_sqrt_inv"])
-            
+        
+        self.P0_sqrt_inv = ca.Function("P0_sqrt_inv",
+                                        [self.P0_SX],
+                                        [ca.sqrt(ca.inv(self.P0_SX))],
+                                        ["P0"],
+                                        ["P0_sqrt_inv"])
+                
         #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
         #self.R_square_root = ca.sqrt(ca.inv(self.R))
         
         
         self.R_square_root = self.R_sqrt_inv(self.R)
         self.Q_square_root = self.Q_sqrt_inv(self.Q)
-        
+        self.P0_sqrt_inv = ca.sqrt(ca.inv(P0))
         # arrival cost:
-        self.P0_sqrt = ca.sqrt(P0)
+        #self.P0_sqrt = ca.sqrt(P0)
         last_x = self.nlp_x[0:self.n_x]
         p = self.dae.dae.p
         costate = ca.vertcat(*p, last_x)
         costate_num = ca.vertcat(p0, x_N)
-        """
-        return 0.5*ca.dot(ca.mtimes(self.R_square_root,
+
+        return ca.dot(ca.mtimes(self.R_square_root,
                                     v),
                             ca.mtimes(v.T,
                                       self.R_square_root).T) \
                 + \
-                0.5*ca.dot(ca.mtimes(self.Q_square_root,
+                ca.dot(ca.mtimes(self.Q_square_root,
                                      w),
                             ca.mtimes(w.T,
-                                      self.Q_square_root).T) + \
-                0.5*ca.dot(ca.mtimes(
-                                     self.P0_sqrt,
-                                     (costate - costate_num)
-                                     ),
-                            ca.mtimes(
-                                      (costate - costate_num
-                                      ).T,
-                                      self.P0_sqrt).T), \
+                                      self.Q_square_root).T), \
                 ca.veccat(self.Q, self.R)
+        
         """
+                ca.dot(ca.mtimes(
+                                self.P0_sqrt_inv,
+                                (costate - costate_num)
+                                ),
+                       ca.mtimes(
+                                (costate - costate_num
+                                ).T,
+                                self.P0_sqrt_inv).T), \
         return 0.5*ca.dot(ca.mtimes(self.R_square_root,
                                     v),
                             ca.mtimes(v.T,
@@ -866,6 +909,7 @@ class MHE(OCP):
                             ca.mtimes(w.T,
                                       self.Q_square_root).T), \
                 ca.veccat(self.Q, self.R)
+        """
         
     def solve(
               self,
@@ -1240,6 +1284,7 @@ class ParameterEstimation(OCP):
         Objective for sysid.
         """          
         # define Q, R here:
+
         self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
         self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
         # actual:
@@ -1264,6 +1309,7 @@ class ParameterEstimation(OCP):
                                      ["R"],
                                      ["R_sqrt_inv"])
             
+        
         #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
         #self.R_square_root = ca.sqrt(ca.inv(self.R))
         

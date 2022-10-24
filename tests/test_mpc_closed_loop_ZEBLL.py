@@ -11,6 +11,12 @@ from boptest_api import Boptest
 from pprint import pprint
 from sysid.filters import EKF
 from utils import Bounds
+from matplotlib import rc
+# text:
+rc('mathtext', default='regular')
+# datetime:
+#plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
+import matplotlib.dates as mdates
     
 
 if __name__ == "__main__":
@@ -64,7 +70,7 @@ if __name__ == "__main__":
     x0 = np.array([295.05, 293.15])
     
     # sim horizon: 2 days
-    days = 7
+    days = 14
     K = days*24*bounds.t_h
 
     for k in range(K):
@@ -88,18 +94,51 @@ if __name__ == "__main__":
                           r=data.iloc[0].values
                           )
 
+    plt.rcParams.update({'font.size': 11})
+    
     res = boptest.get_data(tf=K*boptest.h)
-    ax = res.Ti.plot(color="k")
+    fig = plt.figure(figsize=(10,6))
+    ax = fig.add_subplot(111)
+    
+    # colors
+    colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
+    #for i in range(n):
+    #c = next(colors)
+    #plt.plot(x, y, c=c)
+    
+    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
+    
+    #l1 = res.Ti.plot(ax=ax, color="k")
+    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
+    l1 = ax.plot(dt_index, (res.Ti-273.15), color=next(colors), label="$T_i$")
     ax1 = ax.twinx()
-    res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    ax.legend(["Ti"])
-    ax1.legend(["phi_h"])
+    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
+    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
+    l2 = ax1.plot(dt_index, res.phi_h, color=next(colors), label="$\phi_h$")
+    
+    #ax.legend([l1, l2], , loc=0)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
+    fig.autofmt_xdate()
+    #ax.legend(["Ti"])
+    #ax1.legend(["phi_h"])
     # plot bounds:
     #bounds_plt = pd.concat([bounds]*days)
     bounds_plt = bounds.get_full(days)
     bounds_plt.index = res.index
-    bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
+    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
+    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
+    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{lb}$")
+    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{ub}$")
+    lns = l1+l2+l3+l4
+    labs = [l.get_label() for l in lns]
+    ax.legend(lns, labs, loc='upper center', ncol=4)
+    _min, _max = ax.get_ylim()
+    ax.set_ylim([_min, _max+1])
+    _min, _max = ax1.get_ylim()
+    ax1.set_ylim([_min, _max+1000])
     
+    ax.set_ylabel(r"Temperature [$^\circ$C]")
+    ax1.set_ylabel(r"Power [W]")
+    
+    fig.tight_layout()
     plt.show()    
-    #assert(ca.norm_inf(p_sol-true_params)<1e-8)

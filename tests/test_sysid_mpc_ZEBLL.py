@@ -11,6 +11,11 @@ from boptest_api import Boptest
 from pprint import pprint
 from sysid.filters import EKF
 from utils import Bounds
+from matplotlib import rc
+rc('mathtext', default='regular')
+# datetime:
+#plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
+import matplotlib.dates as mdates
     
 
 if __name__ == "__main__":
@@ -136,6 +141,8 @@ if __name__ == "__main__":
                           )
     
     # get data only for MPC operation:s
+    
+    """
     res = boptest.get_data(ts=(N+1)*boptest.h, tf=(K+N)*boptest.h)
     ax = res.Ti.plot(color="k")
     ax1 = ax.twinx()
@@ -150,4 +157,43 @@ if __name__ == "__main__":
     bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
     
     plt.show()    
-    #assert(ca.norm_inf(p_sol-true_params)<1e-8)
+    """
+    
+    res = boptest.get_data(ts=(N+1)*boptest.h, tf=(K+N)*boptest.h)
+    fig = plt.figure(figsize=(10,6))
+    ax = fig.add_subplot(111)
+    
+    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
+    
+    #l1 = res.Ti.plot(ax=ax, color="k")
+    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
+    l1 = ax.plot(dt_index, (res.Ti-273.15), color="k", label="$T_i$")
+    ax1 = ax.twinx()
+    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
+    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
+    l2 = ax1.plot(dt_index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
+    
+    #ax.legend([l1, l2], , loc=0)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
+    fig.autofmt_xdate()
+    #ax.legend(["Ti"])
+    #ax1.legend(["phi_h"])
+    # plot bounds:
+    #bounds_plt = pd.concat([bounds]*days)
+    bounds_plt = bounds.get_full(days)
+    bounds_plt.index = res.index
+    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
+    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
+    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{lb}$")
+    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{ub}$")
+    lns = l1+l2+l3+l4
+    labs = [l.get_label() for l in lns]
+    ax.legend(lns, labs, loc='upper center', ncol=4)
+    _min, _max = ax.get_ylim()
+    ax.set_ylim([_min, _max+2])
+    
+    ax.set_ylabel(r"Temperature [$^\circ$C]")
+    ax1.set_ylabel(r"Power [W]")
+    
+    fig.tight_layout()
+    plt.show()    
