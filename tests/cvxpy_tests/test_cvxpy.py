@@ -1,8 +1,10 @@
 import cvxpy as cp
 import numpy as np
 import pandas as pd
+import os
+from ocp.tests.utils import get_data_path
 
-sol = pd.read_csv("test.csv")
+sol = pd.read_csv(os.path.join(get_data_path(), "test.csv"))
 
 # Generate a random SDP.
 n = 3
