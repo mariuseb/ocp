@@ -1270,8 +1270,8 @@ class ParameterEstimation(OCP):
         
         super().__init__(**kwargs) # does all the work.
         
-        self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
-                                                        self.nlp_w) 
+        #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
+        #                                                self.nlp_w) 
         
         #self.set_bounds(y=self.Y,
         #                u=self.U)
@@ -1333,10 +1333,33 @@ class ParameterEstimation(OCP):
         
         (negative log-likelihood) 
         """ 
+        
+        self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
+        self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
+        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        self.R = ca.MX.sym("R", self.n_y, self.n_y)
         #### set up log(det) - Functions:
         Q_SX = self.Q_SX
         R_SX = self.R_SX
         
+        self.R_sqrt_inv = ca.Function("R_sqrt_inv",
+                                     [self.R_SX],
+                                     [ca.sqrt(ca.inv(self.R_SX))],
+                                     ["R"],
+                                     ["R_sqrt_inv"])
+        
+        self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
+                                     [self.Q_SX],
+                                     [ca.sqrt(ca.inv(self.Q_SX))],
+                                     ["Q"],
+                                     ["Q_sqrt_inv"])
+            
+        
+        #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
+        #self.R_square_root = ca.sqrt(ca.inv(self.R))
+        
+        self.R_square_root = self.R_sqrt_inv(self.R)
+        self.Q_square_root = self.Q_sqrt_inv(self.Q)
         # for Q:
         self.log_det_Q = ca.Function(
                                      "log_det_Q",
@@ -1369,7 +1392,7 @@ class ParameterEstimation(OCP):
         res_y = self.nlp_parser.h_gaps
         
         #self.alt_obj = 0.5*ca.dot(
-        alt_obj = 0.5*ca.dot(
+        self.alt_obj = 0.5*ca.dot(
                              ca.mtimes(self.R_square_root,
                                        res_y),
                              ca.mtimes(res_y.T,
@@ -1386,7 +1409,7 @@ class ParameterEstimation(OCP):
                   (self.N/2)*self.log_det_R(self.R)
                   
           
-        hess_expr =  ca.hessian(alt_obj,
+        hess_expr =  ca.hessian(self.alt_obj,
                                 ca.vertcat(p,
                                            x,
                                            u,
@@ -1586,7 +1609,18 @@ class ParameterEstimation(OCP):
         self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
                                                 self.nlp_w) 
         
-        self.set_hess_obj()
+        #self.set_hess_obj()
+        
+        #self.nlp["f"] = self.alt_obj
+        
+        # set Q, R on nlp x
+        #self.nlp["x"] = ca.vertcat(
+        #                          self.nlp["x"],
+        #                          ca.veccat(ca.vec(self.Q), 
+        #                                    self.R)
+        #                          )
+        
+        #self.x0 = np.append(self.x0, covar)
         
         # generate x guess: two methods: repeat or freq-based
         # -> own method
@@ -1617,7 +1651,12 @@ class ParameterEstimation(OCP):
         
         self.set_bounds()
         self._init_solver()
-                
+        
+        
+        #self.x0 = np.append(self.x0, covar)
+        #self.lbx = np.append(self.lbx, np.repeat([0], 5))
+        #self.ubx = np.append(self.ubx, np.repeat([np.inf], 5))
+        
         solution = self.solver(
                                x0=self.x0,
                                lbg=0, # option for path-constraints?
@@ -1626,6 +1665,15 @@ class ParameterEstimation(OCP):
                                ubx=self.ubx,
                                p=covar
                                )
+        """        
+        solution = self.solver(
+                               x0=self.x0,
+                               lbg=0, # option for path-constraints?
+                               ubg=0, # --"--
+                               lbx=self.lbx,
+                               ubx=self.ubx,
+                               )
+        """
         
         self.sol_df, params = self.parse_solution(solution)
         

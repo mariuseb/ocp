@@ -74,6 +74,8 @@ if __name__ == "__main__":
         
         Q = ca.DM.eye(2)
         R = ca.DM.eye(1)
+        #Q[0,1] = 0.01
+        #Q[1,0] = 0.01
         # provide Q, R in solve here:
         # provide lb, ub for p here:
         sol, params = param_est.solve(
@@ -91,6 +93,11 @@ if __name__ == "__main__":
         #ax.legend(["Estimated", "True"])
         #plt.show()
         
+    # test obj:
+    #grad_f = ca.gradient(param_est.nlp["f"], param_est.nlp["x"])
+    #grad_f_func = ca.Function("grad_f", [param_est.nlp["x"]],
+    #                          [grad_f])
+    sol.to_csv("test.csv", index=True)   
     params_vals = ca.DM(params.values)
     params_PRBS = params
     
