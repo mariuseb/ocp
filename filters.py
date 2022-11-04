@@ -6,8 +6,8 @@ import pdb
 import casadi as ca
 import os
 import json
-from sysid.dae import DAE
-import sysid.integrators as integrators
+from ocp.dae import DAE
+import ocp.integrators as integrators
 from copy import deepcopy
 
 '''

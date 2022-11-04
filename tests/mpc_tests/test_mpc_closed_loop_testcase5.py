@@ -1,15 +1,17 @@
 #from ast import Param
-from sysid.param_est import MPC
+from ocp.mpc import MPC
 import numpy as np
 import json
 import casadi as ca
-import sysid.dae as dae
-import sysid.integrators as integrators
+#import sysid.dae as dae
+#import sysid.integrators as integrators
 import pandas as pd
 import matplotlib.pyplot as plt
-from boptest_api import Boptest
+from ocp.boptest_api import Boptest
 from pprint import pprint
-from sysid.filters import EKF
+from ocp.filters import EKF
+import os
+from ocp.tests.utils import get_boptest_config_path, get_opt_config_path
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -17,9 +19,13 @@ pd.set_option('display.width', 1000)
 
 if __name__ == "__main__":
     
-    mpc_cfg = "3R3C_MPC.json"
-    boptest_cfg = "testcase5_config.json"
-    ekf_cfg = "3R3C_EKF.json"
+    bop_config_base = get_boptest_config_path()
+    opt_config_base = get_opt_config_path()
+    
+    
+    mpc_cfg = os.path.join(opt_config_base, "3R3C_MPC.json")
+    boptest_cfg = os.path.join(bop_config_base, "testcase5_config.json")
+    ekf_cfg = os.path.join(opt_config_base, "3R3C_EKF.json")
 
     """
             "Rie",

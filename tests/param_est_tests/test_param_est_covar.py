@@ -1,14 +1,22 @@
 #from ast import Param
-from lib2to3.pygram import python_symbols
-from sysid.param_est import ParameterEstimation
+from ocp.param_est import ParameterEstimation
 import numpy as np
 import json
 import casadi as ca
-import sysid.dae as dae
-import sysid.integrators as integrators
+import ocp.dae as dae
+import ocp.integrators as integrators
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
+from matplotlib import rc
+from ocp.tests.utils import get_opt_config_path, get_data_path
+import os
+# text:
+rc('mathtext', default='regular')
+# datetime:
+#plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
+import matplotlib.dates as mdates
+    
 
 
 pd.set_option('display.max_rows', 500)
@@ -49,13 +57,13 @@ def prepare_data(path, sampling_time="15min"):
 
 if __name__ == "__main__":
     
-    cfg_path = "2R2C.json"
+    cfg_path = os.path.join(get_opt_config_path(), "2R2C.json")
+    data_path = os.path.join(get_data_path(), "data_ZEBLL_PRBS.csv")
     
-    ################### PRBS ######################
-    
-    data_path = "data/data_ZEBLL_PRBS.csv"
+    #data = pd.read_csv(data_path)
     
     y_data = prepare_data(data_path)
+    
     N = len(y_data)
     dt = y_data.index[1] - y_data.index[0]
     

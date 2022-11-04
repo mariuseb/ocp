@@ -1,14 +1,16 @@
 #from ast import Param
-from sysid.param_est import ParameterEstimation
+from ocp.param_est import ParameterEstimation
 import numpy as np
 import json
 import casadi as ca
-import sysid.dae as dae
-import sysid.integrators as integrators
+import ocp.dae as dae
+import ocp.integrators as integrators
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
 from matplotlib import rc
+from ocp.tests.utils import get_opt_config_path, get_data_path
+import os
 # text:
 rc('mathtext', default='regular')
 # datetime:
@@ -17,9 +19,10 @@ import matplotlib.dates as mdates
 
 if __name__ == "__main__":
     
-    cfg_path = "2R2C.json"
+    cfg_path = os.path.join(get_opt_config_path(), "2R2C.json")
+    data_path = os.path.join(get_data_path(), "data_ZEBLL_PRBS.csv")
     
-    data = pd.read_csv("data/data_ZEBLL_PRBS.csv")
+    data = pd.read_csv(data_path)
     # dt is 30 seconds:
     data.index = pd.TimedeltaIndex(data["Unnamed: 0"])
     data.index.name = "time"
@@ -49,7 +52,7 @@ if __name__ == "__main__":
         y_data["y1"] = y_data.Ti
         y_data.index = np.arange(0, len(y_data)*30, 30)
     
-    """
+    
     fig, ax = plt.subplots(2,1)
     (y_data.Ti-273.15).plot(color="k", ax=ax[0])
     y_data.phi_h.plot(color="k", ax=ax[1])
@@ -57,7 +60,7 @@ if __name__ == "__main__":
     ax[1].set_ylabel(r"Power [W]")
     fig.tight_layout()
     plt.show()
-    """
+     
     #y_data = y_data.iloc[0:2]
     
     N = len(y_data)
@@ -65,9 +68,7 @@ if __name__ == "__main__":
     
     param_guess = ca.DM([0.01,0.1,1E6,1E7,2])
     lbp = ca.DM([0.001,0.01,1E5,1E6,1])
-    ubp = ca.DM([0.1,0.1,1E7,1E8,50])
-    #lbp = -np.inf
-    #ubp = np.inf
+    ubp = ca.DM([0.1,1,1E7,1E8,50])
     #param_guess = ca.DM([0.001,0.009,1,1E6,1E7,1])
     #param_est = ParameterEstimation(cfg_path, y_data, param_guess)
     

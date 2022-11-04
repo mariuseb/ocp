@@ -1,11 +1,12 @@
 from casadi import *
 import json
-from dae import DAE
-from integrators import RungeKutta4, Collocation
+from ocp.dae import DAE
+from ocp.integrators import RungeKutta4, IRK
 import pandas as pd
 import os
 import numpy
 import matplotlib.pyplot as plt
+from ocp.tests.utils import get_opt_config_path
 
 """
 NOTE:
@@ -21,13 +22,17 @@ if __name__ == "__main__":
   order = 2
   method = "radau"
 
-  with open("sysid/param_est_config_ms.json", "r") as file:
+  path = os.path.join(get_opt_config_path(), "param_est_config_coll.json")
+  
+  with open(path) as file:
       config = json.load(file)
 
   model = config["model"]
-  dt = config["dt"]
-  N = config["N"]
-  n_steps = config["n_steps"]
+  #dt = config["dt"]
+  dt = 0.0016390755613833797
+  #N = config["N"]
+  N = 100
+  #n_steps = config["n_steps"]
 
   # generate some data:
   numpy.random.seed(0)
@@ -36,7 +41,9 @@ if __name__ == "__main__":
   # create a dae
   dae = DAE(model)    
   # integrator:
-  Coll = Collocation(dt, dae, order, n=3, method=method)
+  cfg = config["integrator"]
+  cfg["dt"] = dt
+  Coll = IRK(dae, **cfg)
 
   # true parameters:
   x0 = DM([0,0])
@@ -46,7 +53,7 @@ if __name__ == "__main__":
   X = x0
   res = np.array([])
   for n in range(N):
-    X = Coll.one_sample(X, vertcat(u_data[n], param_truth))
+    X = Coll.one_sample(X, 0, u_data[n], param_truth, 0, 0)
     #xf = Coll.one_sample(X, u_data[n], param_truth[0], param_truth[1], param_truth[2], param_truth[3])
     #X = xf[0]
     res = np.append(res, X[0])
@@ -60,7 +67,7 @@ if __name__ == "__main__":
   #dt = np.arange(0, config["dt"]*len(df), config["dt"])
   df["u1"] = np.array(u_data).flatten()
   df["y_own"] = np.array(y_data).flatten()
-  df.index = np.arange(0, config["dt"]*N, config["dt"])
+  df.index = np.arange(0, cfg["dt"]*N, cfg["dt"])
 
   ##################### built-in #############################
 

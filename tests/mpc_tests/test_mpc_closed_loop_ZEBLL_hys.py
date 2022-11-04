@@ -1,17 +1,20 @@
 #from ast import Param
-from sysid.param_est import MPC, MHE
+from ocp.mpc import MPC
 import numpy as np
 import json
 import casadi as ca
-import sysid.dae as dae
-import sysid.integrators as integrators
+#import sysid.dae as dae
+#import sysid.integrators as integrators
 import pandas as pd
 import matplotlib.pyplot as plt
-from boptest_api import Boptest
+from ocp.boptest_api import Boptest
 from pprint import pprint
-from sysid.filters import EKF
-from utils import Bounds
+from ocp.filters import EKF
+from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
+import os
+
+
 # text:
 rc('mathtext', default='regular')
 # datetime:
@@ -21,21 +24,36 @@ import matplotlib.dates as mdates
 
 if __name__ == "__main__":
     
-    mpc_cfg = "2R2C_MPC.json"
-    boptest_cfg = "ZEBLL_config.json"
-    mhe_cfg = "2R2C_MHE.json"
-    ekf_cfg = "2R2C_EKF.json"
+    bop_config_base = get_boptest_config_path()
+    opt_config_base = get_opt_config_path()
+    
+    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC.json")
+    boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
+    ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
 
     # pass in config?
-    params = params_init = ca.DM([0.0015,
-                                  0.0116,
-                                  1.33E6,
-                                  6.64E6,
-                                  5.53])
+    """
+    Using PRBS:
+    params = ca.DM([0.00100015, 
+                    0.0129768, 
+                    1.32308e+06,
+                    9.54074e+07,
+                    2.19846])
+    """
     
-    mpc = MPC(config=mpc_cfg) # to remove, replace with N
-    mhe = MHE(config=mhe_cfg)
-    # for first N iterations:
+    # with hysteresis base-control:
+    params = ca.DM([0.00100015, 
+                    0.0129768, 
+                    1.32308e+06,
+                    9.54074e+07,
+                    2.19846])
+    
+    mpc = MPC(
+              config=mpc_cfg
+              #N=N,
+              #dt=dt
+              ) # to remove, replace with N
+    
     ekf = EKF(ekf_cfg)
     # set params:
     ekf.set_params(params)
@@ -57,7 +75,7 @@ if __name__ == "__main__":
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
-                    mhe.y_names,
+                    ekf.y,
                     lb_night=lb_night,
                     ub_night=ub_night,
                     lb_day=lb_day,
@@ -68,15 +86,8 @@ if __name__ == "__main__":
     x0 = np.array([295.05, 293.15])
     
     # sim horizon: 2 days
-    days = 2
+    days = 14
     K = days*24*bounds.t_h
-    
-    # mhe settings:
-    P0 = ca.DM.eye(7)
-    lbp = ca.DM([0.001,0.01,1E5,1E6,1])
-    ubp = ca.DM([0.1,0.1,1E7,1E8,50])
-    Q = ca.DM.eye(2)
-    R = ca.DM.eye(1)
 
     for k in range(K):
         
@@ -92,67 +103,13 @@ if __name__ == "__main__":
 
         data, y_meas, u_meas = boptest.evolve(u=u)
         
-        if k >= mhe.N:
-            # get labelled data:
-            stop_time = k*boptest.h
-            start_time = stop_time - (mhe.N-1)*boptest.h
-            y_data = boptest.get_data(ts=start_time, tf=stop_time)
-            y_data["y1"] = y_data.Ti
-            
-            if k == mhe.N:
-                x_N = ekf.df.iloc[-mhe.N].values
-            else:
-                x_N = sol.iloc[1][mhe.x_names].values
-                
-            sol, params = mhe.solve(
-                                    y_data,
-                                    params,
-                                    lbp=params*0.5,
-                                    ubp=params*1.5,
-                                    covar=ca.veccat(Q, R),
-                                    P0=P0,
-                                    x_N=x_N
-                                    )
-            params = params.values
-            
-            ### EKF update of P0 ###
-            # (should be N time steps lagged?)
-            """
-            x0 = ekf.estimate(
-                              x0, 
-                              y=y_meas, 
-                              u=u_meas, 
-                              r=data.iloc[0].values
-                              )
-            P0 = ekf.P_prev
-            """
-            #########################
-        else:
-            
-            x0 = ekf.estimate(
-                              x0, 
-                              y=y_meas, 
-                              u=u_meas, 
-                              r=data.iloc[0].values
-                              )
+        x0 = ekf.estimate(
+                          x0, 
+                          y=y_meas, 
+                          u=u_meas, 
+                          r=data.iloc[0].values
+                          )
 
-    """
-    res = boptest.get_data(tf=K*boptest.h)
-    ax = res.Ti.plot(color="k")
-    ax1 = ax.twinx()
-    res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    ax.legend(["Ti"])
-    ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    
-    plt.show()    
-    """
-    
     plt.rcParams.update({'font.size': 11})
     
     res = boptest.get_data(tf=K*boptest.h)

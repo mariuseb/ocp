@@ -1,16 +1,17 @@
 #from ast import Param
-from sysid.param_est import MPC, ParameterEstimation
+#from sysid.param_est import MPC, ParameterEstimation
+from ocp.mpc import MPC
+from ocp.filters import EKF
+from ocp.param_est import ParameterEstimation
 import numpy as np
 import json
 import casadi as ca
-import sysid.dae as dae
-import sysid.integrators as integrators
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
-from boptest_api import Boptest
+from ocp.boptest_api import Boptest
 from pprint import pprint
-from sysid.filters import EKF
-from utils import Bounds
+from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 rc('mathtext', default='regular')
 # datetime:
@@ -20,9 +21,12 @@ import matplotlib.dates as mdates
 
 if __name__ == "__main__":
     
-    mpc_cfg = "2R2C_MPC.json"
-    boptest_cfg = "ZEBLL_config.json"
-    ekf_cfg = "2R2C_EKF.json"
+    bop_config_base = get_boptest_config_path()
+    opt_config_base = get_opt_config_path()
+    
+    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC.json")
+    ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
+    boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
     """
     From PRBS-sysid:
@@ -54,7 +58,8 @@ if __name__ == "__main__":
     #dt = mpc.dt
     lb_night = 289.15
     ub_night = 301.15
-    lb_day = 293.15
+    lb_day = 293.15#import sysid.dae as dae
+#import sysid.integrators as integrators
     ub_day = 296.15
     
     bounds = Bounds(mpc.dt,
@@ -68,7 +73,7 @@ if __name__ == "__main__":
     x0 = np.array([295.05, 293.15])
     
     # sim horizon: 6 days, same as PRBS
-    days = 90
+    days = 6
     N = days*24*bounds.t_h
 
     # baseline control for sysid:
@@ -77,7 +82,7 @@ if __name__ == "__main__":
     
     ############################## sysid ###############################
     
-    cfg_path = "2R2C.json"
+    cfg_path = os.path.join(opt_config_base, "2R2C.json")
     y_data = boptest.get_data(tf=N*boptest.h) #, downsample=False)
     y_data.index = range(0, mpc.dt*N, mpc.dt)
     y_data["y1"] = y_data.Ti

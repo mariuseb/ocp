@@ -1,13 +1,14 @@
 #from ast import Param
-from sysid.param_est import MPC
+from ocp.mpc import MPC
 import numpy as np
 import json
 import casadi as ca
-import sysid.dae as dae
-import sysid.integrators as integrators
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
+from ocp.tests.utils import get_opt_config_path
+import os
+import ocp
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -15,9 +16,11 @@ pd.set_option('display.width', 1000)
 
 if __name__ == "__main__":
     
-    cfg_path = "2R2C_MPC.json"
     
-    data = pd.read_csv("data/MPC_open_loop_test.csv", index_col=0)
+    cfg_path = os.path.join(get_opt_config_path(), "2R2C_MPC.json")
+    data_path = os.path.join(ocp.__path__[0], "tests", "data", "MPC_open_loop_test.csv")
+    
+    data = pd.read_csv(data_path, index_col=0)
     N = len(data)
     dt = data.index[1] - data.index[0]
     """
@@ -103,13 +106,13 @@ if __name__ == "__main__":
     # TODO: slacks on comfort constraints:
     
     # provide x0, state bounds
-    sol = mpc.solve(
-                    data,
-                    x0=x0,
-                    lbx=lbx,
-                    ubx=ubx,
-                    params=params
-                    )
+    sol, u, x = mpc.solve(
+                         data,
+                         x0=x0,
+                         lbx=lbx,
+                         ubx=ubx,
+                         params=params
+                         )
 
     #pprint(params)
     

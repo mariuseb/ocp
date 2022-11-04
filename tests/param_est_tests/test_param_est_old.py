@@ -1,10 +1,10 @@
 #from ast import Param
-from sysid.param_est import ParameterEstimation
+from ocp.param_est import ParameterEstimation
 import numpy as np
 import json
 import casadi as ca
-import sysid.dae as dae
-import sysid.integrators as integrators
+import ocp.dae as dae
+import ocp.integrators as integrators
 import pandas as pd
 
 def generate_data(cfg_path, x0, true_params):

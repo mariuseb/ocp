@@ -1,10 +1,21 @@
 import pandas as pd
 import numpy as np
 import pdb
+import os
+import ocp
 
 #pd.set_option('display.max_rows', 500)
 #pd.set_option('display.max_columns', 500)
 #pd.set_option('display.width', 1000)
+
+def get_opt_config_path():
+    return os.path.join(ocp.__path__[0], "tests", "opt_configs") 
+
+def get_boptest_config_path():
+    return os.path.join(ocp.__path__[0], "tests", "boptest_configs") 
+
+def get_data_path():
+    return os.path.join(ocp.__path__[0], "tests", "data") 
 
 
 class Bounds(object):
