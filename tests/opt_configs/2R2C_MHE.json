@@ -34,14 +34,14 @@
             ["y1", "Ti"]
         ]
     },
-    "N": 96,
+    "N": 24,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",
         "method": "legendre",
-        "degree": 1,
+        "degree": 3,
         "n_steps": 1
         }
     ,
@@ -50,7 +50,7 @@
         "verbose": false,
         "ipopt.linear_solver": "ma27",
         "ipopt.ma57_pre_alloc": 3,
-        "ipopt.max_cpu_time": 1
+        "ipopt.max_cpu_time": 10
     },
     "codegen": false
 }

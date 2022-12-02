@@ -137,6 +137,7 @@ class DAE(object):
 
             # keep for later lookup:
             self.__setattr__("y", meas_exprs)
+            self.__setattr__("y_names", list(meas_exprs.keys()))
         except KeyError:
             self.__setattr__("y", dict())
             

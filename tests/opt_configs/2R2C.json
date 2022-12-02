@@ -40,7 +40,7 @@
         "name": "IRK",
         "method": "legendre",
         "degree": 3,
-        "n_steps": 3
+        "n_steps": 1
         }
     ,
     "solver": "gauss-newton",

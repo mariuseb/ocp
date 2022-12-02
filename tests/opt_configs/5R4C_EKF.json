@@ -1,0 +1,55 @@
+{
+    "model": {
+        "ode": {
+            "dTi1": "(Te1 - Ti1)/(Rie1*Ci1)  + phi_h*(1/Ci1) + Ai1*(phi_s/Ci1)",
+            "dTi2": "(Te2 - Ti2)/(Rie2*Ci2) + phi_h2*(1/Ci2) + Ai2*(phi_s/Ci2)",
+            "dTe1": "(Ti1 - Te1)/(Rie1*Ce1) + (Ta - Te1)/(Rea1*Ce1)",
+            "dTe2": "(Ti2 - Te2)/(Rie2*Ce2) + (Ta - Te2)/(Rea2*Ce2)"
+        },
+        "alg": {
+            "h1": "Ti1",
+            "h2": "Ti2"
+        },
+        "p": [
+            "Rie1",
+            "Rea1",
+            "Ci1",
+            "Ce1",
+            "Ai1",
+            "Rie2",
+            "Rea2",
+            "Ci2",
+            "Ce2",
+            "Ai2"
+        ],
+        "u": [
+            "phi_h",
+            "phi_h2"
+        ],
+        "r": [
+            "Ta", 
+            "phi_s"
+        ],
+        "x": [
+            "Ti1",
+            "Ti2",
+            "Te1",
+            "Te2"
+        ],
+        "y": [
+            ["y1", "Ti1"],
+            ["y2", "Ti2"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+                {
+                "name": "IRK",
+                "method": "legendre",
+                "degree": 3,
+                "n_steps": 1
+                },
+    "solver": "gauss-newton",
+    "Q": [4,4,4,4],
+    "R": [2,2]
+}

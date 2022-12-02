@@ -158,9 +158,12 @@ class OCP(metaclass=ABCMeta):
         # transcribe:
         self.nlp, self.nlp_parser = self.strategy.transcribe_nlp()
         self.opt = config["opt"]
+        # get duals:
+        self.opt["calc_multipliers"] = True
   
     
-    def _init_solver(self):
+    def _init_solver(self, init_qp_solver=True):
+        
         self.solver = ca.nlpsol(
                                 "solver", \
                                 "ipopt", \
@@ -171,7 +174,19 @@ class OCP(metaclass=ABCMeta):
                                     compiler=self.compiler, \
                                     **self.opt)
                             )
-    
+        
+        if init_qp_solver:
+            
+            opts = dict(
+                        qpsol='qrqp',
+                        qpsol_options=dict(print_iter=False,error_on_fail=False), 
+                        print_time=False
+                        )
+            
+            self.qp_solver = ca.nlpsol('solver',
+                                       'sqpmethod',
+                                       self.nlp,
+                                       opts)
                 
     def set_bounds(self):
         
@@ -226,6 +241,9 @@ class OCP(metaclass=ABCMeta):
             ######## handle x0 #######:
             if bound_dict["x0"] is None:
                 if bound_dict["lb"] is None:
+                    #if k == "v" or k == "w":
+                    #    x0 = np.append(x0, np.repeat([0.01], v["dim"]))
+                    #else:
                     x0 = np.append(x0, np.repeat([0], v["dim"]))
                 else:
                     x0 = np.append(x0, bound_dict["lb"])
@@ -272,8 +290,12 @@ class OCP(metaclass=ABCMeta):
         #self.nlp_parser.vars["lslack"] = lslack_dict
         #self.nlp_parser.vars["slack"] = slack_dict
          
-        self.lbx = lbx       
-        self.ubx = ubx       
+        #self.lbx = lbx       
+        #self.ubx = ubx       
+        
+        # rounding issue
+        self.lbx = lbx.round(7)       
+        self.ubx = ubx.round(7)       
         self.x0 = x0
         
         # add to slacks:
@@ -357,6 +379,10 @@ class OCP(metaclass=ABCMeta):
     @property
     def nlp_y(self):
         return self.get_nlp_var("y")
+ 
+    @property
+    def nlp_r(self):
+        return self.get_nlp_var("r")
 
     #@property
     #def nlp_lslack(self):
@@ -481,11 +507,13 @@ class OCP(metaclass=ABCMeta):
     
             if lbp is not None:
                 bounds["p"]["lb"] = lbp/self.scale
+                #bounds["p"]["lb"] = lbp
             else:
                 bounds["p"]["lb"] = None
                 
             if ubp is not None:
                 bounds["p"]["ub"] = ubp/self.scale
+                #bounds["p"]["ub"] = ubp
             else:
                 bounds["p"]["ub"] = None
                 
@@ -590,7 +618,11 @@ class OCP(metaclass=ABCMeta):
         
     def parse_solution(self, solution):
         """ General. """  
-        parser = self.nlp_parser.vars    
+        parser = self.nlp_parser.vars   
+        
+        # temporary, store nlp-solution:
+        self.solution = solution
+         
         sol_x = np.array(solution["x"]).flatten()
     
         #for i, name in enumerate(self.dae.order):

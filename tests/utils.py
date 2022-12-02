@@ -47,10 +47,10 @@ class Bounds(object):
         
     def _init_df(
                  self,
-                 lb_night,
-                 ub_night,
-                 lb_day,
-                 ub_day
+                 lb_nig,
+                 ub_nig,
+                 lb_d,
+                 ub_d
                 ):
         
         self.df = pd.DataFrame(
@@ -64,11 +64,46 @@ class Bounds(object):
                         )
         
         # ub, lb for non-material states:
-        diff = len(self.x) - len(self.y)
-        lb_night = np.append(np.array(lb_night), [10]*diff)
-        ub_night = np.append(np.array(ub_night), [500]*diff)
-        lb_day = np.append(np.array(lb_day), [10]*diff)
-        ub_day = np.append(np.array(ub_day), [500]*diff)
+        #diff = len(self.x) - len(self.y)
+        #lb_night = np.append(np.array([lb_night]*len(self.y)), [10]*diff)
+        #ub_night = np.append(np.array([ub_night]*len(self.y)), [500]*diff)
+        #lb_day = np.append(np.array([lb_day]*len(self.y)), [10]*diff)
+        #ub_day = np.append(np.array([ub_day]*len(self.y)), [500]*diff)
+        #lb_night = np.array([lb_night, 10, lb_night, 10])
+        #ub_night = np.array([ub_night, 500, ub_night, 500])
+        #lb_day = np.array([lb_day, 10, lb_day, 10])
+        #ub_day = np.array([ub_day, 500, ub_day, 500])
+           
+        # init arrays:
+        lb_night = np.zeros(len(self.x))
+        ub_night = np.zeros(len(self.x))
+        lb_day = np.zeros(len(self.x))
+        ub_day = np.zeros(len(self.x))
+        
+        # x is ordered:
+        for i, name in enumerate(self.x):
+            
+            if name in lb_nig:
+                lb_night[i] = lb_nig[name]
+            else:
+                lb_night[i] = 0
+            
+            if name in ub_nig:
+                ub_night[i] = ub_nig[name]
+            else:
+                ub_night[i] = 500
+            
+            if name in lb_d:
+                lb_day[i] = lb_d[name]
+            else:
+                lb_day[i] = 0
+            
+            if name in ub_d:
+                ub_day[i] = ub_d[name]
+            else:
+                ub_day[i] = 500
+                
+
         
         self.df.loc[0:self.t_h*7, "lb"] = lb_night
         self.df.loc[0:self.t_h*7, "ub"] = ub_night
@@ -93,8 +128,12 @@ class Bounds(object):
         inds = list(map(lambda x: x % (self.t_h*24),
                         (range(k+1, k+N))))
         
+        # ref:
+        
+        
         return self.df.loc[inds, "lb"].values.flatten(), \
-                self.df.loc[inds, "ub"].values.flatten()    
+                self.df.loc[inds, "ub"].values.flatten(), \
+                self.df.loc[inds, "lb"]["Ti"].values.flatten()
                 
     def get_full(self, days):
         df = pd.concat([self.df]*days)

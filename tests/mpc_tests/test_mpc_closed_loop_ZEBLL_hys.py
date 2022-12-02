@@ -86,7 +86,7 @@ if __name__ == "__main__":
     x0 = np.array([295.05, 293.15])
     
     # sim horizon: 2 days
-    days = 14
+    days = 45
     K = days*24*bounds.t_h
 
     for k in range(K):

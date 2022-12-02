@@ -21,6 +21,7 @@ import numpy as np
 #from sysid.ocp import OCP
 #import typing
 from ocp.ocp import OCP
+from ocp.filters import EKF, KalmanBucy
 
 
 class ParameterEstimation(OCP):
@@ -151,7 +152,7 @@ class ParameterEstimation(OCP):
         res_y = self.nlp_parser.h_gaps
         
         #self.alt_obj = 0.5*ca.dot(
-        alt_obj = 0.5*ca.dot(
+        self.alt_obj = 0.5*ca.dot(
                              ca.mtimes(self.R_square_root,
                                        res_y),
                              ca.mtimes(res_y.T,
@@ -168,7 +169,7 @@ class ParameterEstimation(OCP):
                   (self.N/2)*self.log_det_R(self.R)
                   
           
-        hess_expr =  ca.hessian(alt_obj,
+        hess_expr =  ca.hessian(self.alt_obj,
                                 ca.vertcat(p,
                                            x,
                                            u,
@@ -326,9 +327,9 @@ class ParameterEstimation(OCP):
         
         super().__init__(**kwargs) # does all the work.
         
-        #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
-        #                                                self.nlp_w) 
-        
+        self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
+                                                        self.nlp_w) 
+    
         #self.set_bounds(y=self.Y,
         #                u=self.U)
         #self.separate_data(data)
@@ -390,10 +391,10 @@ class ParameterEstimation(OCP):
         (negative log-likelihood) 
         """ 
         
-        self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
-        self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
-        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        #self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
+        #self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
+        #self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        #self.R = ca.MX.sym("R", self.n_y, self.n_y)
         #### set up log(det) - Functions:
         Q_SX = self.Q_SX
         R_SX = self.R_SX
@@ -436,8 +437,12 @@ class ParameterEstimation(OCP):
         x = ca.vec(self.nlp_x)
         z = ca.vec(self.nlp_z)
         u = ca.vec(self.nlp_u)
-        y = ca.vec(self.nlp_y)
         p = ca.vertcat(*self.dae.dae.p)
+        w = ca.vec(self.nlp_w)
+        v = ca.vec(self.nlp_v)
+        y = ca.vec(self.nlp_y)
+        r = ca.vec(self.nlp_r)
+        
         R = self.R
         Q = self.Q
         
@@ -446,6 +451,21 @@ class ParameterEstimation(OCP):
         res_x = self.nlp_parser.x_gaps
         # residual y:
         res_y = self.nlp_parser.h_gaps
+        
+        self.x_gaps = ca.Function(
+                                  "x_gaps",
+                                  [x, z, u, p, w, v, y, r],
+                                  [res_x],
+                                  ["x", "z", "u", "p", "w", "v", "y", "r"],
+                                  ["res_x"]
+                                  )
+        self.y_gaps = ca.Function(
+                                  "y_gaps",
+                                  [x, z, u, p, w, v, y, r],
+                                  [res_y],
+                                  ["x", "z", "u", "p", "w", "v", "y", "r"],
+                                  ["res_y"]
+                                  )
         
         #self.alt_obj = 0.5*ca.dot(
         self.alt_obj = 0.5*ca.dot(
@@ -631,6 +651,92 @@ class ParameterEstimation(OCP):
                           )
         
         return P0
+    
+    def add_path_constraints(
+                            self,
+                            x0=None,
+                            lbx=None,
+                            ubx=None
+                            ):
+        
+        x_info = self.nlp_parser["x"]
+        x = self.nlp["x"][x_info["range"]["a"]:x_info["range"]["b"]]
+        
+        #lbx = np.append(x0, lbx)
+        #ubx = np.append(x0, ubx)
+        
+        #uslack = MX.sym("uslack", x_info["dim"])
+        #lslack = MX.sym("lslack", x_info["dim"])
+        
+        #slack = ca.vertcat(uslack, lslack)
+        
+        #upper_constr = x - ubx - uslack
+        #lower_constr = lbx - x - lslack#, 
+        path_constr = x
+        #lower_constr = x
+        #lower_constr = lbx - x
+        
+        #lbg = np.array([0]*self.nlp["orig_g"].shape[0])
+        #ubg = np.array([0]*self.nlp["orig_g"].shape[0])
+        
+        # assumes all previous constraints are of equality nature.
+        # TODO: fix.
+        
+        lbg = np.array([0]*self.nlp_parser.g.shape[0])
+        ubg = np.array([0]*self.nlp_parser.g.shape[0])
+        
+        self.lbg = np.append(lbg, lbx)
+        self.ubg = np.append(ubg, ubx)
+        
+        #self.nlp["g"] = ca.vertcat(self.nlp["orig_g"], path_constr)
+        self.nlp["g"] = ca.vertcat(self.nlp_parser.g, path_constr)
+        
+      
+    def one_step_residual(self, cfg, x0, params, y_data, R=None, Q=None):
+        """
+        Evolve one-step ahead predictions with EKF,
+        return the residual.
+        """
+        # alternative constructor that takes ocp dae?
+        ekf = KalmanBucy(cfg)
+        ekf.set_params(params)
+        ekf.set_Q(Q)
+        ekf.set_R(R)
+        
+        
+        # set R, Q? P0?
+        N = len(y_data)
+        
+        result = pd.DataFrame(
+                              index=range(N-1),
+                              columns=["res", "y_pred"]
+                              )
+        
+        F = self.integrator.one_sample
+        
+        for n in range(N-1):
+            
+            # noiseless model prediction:
+            x_pred = F(x0,
+                       0,
+                       y_data[self.dae.u].iloc[n].values,
+                       params,
+                       np.array([0, 0]),
+                       0)
+            
+            # filtering of prediction:s
+            x0 = ekf.estimate(
+                              x_pred,
+                              y=y_data[ekf.dae.y_names].iloc[n+1].values,
+                              u=y_data[ekf.dae.u].iloc[n].values,
+                              r=y_data[ekf.dae.r_names].iloc[n].values
+                              )
+            #result.loc[n, "res"] = float(y_data[ekf.dae.y_names].iloc[n+1] - x_pred[0])
+            result.loc[n, "res"] = (y_data[ekf.dae.y_names].iloc[n+1].values - np.array(x_pred[0,0]))[0][0]
+            result.loc[n, "y_pred"] = np.array(x_pred[0, 0])[0][0]
+            
+        return result
+                
         
                             
     def solve(
@@ -639,7 +745,9 @@ class ParameterEstimation(OCP):
               param_guess,
               covar=None,
               lbp=None,
-              ubp=None
+              ubp=None,
+              lbx=None,
+              ubx=None
               ):
         """
         Set initials for v, w to 0
@@ -662,10 +770,10 @@ class ParameterEstimation(OCP):
         #if self.Y.shape[1] != self.integrator.dae.n_x:
             # do this ( n_x - n_y) times:
             
-        self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
-                                                self.nlp_w) 
+        #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
+        #                                        self.nlp_w) 
         
-        #self.set_hess_obj()
+        self.set_hess_obj()
         
         #self.nlp["f"] = self.alt_obj
         
@@ -690,7 +798,8 @@ class ParameterEstimation(OCP):
         x_guess = y
         
         # TODO: handle edge-cases, e.g. n_y = 2 and n_x = 3
-        diff = self.integrator.dae.n_x - self.integrator.dae.n_y
+        #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
+        diff = int(self.integrator.dae.n_x/self.integrator.dae.n_y) - 1
         
         for n in range(diff):
             x_guess = ca.horzcat(x_guess, y)
@@ -706,17 +815,29 @@ class ParameterEstimation(OCP):
                           )
         
         self.set_bounds()
-        self._init_solver()
         
+        #self.set_hess_obj()
+        #self.nlp["f"] = self.alt_obj
         
+        #x_ = ca.veccat(self.nlp["x"], self.nlp["p"])
+        
+        #grad_f = ca.gradient(self.nlp["f"], x_)
+        #grad_f_f = ca.Function("grad_f", [x_], [grad_f])
         #self.x0 = np.append(self.x0, covar)
         #self.lbx = np.append(self.lbx, np.repeat([0], 5))
         #self.ubx = np.append(self.ubx, np.repeat([np.inf], 5))
+        if lbx is not None and ubx is not None:
+            self.add_path_constraints(lbx=lbx, ubx=ubx)
+        else:
+            self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
+            self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
+        
+        self._init_solver()
         
         solution = self.solver(
                                x0=self.x0,
-                               lbg=0, # option for path-constraints?
-                               ubg=0, # --"--
+                               lbg=self.lbg, # option for path-constraints?
+                               ubg=self.ubg, # --"--
                                lbx=self.lbx,
                                ubx=self.ubx,
                                p=covar

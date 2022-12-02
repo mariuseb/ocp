@@ -103,6 +103,12 @@ class NLPParser(object):
     
     def set_g(self, g):
         self.g = g
+        
+    def set_x_orig(self, x):
+        self.x_orig = x
+        
+    def set_p_orig(self, p):
+        self.p_orig = p
     
     def set_x_gaps(self, x_gaps):
         self.x_gaps = x_gaps
@@ -117,7 +123,12 @@ class MultipleShooting(Shooting):
         """ 
         Transcribe the nlp.
         """ 
-        # some logic for stochasticity?
+        
+        self.x_nom = 300
+        self.u_nom = 5000
+        self.r_nom = 300
+        self.p_nom = self.scale
+        
         x = self.get_x()
         w = self.get_w()
         v = self.get_v()
@@ -126,7 +137,8 @@ class MultipleShooting(Shooting):
         z = self.get_z()
         r = self.get_r()
         # TODO: init p here instead (for TVP etc.):
-        p = self.F.p
+        #p = self.F.p
+        p = self.get_p()
         
         self.F_map = self.map_F()
         self.h_map = self.map_h()
@@ -145,11 +157,14 @@ class MultipleShooting(Shooting):
         
         ############## setting up constraints #############
         
+        # hardcode scaling here:
+        
         xn = self.F_map(
                         x0=x,
                         z=z,
                         u=u,
                         p=self.scale*ca.repmat(p, 1, self.N),
+                        #p=ca.repmat(p, 1, self.N),
                         w=w,
                         r=r
                         )["xf"]
@@ -162,8 +177,9 @@ class MultipleShooting(Shooting):
                             x=x,
                             z=z,
                             u=u,
-                            #p=p,
+                            #p=ca.repmat(p, 1, self.N),
                             p=self.scale*ca.repmat(p, 1, self.N),
+                            #p=self.scale*ca.repmat(p, 1, self.N),
                             v=v,
                             r=r
                             )["h"]
@@ -172,8 +188,9 @@ class MultipleShooting(Shooting):
                             x=x,
                             z=z,
                             u=u,
-                            #p=p,
+                            #p=ca.repmat(p, 1, self.N),
                             p=self.scale*ca.repmat(p, 1, self.N),
+                            #p=self.scale*ca.repmat(p, 1, self.N),
                             v=v,
                             r=r
                             )["g"]
@@ -196,6 +213,8 @@ class MultipleShooting(Shooting):
         nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
         # keep orig g:
         nlp_parser.set_g(g)  
+        nlp_parser.set_x_orig(x)  
+        nlp_parser.set_p_orig(p)  
         
         """
         Gaps without noise, scaling for covariance estimation:
@@ -266,10 +285,12 @@ class MultipleShooting(Shooting):
 
     def get_y(self):
         """ Process noise. """
+        #return ca.MX.sym("y", self.n_y, self.N)*self.x_nom
         return ca.MX.sym("y", self.n_y, self.N)
     
     def get_u(self):
         """ Process noise. """
+        #return ca.MX.sym("u", self.n_u, self.N)*self.u_nom
         return ca.MX.sym("u", self.n_u, self.N)
 
     def get_z(self):
@@ -278,11 +299,18 @@ class MultipleShooting(Shooting):
     
     def get_x(self):
         """ Process noise. """
+        #return ca.MX.sym("x", self.n_x, self.N)*self.x_nom
         return ca.MX.sym("x", self.n_x, self.N)
 
     def get_r(self):
         """ Process noise. """
+        #return ca.MX.sym("r", self.n_r, self.N)*self.r_nom
         return ca.MX.sym("r", self.n_r, self.N)
+    
+    def get_p(self):
+        """ Parameters. """
+        #return ca.MX.sym("p", self.n_p)*self.p_nom
+        return self.F.p #*self.p_nom
     
     def map_F(self):
         return self.F.one_sample.map(self.N, "openmp")

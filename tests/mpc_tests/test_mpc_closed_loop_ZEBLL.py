@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF
+from ocp.filters import EKF, KalmanBucy
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
@@ -43,7 +43,7 @@ if __name__ == "__main__":
               #dt=dt
               ) # to remove, replace with N
     
-    ekf = EKF(ekf_cfg)
+    ekf = KalmanBucy(ekf_cfg)
     # set params:
     ekf.set_params(params)
     
@@ -57,10 +57,10 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     #dt = mpc.dt
-    lb_night = 289.15
-    ub_night = 301.15
-    lb_day = 293.15
-    ub_day = 296.15
+    lb_night = {"Ti": 289.15}
+    ub_night = {"Ti": 301.15}
+    lb_day = {"Ti": 293.15}
+    ub_day = {"Ti": 296.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     x0 = np.array([295.05, 293.15])
     
     # sim horizon: 2 days
-    days = 14
+    days = 45
     K = days*24*bounds.t_h
 
     for k in range(K):

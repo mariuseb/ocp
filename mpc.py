@@ -55,6 +55,7 @@ class MPC(OCP):
     def __init__(self, **kwargs):
         
         super().__init__(**kwargs) # does all the work.
+        #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)
         
         #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_u)
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_lslack, self.nlp_uslack)
@@ -65,7 +66,7 @@ class MPC(OCP):
         #self._init_solver()
         
     #def get_nlp_obj(self, u, slack):
-    def get_nlp_obj(self, u):
+    def get_nlp_obj(self, u, ref=False):
         """ 
         Objective for MPC.
         
@@ -80,7 +81,23 @@ class MPC(OCP):
             Combination of 
             the two.
         """          
-        return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
+        if not ref:
+            return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
+        else: # reference tracking
+            
+            # how to know which state to track?
+    
+            x_bounds = self.nlp_parser["x"]["range"]
+            r_bounds = self.nlp_parser["r"]["range"]
+            x_ref = self.nlp["x"][x_bounds["a"]:x_bounds["b"]:self.dae.n_x]
+            # need modular way to find the shift in r:
+            r_ref = self.nlp["x"][(r_bounds["a"]+2):r_bounds["b"]:self.dae.n_r]
+            delta = x_ref - r_ref
+            return 0.5*ca.dot(delta, delta) # + 0.05*ca.dot(u, u)
+            
+        # add slew rate:
+        #u_slew = (u[1:] - u[:-1])
+        #return 0.5*ca.dot(u, u) - 0.01*ca.dot(u_slew, u_slew) # + 0.01*ca.dot(slack, slack)
     
     def add_path_constraints(
                             self,
@@ -151,6 +168,8 @@ class MPC(OCP):
               lbx=None,
               ubx=None,
               params=None,
+              ref=False,
+              return_raw_sol=False
               ):
         """
         todo
@@ -173,7 +192,7 @@ class MPC(OCP):
         self.add_path_constraints(x0=x0, lbx=lbx, ubx=ubx)
         
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, slack)
-        self.nlp["f"] = self.get_nlp_obj(self.nlp_u)
+        self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)
                 
         self._init_solver()
         
@@ -195,5 +214,7 @@ class MPC(OCP):
         sol_df, params = self.parse_solution(solution)
         
         #################################################################################
-        
-        return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values
+        if not return_raw_sol:
+            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values
+        else:
+            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values, solution

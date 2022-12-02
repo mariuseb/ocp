@@ -148,19 +148,30 @@ class Boptest(RestApi):
         cfg = {'boptest_map': forecast_map}# 'mosiop_map':self.var} # TODO to make this more generic boptest_map should have similar variables maps for y,u,z,r,p (latter empty if not applicable)
         self.forecaster = Forecaster(cfg)
 
-    def evolve(self, u={}):
+    def evolve(self,
+               u={},
+               y_as_array=True,
+               u_as_array=True
+               ):
         ''' 
         Advances simulation one step forward.
         Then forecast is retrieved.
         '''
         y = self.advance(u=self.get_control(u))
 
-        y_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["y"])
+        if y_as_array:
+            y_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["y"])
+        else:
+            y_sorted = {k_bop: y[k_bop] for k_ocp, k_bop in self.y.items()}
         
         if self.noise: # add meas noise
             y_sorted += np.random.normal(scale=0.1, size=len(y_sorted))
         
-        u_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["u"])
+        if u_as_array:
+            u_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["u"])
+        else:
+            u_sorted = {k_bop: y[k_bop + "_u"] for k_ocp, k_bop in self.u.items()}
+            
         # get this to return df:
         forecast = self.forecast()
         self.forecast_df.loc[y["time"]] = forecast.iloc[0]

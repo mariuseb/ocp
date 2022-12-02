@@ -1,10 +1,29 @@
 {
-  "ZEBLL":
+  "ZEBLL_twozone":
     {
       "misc": {
         "h": 900,
         "N": 12,
         "start_time": 0,
+        "warmup_period": 0
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "u" : {"phi_h": "oveActS", "phi_h2": "oveActN"},
+        "y": {"Ti1": "TRoo1_y", "Ti2": "TRoo2_y"},
+        "boptest_to_ocp": {"phi_h": "PHea_y", "phi_h2": "PHea2_y", "Ti1": "TRoo1_y", "Ti2": "TRoo2_y"},
+        "sampling": {
+                     "integrate": ["phi_h", "phi_h2"],
+                     "point": ["Ta", "phi_s", "Ti1", "Ti2"]
+                    }
+      }
+    },
+     "ZEBLL":
+    {
+      "misc": {
+        "h": 900,
+        "N": 12,
+        "start_time": 2678400,
         "warmup_period": 0
       },
       "maps" : {
