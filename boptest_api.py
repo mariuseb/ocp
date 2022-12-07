@@ -14,6 +14,11 @@ import matplotlib.pyplot as plt
 from pprint import pprint
 import os
 import json
+#rc('mathtext', default='regular')
+# datetime:
+#plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
+import matplotlib.dates as mdates
+    
 
 class Forecaster(object):
     ''' 
@@ -138,6 +143,23 @@ class Boptest(RestApi):
             self.var[k] = list(v.keys())
             
         self.forecast_df = pd.DataFrame(columns=list(self.r.keys()))
+        
+        self.result_df = pd.DataFrame(columns = list(map(lambda x: x + "_u", list(self.u.values()))) + \
+            list(self.boptest_to_ocp.values()))
+        self.result_df.loc[0] = [0]*len(self.result_df.columns)
+        
+        # get initial temperature:
+        res = self.get_results(tf=self.start_time+self.h, ts=self.start_time)
+                       
+        self.y_names = list(self.y.values())
+        
+        self.u_names = list(map(lambda x: x + "_u", \
+                                list(self.u.values()))) + \
+                                    [v for k, v in self.boptest_to_ocp.items() if v not in self.y_names]
+        
+        self.result_df.loc[int(res.index[0]), self.y_names] = res.loc[res.index[0], self.y_names]
+        
+            #list(self.boptest_to_ocp[k] for k, v in self.u.items()))
         #self.forecast = pd.DataFrame(columns=list(self.r.values()))
         
         self.initialize()
@@ -156,8 +178,24 @@ class Boptest(RestApi):
         ''' 
         Advances simulation one step forward.
         Then forecast is retrieved.
+            
+        # get this to return df:
         '''
+        # get forecast:
+        forecast = self.forecast()
+        
         y = self.advance(u=self.get_control(u))
+        #self.forecast_df.loc[y["time"]] = forecast.iloc[0]
+        self.forecast_df.loc[int(y["time"] - self.h)] = forecast.iloc[0]
+        
+        # set u:
+        #self.result
+        
+        self.result_df.loc[y["time"] - self.h, self.u_names] = [y[k] for k in self.result_df.columns if k not in self.y_names]
+        self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.result_df if k in self.y_names]
+        
+        #self
+
 
         if y_as_array:
             y_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["y"])
@@ -171,10 +209,6 @@ class Boptest(RestApi):
             u_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["u"])
         else:
             u_sorted = {k_bop: y[k_bop + "_u"] for k_ocp, k_bop in self.u.items()}
-            
-        # get this to return df:
-        forecast = self.forecast()
-        self.forecast_df.loc[y["time"]] = forecast.iloc[0]
 
         # return actual u
         return forecast, y_sorted, u_sorted
@@ -264,18 +298,54 @@ class Boptest(RestApi):
         '''
 
         # ts adjusted? tf and ts are relative -> adjust
+        """
         if ts < self.start_time:
             ts += self.start_time
 
+        try:
+            # first
+            # include last forecast
+            #df_res_orig = self.get_results(tf + self.start_time, ts=ts)
+            forecast = self.forecast()
+            self.forecast_df.loc[self.forecast_df.index[-1] + self.h] = forecast.iloc[0]
+        except TypeError:
+            pass
+        
         df_res = self.get_results(tf + self.start_time, ts=ts)
         
         if include_forecast:
             forecast = self.forecast_df
             forecast.index = pd.TimedeltaIndex(forecast.index, unit="s")
+            #df_res_orig.index = pd.TimedeltaIndex(df_res_orig.index, unit="s")
             df_res.index = pd.TimedeltaIndex(df_res.index, unit="s")
+            #df_res_orig.index = pd.TimedeltaIndex(df_res_orig.index, unit="s")
+            
+            # shift (only heating):
+            u_names_bop = list(map(lambda x: x + "_u", list(self.u.values()))) + \
+                        list([v for k, v in self.boptest_to_ocp.items() if k in self.u])
+                        
+            rest = [col for col in df_res.columns if col not in u_names_bop]
+            
+            df_res_u = df_res[u_names_bop].iloc[1:]
+            df_rest = df_res[rest].iloc[:-1]
+            #df_res = df_res_orig[1:]
+            #df_res.index = df_res_orig.index[:-1]
+            
+            df_res_u.index = df_res.index[:-1]
+            df_rest.index = df_res.index[:-1]
+            
+            df_res = pd.merge(df_res_u, df_rest, left_index=True, right_index=True)
+            #df_res = df_res_orig.iloc[:-1]
+            
             forecast = forecast.resample('30s').ffill()
-            df_res = df_res.merge(forecast, left_index=True, right_index=True)
-               
+            #forecast = forecast.iloc[:-1]
+            #df_res = df_res_orig.merge(forecast, left_index=True, right_index=True)
+            df_res = df_res.merge(forecast, left_index=True, right_in                downsample=True,dex=True)
+        """
+        df_res = pd.merge(self.result_df, self.forecast_df, left_index=True, right_index=True)
+        # append last y:
+        df_res.loc[self.result_df.index[-1], self.y_names] = self.result_df.loc[self.result_df.index[-1], self.y_names]
+            
         if mpc_names:
             """
             boptest_to_ocp = {}
@@ -292,6 +362,7 @@ class Boptest(RestApi):
             boptest_to_ocp = {v: k for k, v in self.boptest_to_ocp.items()}
             df_res.rename(columns = boptest_to_ocp, inplace=True)
         # downsample
+        """
         if downsample:
             #df_res = df_res.loc[[ndx for ndx in df_res.index if ndx % self.h == 0]]
             int_cols = self.sampling["integrate"]
@@ -305,8 +376,8 @@ class Boptest(RestApi):
             df_point = df_point.resample(rule).asfreq()
             
             df_res = pd.merge(df_integrate, df_point, left_index=True, right_index=True)
-        
-        return df_res
+        """
+        return df_res.loc[ts:tf]
 
     def plot_results(self, ts=0, tf=0, cols_to_plot=None, plot_ext=True):
         ''' Plot results of boptest-interaction. '''
@@ -349,3 +420,128 @@ class Boptest(RestApi):
                 name = "_".join([name1, name2])
         typ = "{" + typ + "}"
         return f"${name}_{typ}$"
+    
+    
+    def plot_temperatures(self, K, days, bounds):
+        """
+        Plot temperatures.
+        """
+        
+        colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
+    
+        # get result
+        res = self.get_data(tf=(K+1)*self.h)
+        
+        # leave out last: 
+        res = res.iloc[:-1]
+        dt_index = pd.to_datetime(res.index, origin="2020-01-01 00:00", unit="s").round("s")
+        res.index = dt_index
+        
+        y = list(self.y.keys())
+        
+        #res.Ti.iloc[:-1] = res.Ti.iloc[1:] 
+        #res = res.iloc[:-1]
+        fig = plt.figure(figsize=(10,6))
+        
+        # Add plots vertically:
+        
+        #ax = fig.add_subplot(2, 1, 1)
+        # plot for solar:
+        #ax2 = fig.add_subplot(2, 1, 2)
+        
+        ax = fig.add_subplot(111)
+        
+        #dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
+        axes = []
+        
+        for y_name in y:
+            
+            prefix = y_name[0]
+            
+            if len(y_name) == 2:
+                suffix = y_name[1]
+            elif len(y_name) == 3:
+                suffix = y_name[1:2]
+            
+            #l1 = res.Ti.plot(ax=ax, color="k")
+            #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
+            l1 = ax.plot(dt_index, (res[y_name]-273.15), color=next(colors), label="$%s_%s$" % (prefix, suffix))
+            ax1 = ax.twinx()
+            #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
+            #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
+            
+            # TODO: map from temperature to heater:
+            l2 = ax1.plot(dt_index, res.phi_h, color=next(colors), linestyle="dashed", label="$\phi_h$")
+            
+            #ax.legend([l1, l2], , loc=0)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
+            fig.autofmt_xdate()
+            #ax.legend(["Ti"])
+            #ax1.legend(["phi_h"])
+            # plot bounds:
+            #bounds_plt = pd.concat([bounds]*days)
+            post = bounds.get_full(days)
+            pre = bounds.get_full(days)
+            post -= 273.15
+            pre -= 273.15
+            #bounds_plt.loc[0] = [0]*len(bounds_plt.columns)
+            pre.index = dt_index
+            post.index = dt_index
+            
+            post[post.index.hour >= 12] = np.nan
+            pre[(pre.index.hour <= 11) & (pre.index.hour > 0)] = np.nan
+            # split bounds in post and pre:
+            #post = bounds_plt.loc[[ndx for ndx in bounds_plt.index if ndx.hour < 12]]
+            #pre = bounds_plt.loc[[ndx for ndx in bounds_plt.index if ndx.hour >= 12]]
+            
+            #bounds_plt = bounds_plt.sort_index()
+            #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
+            #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
+            #l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{lb}$")
+            #l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{ub}$")
+            #l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]), drawstyle="steps", label="$T_{i}^{lb}$")
+            #l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]), drawstyle="steps", label="$T_{i}^{ub}$")
+            cols_bds = ["k", "k"]
+            #for i in range(2):
+            #    cols_bds.append(next(colors))
+            
+            # lines
+            lns = l1+l2
+                
+            for i, df in enumerate((post, pre)):
+                
+                if i == 0:
+                    style = "post"
+                else:
+                    style = "pre"
+                    
+                l_upper = ax.plot(dt_index,
+                                  (df[("ub", y_name)]), 
+                                  drawstyle="steps-" + style,
+                                  color=cols_bds[0],
+                                  label="$%s_{%s}^{ub}$" % (prefix, suffix))
+                
+                l_lower = ax.plot(dt_index, 
+                                  (df[("lb", y_name)]),
+                                  drawstyle="steps-" + style,
+                                  color=cols_bds[1],
+                                  label="$%s_{%s}^{lb}$" % (prefix, suffix))
+                
+                if i == 0:
+                    lns += l_upper
+                    lns += l_lower
+            
+            labs = [l.get_label() for l in lns]
+            ax.legend(lns, labs, loc='upper center', ncol=4)
+            _min, _max = ax.get_ylim()
+            ax.set_ylim([_min, _max+2])
+            
+            ax.set_ylabel(r"Temperature [$^\circ$C]")
+            ax1.set_ylabel(r"Power [W]")
+            
+            axes.append(ax)
+            axes.append(ax1)
+        
+        fig.tight_layout()
+        
+        return fig, axes, dt_index

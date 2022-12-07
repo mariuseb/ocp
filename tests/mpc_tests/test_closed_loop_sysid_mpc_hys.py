@@ -128,9 +128,9 @@ if __name__ == "__main__":
     data = boptest.forecast()
     ###################################################################
     # init state:
-    x0 = np.array([295.05, 293.15])
+    x0 = np.array([294.05, 293.15])
     
-    days = 2
+    days = 28
     K = days*24*bounds.t_h
     # estimated state at sysid horizon end:
     #x0 = sol.iloc[-1][mpc.dae.x].values

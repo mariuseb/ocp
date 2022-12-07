@@ -9,7 +9,7 @@ import numpy as np
 #import json
 #import sys
 #import pdb
-#import pprint
+from pprint import pprint
 #from sysid.shooting import MultipleShooting, SingleShooting
 #import copy
 
@@ -189,7 +189,8 @@ class MPC(OCP):
         # add lbx and ubx as path constraints on g:
         
         # ADD: option for slack:
-        self.add_path_constraints(x0=x0, lbx=lbx, ubx=ubx)
+        #self.add_path_constraints(x0=x0, lbx=lbx, ubx=ubx)
+        self.add_path_constraints(x0=x0/self.x_nom, lbx=lbx/self.x_nom, ubx=ubx/self.x_nom)
         
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, slack)
         self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)

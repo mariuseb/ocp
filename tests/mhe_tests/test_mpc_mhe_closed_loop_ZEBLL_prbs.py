@@ -15,6 +15,7 @@ from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
 import scipy
+from copy import deepcopy
 np.set_printoptions(precision=2)
 
 # text:
@@ -41,9 +42,16 @@ if __name__ == "__main__":
                                   6.64E6,
                                   5.53])
     
-    mpc = MPC(config=mpc_cfg, param_guess=params) # to remove, replace with N
+    kwargs = {
+              "x_nom": 300,
+              "u_nom": 5000,
+              "r_nom": 300,
+              "y_nom": 300
+              }
+    
+    mpc = MPC(config=mpc_cfg, param_guess=params, **deepcopy(kwargs)) # to remove, replace with N
     #mhe = MHE(config=mhe_cfg, param_guess=params)
-    mhe = MHE(config=mhe_cfg, param_guess=params)
+    mhe = MHE(config=mhe_cfg, param_guess=params, **kwargs)
     
     # for first N iterations:
     ekf = KalmanBucy(ekf_cfg)
@@ -88,9 +96,10 @@ if __name__ == "__main__":
     # variance of x_hat_-1 -> high
     # order in P0 -> [p, x_hat_-1]
     #P0[:mhe.n_p,:mhe.n_p] *= 1E-32
-    P0[:mhe.n_p,:mhe.n_p] *= 1E32
-    P0[mhe.n_p:, mhe.n_p:] *= 1E32
-    #P0 *= 1E-32
+    #P0[:mhe.n_p,:mhe.n_p] *= 1E32
+    #P0[mhe.n_p:, mhe.n_p:] *= 1E32
+    #P0 *= 1E-7
+    #P0 *= 1E-9
     
     #params_lb = ca.DM([0.001,0.01,1E5,1E6,1])
     #params_ub = ca.DM([0.1,0.1,1E7,1E8,50])
@@ -138,7 +147,7 @@ if __name__ == "__main__":
                                     covar=ca.veccat(Q, R),
                                     P0=P0,
                                     x_N=x_N,
-                                    arrival_cost=False
+                                    arrival_cost=True
                                     )
             
             params = params.values

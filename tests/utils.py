@@ -107,10 +107,10 @@ class Bounds(object):
         
         self.df.loc[0:self.t_h*7, "lb"] = lb_night
         self.df.loc[0:self.t_h*7, "ub"] = ub_night
-        self.df.loc[self.t_h*7:self.t_h*22, "lb"] = lb_day
-        self.df.loc[self.t_h*7:self.t_h*22, "ub"] = ub_day
-        self.df.loc[self.t_h*22:, "lb"] = lb_night
-        self.df.loc[self.t_h*22:, "ub"] = ub_night
+        self.df.loc[self.t_h*7:(self.t_h*22 + 1), "lb"] = lb_day
+        self.df.loc[self.t_h*7:(self.t_h*22 + 1), "ub"] = ub_day
+        self.df.loc[(self.t_h*22 + 1):, "lb"] = lb_night
+        self.df.loc[(self.t_h*22 + 1):, "ub"] = ub_night
     
     def get_bounds(self, k: int, N: int):
         """_summary_
@@ -136,6 +136,9 @@ class Bounds(object):
                 self.df.loc[inds, "lb"]["Ti"].values.flatten()
                 
     def get_full(self, days):
+        """
+        Get full bounds frame. 
+        """
         df = pd.concat([self.df]*days)
         df.index = range(self.dt, (len(df.index)+1)*self.dt, self.dt)
         return df

@@ -23,6 +23,12 @@
             "Te"
         ]
     },
+    "bounds": {
+        "u": {
+            "lbu": [0],
+            "ubu": [5000]
+        }
+    },
     "N": 12,
     "dt": 900,
     "method": "multiple_shooting",

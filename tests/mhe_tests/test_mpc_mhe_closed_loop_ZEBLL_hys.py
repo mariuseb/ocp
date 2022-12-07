@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF
+from ocp.filters import EKF, KalmanBucy
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     mpc = MPC(config=mpc_cfg) # to remove, replace with N
     mhe = MHE(config=mhe_cfg)
     # for first N iterations:
-    ekf = EKF(ekf_cfg)
+    ekf = KalmanBucy(ekf_cfg)
     # set params:
     ekf.set_params(params)
     
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     x0 = np.array([295.05, 293.15])
     
     # sim horizon: 2 days
-    days = 2
+    days = 4
     K = days*24*bounds.t_h
     
     # mhe settings:
@@ -124,10 +124,13 @@ if __name__ == "__main__":
 
         data, y_meas, u_meas = boptest.evolve(u=u)
         
+        # need to leave out first (non-estimated from EKF)
         if k >= (mhe.N - 1):
             # get labelled data:
+            #stop_time = (k+1)*boptest.h 
             stop_time = (k+1)*boptest.h 
             start_time = stop_time - (mhe.N - 1)*boptest.h
+            #start_time = stop_time - mhe.N*boptest.h
             y_data = boptest.get_data(ts=start_time, tf=stop_time)
             y_data["y1"] = y_data.Ti
             
@@ -136,6 +139,9 @@ if __name__ == "__main__":
             else:
                 x_N = sol_mhe.iloc[1][mhe.x_names].values
                 
+            
+            if k > (27+94):
+                print(y_data)
             
             sol_mhe, params = mhe.solve(
                                         y_data,
@@ -194,51 +200,9 @@ if __name__ == "__main__":
     
     plt.rcParams.update({'font.size': 11})
     
-    res = boptest.get_data(tf=K*boptest.h)
-    fig = plt.figure(figsize=(10,6))
-    ax = fig.add_subplot(111)
+    #dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
     
-    # colors
-    colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
-    #for i in range(n):
-    #c = next(colors)
-    #plt.plot(x, y, c=c)
-    
-    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
-    
-    #l1 = res.Ti.plot(ax=ax, color="k")
-    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
-    l1 = ax.plot(dt_index, (res.Ti-273.15), color=next(colors), label="$T_i$")
-    ax1 = ax.twinx()
-    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
-    l2 = ax1.plot(dt_index, res.phi_h, color=next(colors), label="$\phi_h$")
-    
-    #ax.legend([l1, l2], , loc=0)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-    fig.autofmt_xdate()
-    #ax.legend(["Ti"])
-    #ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{lb}$")
-    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{ub}$")
-    lns = l1+l2+l3+l4
-    labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs, loc='upper center', ncol=4)
-    _min, _max = ax.get_ylim()
-    ax.set_ylim([_min, _max+1])
-    _min, _max = ax1.get_ylim()
-    ax1.set_ylim([_min, _max+1000])
-    
-    ax.set_ylabel(r"Temperature [$^\circ$C]")
-    ax1.set_ylabel(r"Power [W]")
-    
-    fig.tight_layout()
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
     plt.show()    
     
     #plt.rcParams.update({'font.size': 14})

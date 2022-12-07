@@ -12,7 +12,7 @@ class Shooting(metaclass=ABCMeta):
     # Q and R should also be variable entities
     # for eventual sensitivity calculation.
     #def __init__(self, integrator, Q, R, N, scale):
-    def __init__(self, integrator, N, scale):
+    def __init__(self, integrator, N, **kwargs):
         """
         Entities for NLP.
         """
@@ -22,13 +22,25 @@ class Shooting(metaclass=ABCMeta):
         #self.U = U
         #self.Y = Y
         self.N = N 
-        self.scale = scale
+        #self.scale = scale
+        self.x_nom = kwargs.pop("x_nom")
+        self.u_nom = kwargs.pop("u_nom")
+        self.r_nom = kwargs.pop("r_nom")
+        self.y_nom = kwargs.pop("y_nom")
+        self.p_nom = kwargs.pop("p_nom")
+        #self.w_nom = kwargs.pop("w_nom", 1E-3)
+        self.w_nom = kwargs.pop("w_nom", 1/(self.x_nom*self.F.dt))
+        self.v_nom = kwargs.pop("v_nom", 1/self.x_nom)
+        #self.v_nom = kwargs.pop("p_nom", 1E-5)
+        
+        # TODO: x_nom, r_nom, y_nom, u_nom
     
     @classmethod    
     def __subclasshook__(cls, subclass):
         return (
                 hasattr(subclass, 'transcribe_nlp') 
-                #and 
+                #and                 if not mhe.solver.stats()["return_status"] == "Solve_Succeeded":
+
                 #hasattr(subclass, 'get_one_sample') 
                 and 
                 callable(subclass.transcribe_nlp)
@@ -39,7 +51,7 @@ class Shooting(metaclass=ABCMeta):
         return self.F.dae.n_x
 
     @property
-    def n_y(self):
+    def n_y(self): 
         return self.F.dae.n_y
 
     @property
@@ -124,10 +136,10 @@ class MultipleShooting(Shooting):
         Transcribe the nlp.
         """ 
         
-        self.x_nom = 300
-        self.u_nom = 5000
-        self.r_nom = 300
-        self.p_nom = self.scale
+        #self.x_nom = 300
+        #self.u_nom = 5000
+        #self.r_nom = 300
+        #self.p_nom = self.scale
         
         x = self.get_x()
         w = self.get_w()
@@ -160,39 +172,40 @@ class MultipleShooting(Shooting):
         # hardcode scaling here:
         
         xn = self.F_map(
-                        x0=x,
+                        x0=x*self.x_nom,
                         z=z,
-                        u=u,
-                        p=self.scale*ca.repmat(p, 1, self.N),
+                        u=u*self.u_nom,
+                        p=self.p_nom*ca.repmat(p, 1, self.N),
                         #p=ca.repmat(p, 1, self.N),
-                        w=w,
-                        r=r
+                        # w same unit as dT/dt -> factor: 1/300/900
+                        w=w*self.w_nom,
+                        r=r*self.r_nom
                         )["xf"]
         
-        x_gaps = xn[:,:-1]-x[:,1:] 
+        x_gaps = xn[:,:-1]-self.x_nom*x[:,1:] 
         #x_gaps = xn - x[:,1:] 
         
         h_gaps = self.h_map(
-                            y=y,
-                            x=x,
+                            y=y*self.y_nom,
+                            x=x*self.x_nom,
                             z=z,
-                            u=u,
+                            u=u*self.u_nom,
                             #p=ca.repmat(p, 1, self.N),
-                            p=self.scale*ca.repmat(p, 1, self.N),
+                            p=self.p_nom*ca.repmat(p, 1, self.N),
                             #p=self.scale*ca.repmat(p, 1, self.N),
-                            v=v,
-                            r=r
+                            v=v*self.v_nom,
+                            r=r*self.r_nom
                             )["h"]
         
         g_gaps = self.g_map(
-                            x=x,
+                            x=x*self.x_nom,
                             z=z,
-                            u=u,
+                            u=u*self.u_nom,
                             #p=ca.repmat(p, 1, self.N),
-                            p=self.scale*ca.repmat(p, 1, self.N),
+                            p=self.p_nom*ca.repmat(p, 1, self.N),
                             #p=self.scale*ca.repmat(p, 1, self.N),
-                            v=v,
-                            r=r
+                            v=v*self.v_nom,
+                            r=r*self.r_nom
                             )["g"]
         
         ###################################################

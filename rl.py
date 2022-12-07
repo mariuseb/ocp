@@ -3,6 +3,7 @@ import numpy as np
 import casadi as ca
 from abc import ABC, abstractmethod, ABCMeta
 from ocp.rl_sdp import RL_SDP
+import pandas as pd
 #import pandas as pd
 #import os
 #from ocp.tests.utils import get_data_path
@@ -96,6 +97,7 @@ class RL(metaclass=ABCMeta):
         #self._init_mhe_params(mhe, p, Q, R, P0)
         self.set_F_dQ_dz(mpc)
         self._init_MHE_sens(mhe)
+        self.sens = pd.DataFrame(columns=mpc.dae.p + mpc.dae.x)
         # epsilon as well?
         # needed for both Q and SARSA
         #self.mhe_nlp = mhe.nlp
@@ -140,6 +142,12 @@ class RL(metaclass=ABCMeta):
         
         # find num inequality constraints
         # only on x for now:
+        
+        """
+        TODO: 
+        inspect this.
+        Also, do not re-init these functions unecessarily
+        """
         self.inact_x_inds  = np.array([mhe.lbx < mhe.solution["x"]], dtype=bool).flatten()
         
         #x_map = {ndx: w_hat[ndx] for ndx, val in enumerate(inact_x) if not val}
@@ -297,16 +305,48 @@ class RL(metaclass=ABCMeta):
         """
         Set the function for obtaining:
             * ∂Q/∂w
+            
+        TODO: include inequality constraints.
         """
         nlp = mpc.nlp
         g = nlp["g"]
-        _lambda_hat = ca.MX.sym("lambda", g.shape[0])
+        
+        # TODO: check this outside this function,
+        # prior to setting up new function objects
+        
+        # get inequality constraint indices:
+        
+        """
+        bools = mpc.lbg != mpc.ubg
+        h_inds = [ndx for ndx, val in enumerate(bools) if val]
+        self.g_inds = g_inds = [ndx for ndx, val in enumerate(bools) if not val]
+        
+        start = mpc.nlp_parser["x"]["range"]["a"] + mpc.dae.n_x
+        stop = mpc.nlp_parser["x"]["range"]["b"]
+        
+        # extract x trajectory from solution:
+        h_active_inds_lb = [h_ind for bool, h_ind in zip(np.array(mpc.solution["x"][start:stop] > mpc.lbg[h_inds]).flatten(), h_inds) if not bool]
+        # NOTE: obviously more clever way of doing this..
+        h_active_inds_ub = [h_ind for bool, h_ind in zip(np.array(mpc.solution["x"][start:stop] < mpc.ubg[h_inds]).flatten(), h_inds) if not bool]
+        
+        self.h_active_inds = h_active_inds = np.append(h_active_inds_lb, h_active_inds_ub)
+        
+        mu = ca.MX.sym("mu", len(h_active_inds))
+        
+        g_eq = g[g_inds]
+        h = g[h_active_inds]
+        """
+        #_lambda = ca.MX.sym("lambda", g_eq.shape[0])
+        _lambda = ca.MX.sym("lambda", g.shape[0])
         # lagrangian of MPC-NLP:
-        L = nlp["f"] - ca.mtimes(_lambda_hat.T, g)
+        
+        #L = nlp["f"] - ca.mtimes(_lambda.T, g_eq) - ca.mtimes(mu.T, h)
+        L = nlp["f"] - ca.mtimes(_lambda.T, g)
         # primal:
         w = nlp["x"]
         # primal-dual:
-        z = ca.vertcat(w, _lambda_hat)
+        #z = ca.vertcat(w, _lambda, mu)
+        z = ca.vertcat(w, _lambda)
         # take gradient:
         dL_dw = ca.gradient(L, z)
         # set as function:
@@ -325,12 +365,13 @@ class RL(metaclass=ABCMeta):
         from MPC problem.
     
         """
+        #z_val = ca.vertcat(sol["x"], sol["lam_g"][self.g_inds], sol["lam_g"][self.h_active_inds])
         z_val = ca.vertcat(sol["x"], sol["lam_g"])
         dQ_dz = self.F_dL_dw(z_val)
         
         return self.get_dQ_dx0(dQ_dz).T, self.get_dQ_dp(dQ_dz).T
     
-    def step(self, mpc, mhe, p, Q, R, P0, diff_Q, L_k):
+    def step(self, mpc, mhe, p, Q, R, P0, diff_Q, L_k, k):
         #self._init_mpc_params(mpc)
         #self._init_mhe_params(mhe, p, Q, R, P0)
         self._init_MHE_sens(mhe)
@@ -352,10 +393,12 @@ class RL(metaclass=ABCMeta):
         alpha_delta_k = self.alpha*float(L_k + diff_Q)
         alpha_delta_grad_Q = alpha_delta_k*grad_Q_P0
         
+        grad_Q_P0_mat = grad_Q_P0.reshape((P0.shape[0], P0.shape[1]))
         # try to recover covariance step:
         alpha_delta_grad_Q_mat = alpha_delta_grad_Q.reshape((P0.shape[0], P0.shape[1]))
         
-        
+        # keep Ce sens:
+        self.sens.loc[k, :] = np.diag(grad_Q_P0_mat)
         # times alpha
         # first: create the SDP.
         #self.sdp = RL_SDP(mpc.dae.n_x, mpc.dae.n_y, mpc.dae.n_p)
@@ -364,7 +407,7 @@ class RL(metaclass=ABCMeta):
         #sol = self.sdp.solve(P0)
         
         #if sol is None:
-        return alpha_delta_grad_Q
+        return alpha_delta_grad_Q_mat
         #else:
         #return sol
         # transform P0 to actual in call:

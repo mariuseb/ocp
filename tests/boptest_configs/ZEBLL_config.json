@@ -22,9 +22,9 @@
     {
       "misc": {
         "h": 900,
-        "N": 12,
-        "start_time": 2678400,
-        "warmup_period": 0
+        "N": 13,
+        "start_time": 0,
+        "warmup_period": 604800
       },
       "maps" : {
         "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},

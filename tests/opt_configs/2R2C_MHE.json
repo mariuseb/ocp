@@ -15,10 +15,13 @@
             "Ai"
         ],
         "u": [
-            "phi_h",
+            "phi_h"
+            ],
+        "r":
+            [
             "Ta", 
             "phi_s"
-        ],
+            ],
         "x": [
             "Ti",
             "Te"
@@ -34,7 +37,7 @@
             ["y1", "Ti"]
         ]
     },
-    "N": 24,
+    "N": 48,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 

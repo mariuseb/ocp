@@ -4,12 +4,12 @@ import casadi as ca
 #from abc import ABC, abstractmethod, ABCMeta
 import pandas as pd
 #pd.set_option("display.precision", 8)
-#import numpy as np
+import numpy as np
 #np.set_printoptions(precision=10)
 #import json
 #import sys
 #import pdb
-#import pprint
+from pprint import pprint
 #from sysid.shooting import MultipleShooting, SingleShooting
 #import copy
 
@@ -34,10 +34,362 @@ class MHE(OCP):
         """
         super(MHE, self).__init__(**kwargs)
         self.df = pd.DataFrame(columns=self.dae.p)
+        # covariance matrices:
+        #self.R = ca.MX.sym("R", ca.Sparsity.diag(self.n_y))
+        #self.Q = ca.MX.sym("Q", ca.Sparsity.diag(self.n_x))
+        self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        self.set_hess_obj()
         
     # skip this:
     def set_hess_obj(self):
-        pass
+        """
+        For covariance estimation.
+        
+        (negative log-likelihood) 
+        """ 
+        
+        self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
+        self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
+        #self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        #self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        #### set up log(det) - Functions:
+        Q_SX = self.Q_SX
+        R_SX = self.R_SX
+        
+        """
+        self.R_sqrt_inv = ca.Function("R_sqrt_inv",
+                                     [self.R_SX],
+                                     [ca.sqrt(ca.inv(self.R_SX))],
+                                     ["R"],
+                                     ["R_sqrt_inv"])
+        
+        self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
+                                     [self.Q_SX],
+                                     [ca.sqrt(ca.inv(self.Q_SX))],
+                                     ["Q"],
+                                     ["Q_sqrt_inv"])
+        """ 
+        
+        #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
+        #self.R_square_root = ca.sqrt(ca.inv(self.R))
+        
+        #self.R_square_root = self.R_sqrt_inv(self.R_SX)
+        #self.Q_square_root = self.Q_sqrt_inv(self.Q_SX)
+        # for Q:
+        self.log_det_Q = ca.Function(
+                                     "log_det_Q",
+                                     [Q_SX],
+                                     [ca.trace(ca.log(ca.qr(Q_SX)[1]))],
+                                     ["Q"],
+                                     ["log(det(Q))"]                        
+        )
+        # for R:
+        self.log_det_R = ca.Function(
+                                     "log_det_R",
+                                     [R_SX],
+                                     [ca.trace(ca.log(ca.qr(R_SX)[1]))],
+                                     ["Q"],
+                                     ["log(det(R))"]                        
+        )
+        
+        
+        x = ca.vec(self.nlp_x)
+        z = ca.vec(self.nlp_z)
+        u = ca.vec(self.nlp_u)
+        p = ca.vertcat(*self.dae.dae.p)
+        w = ca.vec(self.nlp_w)
+        v = ca.vec(self.nlp_v)
+        y = ca.vec(self.nlp_y)
+        r = ca.vec(self.nlp_r)
+        
+        R = self.R
+        Q = self.Q
+        
+        
+        # residual x:
+        res_x = self.nlp_parser.x_gaps
+        # residual y:
+        res_y = self.nlp_parser.h_gaps
+        
+        self.x_gaps = ca.Function(
+                                  "x_gaps",
+                                  [x, z, u, p, w, v, y, r],
+                                  [res_x],
+                                  ["x", "z", "u", "p", "w", "v", "y", "r"],
+                                  ["res_x"]
+                                  )
+        self.y_gaps = ca.Function(
+                                  "y_gaps",
+                                  [x, z, u, p, w, v, y, r],
+                                  [res_y],
+                                  ["x", "z", "u", "p", "w", "v", "y", "r"],
+                                  ["res_y"]
+                                  )
+        
+        #self.alt_obj = 0.5*ca.dot(
+        self.alt_obj = 0.5*ca.dot(
+                             ca.mtimes(self.R,
+                                       res_y),
+                             ca.mtimes(res_y.T,
+                                       self.R).T) \
+                            + \
+                  0.5*ca.dot(
+                            ca.mtimes(self.Q,
+                                      res_x),
+                            ca.mtimes(res_x.T,
+                                      self.Q).T) \
+                            #- \
+                            #((self.N-1)/2)*self.log_det_Q(self.Q) \
+                            #- \
+                            #(self.N/2)*self.log_det_R(self.R)
+        
+        #self.res_obj = ca.Function("objective", [res_y, res_x, R, Q], [self.alt_obj],
+        #                           ["res_y", "res_x", "R", "Q"], ["residual"])     
+        # [x, z, u, p, w, v, y, r],     
+        self.res_obj = ca.Function("objective",
+                                   [x, z, u, p, w, v, y, r, ca.vec(R), ca.vec(Q)],
+                                   [self.alt_obj],
+                                   ["x", "z", "u", "p", "w", "v", "y", "r", "R", "Q"],
+                                   ["residual"])
+          
+        hess_expr, jac_expr =  ca.hessian(self.alt_obj,
+                                ca.vertcat(p,
+                                           x,
+                                           u,
+                                           y,
+                                           r,
+                                           ca.vec(R),
+                                           ca.vec(Q)
+                                           )
+                                )       
+        """
+        jac_expr =  ca.jacobian(self.alt_obj,
+                                ca.vertcat(p,
+                                           x,
+                                           u,
+                                           y,
+                                           r,
+                                           ca.vec(R),
+                                           ca.vec(Q)
+                                           )
+                                )             
+        """    
+        self.hess_obj = ca.Function(
+                                    "hess_obj",
+                                     [p,
+                                      x,
+                                      u,
+                                      y,
+                                      r,
+                                      ca.vec(R),
+                                      ca.vec(Q)
+                                      ],
+                                    [hess_expr],
+                                    #self.dae.p + ["x", "u", "y", "R", "Q"],
+                                    ["p", "x", "u", "y", "r", "R", "Q"],
+                                    ["hess_obj"]
+                                    )           
+        self.jac_obj = ca.Function(
+                                    "jac_obj",
+                                     [p,
+                                      x,
+                                      u,
+                                      y,
+                                      r,
+                                      ca.vec(R),
+                                      ca.vec(Q)
+                                      ],
+                                    [jac_expr.T],
+                                    #self.dae.p + ["x", "u", "y", "R", "Q"],
+                                    ["p", "x", "u", "y", "r", "R", "Q"],
+                                    ["jac_obj"]
+                                    )    
+        
+        #res_x = ca.MX.sym("res_x", res_x.shape[0], res_x.shape[1])
+        #res_y = ca.MX.sym("res_x", res_y.shape[0], res_y.shape[1])
+        """
+        alt_obj = 0.5*ca.dot(
+                             ca.mtimes(self.R,
+                                       res_y),
+                             ca.mtimes(res_y.T,
+                                       self.R).T) \
+                            + \
+                  0.5*ca.dot(
+                            ca.mtimes(self.Q,
+                                      res_x),
+                            ca.mtimes(res_x.T,
+                                      self.Q).T) \
+                            #- \
+                            #((self.N-1)/2)*self.log_det_Q(self.Q) \
+                            #- \
+                            #(self.N/2)*self.log_det_R(self.R)
+        """
+        
+       
+    def eval_res_obj(self, sol_df, params, R, Q):
+        """
+        Evaluate residual.
+        """
+        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
+        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
+        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
+        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
+        
+        obj_value = self.res_obj(
+                                x_vals,
+                                0,
+                                u_vals,
+                                params,
+                                0,
+                                0,
+                                y_vals,
+                                r_vals,
+                                ca.vec(R),
+                                ca.vec(Q)
+                                  )
+        # x_residual:
+        """
+        res_x = self.x_gaps(
+                            x_vals,
+                            0,
+                            u_vals,
+                            params,
+                            0,
+                            0,
+                            y_vals,
+                            r_vals,
+                            ca.vec(R),
+                            ca.vec(Q)
+                            )
+        res_y = self.y_gaps(
+                            x_vals,
+                            0,
+                            u_vals,
+                            params,
+                            0,
+                            0,
+                            y_vals,
+                            r_vals,
+                            ca.vec(R),
+                            ca.vec(Q)
+                            )
+
+        obj_value = self.res_obj(res_y, res_x, R, Q)
+        """
+        
+        return obj_value
+                
+        
+       
+    def get_covar_p(self, params, R, Q):
+        """
+        Get covariance of parameter estimates.
+        """
+        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
+        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
+        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
+        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
+        
+        # sample fisher information:
+        hess_val = self.hess_obj(
+                                 params,
+                                 x_vals,
+                                 u_vals,
+                                 y_vals,
+                                 r_vals,
+                                 ca.vec(R),
+                                 ca.vec(Q)
+                                 )
+        jac_val = self.jac_obj(
+                                params,
+                                x_vals,
+                                u_vals,
+                                y_vals,
+                                r_vals,
+                                ca.vec(R),
+                                ca.vec(Q)
+                                ).T
+        
+        param_dim = self.nlp_parser["p"]["dim"]
+        
+        fisher_p = hess_val[:param_dim,:param_dim]
+        jac_p = jac_val[:param_dim]
+        
+        x_start, x_stop = self.nlp_parser["x"]["range"]["a"] + self.nlp_parser["p"]["dim"], \
+                    self.nlp_parser["x"]["range"]["b"] + self.nlp_parser["p"]["dim"]
+                    
+        jac_x = jac_val[x_start:x_stop]
+        """
+        return pd.DataFrame(data=np.array(ca.inv(fisher)),
+                            index=self.dae.p,
+                            columns=self.dae.p), \
+                pd.DataFrame(data=np.array(fisher),
+                            index=self.dae.p,
+                            columns=self.dae.p)
+        """        
+        return pd.DataFrame(data=np.array(jac_p),
+                            index=self.dae.p,
+                            columns=["val"]), \
+                pd.DataFrame(data=np.array(fisher_p),
+                            index=self.dae.p,
+                            columns=self.dae.p), \
+                pd.DataFrame(data=np.array(jac_x)[:self.dae.n_x],
+                            columns=["val"])
+                
+                
+    def get_covar_x(self, params, R, Q):
+        """
+        Get covariance of parameter estimates.
+        """
+        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
+        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
+        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
+        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
+        
+        # sample fisher information:
+        hess_val = self.hess_obj(
+                                 params,
+                                 x_vals,
+                                 u_vals,
+                                 y_vals,
+                                 r_vals,
+                                 ca.vec(R),
+                                 ca.vec(Q)
+                                 )
+        
+        x_start, x_stop = self.nlp_parser["x"]["range"]["a"] + self.nlp_parser["p"]["dim"], \
+                            self.nlp_parser["x"]["range"]["b"] + self.nlp_parser["p"]["dim"]
+        
+        fisher = np.array(hess_val[x_start:x_stop,x_start:x_stop])
+        
+        #names = np.repeat(self.dae.x, self.N, axis=1)
+        names = np.repeat(np.array([self.dae.x]),
+                          self.N,
+                          axis=0)
+        
+        ns = list(map(lambda x: str(x), list(range(self.N))))
+        
+        x_names = []
+        for name_tup, num in zip(names, ns):
+            for name in name_tup:
+                x_names.append(name + num)
+        
+        #def namer(*args, y):
+        #    ret = []
+        #    for s in enumerate(args):
+        #        ret.append(s + y)
+        #    return ret
+        
+        #vector_namer = np.vectorize(namer)
+        #vector_namer(names, ns)
+        
+        return pd.DataFrame(data=np.array(np.linalg.inv(fisher)),
+                            index=x_names,
+                            columns=x_names), \
+                pd.DataFrame(data=fisher,
+                            index=x_names,
+                            columns=x_names)
     
     # TODO: P0 as parameter in NLP
     def get_nlp_obj(self, v, w, P0, x_N, p0, arrival_cost=False):
@@ -91,8 +443,8 @@ class MHE(OCP):
         #self.Q_sqrt_inv = ca.MX.sym("Q", self.n_x, self.n_x)
         #self.R = ca.MX.sym("R", self.n_y, self.n_y)
         #self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        self.R = ca.MX.sym("R", ca.Sparsity.diag(self.n_y))
-        self.Q = ca.MX.sym("Q", ca.Sparsity.diag(self.n_x))
+        #self.R = ca.MX.sym("R", ca.Sparsity.diag(self.n_y))
+        #self.Q = ca.MX.sym("Q", ca.Sparsity.diag(self.n_x))
         
         #self.P0_sqrt_inv = ca.sqrt(ca.inv(P0))
         #self.P0_sqrt_inv = ca.MX.sym("P0", self.n_x + self.n_p, self.n_x + self.n_p)
@@ -132,14 +484,19 @@ class MHE(OCP):
         """
         if arrival_cost:
             
+            #last_x = self.nlp_x[0:self.n_x]*self.x_nom
+            #p = ca.vertcat(*self.dae.dae.p)*self.p_nom
             last_x = self.nlp_x[0:self.n_x]
-            p = self.dae.dae.p
-            costate = ca.vertcat(*p, last_x)
+            p = ca.vertcat(*self.dae.dae.p)
+            costate = ca.vertcat(p, last_x)
             
             # define this as parameter:
             #costate_prior = ca.vertcat(p0, x_N)
             self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
 
+
+            # TODO: take steps directly on P0, not sqrt(P0)    
+            """
             arrival_cost = ca.dot(
                                 ca.mtimes(
                                     self.P0,
@@ -151,7 +508,12 @@ class MHE(OCP):
                                     self.P0).T
                                     #P0_sqrt).T
                             )
+            """
+            #arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
+            #arrival_cost = (self.P0@(costate - self.costate_prior).T)@(self.P0@(costate - self.costate_prior))
+            arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
             nlp_obj += arrival_cost
+            
             return nlp_obj, ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
         # return obj, params of NLP
         #return nlp_obj, ca.veccat(self.Q, self.R)
@@ -181,7 +543,8 @@ class MHE(OCP):
               ubp=None,
               P0=None,
               x_N=None,
-              arrival_cost=False
+              arrival_cost=False,
+              return_raw_sol=False
               ):
         """
         Set initials for v, w to 0
@@ -205,7 +568,7 @@ class MHE(OCP):
         
         y = self.data[self.y_names].values.flatten()
                     
-        x_guess = y
+        x_guess = y/self.y_nom
         
         #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
         #for n in range(diff):
@@ -246,7 +609,15 @@ class MHE(OCP):
         
         # TODO: branching on arrival cost:
         if arrival_cost:
-            p = ca.veccat(P0, covar, ca.vertcat(param_guess, x_N))
+            
+            p0 = param_guess/self.p_nom
+            x_N = x_N/self.x_nom
+            #p0 = param_guess
+            #x_N = x_N
+            costate_prior = ca.vertcat(p0, x_N)
+            
+            p = ca.veccat(P0, covar, costate_prior)
+            
         else:
             p = ca.veccat(covar)
         
@@ -267,5 +638,8 @@ class MHE(OCP):
         k = len(self.df)
         self.df.loc[k*self.dt, :] = params.values
         
-        return self.sol_df, params
+        if not return_raw_sol:
+            return self.sol_df, params
+        else:
+            return self.sol_df, params, solution
     

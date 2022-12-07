@@ -93,7 +93,17 @@ class OCP(metaclass=ABCMeta):
         dt = kwargs.pop("dt", None)
         
         # mostly for sysid:
-        param_guess = kwargs.pop("param_guess", None)
+        param_guess = kwargs.pop("param_guess", None)    
+        #scale_nlp = kwargs.pop("scale_nlp", False)
+            
+        # TODO: include all entities
+        #if scale_nlp:
+        self.x_nom = kwargs.pop("x_nom", 1)
+        self.y_nom = kwargs.pop("y_nom", 1)
+        self.r_nom = kwargs.pop("r_nom", 1)
+        self.u_nom = kwargs.pop("u_nom", 1)
+       
+            
         
         if isinstance(config, str) or isinstance(config, os.PathLike):
             with open(config, "r") as f:
@@ -110,8 +120,16 @@ class OCP(metaclass=ABCMeta):
             self.dt = dt
         
         self.dae = dae = DAE(config["model"])
+        # mainly on 
+        self.bounds_cfg = config.pop("bounds", None)
         #self.data = data
 
+        # special:
+        if param_guess is not None:
+            self.p_nom = self.scale = self.get_scale(param_guess)
+        else:
+            self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
+        
         #if isinstance(data, pd.DataFrame):
         #    self.dt = dt = data.index[1] - data.index[0]
             # need?
@@ -135,14 +153,31 @@ class OCP(metaclass=ABCMeta):
             raise ValueError("Only multiple shooting implemented.")
          
         # for discretization:
-        if param_guess is None:
-            self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
-        else:
-            self.scale = self.get_scale(param_guess)
+        #if param_guess is None:
+            #self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
+        #else:
+            #self.scale = self.get_scale(param_guess)
+
+        self.w_nom = 1/(self.x_nom/self.integrator.dt)
+        self.v_nom = 1/self.x_nom
 
         if self.method == "multiple_shooting":
-            self.strategy = MultipleShooting(self.integrator, N, self.scale)
+            
+            self.strategy = MultipleShooting(self.integrator, 
+                                             N,
+                                            **{
+                                                "x_nom": self.x_nom,
+                                                "y_nom": self.y_nom,
+                                                "p_nom": self.p_nom,
+                                                "r_nom": self.r_nom,
+                                                "u_nom": self.u_nom,
+                                                "w_nom": self.w_nom,
+                                                "v_nom": self.v_nom
+                                              }
+                                            )
+            
         elif self.method == "single_shooting":
+            
             self.strategy = SingleShooting(self.integrator)
 
         if config["codegen"]:
@@ -293,6 +328,10 @@ class OCP(metaclass=ABCMeta):
         #self.lbx = lbx       
         #self.ubx = ubx       
         
+        # nan issue:
+        lbx = np.nan_to_num(lbx, nan=0)
+        ubx = np.nan_to_num(ubx, nan=0)
+        
         # rounding issue
         self.lbx = lbx.round(7)       
         self.ubx = ubx.round(7)       
@@ -321,7 +360,7 @@ class OCP(metaclass=ABCMeta):
         """
         For numerical conditioning.
         """
-        return np.array(
+        dec_scale = np.array(
                         list(
                             map(
                                 lambda x: 10**x,
@@ -333,6 +372,11 @@ class OCP(metaclass=ABCMeta):
                                     )
                                 )
                         ).flatten()
+        
+        #prefix = param_guess/dec_scale
+        #ceiled = np.ceil(prefix)
+        #return np.multiply(ceiled, dec_scale)
+        return dec_scale
       
     def get_nlp_var(self, varname):
         """
@@ -497,6 +541,8 @@ class OCP(metaclass=ABCMeta):
         p_init = kwargs.pop("param_guess", None)
         
         bounds = {}
+        
+        bounds_cfg = self.bounds_cfg
             
         varnames = self.dae.order
         
@@ -527,9 +573,14 @@ class OCP(metaclass=ABCMeta):
             varnames = list(set(varnames).difference(set("x")))
             bounds["x"] = {}
     
+    
+            # TODO: bounds on x here:
+            
+            # None:
             bounds["x"]["ub"] = ubx
             bounds["x"]["lb"] = lbx
-            bounds["x"]["x0"] = x_init
+            # not None:
+            bounds["x"]["x0"] = x_init/self.x_nom
                  
         for varname in varnames:
             
@@ -549,17 +600,42 @@ class OCP(metaclass=ABCMeta):
                     vals = data[names].values
                     vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
                     
-                    bounds[varname]["lb"] = \
-                        bounds[varname]["ub"] = \
-                            bounds[varname]["x0"] = \
-                                ca.DM(vals)
-                                
-                except KeyError:
+                    try:
+                        scale = getattr(self, varname + "_nom")
+                    except AttributeError:
+                        scale = 1    
                     
                     bounds[varname]["lb"] = \
                         bounds[varname]["ub"] = \
                             bounds[varname]["x0"] = \
-                                None
+                                ca.DM(vals)/scale
+                                
+                except KeyError:
+                    # not in data.
+                    # in bounds_cfg?
+                    if bounds_cfg is not None and varname in bounds_cfg:
+                        
+                        # self.set_bounds expects array that fits nlp:
+                        #np.repeat([-np.inf], v["dim"]
+                        
+                        dim = self.nlp_parser[varname]["dim"]
+                        
+                        scale = self.u_nom
+                        
+                        bounds[varname]["lb"] = \
+                                bounds[varname]["x0"] = \
+                                    np.repeat(bounds_cfg[varname]["lb" + varname], dim)/scale
+                                    
+                        bounds[varname]["ub"] = np.repeat(bounds_cfg[varname]["ub" + varname], dim)/scale
+                                    
+                    else:
+                        bounds[varname]["lb"] = \
+                            bounds[varname]["ub"] = \
+                                bounds[varname]["x0"] = \
+                                    None
+                                    
+                        
+                        
                     
         # TODO: handle better. Iterate on num states.
         #if lbx is not None and ubx is not None:
@@ -568,6 +644,8 @@ class OCP(metaclass=ABCMeta):
             #bounds["x"]["lb"] = lbx
             #bounds["x"]["ub"] = ubx
         #return ca.DM(data[self.u_names].values), ca.DM(data[self.y_names].values)
+        
+        # bounds overwrite:
         self.bounds = bounds
     
         
@@ -626,6 +704,7 @@ class OCP(metaclass=ABCMeta):
         sol_x = np.array(solution["x"]).flatten()
     
         #for i, name in enumerate(self.dae.order):
+        # TODO: scale back from <name>_nom
         for i, (name, d) in enumerate(self.nlp_parser.vars.items()):
             
             sub_parser = parser[name]
@@ -633,9 +712,7 @@ class OCP(metaclass=ABCMeta):
                             sub_parser["range"]["b"]
             attr_name = "n_" + name
             
-            if name != "p":
-                _vals = np.array(sol_x[start:stop]).reshape((self.N, getattr(self, attr_name)))
-            else:
+            if name == "p":
                 #scale = self.get_scale()
                 params = np.array(sol_x[start:stop]*self.scale).flatten()
                 _vals = np.tile(
@@ -643,6 +720,17 @@ class OCP(metaclass=ABCMeta):
                                          params)).reshape((1,self.n_p)), self.N).reshape(
                                          (self.N, self.n_p)
                                 )
+            else:
+                #if name == "x":
+                #    scale = self.x_nom
+                #else:
+                #    scale = 1
+                try:
+                    scale = getattr(self, name + "_nom")
+                except AttributeError:
+                    scale = 1
+                    
+                _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name)))
                 
             #all_vals = np.append(all_vals, vals)
             try:

@@ -21,6 +21,7 @@ np.set_printoptions(precision=2)
 # profiling:
 import cProfile, pstats, io
 from pstats import SortKey
+#import pdb
 
 # text:
 rc('mathtext', default='regular')
@@ -64,11 +65,23 @@ if __name__ == "__main__":
                     1.32308e+06,
                     9.54074e+07,
                     2.19846])
+    """
+    params = ca.DM([0.100015, 
+                    0.129768, 
+                    1.32308e+07,
+                    9.54074e+08,
+                    20.19846])
+    """
+    kwargs = {
+              "x_nom": 300,
+              "u_nom": 5000,
+              "r_nom": 300,
+              "y_nom": 300
+              }
     
-    mpc = MPC(config=mpc_cfg) # to remove, replace with N
+    mpc = MPC(config=mpc_cfg, param_guess=params, **deepcopy(kwargs)) # to remove, replace with N
     #mhe = MHE(config=mhe_cfg, param_guess=params)
-    #mhe = MHE(config=mhe_cfg, param_guess=params)
-    mhe = MHE(config=mhe_cfg)
+    mhe = MHE(config=mhe_cfg, param_guess=params, **deepcopy(kwargs))
     """
     Here, init RL obj. Takes in the mhe, mpc objs
     in constructor to set up sensitivity functions.
@@ -103,7 +116,8 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     # batch size:
-    B = 100
+    B = 24
+    deltas = {}
     #dt = mpc.dt
     lb_night = {"Ti": 289.15}
     ub_night = {"Ti": 301.15}
@@ -137,6 +151,10 @@ if __name__ == "__main__":
     #P0[mhe.n_p:, mhe.n_p:] *= 1E32
     #P0[:mhe.n_p,:mhe.n_p] *= 1E-16
     #P0[mhe.n_p:, mhe.n_p:] *= 1E-16
+    #P0[:mhe.n_p,:mhe.n_p] *= 1E-16
+    #P0[mhe.n_p:, mhe.n_p:] *= 1E-16
+    #P0[:mhe.n_p,:mhe.n_p] *= 1E-32
+    #P0[mhe.n_p:, mhe.n_p:] *= 1E-32
     P0[:mhe.n_p,:mhe.n_p] *= 1E-16
     P0[mhe.n_p:, mhe.n_p:] *= 1E-16
     #P0 *= 1E-32
@@ -147,7 +165,15 @@ if __name__ == "__main__":
     params_ub = params*1.3
     Q = ca.DM.eye(2)
     R = ca.DM.eye(1)
-
+    
+    
+    constr_vio = 0
+    # RL:
+    gains = pd.DataFrame(columns = ["diff_Q", "L_k", "cons"])
+    start = 0
+    v = 0
+    P0s = {}
+    
     for k in range(K):
         
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
@@ -158,6 +184,15 @@ if __name__ == "__main__":
         
         data_mpc = data.iloc[0:mpc.N]
         data_mpc["Ti_ref"] = ref
+        
+        
+        if not all(mpc.get_scale(np.array(params).flatten()) == np.array(mpc.p_nom).flatten()):
+            # keep df:
+            #df = mhe.df
+            # new mhe object:
+            mpc = MPC(config=mpc_cfg, param_guess=params, **deepcopy(kwargs))
+            # set df for estimation history:
+            #mhe.df = df
         
         sol_mpc, u, x0, raw_sol = mpc.solve(
                                         data_mpc,
@@ -177,7 +212,31 @@ if __name__ == "__main__":
             - function object for stage cost in
             MPC class.
         """
-        L_k = 0.5*u_meas**2
+        
+        # if we violate constraint, should result in drastic delta_theta
+        #L_k = 0.5*(u_meas/mpc.u_nom)**2
+        
+        # heavy penalization on (lb) constraint violation:
+        #if y_meas[0] < lbx[2]:
+        #    L_k = 0.5*(u_meas/mpc.u_nom)**2 + 1E6*(lbx[2] - y_meas[0])
+        #else:
+        #if k == 719:
+        #    P0 = ca.DM.eye(7)*1E-16
+        
+        # TODO: need to rethink this:
+        L_k = 0.5*(u_meas/mpc.u_nom)**2
+
+        gains.loc[k, "L_k"] = float(L_k)
+        gains.loc[k, "cons"] = max(float(lbx[2] - y_meas[0]), 0)
+        
+        
+        cons_vio = gains.cons[start:(start+k)]
+        
+        if (cons_vio*cons_vio).sum() > 3:
+            #P0s[v] = P0
+            P0 = ca.DM.eye(7)*1E-16
+            start = k
+            #v += 1
         
         # for RL step:
         lbx, ubx, ref = bounds.get_bounds(k+1, mpc.N)
@@ -201,7 +260,9 @@ if __name__ == "__main__":
         
         
         diff_Q = gamma*raw_sol_RL["f"] - raw_sol["f"]
-        
+        gains.loc[k, "diff_Q"] = float(diff_Q)
+        #if k == 122:
+        #    print(k)
         
         if k >= (mhe.N - 1):
             # get labelled data:
@@ -216,25 +277,54 @@ if __name__ == "__main__":
                 x_N = sol_mhe.iloc[1][mhe.x_names].values
             
             params_init = params # keep
+            try:  
                 
-            sol_mhe, params = mhe.solve(
-                                    y_data,
-                                    params,
-                                    lbp=params_lb,
-                                    ubp=params_ub,
-                                    covar=ca.veccat(Q, R),
-                                    P0=P0,
-                                    x_N=x_N,
-                                    arrival_cost=True
-                                    )
+                # check if parameter scale has changed:
+                if not all(
+                           mhe.get_scale(np.array(params).flatten()) 
+                           == 
+                           np.array(mhe.p_nom).flatten()
+                           ):
+                    
+                    # keep df:
+                    df = mhe.df
+                    # new mhe object:
+                    mhe = MHE(config=mhe_cfg, param_guess=params, **deepcopy(kwargs))
+                    # set df for estimation history:
+                    mhe.df = df
+                    
+                
+                sol_mhe, params, raw_mhe = mhe.solve(
+                                                    y_data,
+                                                    params,
+                                                    lbp=params_lb,
+                                                    ubp=params_ub,
+                                                    covar=ca.veccat(Q, R),
+                                                    P0=P0,
+                                                    x_N=x_N,
+                                                    arrival_cost=True,
+                                                    return_raw_sol=True
+                                                    )
+                
+                #if params["Ce"] > 5E7:
+                #    print(k)
+                
+                if not mhe.solver.stats()["return_status"] == "Solve_Succeeded":
+                    print(sol_mhe)
+                
+            except ValueError:
+                print(k)
             
-            #mhe_params = ca.veccat(ca.vertcat(params, x_N), Q, R, P0)
+            
             try:
+                #mhe_params = ca.veccat(ca.vertcat(params, x_N), Q, R, P0)
                 #pr = cProfile.Profile()
                 #pr.enable()
+                costate_prior = ca.vertcat(params_init/mhe.p_nom, x_N/mhe.x_nom)
+                
                 del_theta = rl.step(mpc, 
                                     mhe, 
-                                    ca.vertcat(params_init, x_N),
+                                    costate_prior,
                                     #ca.sqrt(ca.inv(Q)), 
                                     #ca.sqrt(ca.inv(R)), 
                                     #ca.sqrt(Q), 
@@ -243,10 +333,11 @@ if __name__ == "__main__":
                                     R,
                                     #ca.sqrt(ca.inv(P0)),
                                     #ca.sqrt(P0),
+                                    #P0 + del_P0_accum,
                                     P0,
-                                    #P0,
                                     diff_Q,
-                                    L_k)
+                                    L_k,
+                                    k)
                 #pr.disable()
                 #s = io.StringIO()
                 #sortby = SortKey.CUMULATIVE
@@ -254,48 +345,68 @@ if __name__ == "__main__":
                 #ps.print_stats()
                 #pr.print_stats()
                 
+            except RuntimeError: # rootfinder fail
+                print(costate_prior)
+                
             except NameError:
                 
                 rl = Qlearning(mpc, mhe, **{"gamma": 0.99, "alpha": 0.03})
                 b = 0
+                
+                del_P0_accum = np.zeros((P0.shape[0], P0.shape[1]))
+                
                 del_theta = rl.step(mpc, 
                                     mhe, 
-                                    ca.vertcat(params_init, x_N),
+                                    costate_prior,
                                     #ca.sqrt(ca.inv(Q)), 
                                     #ca.sqrt(ca.inv(R)), 
                                     Q,
                                     R,
                                     #ca.sqrt(ca.inv(P0)),
+                                    #P0 + del_P0_accum,
                                     P0,
-                                    #P0,
                                     diff_Q,
-                                    L_k)
-                del_P0_accum = np.zeros((P0.shape[0], P0.shape[1]))
+                                    L_k,
+                                    k)
+                
             
             # reshape del_theta:
-            del_P0 = del_theta.reshape((P0.shape[0], P0.shape[1]))
+            #del_P0 = del_theta.reshape((P0.shape[0], P0.shape[1]))
             
             #_P0 = ca.sqrt(ca.inv(P0))
             #P0 = ca.power(_P0, -2)
             #del_P0 = ca.power(_del_P0, -2)
-            del_P0_diag = ca.diag(ca.DM(np.diag(np.array(del_P0))))
-            #del_P0 = ca.diag(ca.DM(np.diag(np.array(del_theta))))
+            #del_P0_diag = ca.diag(ca.DM(np.diag(np.array(del_P0))))
+            del_P0 = ca.diag(ca.DM(np.diag(np.array(del_theta))))
+            deltas[k] = del_P0
             
             if b == B:
             #P0 += del_P0_diag
                 P0 += del_P0_accum
+                for k, v in deltas.items():
+                    if abs(float(v[3,3])) > 1E-3:
+                        print(k)
+                        print(v)
+                
                 b = 0
                 del_P0_accum = np.zeros((P0.shape[0], P0.shape[1]))
             else:
                 # let P0 evolve in paralell:
                 del_P0_accum += del_P0
                 b += 1
-                
+            
         
             params = params.values
             
+            #params_lb = params*0.5
+            #params_ub = params*2
             params_lb = params*0.7
             params_ub = params*1.3
+            
+            # parameter bounds not really necessary?
+            
+            #params_lb = params*0.1
+            #params_ub = params*10
             
             x0 = sol_mhe.iloc[-1][mhe.x_names].values
             
@@ -338,52 +449,8 @@ if __name__ == "__main__":
     """
     
     plt.rcParams.update({'font.size': 11})
-    
-    res = boptest.get_data(tf=K*boptest.h)
-    fig = plt.figure(figsize=(10,6))
-    ax = fig.add_subplot(111)
-    
-    # colors
-    colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
-    #for i in range(n):
-    #c = next(colors)
-    #plt.plot(x, y, c=c)
-    
-    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
-    
-    #l1 = res.Ti.plot(ax=ax, color="k")
-    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
-    l1 = ax.plot(dt_index, (res.Ti-273.15), color=next(colors), label="$T_i$")
-    ax1 = ax.twinx()
-    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
-    l2 = ax1.plot(dt_index, res.phi_h, color=next(colors), label="$\phi_h$")
-    
-    #ax.legend([l1, l2], , loc=0)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-    fig.autofmt_xdate()
-    #ax.legend(["Ti"])
-    #ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{lb}$")
-    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{ub}$")
-    lns = l1+l2+l3+l4
-    labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs, loc='upper center', ncol=4)
-    _min, _max = ax.get_ylim()
-    ax.set_ylim([_min, _max+1])
-    _min, _max = ax1.get_ylim()
-    ax1.set_ylim([_min, _max+1000])
-    
-    ax.set_ylabel(r"Temperature [$^\circ$C]")
-    ax1.set_ylabel(r"Power [W]")
-    
-    fig.tight_layout()
+
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
     plt.show()    
     
     #### parameter evolution plot ####:
@@ -412,4 +479,5 @@ if __name__ == "__main__":
     ax[2].axes.get_xaxis().set_visible(False)
     ax[3].axes.get_xaxis().set_visible(False)
     
+
     plt.show()

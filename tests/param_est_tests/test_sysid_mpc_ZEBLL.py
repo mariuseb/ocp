@@ -11,24 +11,26 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF
+from ocp.filters import EKF, KalmanBucy
 from matplotlib import rc
 import os
 rc('mathtext', default='regular')
 # datetime:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
-from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
+from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path, get_data_path
     
 
 if __name__ == "__main__":
     
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
+    data_path = get_data_path()
     
     mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
+    prbs_path = os.path.join(data_path, "inputPRBS1.csv")
 
     """
     From PRBS-sysid:
@@ -38,13 +40,15 @@ if __name__ == "__main__":
                     6.64E6,
                     5.53])
     """
+    params = ca.DM([0.00165302, 0.0115456, 1.38904e+06, 6.72582e+06, 4.61678])
+    
     mpc = MPC(
               config=mpc_cfg
               #N=N,
               #dt=dt
               ) # to remove, replace with N
     
-    ekf = EKF(ekf_cfg)
+    ekf = KalmanBucy(ekf_cfg)
     # set params:
     #ekf.set_params(params)
     
@@ -58,10 +62,10 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     #dt = mpc.dt
-    lb_night = 289.15
-    ub_night = 301.15
-    lb_day = 293.15
-    ub_day = 296.15
+    lb_night = {"Ti": 289.15}
+    ub_night = {"Ti": 301.15}
+    lb_day = {"Ti": 293.15}
+    ub_day = {"Ti": 296.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -75,17 +79,62 @@ if __name__ == "__main__":
     
     # sim horizon: 6 days, same as PRBS
     days = 6
-    N = days*24*bounds.t_h
-
+    N = days*24*bounds.t_h - 12
+    #N = 5
+    #N = 4
+    """
+    prbs = pd.read_csv(prbs_path, sep=";")
+    index = pd.to_datetime(prbs.t, origin="2020-02-01 00:00", unit="h").round("s")
+    prbs.index = index
+    U = prbs.Ph/5
+    U = U.resample(rule="15min").mean().round()
+    U = pd.DataFrame(data=U.values, index=U.index, columns=["phi_h"])
+    _u = pd.DataFrame(index=U.index, columns=["phi_h"])
     # baseline control for sysid:
     for n in range(N):
-        data, y_meas, u_meas = boptest.evolve()
+        u = U.iloc[n]*5000
+        data, y_meas, u_meas = boptest.evolve(u=u)
+        _u.iloc[n] = u_meas
+        #if not (u.values == u_meas)[0]:
+        #    print(u_meas)
+        
     
     ############################## sysid ###############################
     
     cfg_path = os.path.join(get_opt_config_path(), "2R2C.json")
     y_data = boptest.get_data(tf=N*boptest.h) #, downsample=False)
-    y_data.index = range(0, mpc.dt*N, mpc.dt)
+    
+    #ax = y_data.phi_h.plot(drawstyle="steps")
+    #ax1 = ax.twinx()
+    #y_data.Ti.plot(ax=ax1)
+    
+    phi_h = y_data.phi_h.resample(rule="15min").mean()
+    Ti = y_data.Ti.resample(rule="15min").asfreq()
+    
+    _u = _u.iloc[:N]
+    #_u.index = y.index
+    #y_data.index = _u.index
+    phi_h.index = _u.index
+    Ti.index = _u.index
+    
+    
+    fig, ax = plt.subplots(1,1)
+    ax.plot(_u.index, _u.values, drawstyle="steps")
+    ax.plot(_u.index, phi_h.values, drawstyle="steps", linestyle="dashed")
+    plt.show()
+    #ax = y_data.phi_h.plot()
+    #u.phi_h.plot(ax=ax)
+    
+    #y = y_data[list(boptest.y.keys())][1:]
+    #y_data = y_data.iloc[:-1]
+    #y.index = y_data.index
+    #y_data[list(boptest.y.keys())] = y
+    #y_data.index = range(0, mpc.dt*N, mpc.dt)
+    #y_data = y_data.iloc[:-1]
+    #y_data.index = _u.index
+    #ax = _u.phi_h.plot()
+    #y_data.phi_h.iloc[:-1].plot(ax=ax)                downsample=True,
+    
     y_data["y1"] = y_data.Ti
     #y_data.to_csv("data/data_ZEBLL_hysteresis.csv", index=True)
     # columns:
@@ -113,21 +162,32 @@ if __name__ == "__main__":
                                       ubp=ubp,
                                       covar=ca.veccat(Q, R)
                                       )
-        
+    """
+       
     ############################### MPC ###############################
     # set params of ekf:
-    params = ca.DM(params.values)
+    #params = ca.DM(params.values)
     
     ekf.set_params(params)    # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    days = 14
+    days = 1
     K = days*24*bounds.t_h
     # estimated state at sysid horizon end:
-    x0 = sol.iloc[-1][mpc.dae.x].values
-        
+    #x0 = sol.iloc[-1][mpc.dae.x].values
+    
+    boptest = Boptest(
+                        boptest_cfg,
+                        name="ZEBLL"
+                     )
+    # guess:
+    x0 = np.array([294.05, 293.15])
+    _y = pd.DataFrame(columns=["y_meas"])
     for k in range(K):
         
-        lbx, ubx = bounds.get_bounds(k, mpc.N)
+        lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
+        
+        if k > 19:
+            print(lbx)
         
         sol, u, x0 = mpc.solve(
                                data,
@@ -138,6 +198,11 @@ if __name__ == "__main__":
                                )
 
         data, y_meas, u_meas = boptest.evolve(u=u)
+        _y.loc[k+1] = y_meas
+        
+        #if k > 85:
+        #    bounds_plt = bounds.get_full(days)
+        #    print(sol)
         
         x0 = ekf.estimate(
                           x0, 
@@ -146,60 +211,6 @@ if __name__ == "__main__":
                           r=data.iloc[0].values
                           )
     
-    # get data only for MPC operation:s
-    
-    """
-    res = boptest.get_data(ts=(N+1)*boptest.h, tf=(K+N)*boptest.h)
-    ax = res.Ti.plot(color="k")
-    ax1 = ax.twinx()
-    res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    ax.legend(["Ti"])
-    ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    
-    plt.show()    
-    """
-    
-    res = boptest.get_data(ts=(N+1)*boptest.h, tf=(K+N)*boptest.h)
-    fig = plt.figure(figsize=(10,6))
-    ax = fig.add_subplot(111)
-    
-    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
-    
-    #l1 = res.Ti.plot(ax=ax, color="k")
-    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
-    l1 = ax.plot(dt_index, (res.Ti-273.15), color="k", label="$T_i$")
-    ax1 = ax.twinx()
-    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
-    l2 = ax1.plot(dt_index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
-    
-    #ax.legend([l1, l2], , loc=0)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-    fig.autofmt_xdate()
-    #ax.legend(["Ti"])
-    #ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{lb}$")
-    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{ub}$")
-    lns = l1+l2+l3+l4
-    labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs, loc='upper center', ncol=4)
-    _min, _max = ax.get_ylim()
-    ax.set_ylim([_min, _max+2])
-    
-    ax.set_ylabel(r"Temperature [$^\circ$C]")
-    ax1.set_ylabel(r"Power [W]")
-    
-    fig.tight_layout()
+       
+    fig, axes = boptest.plot_temperatures(K, days, bounds)
     plt.show()    

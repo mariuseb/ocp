@@ -87,7 +87,7 @@ if __name__ == "__main__":
     x0 = np.array([295.05, 293.15])
     
     # sim horizon: 2 days
-    days = 30
+    days = 60
     K = days*24*bounds.t_h
 
     for k in range(K):
@@ -103,8 +103,8 @@ if __name__ == "__main__":
                                x0=x0,
                                lbx=lbx,
                                ubx=ubx,
-                               params=params,
-                               ref=True
+                               params=params
+                               #ref=True
                                )
 
         data, y_meas, u_meas = boptest.evolve(u=u)
