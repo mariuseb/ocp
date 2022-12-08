@@ -1,0 +1,43 @@
+{
+    "model": {
+        "ode": {
+            "dTi": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + (1 - u_sha)*Ai*(phi_s/Ci)",
+            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "h": "Ti"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai"
+        ],
+        "u": [
+            "phi_h",
+            "u_sha"
+        ],
+        "r": [
+            "Ta", 
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 3600,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        },
+    "Q": [1,1],
+    "R": [1]
+}

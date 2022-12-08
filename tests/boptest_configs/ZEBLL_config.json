@@ -21,16 +21,16 @@
      "ZEBLL":
     {
       "misc": {
-        "h": 900,
-        "N": 13,
-        "start_time": 0,
+        "h": 3600,
+        "N": 24,
+        "start_time": 5184000,
         "warmup_period": 604800
       },
       "maps" : {
         "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
-        "u" : {"phi_h": "oveAct"},
+        "u" : {"phi_h": "oveAct", "u_sha": "oveActSha"},
         "y": {"Ti": "TRooAir_y"},
-        "boptest_to_ocp": {"phi_h": "PHea_y", "Ti": "TRooAir_y"},
+        "boptest_to_ocp": {"phi_h": "PHea_y", "u_sha": "shaRead_y", "Ti": "TRooAir_y"},
         "sampling": {
                      "integrate": ["phi_h"],
                      "point": ["Ta", "phi_s", "Ti"]

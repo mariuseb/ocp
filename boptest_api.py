@@ -146,8 +146,10 @@ class Boptest(RestApi):
         
         self.result_df = pd.DataFrame(columns = list(map(lambda x: x + "_u", list(self.u.values()))) + \
             list(self.boptest_to_ocp.values()))
+        
         self.result_df.loc[0] = [0]*len(self.result_df.columns)
         
+        #self.initialize()
         # get initial temperature:
         res = self.get_results(tf=self.start_time+self.h, ts=self.start_time)
                        
@@ -299,8 +301,6 @@ class Boptest(RestApi):
 
         # ts adjusted? tf and ts are relative -> adjust
         """
-        if ts < self.start_time:
-            ts += self.start_time
 
         try:
             # first
@@ -342,6 +342,10 @@ class Boptest(RestApi):
             #df_res = df_res_orig.merge(forecast, left_index=True, right_index=True)
             df_res = df_res.merge(forecast, left_index=True, right_in                downsample=True,dex=True)
         """
+        if ts < self.start_time:
+            ts += self.start_time
+            tf += self.start_time
+        
         df_res = pd.merge(self.result_df, self.forecast_df, left_index=True, right_index=True)
         # append last y:
         df_res.loc[self.result_df.index[-1], self.y_names] = self.result_df.loc[self.result_df.index[-1], self.y_names]

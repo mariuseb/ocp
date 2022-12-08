@@ -618,7 +618,8 @@ class OCP(metaclass=ABCMeta):
                         # self.set_bounds expects array that fits nlp:
                         #np.repeat([-np.inf], v["dim"]
                         
-                        dim = self.nlp_parser[varname]["dim"]
+                        #dim = self.nlp_parser[varname]["dim"]
+                        dim = self.nlp_parser[varname]["dim"]/len(getattr(self.dae, varname))
                         
                         scale = self.u_nom
                         
