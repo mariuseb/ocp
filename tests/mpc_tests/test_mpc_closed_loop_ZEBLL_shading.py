@@ -60,7 +60,7 @@ if __name__ == "__main__":
     lb_night = {"Ti": 289.15}
     ub_night = {"Ti": 301.15}
     lb_day = {"Ti": 293.15}
-    ub_day = {"Ti": 296.15}
+    ub_day = {"Ti": 297.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -93,8 +93,8 @@ if __name__ == "__main__":
         data, y_meas, u_meas = boptest.evolve(u=u)
         
         
-        if k == 100:
-            print(sol)
+        #if k == 100:
+        #    print(sol)
         
         x0 = ekf.estimate(
                           x0, 
@@ -105,6 +105,11 @@ if __name__ == "__main__":
 
     plt.rcParams.update({'font.size': 11})
     
-    res = boptest.get_data(tf=K*boptest.h)
     
-    plt.show()    
+    plt.rcParams.update({'font.size': 11})
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
+    res = boptest.get_data(tf=K*boptest.h).iloc[:-1]
+    res.index = dt_index
+    (res.u_sha*5000).plot(ax=axes[1])
+    (res.phi_s).plot(ax=axes[1])
+    plt.show()     

@@ -619,15 +619,19 @@ class OCP(metaclass=ABCMeta):
                         #np.repeat([-np.inf], v["dim"]
                         
                         #dim = self.nlp_parser[varname]["dim"]
-                        dim = self.nlp_parser[varname]["dim"]/len(getattr(self.dae, varname))
+                        dim = int(self.nlp_parser[varname]["dim"]/len(getattr(self.dae, varname)))
                         
                         scale = self.u_nom
                         
                         bounds[varname]["lb"] = \
                                 bounds[varname]["x0"] = \
-                                    np.repeat(bounds_cfg[varname]["lb" + varname], dim)/scale
-                                    
-                        bounds[varname]["ub"] = np.repeat(bounds_cfg[varname]["ub" + varname], dim)/scale
+                                    np.array(bounds_cfg[varname]["lb" + varname]*dim)
+                                    #p.tile(dim, bounds_cfg[varname]["lb" + varname])/scale
+                        #np.tile(bounds_cfg[varname]["lb" + varname], dim)/scale
+                        
+                        # tile here:            
+                        #bounds[varname]["ub"] = np.tile(dim, bounds_cfg[varname]["ub" + varname])/scale
+                        bounds[varname]["ub"] = np.array(bounds_cfg[varname]["ub" + varname]*dim)
                                     
                     else:
                         bounds[varname]["lb"] = \

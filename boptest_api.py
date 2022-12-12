@@ -149,7 +149,7 @@ class Boptest(RestApi):
         
         self.result_df.loc[0] = [0]*len(self.result_df.columns)
         
-        #self.initialize()
+        self.initialize()
         # get initial temperature:
         res = self.get_results(tf=self.start_time+self.h, ts=self.start_time)
                        

@@ -29,7 +29,7 @@
             "ubu": [5000]
         }
     },
-    "N": 12,
+    "N": 24,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 

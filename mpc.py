@@ -82,7 +82,8 @@ class MPC(OCP):
             the two.
         """          
         if not ref:
-            return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
+            #return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
+            return 0.5*ca.dot(u[0, :], u[0, :]) # + 0.01*ca.dot(slack, slack)
         else: # reference tracking
             
             # how to know which state to track?
