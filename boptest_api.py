@@ -426,7 +426,7 @@ class Boptest(RestApi):
         return f"${name}_{typ}$"
     
     
-    def plot_temperatures(self, K, days, bounds):
+    def plot_temperatures(self, K, days, bounds, solar=False):
         """
         Plot temperatures.
         """
@@ -445,7 +445,7 @@ class Boptest(RestApi):
         
         #res.Ti.iloc[:-1] = res.Ti.iloc[1:] 
         #res = res.iloc[:-1]
-        fig = plt.figure(figsize=(10,6))
+        fig = plt.figure(figsize=(10,12))
         
         # Add plots vertically:
         
@@ -453,7 +453,10 @@ class Boptest(RestApi):
         # plot for solar:
         #ax2 = fig.add_subplot(2, 1, 2)
         
-        ax = fig.add_subplot(111)
+        if solar:
+            ax = fig.add_subplot(211)
+        else:
+            ax = fig.add_subplot(111)
         
         #dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
         axes = []
@@ -545,6 +548,27 @@ class Boptest(RestApi):
             
             axes.append(ax)
             axes.append(ax1)
+        
+        
+        if solar:
+            # plot solar rad
+            ax2 = fig.add_subplot(212, sharex=ax)
+            l1 = ax2.plot(dt_index, res.phi_s, color=next(colors), label="$\phi_{s}$")
+            ax2.set_ylabel(r"Global radiation [$\frac{kW}{m^{2}}$]")
+            ax3 = ax2.twinx()
+            ax3.set_ylabel(r"Shading control [-]")
+            l2 = ax3.plot(dt_index, res.u_sha, drawstyle="steps", color=next(colors), label="$u_{sha}$")
+            
+            
+            _min, _max = ax3.get_ylim()
+            ax3.set_ylim([_min, _max*1.2])
+            
+            lns = l1 + l2
+            labs = [l.get_label() for l in lns]
+            ax.legend(lns, labs, loc='upper center', ncol=2)
+            
+            axes.append(ax2)
+            axes.append(ax3)
         
         fig.tight_layout()
         

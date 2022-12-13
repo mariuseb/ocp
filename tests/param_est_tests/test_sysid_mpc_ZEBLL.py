@@ -82,17 +82,21 @@ if __name__ == "__main__":
     N = days*24*bounds.t_h - 12
     #N = 5
     #N = 4
-    """
+    
     prbs = pd.read_csv(prbs_path, sep=";")
     index = pd.to_datetime(prbs.t, origin="2020-02-01 00:00", unit="h").round("s")
     prbs.index = index
     U = prbs.Ph/5
-    U = U.resample(rule="15min").mean().round()
-    U = pd.DataFrame(data=U.values, index=U.index, columns=["phi_h"])
-    _u = pd.DataFrame(index=U.index, columns=["phi_h"])
+    U = pd.DataFrame(U.resample(rule="15min").mean().round())
+    U.columns = ["phi_h"]
+    U["u_sha"] = U["phi_h"]
+    #U = pd.DataFrame(data=np.tile(U.values, 2), index=U.index, columns=["phi_h", "u_sha"])
+    _u = pd.DataFrame(index=U.index, columns=["phi_h", "u_sha"])
+    U.loc[:, "phi_h"] *= 5000
     # baseline control for sysid:
     for n in range(N):
-        u = U.iloc[n]*5000
+        u = U.iloc[n]
+        #u.loc["phi_h"] *= 3000
         data, y_meas, u_meas = boptest.evolve(u=u)
         _u.iloc[n] = u_meas
         #if not (u.values == u_meas)[0]:
@@ -101,13 +105,13 @@ if __name__ == "__main__":
     
     ############################## sysid ###############################
     
-    cfg_path = os.path.join(get_opt_config_path(), "2R2C.json")
+    cfg_path = os.path.join(get_opt_config_path(), "2R2C_sha.json")
     y_data = boptest.get_data(tf=N*boptest.h) #, downsample=False)
     
     #ax = y_data.phi_h.plot(drawstyle="steps")
     #ax1 = ax.twinx()
     #y_data.Ti.plot(ax=ax1)
-    
+    """
     phi_h = y_data.phi_h.resample(rule="15min").mean()
     Ti = y_data.Ti.resample(rule="15min").asfreq()
     
@@ -122,6 +126,7 @@ if __name__ == "__main__":
     ax.plot(_u.index, _u.values, drawstyle="steps")
     ax.plot(_u.index, phi_h.values, drawstyle="steps", linestyle="dashed")
     plt.show()
+    """
     #ax = y_data.phi_h.plot()
     #u.phi_h.plot(ax=ax)
     
@@ -162,7 +167,7 @@ if __name__ == "__main__":
                                       ubp=ubp,
                                       covar=ca.veccat(Q, R)
                                       )
-    """
+    
        
     ############################### MPC ###############################
     # set params of ekf:
@@ -186,8 +191,8 @@ if __name__ == "__main__":
         
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
         
-        if k > 19:
-            print(lbx)
+        #if k > 19:
+        #    print(lbx)
         
         sol, u, x0 = mpc.solve(
                                data,

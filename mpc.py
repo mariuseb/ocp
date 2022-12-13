@@ -54,9 +54,36 @@ class MPC(OCP):
     """
     def __init__(self, **kwargs):
         
+        self.slack = slack = kwargs.pop("slack", False)
+        ref = kwargs.pop("ref", False)
+        
         super().__init__(**kwargs) # does all the work.
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)
         
+        if slack:
+            self.s = s = ca.MX.sym("s",
+                                    self.nlp_parser["x"]["dim"])
+            
+            self.nlp["x"] = ca.vertcat(self.nlp["x"],
+                                       s)
+            
+            dim = s.shape[0]*s.shape[1]
+            # modify nlp parser:
+            self.nlp_parser.vars["s"] = {
+                                        "range":
+                                                {
+                                                 "a":
+                                                    self.nlp_parser["r"]["range"]["b"],
+                                                 "b": 
+                                                    self.nlp_parser["r"]["range"]["b"] + \
+                                                        dim
+                                                },
+                                        "dim": dim
+                                        }
+            self.n_s = self.n_x
+            self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_s)))
+            
+        self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref, slack=slack)
         #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_u)
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_lslack, self.nlp_uslack)
         
@@ -66,7 +93,7 @@ class MPC(OCP):
         #self._init_solver()
         
     #def get_nlp_obj(self, u, slack):
-    def get_nlp_obj(self, u, ref=False):
+    def get_nlp_obj(self, u, ref=False, slack=False):
         """ 
         Objective for MPC.
         
@@ -83,7 +110,41 @@ class MPC(OCP):
         """          
         if not ref:
             #return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
-            return 0.5*ca.dot(u[0, :], u[0, :]) # + 0.01*ca.dot(slack, slack)
+            #return 0.5*ca.dot(u[0, :], u[0, :]) # + 0.01*ca.dot(slack, slack)
+            if slack:
+                #l_expr = 0.5*ca.dot(u, u) + \
+                #         1E5*ca.dot(self.s, self.s)
+                
+                #dim_u = 
+                
+                # only for function instance:
+                #return 0.5*ca.dot(u, u) + 1E5*ca.dot(self.s, self.s)
+                
+                
+                u = ca.MX.sym("u", self.n_u)
+                s = ca.MX.sym("s", self.n_s)
+                
+                # stage cost:
+                self.L = ca.Function("L",
+                                     [u, s],
+                                     [0.5*u.T@u + 1E6*s.T@s],
+                                     ["u", "s"],
+                                     ["L"])
+                
+                # value function:
+                self.V = self.L.map(self.N)
+                
+                V_call = self.V(self.nlp_u.reshape((self.n_u, self.N)),
+                                self.s.reshape((self.n_s, self.N)))
+                
+                sqrt_call = ca.sqrt(V_call)
+                
+                return ca.mtimes(sqrt_call, sqrt_call.T)
+                
+                         
+                
+            else:
+                return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
         else: # reference tracking
             
             # how to know which state to track?
@@ -105,23 +166,45 @@ class MPC(OCP):
                             x0=None,
                             lbx=None,
                             ubx=None
+                            #slack=False
                             ):
         
         x_info = self.nlp_parser["x"]
         x = self.nlp["x"][x_info["range"]["a"]:x_info["range"]["b"]]
         
+        # path limits:
         lbx = np.append(x0, lbx)
         ubx = np.append(x0, ubx)
         
-        #uslack = MX.sym("uslack", x_info["dim"])
-        #lslack = MX.sym("lslack", x_info["dim"])
+        #self.uslack = uslack = ca.MX.sym("uslack", x_info["dim"])
+        #self.lslack = lslack = ca.MX.sym("lslack", x_info["dim"])
         
+        # move this to nlp dict somehow: ? init ?
+        # slack var:
+        #self.slack = slack = ca.MX.sym("s", x_info["dim"])
+        
+        # add to nlp dict:
+        #self.nlp["x"] = ca.vertcat(self.nlp["x"], slack)
+        
+        # path constraint:
+        h_x = x
+        
+        # add bounds, -inf and inf in dim(s) and 0 for x0
+        if self.slack:
+            
+            self.lbx = np.append(self.lbx, np.repeat([-np.inf], x_info["dim"]))
+            self.ubx = np.append(self.ubx, np.repeat([np.inf], x_info["dim"]))
+            self.x0 = np.append(self.x0, np.repeat([0], x_info["dim"]))
+            
+            h_x += self.s
+            
         #slack = ca.vertcat(uslack, lslack)
         
         #upper_constr = x - ubx - uslack
         #lower_constr = lbx - x - lslack#, 
-        path_constr = x
-        #lower_constr = x
+        
+        #lower_constr = x["x"] = ca.vertcat(self.nlp["x"], slack)
+        
         #lower_constr = lbx - x
         
         #lbg = np.array([0]*self.nlp["orig_g"].shape[0])
@@ -133,7 +216,8 @@ class MPC(OCP):
         self.ubg = np.append(ubg, ubx)
         
         #self.nlp["g"] = ca.vertcat(self.nlp["orig_g"], path_constr)
-        self.nlp["g"] = ca.vertcat(self.nlp_parser.g, path_constr)
+        #self.nlp["g"] = ca.vertcat(self.nlp_parser.g, path_constr)
+        self.nlp["g"] = ca.vertcat(self.nlp_parser.g, h_x)
         
         
         #self.nlp["x"] = ca.vertcat(self.nlp["x"], slack)
@@ -169,7 +253,6 @@ class MPC(OCP):
               lbx=None,
               ubx=None,
               params=None,
-              ref=False,
               return_raw_sol=False
               ):
         """
@@ -191,10 +274,15 @@ class MPC(OCP):
         
         # ADD: option for slack:
         #self.add_path_constraints(x0=x0, lbx=lbx, ubx=ubx)
-        self.add_path_constraints(x0=x0/self.x_nom, lbx=lbx/self.x_nom, ubx=ubx/self.x_nom)
+        self.add_path_constraints(
+                                  x0=x0/self.x_nom,
+                                  lbx=lbx/self.x_nom,
+                                  ubx=ubx/self.x_nom
+                                  )
+                                  #slack=slack)
         
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, slack)
-        self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)
+        #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref, slack=slack)
                 
         self._init_solver()
         

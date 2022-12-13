@@ -92,6 +92,9 @@ class OCP(metaclass=ABCMeta):
         N = kwargs.pop("N", None)
         dt = kwargs.pop("dt", None)
         
+        # new:
+        self.slack_names = []
+        
         # mostly for sysid:
         param_guess = kwargs.pop("param_guess", None)    
         #scale_nlp = kwargs.pop("scale_nlp", False)
@@ -715,6 +718,7 @@ class OCP(metaclass=ABCMeta):
             sub_parser = parser[name]
             start, stop = sub_parser["range"]["a"], \
                             sub_parser["range"]["b"]
+                            
             attr_name = "n_" + name
             
             if name == "p":
@@ -744,7 +748,9 @@ class OCP(metaclass=ABCMeta):
                 vals = _vals
           
         #all_names = self.dae.all_names + ["us1", "us2", "ls1", "ls2"]
-        all_names = self.dae.all_names
+        
+        # slack?
+        all_names = self.dae.all_names + self.slack_names
                 
         sol_df = pd.DataFrame(
                               columns = 

@@ -34,7 +34,7 @@
         {
         "name": "IRK",
         "method": "legendre",
-        "degree": 3,
+        "degree": 1,
         "n_steps": 1
         },
     "Q": [1,1],
