@@ -4,6 +4,7 @@ import casadi as ca
 from abc import ABC, abstractmethod, ABCMeta
 from ocp.rl_sdp import RL_SDP
 import pandas as pd
+from pprint import pprint
 #import pandas as pd
 #import os
 #from ocp.tests.utils import get_data_path
@@ -95,9 +96,33 @@ class RL(metaclass=ABCMeta):
         
         self._init_mpc_params(mpc)
         #self._init_mhe_params(mhe, p, Q, R, P0)
-        self.set_F_dQ_dz(mpc)
+        self.h_active_inds = {0: [np.inf]}
+        self.k = 1
+        #self.set_F_dQ_dz(mpc)
+
+        # extract base inds for h(w, p)
+        self.base_inds_mhe = []
+        self.not_base_inds_mhe = []
+        for name in ("p", "v", "w", "x", "z"):
+            self.base_inds_mhe.extend(list(
+                                    range(mhe.nlp_parser.vars[name]["range"]["a"],
+                                            mhe.nlp_parser.vars[name]["range"]["b"]
+                                            )
+                                        )
+                                )
+        for name in ("u", "r", "y"):
+            self.not_base_inds_mhe.extend(list(
+                                    range(mhe.nlp_parser.vars[name]["range"]["a"],
+                                            mhe.nlp_parser.vars[name]["range"]["b"]
+                                            )
+                                        )
+                                )
+        
         self._init_MHE_sens(mhe)
         self.sens = pd.DataFrame(columns=mpc.dae.p + mpc.dae.x)
+        self.sens_sdp = pd.DataFrame(columns=mpc.dae.p + mpc.dae.x)
+        self.sens_mhe = pd.DataFrame(columns=mpc.dae.p + mpc.dae.x)
+        
         # epsilon as well?
         # needed for both Q and SARSA
         #self.mhe_nlp = mhe.nlp
@@ -115,8 +140,10 @@ class RL(metaclass=ABCMeta):
         """
         self.x_bounds = mpc.nlp_parser["x"]["range"]
         self.p_bounds = mpc.nlp_parser["p"]["range"]
+        self.u_bounds = mpc.nlp_parser["u"]["range"]
         self.dim_x = mpc.dae.n_x
         self.dim_p = mpc.dae.n_p
+        self.dim_u = mpc.dae.n_u
         
     def _init_MHE_sens(self, mhe):
     #def get_MHE_sens(self, mhe, p_val, Q_val, R_val, P0_val):
@@ -148,54 +175,125 @@ class RL(metaclass=ABCMeta):
         inspect this.
         Also, do not re-init these functions unecessarily
         """
-        self.inact_x_inds  = np.array([mhe.lbx < mhe.solution["x"]], dtype=bool).flatten()
+        self.inact_x_inds  = np.array(
+                                      [
+                                       mhe.lbx
+                                       < 
+                                       mhe.solution["x"]
+                                      ],
+                                      dtype=bool
+                                      ).flatten()
+        
+        # These are inactive by default (not decision variables):
+        #self.inact_x_inds[[ndx for ndx in self.not_base_inds_mhe]] = True
+        
+        #self.act_x_inds = np.array([mhe.lbx == mhe.solution["x"]], dtype=bool).flatten()
+        
+        """
+        For the MHE-problem, what are decision variables? 
+        
+        Only: p, v, w, x, z
+        So extract those:
+        (Can set this in __init__)
+        """
         
         #x_map = {ndx: w_hat[ndx] for ndx, val in enumerate(inact_x) if not val}
         #h_active_inds = ca.DM([ndx for ndx if not()])
-        h_active = ca.vertcat(*[w_hat[ndx] for ndx, val in enumerate(self.inact_x_inds) if not val])
-        # no g yet:
-        #inact_g = np.array([mhe.lbx < mhe.solution["x"]], dtype=bool).flatten()
+        #self.h_active_inds[self.k] = [ndx for ndx, val in enumerate(self.inact_x_inds) if not val]
+        #h_active = ca.vertcat(*self.h_active_inds[self.k])
+        #self.k += 1
         
-        self.mu_hat = mu_hat = ca.MX.sym("mu_hat", h_active.shape[0]) # ------""------ inequality constraints
-        L = f - ca.mtimes(lambda_hat.T, g) - ca.mtimes(mu_hat.T, h_active)  # lagrangian
-        #L = f
-        # z_hat: (w_hat, lambda_hat, mu_hat):
-        self.z_hat = z_hat = ca.vertcat(w_hat, lambda_hat, mu_hat)
+        h_active_inds = [ndx for ndx, val in enumerate(self.inact_x_inds) if not val]
+        #_h_active_inds = [ndx for ndx, val in enumerate(self.act_x_inds) if val]
+        #h_active_inds = [w_hat[ndx] for ndx in h_active_inds]
+        h_active = ca.vertcat(*[w_hat[ndx] for ndx in h_active_inds])
+        self.h_active_inds[self.k] = h_active_inds
         
-        grad_L_w = ca.jacobian(L, w_hat) # transpose this
         
-        hess_L_w = ca.hessian(L, w_hat)[0]
+        # TODO: clean up:
+        # if no h_active, then skip all consideration of inequalities
 
-        R = ca.vertcat(grad_L_w.T, g, h_active)
+        # check if active set has changed::
+        if h_active_inds != self.h_active_inds[self.k-1]:
         
-        # params:
-        theta = ca.veccat(_p, _Q, _R, _P0)
-        dR_dtheta = ca.jacobian(R, theta)
+            # no g yet:
+            #inact_g = np.array([mhe.lbx < mhe.solution["x"]], dtype=bool).flatten()
+            if h_active.shape[0] == 0:
+                self.mu_hat = mu_hat = ca.Sparsity(0,0)
+                #h_active = ca.sym.MX("zero")
+                #self.mu_hat = 0
+                
+                self.z_hat = z_hat = ca.vertcat(w_hat, lambda_hat)
+                L = f - ca.mtimes(lambda_hat.T, g)
+                self.jac_h_w = ca.Sparsity(0,0)
+                self.n_jac_h_w = n_jac_h_w = 0
+            else:
+                self.mu_hat = mu_hat = ca.MX.sym("mu_hat", h_active.shape[0]) # ------""------ inequality constraints
+                self.z_hat = z_hat = ca.vertcat(w_hat, lambda_hat, mu_hat)
+                L = f - ca.mtimes(lambda_hat.T, g) - ca.mtimes(mu_hat.T, h_active)  # lagrangian
+                self.jac_h_w = ca.jacobian(h_active, w_hat)
+                self.n_jac_h_w = n_jac_h_w = self.jac_h_w.shape[0]
+            #L = f
+            # z_hat: (w_hat, lambda_hat, mu_hat):
+            
+            # gradient
+            grad_L_w = ca.jacobian(L, w_hat) # transpose this
+            # hessian
+            hess_L_w = ca.hessian(L, w_hat)[0]
+    
+            R = ca.vertcat(grad_L_w.T, g, h_active)
+            # params:
+            #theta = ca.veccat(_p, _Q, _R, _P0)
+            theta = ca.veccat(_P0, _Q, _R, _p)
+            dR_dtheta = ca.jacobian(R, theta)
+            
+            self.dR_dtheta_func = ca.Function("dRdTheta", [theta, z_hat], [dR_dtheta], ["theta", "z_hat"], ["dR_dtheta"])
+            
+            self.jac_g_w = ca.jacobian(g, w_hat)
+            
+            n_hess = hess_L_w.shape[0]
+            n_jac_g_w = self.jac_g_w.shape[0]
+            
+            # prepare for KKT-matrix:
+            self.n_KKT = n_hess + n_jac_g_w + n_jac_h_w
         
-        self.dR_dtheta_func = ca.Function("dRdTheta", [theta, z_hat], [dR_dtheta], ["theta", "z_hat"], ["dR_dtheta"])
+            self.L_start = 0
+            self.L_stop = self.G_start_row = w_hat.shape[0]
+            # eq. constraints:
+            self.G_stop_row = self.H_start_row = self.G_start_row + self.nlp["g"].shape[0]
+            self.G_start_col = 0
+            self.G_stop_col = self.G_start_col + self.jac_g_w.shape[1]
+            # G.T
+            self.GT_start_col = self.L_stop
+            self.GT_stop_col = self.GT_start_col + self.jac_g_w.shape[0]
+            # ineq. constraints:
+            self.H_stop_row = self.H_start_row + mu_hat.shape[0]
+            self.H_start_col = 0
+            self.H_stop_col = self.H_start_col + self.jac_h_w.shape[1]
+            # H.T
+            self.HT_start_col = self.GT_stop_col
+            self.HT_stop_col = self.HT_start_col + self.jac_h_w.shape[0]
         
-        self.jac_g_w = ca.jacobian(g, w_hat)
-        self.jac_h_w = ca.jacobian(h_active, w_hat)
+            # set the functions:
+            #self.R_func = ca.Function("R", [z_hat, _p, _Q, _R, _P0], [R], ["z_hat", "p", "Q", "R", "P0"], ["R"])
+            #self.hess_L = ca.Function("hess_L", [w_hat, _p, _Q, _R, _P0, lambda_hat], [hess_L_w], ["w_hat", "p", "Q", "R", "P0", "lambda_hat"], ["hess_L_w"])
+            #self.J_g_w = ca.Function("JgW", [w_hat, _p, _Q, _R, _P0, lambda_hat], [self.jac_g_w], ["w_hat", "p", "Q", "R", "P0", "lambda_hat"], ["jac_g_w"])
+            #if n_jac_h_w > 0:
+            #self.J_h_w = ca.Function("JhW", [w_hat, _p, _Q, _R, _P0, mu_hat], [self.jac_h_w], ["w_hat", "p", "Q", "R", "P0", "mu_hat"], ["jac_h_w"])
+            # else:
+            #    self.J_h_w = ca.Function("JhW", [w_hat, _p, _Q, _R, _P0, mu_hat], [0], ["w_hat", "p", "Q", "R", "P0", "mu_hat"], ["jac_h_w"])
+            
+            # rearrange function arguments:
+            self.R_func = ca.Function("R", [z_hat, _P0, _Q, _R, _p], [R], ["z_hat", "P0", "Q", "R", "p"], ["R"])
+            self.hess_L = ca.Function("hess_L", [w_hat, _P0, _Q, _R, _p, lambda_hat], [hess_L_w], ["w_hat", "P0", "Q", "R", "p", "lambda_hat"], ["hess_L_w"])
+            self.J_g_w = ca.Function("JgW", [w_hat, _P0, _Q, _R, _p, lambda_hat], [self.jac_g_w], ["w_hat", "P0", "Q", "R", "p", "lambda_hat"], ["jac_g_w"])
+            #if n_jac_h_w > 0:
+            self.J_h_w = ca.Function("JhW", [w_hat, _P0, _Q, _R, _p, mu_hat], [self.jac_h_w], ["w_hat", "P0", "Q", "R", "p", "mu_hat"], ["jac_h_w"])
         
-        n_hess = hess_L_w.shape[0]
-        n_jac_g_w = self.jac_g_w.shape[0]
-        n_jac_h_w = self.jac_h_w.shape[0]
+        # increment:
+        self.k += 1
         
-        self.n_KKT = n_hess + n_jac_g_w + n_jac_h_w
-        
-        # END
-        
-        #KKT_symbolic = ca.MX.sym("KKT", n_KKT, n_KKT)
-        
-        # set the functions:
-        self.R_func = ca.Function("R", [z_hat, _p, _Q, _R, _P0], [R], ["z_hat", "p", "Q", "R", "P0"], ["R"])
-        self.hess_L = ca.Function("hess_L", [w_hat, _p, _Q, _R, _P0, lambda_hat], [hess_L_w], ["w_hat", "p", "Q", "R", "P0", "lambda_hat"], ["hess_L_w"])
-        self.J_g_w = ca.Function("JgW", [w_hat, _p, _Q, _R, _P0, lambda_hat], [self.jac_g_w], ["w_hat", "p", "Q", "R", "P0", "lambda_hat"], ["jac_g_w"])
-        self.J_h_w = ca.Function("JhW", [w_hat, _p, _Q, _R, _P0, mu_hat], [self.jac_h_w], ["w_hat", "p", "Q", "R", "P0", "mu_hat"], ["jac_h_w"])
-        
-        # mhe params fixed in this call:
-        
-    def get_MHE_sens(self, sol, p_val, Q_val, R_val, P0_val):
+    def get_MHE_sens(self, mhe, sol, p_val, Q_val, R_val, P0_val):
         
         # refs:
         w_hat = self.w_hat
@@ -203,7 +301,20 @@ class RL(metaclass=ABCMeta):
         jac_h_w = self.jac_h_w
         mu_hat = self.mu_hat
         
+        # evaluate mhe solution with sqpmethod + qrqp:
         
+        """
+        sol = mhe.sqp_solver(
+                        x0=sol["x"],
+                        #x0=self.x0,
+                        lbg=0,
+                        ubg=0,
+                        lbx=mhe.lbx,
+                        ubx=mhe.ubx,
+                        p=mhe.p_val
+                )
+        """
+
         lam_x = np.array(sol["lam_x"])
         w_hat_val = sol["x"]
         # get numerical z_hat from mhe solution:
@@ -219,16 +330,27 @@ class RL(metaclass=ABCMeta):
                                mu_val)
         
         #_R_val = self.R_func(z_hat_val, p_val, Q_val, R_val, P0_val)
-        hess_L_val = self.hess_L(sol["x"], p_val, Q_val, R_val, P0_val, sol["lam_g"])
-        jac_g_w_val = self.J_g_w(sol["x"], p_val, Q_val, R_val, P0_val, sol["lam_g"])
-        jac_h_w_val = self.J_h_w(sol["x"], p_val, Q_val, R_val, P0_val, mu_val)
+        
+        #hess_L_val = self.hess_L(sol["x"], p_val, Q_val, R_val, P0_val, sol["lam_g"])
+        #jac_g_w_val = self.J_g_w(sol["x"], p_val, Q_val, R_val, P0_val, sol["lam_g"])
+        
+        # rearrange:
+        
+        hess_L_val = self.hess_L(sol["x"], P0_val, Q_val, R_val, p_val, sol["lam_g"])
+        jac_g_w_val = self.J_g_w(sol["x"], P0_val, Q_val, R_val, p_val, sol["lam_g"])
+        
+        if self.n_jac_h_w > 0:
+            jac_h_w_val = self.J_h_w(sol["x"], P0_val, Q_val, R_val, p_val, mu_val)
+        else:
+            jac_h_w_val = ca.DM([0])
         
         # test dR_dtheta:
-        dR_dtheta_val = self.dR_dtheta_func(ca.veccat(p_val, Q_val, R_val, P0_val), z_hat_val)
+        dR_dtheta_val = self.dR_dtheta_func(ca.veccat(P0_val, Q_val, R_val, p_val), z_hat_val)
         
         
         # try to construct simplified KKT-matrix:
         #KKT_num = ca.DM.zeros(self.n_KKT, self.n_KKT)
+        """
         KKT_num = np.zeros((self.n_KKT, self.n_KKT))
         
         L_start = 0
@@ -247,19 +369,24 @@ class RL(metaclass=ABCMeta):
         # H.T
         HT_start_col = GT_stop_col
         HT_stop_col = HT_start_col + jac_h_w.shape[0]
+        """   
+        # set numeric KKT:
+        KKT_num = np.zeros((self.n_KKT, self.n_KKT))
         
-        
-        
-        # set hessian
-        KKT_num[L_start:L_stop, L_start:L_stop] = np.array(hess_L_val)
+        KKT_num[self.L_start:self.L_stop,
+                self.L_start:self.L_stop] = np.array(hess_L_val)
         # set jac_G:
-        KKT_num[G_start_row:G_stop_row, G_start_col:G_stop_col] = np.array(jac_g_w_val)
+        KKT_num[self.G_start_row:self.G_stop_row, 
+                self.G_start_col:self.G_stop_col] = np.array(jac_g_w_val)
         # set the transpose of jac_G (grad_G):
-        KKT_num[L_start:L_stop, GT_start_col:GT_stop_col] = np.array(jac_g_w_val.T)
+        KKT_num[self.L_start:self.L_stop,
+                self.GT_start_col:self.GT_stop_col] = np.array(jac_g_w_val.T)
         # set jac_H:
-        KKT_num[H_start_row:H_stop_row, H_start_col:H_stop_col] = np.array(jac_h_w_val)
+        KKT_num[self.H_start_row:self.H_stop_row,
+                self.H_start_col:self.H_stop_col] = np.array(jac_h_w_val)
         # set the transpose of jac_H (grad_H):
-        KKT_num[L_start:L_stop, HT_start_col:HT_stop_col] = np.array(jac_h_w_val.T)
+        KKT_num[self.L_start:self.L_stop,
+                self.HT_start_col:self.HT_stop_col] = np.array(jac_h_w_val.T)
         
         # evaluate jac_R
         # we know this inverse must exist:
@@ -298,6 +425,7 @@ class RL(metaclass=ABCMeta):
         """
         Get index of equality constraints.
         """
+        pass
         
         
         
@@ -346,12 +474,20 @@ class RL(metaclass=ABCMeta):
         w = nlp["x"]
         # primal-dual:
         #z = ca.vertcat(w, _lambda, mu)
-        z = ca.vertcat(w, _lambda)
+        z = ca.vertcat(w, _lambda, mpc.nlp["p"])
         # take gradient:
         dL_dw = ca.gradient(L, z)
         # set as function:
         self.F_dL_dw = ca.Function("FdLdw", [z], [dL_dw])
         
+    
+    """ 
+    The below seems to be wrong..
+    
+    Need to reformulate the problem, 
+    setting x_k and p_k as parameters
+    in parametric NLP.
+    """
     
     def get_dQ_dx0(self, dQ_dz):
         return dQ_dz[self.x_bounds["a"]:(self.x_bounds["a"] + self.dim_x)]
@@ -359,38 +495,177 @@ class RL(metaclass=ABCMeta):
     def get_dQ_dp(self, dQ_dz):
         return dQ_dz[self.p_bounds["a"]:self.p_bounds["b"]]
     
+    """
     def get_MPC_sens(self, sol):
-        """
-        Get sensitivities
-        from MPC problem.
-    
-        """
         #z_val = ca.vertcat(sol["x"], sol["lam_g"][self.g_inds], sol["lam_g"][self.h_active_inds])
-        z_val = ca.vertcat(sol["x"], sol["lam_g"])
+        
+        z_val = ca.vertcat(sol["x"], sol["lam_g"], sol["p"])
         dQ_dz = self.F_dL_dw(z_val)
         
         return self.get_dQ_dx0(dQ_dz).T, self.get_dQ_dp(dQ_dz).T
+    """
     
-    def step(self, mpc, mhe, p, Q, R, P0, diff_Q, L_k, k):
-        #self._init_mpc_params(mpc)
-        #self._init_mhe_params(mhe, p, Q, R, P0)
-        self._init_MHE_sens(mhe)
-        self.set_F_dQ_dz(mpc)
-        dQ_dx_init, dQ_dp = self.get_MPC_sens(mpc.solution)
-        dx_init_dtheta, dp_dtheta = self.get_MHE_sens(mhe.solution, p, Q, R, P0)
+    def get_MPC_sens(self, mpc, sol):
+        """
+        Evaluate nlp-solution with sqpmethod + qrqp
+        to get more accurate sensitivities.
+    
+        """
+        x0_start, x0_stop = self.x_bounds["a"], (self.x_bounds["a"] + self.dim_x)
+        p_start, p_stop = self.p_bounds["a"], self.p_bounds["b"]
+        u_start, u_stop = self.u_bounds["a"], (self.u_bounds["a"] + self.dim_u)
         
+        """
+        sqp_sol = mpc.sqp_solver(
+                                x0=sol["x"],
+                                #x0=self.x0,
+                                lbg=mpc.lbg,
+                                ubg=mpc.ubg,
+                                lbx=mpc.lbx,
+                                ubx=mpc.ubx
+                                #p=self.p_val
+                        )
+        """
+        
+        #return sqp_sol["lam_x"][x0_start:x0_stop].T, sqp_sol["lam_x"][p_start:p_stop].T #, sqp_sol["lam_x"][u_start:u_stop].T
+        return sol["lam_x"][x0_start:x0_stop].T, sol["lam_x"][p_start:p_stop].T #, sqp_sol["lam_x"][u_start:u_stop].T
+        
+    def get_MHE_sens_obj(self, mhe, sol):
+        """
+        Evaluate nlp-solution with sqpmethod + qrqp
+        to get more accurate sensitivities.
+        
+        sqp_sol = mhe.sqp_solver(
+                                x0=sol["x"],
+                                #x0=self.x0,
+                                lbg=0,
+                                ubg=0,
+                                lbx=mhe.lbx,
+                                ubx=mhe.ubx,
+                                p=mhe.p_val
+                                )
+        """
+        #return sqp_sol["lam_p"].T
+        return sol["lam_p"].T
+        
+    
+    def get_MPC_sens_jsolver(self, mpc, sol):
+        """
+        Get sensitivities from MPC problem,
+        using Function generated from SQP-solver.
+        """
+        #dQ_dp_nlp = mpc.jsolver_sqp(x0=sol["x"], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'],
+        #            lbx=mpc.lbx, ubx=mpc.ubx, lbg=mpc.lbg, ubg=mpc.ubg, p=mpc.p_val)
+        
+        # prepare arguments for adj solver
+        sol = mpc.solution
+        
+        nadj = mpc.nlp["p"].shape[0]
+        adj_f = [ca.DM.zeros(sol['f'].sparsity()) for i in range(nadj)]
+        adj_g = [ca.DM.zeros(sol['g'].sparsity()) for i in range(nadj)]
+        adj_x = [ca.DM.zeros(sol['x'].sparsity()) for i in range(nadj)]
+        
+        adj_f[0][0] = 1
+        
+        sol_adj = mpc.sqp_adj(out_x=sol['x'], 
+                              out_lam_g=sol['lam_g'],
+                              out_lam_x=sol['lam_x'],
+                              out_f=sol['f'],
+                              out_g=sol['g'],
+                              lbx=mpc.lbx,
+                              ubx=mpc.ubx,
+                              lbg=mpc.lbg,
+                              ubg=mpc.ubg,
+                              adj_f=ca.horzcat(*adj_f),
+                              adj_g=ca.horzcat(*adj_g),
+                              p=0,
+                              adj_x=ca.horzcat(*adj_x))
+
+        dQ_dp_nlp = mpc.jsolver_ipopt(x0=sol["x"],
+                                      lam_x0=sol['lam_x'],
+                                      lam_g0=sol['lam_g'],
+                                      lbx=mpc.lbx,
+                                      ubx=mpc.ubx,
+                                      lbg=mpc.lbg,
+                                      ubg=mpc.ubg,
+                                      p=mpc.p_val)
+        return dQ_dp_nlp
+    
+    
+    def get_MHE_sens_hsolver(self, mhe, sol):
+        """
+        Get sensitivities from MPC problem,
+        using Function generated from SQP-solver.
+        """
+        #dQ_dp_nlp = mpc.jsolver_sqp(x0=sol["x"], lam_x0=sol['lam_x'], lam_g0=sol['lam_g'],
+        #            lbx=mpc.lbx, ubx=mpc.ubx, lbg=mpc.lbg, ubg=mpc.ubg, p=mpc.p_val)
+        
+        # prepare arguments for adj solver
+        sol = mhe.solution
+        
+        sqp_sol = mhe.sqp_solver(
+                        x0=sol["x"],
+                        #x0=self.x0,
+                        lbg=0,
+                        ubg=0,
+                        lbx=mhe.lbx,
+                        ubx=mhe.ubx
+                        #p=self.p_val
+                )
+
+        dQ_dp_dp = mhe.hsolver_ipopt(x0=sol["x"],
+                                      lam_x0=sol['lam_x'],
+                                      lam_g0=sol['lam_g'],
+                                      lbx=mhe.lbx,
+                                      ubx=mhe.ubx,
+                                      lbg=0,
+                                      ubg=0,
+                                      p=mhe.p_val)
+        return dQ_dp_dp
+        
+    
+    def solve_SDP():
+        pass
+    
+class Qlearning(RL):
+    def step(self, mpc, mhe, p, Q, R, P0, diff_Q, R_k_plus_1, k, del_P0_accum, alpha=None):
+            #self._init_mpc_params(mpc)
+        #self._init_mhe_params(mhe, p, Q, R, P0)
+        #try:
+        ### check if active set has changed ###
+        self._init_MHE_sens(mhe)
+        #self.set_F_dQ_dz(mpc)
+        dQ_hat_dtheta = self.get_MHE_sens_obj(mhe, mhe.solution)
+        dQ_dx_init, dQ_dp = self.get_MPC_sens(mpc, mpc.solution)
+        #dQ_dp_nlp = self.get_MPC_sens_jsolver(mpc, mpc.solution)
+        dx_init_dtheta, dp_dtheta = self.get_MHE_sens(mhe, mhe.solution, p, Q, R, P0)
         # get grad(Q)_theta
         #grad_Q_theta = ca.mtimes(dQ_dx_init, dx_init_dtheta) + ca.mtimes(dQ_dp, dp_dtheta)
         grad_Q_theta = dQ_dx_init@dx_init_dtheta + dQ_dp@dp_dtheta
         
+        
         # solve SDP for Δθ
         dim_P0 = P0.shape[0]*P0.shape[1]
         # last elems:
-        start = grad_Q_theta.shape[1] - dim_P0
-        stop = grad_Q_theta.shape[1]
+        #start = grad_Q_theta.shape[1] - dim_P0
+        #stop = grad_Q_theta.shape[1]
+        
+        # correction: first elems:
+        start = 0
+        stop = dim_P0
         grad_Q_P0 = np.array(grad_Q_theta[start:stop])
         
-        alpha_delta_k = self.alpha*float(L_k + diff_Q)
+        # for MHE-obj:
+        grad_Q_hat_P0 = np.array(dQ_hat_dtheta[start:stop]).reshape((P0.shape[0], P0.shape[1]))
+        
+        alpha_grad_Q_hat_P0 = self.alpha*grad_Q_hat_P0
+        alpha_grad_Q_hat_P0_mat = alpha_grad_Q_hat_P0.reshape((P0.shape[0], P0.shape[1]))
+        
+        # overwrite learning rate
+        if alpha is None:
+            alpha_delta_k = self.alpha*float(R_k_plus_1 + diff_Q)
+        else:
+            alpha_delta_k = alpha*float(R_k_plus_1 + diff_Q)
         alpha_delta_grad_Q = alpha_delta_k*grad_Q_P0
         
         grad_Q_P0_mat = grad_Q_P0.reshape((P0.shape[0], P0.shape[1]))
@@ -399,29 +674,152 @@ class RL(metaclass=ABCMeta):
         
         # keep Ce sens:
         self.sens.loc[k, :] = np.diag(grad_Q_P0_mat)
+        self.sens_mhe.loc[k, :] = np.diag(grad_Q_hat_P0)
+        
+        return alpha_delta_grad_Q_mat
+        #except:
+        #    return np.zeros((P0.shape[0], P0.shape[1]))
         # times alpha
         # first: create the SDP.
+        
+        
         #self.sdp = RL_SDP(mpc.dae.n_x, mpc.dae.n_y, mpc.dae.n_p)
         #self.sdp.setup_problem(alpha_delta_grad_Q)
         
         #sol = self.sdp.solve(P0)
-        
+        #self.sens_sdp.loc[k, :] = np.diag(sol)
+        #sol = None
         #if sol is None:
-        return alpha_delta_grad_Q_mat
+            #return alpha_delta_grad_Q_mat
+            # return 0?
+        #    return np.zeros((mpc.dae.n_x + mpc.dae.n_p, mpc.dae.n_x + mpc.dae.n_p))
         #else:
-        #return sol
+        #    self.sens_sdp.loc[k, :] = np.diag(sol)
+            #return sol
         # transform P0 to actual in call:
         #del_theta = self.sdp.solve(np.power(P0, -2))
         
-        #return alpha_delta_grad_Q
-    
-    def solve_SDP():
-        pass
-    
-class Qlearning(RL):
-    pass
+        # filter, such that theta remains pos.def.
+        # 
         
+        #return alpha_grad_Q_hat_P0_mat
+        
+        """
+        if ((np.array(P0) + alpha_delta_grad_Q_mat + del_P0_accum) >= 0).all():
+            
+            return alpha_delta_grad_Q_mat
+        
+        else:
+            # if any negative elements of P0, then
+            # reset information (less confidence in model):
+            #return -P0 + 1e-16
+            ndx = np.where((np.array(P0) + alpha_delta_grad_Q_mat + del_P0_accum) < 0)
+            alpha_delta_grad_Q_mat[ndx] = 1e-16
+            alpha_delta_grad_Q_mat[ndx] -= (np.array(P0)[ndx] + del_P0_accum[ndx])
+            return alpha_delta_grad_Q_mat
+        """
+        
+class PolicyGradient(RL):
+    def step(self, mpc, mhe, p, Q, R, P0, k, del_P0_accum, alpha=None):
+            #self._init_mpc_params(mpc)
+        #self._init_mhe_params(mhe, p, Q, R, P0)
+        
+        ### check if active set has changed ###
+        self._init_MHE_sens(mhe)
+        #self.set_F_dQ_dz(mpc)
+        dQ_dx_init, dQ_dp, dQ_du = self.get_MPC_sens(mpc, mpc.solution)
+        #dQ_dp_nlp = self.get_MPC_sens_jsolver(mpc, mpc.solution)
+        #dx_init_dtheta, dp_dtheta = self.get_MHE_sens(mhe, mhe.solution, p, Q, R, P0)
+        dx_init_dtheta, dp_dtheta = self.get_MHE_sens(mhe, mhe.solution, p, Q, R, P0)
+        # sens of MHE objective w.r.t theta:
+        dQ_hat_dtheta = self.get_MHE_sens_obj(mhe, mhe.solution)
+        
+        # get grad(Q)_theta
+        #grad_Q_theta = ca.mtimes(dQ_dx_init, dx_init_dtheta) + ca.mtimes(dQ_dp, dp_dtheta)
+        grad_Q_theta = dQ_dx_init@dx_init_dtheta + dQ_dp@dp_dtheta
+        
+        # solve SDP for Δθ
+        dim_P0 = P0.shape[0]*P0.shape[1]
+        # last elems:
+        #start = grad_Q_theta.shape[1] - dim_P0
+        #stop = grad_Q_theta.shape[1]
+        #grad_Q_P0 = np.array(grad_Q_theta[start:stop])
+        # correction: first elems:
+        start = 0
+        stop = dim_P0
+        
+        # for MHE-obj:
+        grad_Q_hat_P0 = np.array(dQ_hat_dtheta[start:stop]).reshape((P0.shape[0], P0.shape[1]))
+        
+        grad_Q_P0 = np.array(grad_Q_theta[start:stop])
+        
+        grad_Q_P0_mat = self.alpha*grad_Q_P0.reshape((P0.shape[0], P0.shape[1]))
+        alpha_grad_Q_hat_P0 = self.alpha*grad_Q_hat_P0
+        alpha_grad_Q_hat_P0_mat = alpha_grad_Q_hat_P0.reshape((P0.shape[0], P0.shape[1]))
+        
+        
+        # try to recover covariance step:
+        #alpha_delta_grad_Q_mat = alpha_delta_grad_Q.reshape((P0.shape[0], P0.shape[1]))
+        
+        # keep Ce sens:
+        self.sens.loc[k, :] = np.diag(grad_Q_P0_mat)
+        self.sens_mhe.loc[k, :] = np.diag(alpha_grad_Q_hat_P0_mat)
+        # times alpha
+        # first: create the SDP.
+        
+        #return grad_Q_hat_P0
 
+        #self.sdp = RL_SDP(mpc.dae.n_x, mpc.dae.n_y, mpc.dae.n_p)
+        #self.sdp.setup_problem(alpha_delta_grad_Q)
+        #self.sdp.setup_problem(alpha_grad_Q_hat_P0.reshape((1, P0.shape[0]*P0.shape[1])))
+        
+        #sol = self.sdp.solve(-(P0 + del_P0_accum))
+        #sol = self.sdp.solve(P0 + del_P0_accum)
+        #sol = self.sdp.solve(P0 + del_P0_accum)
+        #self.sens_sdp.loc[k, :] = np.diag(sol)
+        #sol = None
+        #if sol is None:
+        #    return np.zeros((mpc.dae.n_x + mpc.dae.n_p, mpc.dae.n_x + mpc.dae.n_p))
+            #return alpha_delta_grad_Q_mat
+            # return 0?
+        #else:
+        #hess_p_p = self.get_MHE_sens_hsolver(mhe, mhe.solution)
+          
+        #return alpha_grad_Q_hat_P0_mat
+        
+        return grad_Q_P0_mat
+        
+        #    self.sens_sdp.loc[k, :] = np.diag(sol)
+            #return sol
+        # transform P0 to actual in call:
+        #del_theta = self.sdp.solve(np.power(P0, -2))
+        
+        # filter, such that theta remains pos.def.
+        # 
+        #grad_Q_P0_mat += grad_Q_hat_P0_mat
+        
+        #grad_Q_P0_mat = grad_Q_hat_P0_mat
+        
+        #result = (np.array(P0) - grad_Q_P0_mat - del_P0_accum)
+        
+        """
+        result = (np.array(P0) + grad_Q_P0_mat + del_P0_accum)
+        
+        if (result >= 0).all():
+            
+            return grad_Q_P0_mat
+        
+        else:
+            # if any negative elements of P0, then
+            # reset information (less confidence in model):
+            #return -P0 + 1e-16
+            ndx = np.where(result < 0)
+            #grad_Q_P0_mat[ndx] = -1e-16
+            grad_Q_P0_mat[ndx] = 1e-16
+            #grad_Q_P0_mat[ndx] += (np.array(P0)[ndx] + del_P0_accum[ndx])
+            grad_Q_P0_mat[ndx] -= (np.array(P0)[ndx] + del_P0_accum[ndx])
+            return grad_Q_P0_mat
+        """
 
 """
 Define arrival cost weighting matrix P0 as parameter in MHE NLP.

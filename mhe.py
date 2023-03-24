@@ -93,7 +93,16 @@ class MHE(OCP):
                                      ["log(det(R))"]                        
         )
         
-        
+        """
+        x = ca.vec(self.nlp_x)*self.x_nom
+        z = ca.vec(self.nlp_z)*self.x_nom
+        u = ca.vec(self.nlp_u)*self.u_nom
+        p = ca.vertcat(*self.dae.dae.p)*self.p_nom
+        w = ca.vec(self.nlp_w)*self.w_nom
+        v = ca.vec(self.nlp_v)*self.v_nom
+        y = ca.vec(self.nlp_y)*self.y_nom
+        r = ca.vec(self.nlp_r)*self.r_nom
+        """        
         x = ca.vec(self.nlp_x)
         z = ca.vec(self.nlp_z)
         u = ca.vec(self.nlp_u)
@@ -158,6 +167,8 @@ class MHE(OCP):
                                            x,
                                            u,
                                            y,
+                                           w,
+                                           v,
                                            r,
                                            ca.vec(R),
                                            ca.vec(Q)
@@ -180,6 +191,8 @@ class MHE(OCP):
                                      [p,
                                       x,
                                       u,
+                                      w,
+                                      v,
                                       y,
                                       r,
                                       ca.vec(R),
@@ -187,7 +200,7 @@ class MHE(OCP):
                                       ],
                                     [hess_expr],
                                     #self.dae.p + ["x", "u", "y", "R", "Q"],
-                                    ["p", "x", "u", "y", "r", "R", "Q"],
+                                    ["p", "x", "u", "w", "v", "y", "r", "R", "Q"],
                                     ["hess_obj"]
                                     )           
         self.jac_obj = ca.Function(
@@ -280,6 +293,60 @@ class MHE(OCP):
         
         return obj_value
                 
+    def get_fisher(self, params, R, Q):
+        """
+        Get covariance of parameter estimates.
+        """
+
+        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
+        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
+        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
+        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
+        w_vals =  self.sol_df[self.dae.w_names].values.flatten()/self.w_nom
+        v_vals =  self.sol_df[self.dae.v_names].values.flatten()/self.v_nom
+        """
+        x_vals =  self.sol_df[self.dae.x].values.flatten()
+        u_vals =  self.sol_df[self.dae.u].values.flatten()
+        y_vals =  self.sol_df[self.dae.y].values.flatten()
+        r_vals =  self.sol_df[self.dae.r_names].values.flatten()
+        w_vals =  self.sol_df[self.dae.w_names].values.flatten()
+        v_vals =  self.sol_df[self.dae.v_names].values.flatten()
+        """
+        
+        # sample fisher information:
+        hess_val = self.hess_obj(
+                                 #params.values*self.scale,
+                                 params.values,
+                                 x_vals,
+                                 u_vals,
+                                 w_vals,
+                                 v_vals,
+                                 y_vals,
+                                 r_vals,
+                                 ca.vec(R),
+                                 ca.vec(Q)
+                                 )
+        
+        param_dim = self.nlp_parser["p"]["dim"]
+        
+        fisher_p = hess_val[:param_dim,:param_dim]
+        
+        x_start, x_stop = self.nlp_parser["x"]["range"]["a"] + self.nlp_parser["p"]["dim"], \
+                    self.nlp_parser["x"]["range"]["b"] + self.nlp_parser["p"]["dim"]
+            
+        fisher_x = hess_val[(x_stop-self.n_x):x_stop,(x_stop-self.n_x):x_stop]
+        
+        fisher = np.vstack([fisher_p, np.zeros((1, self.n_p)) ] )
+        fisher = np.column_stack([fisher, np.zeros((self.n_p + self.n_x, 1))] )
+        #fisher[self.n_p:(self.n_p + self.n_x),
+        #       self.n_p:(self.n_p + self.n_x)] = fisher_x
+        fisher[self.n_p:(self.n_p + self.n_x),
+               self.n_p:(self.n_p + self.n_x)] = 1
+        
+        return np.diag(np.diag(fisher))
+                    
+        
+        
         
        
     def get_covar_p(self, params, R, Q):
@@ -460,6 +527,9 @@ class MHE(OCP):
         #R_sqrt = ca.sqrt(self.R)
         #Q_sqrt = ca.sqrt(self.Q)
         
+        #v = v/self.v_nom
+        #w = w/self.w_nom
+        
         nlp_obj = ca.dot(ca.mtimes(self.R,
                                     v),
                             ca.mtimes(v.T,
@@ -511,7 +581,11 @@ class MHE(OCP):
             """
             #arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
             #arrival_cost = (self.P0@(costate - self.costate_prior).T)@(self.P0@(costate - self.costate_prior))
+            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
+            #P0 = (ca.MX.eye(self.n_x + self.n_p) - ca.expm(-self.P0))
+            #P0 = ca.expm(self.P0)
             arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
+            #arrival_cost = ((P0@(costate - self.costate_prior)).T)@(P0@(costate - self.costate_prior))
             nlp_obj += arrival_cost
             
             return nlp_obj, ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
@@ -566,25 +640,33 @@ class MHE(OCP):
                                                         arrival_cost=arrival_cost
                                                         ) 
         
-        y = self.data[self.y_names].values.flatten()
-                    
+        y = self.data[self.y_names].values.flatten()           
         x_guess = y/self.y_nom
         
         #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
         #for n in range(diff):
         #    x_guess = ca.horzcat(x_guess, y)
+         
+        # TODO: fix for multi-dimensional:
+        if self.strategy.name == "Collocation":
+            _x_guess = np.ones((self.n_x, ((self.N-1)*(self.strategy.d+1)+1)))     
+            # if direct collocation, fill between
+            for n in range(self.N-1):
+                _x_guess[:, n:(n + self.strategy.d+1)] = x_guess[n]
+            last = (self.N-1)*(self.strategy.d+1)
+            _x_guess[:,last:last+1] = x_guess[-1]
+            x_guess = _x_guess
         
         diff = int(self.integrator.dae.n_x/self.integrator.dae.n_y) - 1
         for n in range(diff):
-            x_guess = ca.horzcat(x_guess, y)
-        
-        
-        
-        
+            x_guess = ca.horzcat(x_guess, y/self.y_nom)
+    
         self.separate_data(
                           data,
                           lbp=lbp,
                           ubp=ubp,
+                          lbx=0.5*x_guess,
+                          ubx=1.5*x_guess,
                           x_guess=x_guess,
                           param_guess=param_guess
                           )
@@ -608,21 +690,17 @@ class MHE(OCP):
         #_P0 = ca.sqrt(ca.inv(P0))
         
         # TODO: branching on arrival cost:
-        if arrival_cost:
-            
+        if arrival_cost:        
             p0 = param_guess/self.p_nom
             x_N = x_N/self.x_nom
             #p0 = param_guess
             #x_N = x_N
             costate_prior = ca.vertcat(p0, x_N)
-            
-            p = ca.veccat(P0, covar, costate_prior)
-            
+            p = ca.veccat(P0, covar, costate_prior)       
         else:
             p = ca.veccat(covar)
-        
-        
-        
+        self.p_val = p # store
+             
         solution = self.solver(
                             x0=self.x0,
                             lbg=0, # option for path-constraints?

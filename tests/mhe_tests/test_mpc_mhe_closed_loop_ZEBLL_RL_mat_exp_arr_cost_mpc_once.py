@@ -52,26 +52,12 @@ if __name__ == "__main__":
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
 
-    # pass in config?
-    """
-    params = params_init = ca.DM([0.0015,
-                                  0.0116,
-                                  1.33E6,
-                                  6.64E6,
-                                  5.53])
-    """
     params = ca.DM([0.00100015, 
                     0.0129768, 
                     1.32308e+06,
                     9.54074e+07,
                     2.19846])
-    """
-    params = ca.DM([0.100015, 
-                    0.129768, 
-                    1.32308e+07,
-                    9.54074e+08,
-                    20.19846])
-    """
+    
     kwargs = {
               "x_nom": 300,
               "u_nom": 5000,
@@ -80,7 +66,6 @@ if __name__ == "__main__":
               }
     
     mpc = MPC(config=mpc_cfg, param_guess=params, **deepcopy(kwargs)) # to remove, replace with N
-    #mhe = MHE(config=mhe_cfg, param_guess=params)
     mhe = MHE(config=mhe_cfg, param_guess=params, **deepcopy(kwargs))
     """
     Here, init RL obj. Takes in the mhe, mpc objs
@@ -95,12 +80,13 @@ if __name__ == "__main__":
     
     NOTE: distuingish between SARSA
     and Q-learning.
+    
+    TODO: implement arrival cost as:
+    
+    P = (I - exp(-P_theta))
     """
     gamma = 0.99
     #rl = Qlearning(**{"gamma": 0.99, "alpha": 0.03})
-    
-    
-    
     # for first N iterations:
     ekf = KalmanBucy(ekf_cfg)
     # set params:
@@ -116,7 +102,8 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     # batch size:
-    B = 24
+    B = 12
+    #B = 24
     deltas = {}
     #dt = mpc.dt
     lb_night = {"Ti": 289.15}
@@ -137,7 +124,7 @@ if __name__ == "__main__":
     x0 = np.array([294.05, 293.15])
     
     # sim horizon: 2 days
-    days = 14
+    days = 7
     K = days*24*bounds.t_h
     
     # mhe settings:
@@ -145,16 +132,6 @@ if __name__ == "__main__":
     
     # variance of parameters -> low
     # variance of x_hat_-1 -> high
-    # order in P0 -> [p, x_hat_-1]
-    #P0[:mhe.n_p,:mhe.n_p] *= 1E-32
-    #P0[:mhe.n_p,:mhe.n_p] *= 1E32
-    #P0[mhe.n_p:, mhe.n_p:] *= 1E32
-    #P0[:mhe.n_p,:mhe.n_p] *= 1E-16
-    #P0[mhe.n_p:, mhe.n_p:] *= 1E-16
-    #P0[:mhe.n_p,:mhe.n_p] *= 1E-16
-    #P0[mhe.n_p:, mhe.n_p:] *= 1E-16
-    #P0[:mhe.n_p,:mhe.n_p] *= 1E-32
-    #P0[mhe.n_p:, mhe.n_p:] *= 1E-32
     P0[:mhe.n_p,:mhe.n_p] *= 1E-16
     P0[mhe.n_p:, mhe.n_p:] *= 1E-16
     #P0 *= 1E-32
@@ -165,7 +142,6 @@ if __name__ == "__main__":
     params_ub = params*1.3
     Q = ca.DM.eye(2)
     R = ca.DM.eye(1)
-    
     
     constr_vio = 0
     # RL:
@@ -224,31 +200,24 @@ if __name__ == "__main__":
         #    P0 = ca.DM.eye(7)*1E-16
         
         # TODO: need to rethink this:
+        # TODO: incorporate slack in objective
+        # -> constr. violation yields larger change in theta
         L_k = 0.5*(u_meas/mpc.u_nom)**2
 
         gains.loc[k, "L_k"] = float(L_k)
         gains.loc[k, "cons"] = max(float(lbx[2] - y_meas[0]), 0)
-        
-        
-        cons_vio = gains.cons[start:(start+k)]
-        
-        #if (cons_vio*cons_vio).sum() > 3:
-        #    #P0s[v] = P0
-        #    P0 = ca.DM.eye(7)*1E-16
-        #    start = k
-        #    cons = np.zeros((1,len(gains.L_k)))
-        #    #v += 1
-        
+
         # for RL step:
-        lbx, ubx, ref = bounds.get_bounds(k+1, mpc.N)
-        index = data_mpc.index
-        data_rl = data.iloc[1:(mpc.N+1)]
-        data_rl.index = index
+        #lbx, ubx, ref = bounds.get_bounds(k+1, mpc.N)
+        #index = data_mpc.index
+        #data_rl = data.iloc[1:(mpc.N+1)]
+        #data_rl.index = index
         # append ref
         #ref = np.array([294.15]*11)
-        ref = np.append(x0[0],ref)
-        data_rl["Ti_ref"] = ref
+        #ref = np.append(x0[0],ref)
+        #data_rl["Ti_ref"] = ref
         
+        """
         sol_mpc_RL, u_RL, x0_RL, raw_sol_RL = mpc.solve(
                                                         data_rl,
                                                         x0=x0,
@@ -258,9 +227,23 @@ if __name__ == "__main__":
                                                         return_raw_sol=True
                                                         #ref=True 
                                                      )  
+        """
         
+        #diff_Q = gamma*raw_sol_RL["f"] - raw_sol["f"]
+            
+        """
+        Do MPC at from k=0 to k=N+1.
+        Then:
+            Q_0 = f_MPC_{N+1} - L_{n+1}
+            Q_1 = f_MPC_{N+1} - L_{0}
+            
+        Avoid solving the problem twice.
+        """
+        # this is objective dependant:
+        Q_0 = raw_sol["f"] - (sol_mpc.iloc[-1]["phi_h"]/mpc.u_nom)**2
+        Q_1 = raw_sol["f"] - (sol_mpc.iloc[0]["phi_h"]/mpc.u_nom)**2
+        diff_Q = Q_1*gamma - Q_0
         
-        diff_Q = gamma*raw_sol_RL["f"] - raw_sol["f"]
         gains.loc[k, "diff_Q"] = float(diff_Q)
         #if k == 122:
         #    print(k)
@@ -278,23 +261,19 @@ if __name__ == "__main__":
                 x_N = sol_mhe.iloc[1][mhe.x_names].values
             
             params_init = params # keep
-            try:  
-                
+            try:   
                 # check if parameter scale has changed:
                 if not all(
                            mhe.get_scale(np.array(params).flatten()) 
                            == 
                            np.array(mhe.p_nom).flatten()
-                           ):
-                    
+                           ):                 
                     # keep df:
                     df = mhe.df
                     # new mhe object:
                     mhe = MHE(config=mhe_cfg, param_guess=params, **deepcopy(kwargs))
                     # set df for estimation history:
                     mhe.df = df
-                    
-                
                 sol_mhe, params, raw_mhe = mhe.solve(
                                                     y_data,
                                                     params,
@@ -305,24 +284,13 @@ if __name__ == "__main__":
                                                     x_N=x_N,
                                                     arrival_cost=True,
                                                     return_raw_sol=True
-                                                    )
-                
-                #if params["Ce"] > 5E7:
-                #    print(k)
-                
+                                                    )    
                 if not mhe.solver.stats()["return_status"] == "Solve_Succeeded":
                     print(sol_mhe)
-                
             except ValueError:
-                print(k)
-            
-            
+                print(k)         
             try:
-                #mhe_params = ca.veccat(ca.vertcat(params, x_N), Q, R, P0)
-                #pr = cProfile.Profile()
-                #pr.enable()
                 costate_prior = ca.vertcat(params_init/mhe.p_nom, x_N/mhe.x_nom)
-                
                 del_theta = rl.step(mpc, 
                                     mhe, 
                                     costate_prior,
@@ -339,12 +307,6 @@ if __name__ == "__main__":
                                     diff_Q,
                                     L_k,
                                     k)
-                #pr.disable()
-                #s = io.StringIO()
-                #sortby = SortKey.CUMULATIVE
-                #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-                #ps.print_stats()
-                #pr.print_stats()
                 
             except RuntimeError: # rootfinder fail
                 print(costate_prior)
@@ -370,88 +332,42 @@ if __name__ == "__main__":
                                     L_k,
                                     k)
                 
-            
-            # reshape del_theta:
-            #del_P0 = del_theta.reshape((P0.shape[0], P0.shape[1]))
-            
-            #_P0 = ca.sqrt(ca.inv(P0))
-            #P0 = ca.power(_P0, -2)
-            #del_P0 = ca.power(_del_P0, -2)
-            #del_P0_diag = ca.diag(ca.DM(np.diag(np.array(del_P0))))
             del_P0 = ca.diag(ca.DM(np.diag(np.array(del_theta))))
             deltas[k] = del_P0
             
-            if b == B:
-            #P0 += del_P0_diag
+            if b == B: # update, reset del_P0_accum
                 P0 += del_P0_accum
                 for k, v in deltas.items():
                     if abs(float(v[3,3])) > 1E-3:
                         print(k)
                         print(v)
-                
                 b = 0
                 del_P0_accum = np.zeros((P0.shape[0], P0.shape[1]))
             else:
                 # let P0 evolve in paralell:
                 del_P0_accum += del_P0
                 b += 1
-            
-        
             params = params.values
-            
-            #params_lb = params*0.5
-            #params_ub = params*2
             params_lb = params*0.7
             params_ub = params*1.3
-            
-            # parameter bounds not really necessary?
-            
-            #params_lb = params*0.1
-            #params_ub = params*10
-            
             x0 = sol_mhe.iloc[-1][mhe.x_names].values
-            
-            ### EKF update of P0 ###
-            # (should be N time steps lagged?)
-            """
-            x0 = ekf.estimate(
-                              x0, 
-                              y=y_meas, 
-                              u=u_meas, 
-                              r=data.iloc[0].values
-                              )
-            P0 = ekf.P_prev
-            """
-            #########################
         else:
-            
             x0 = ekf.estimate(
                               x0, 
                               y=y_meas, 
                               u=u_meas, 
                               r=data.iloc[0].values
                               )
-
-    """
-    res = boptest.get_data(tf=K*boptest.h)
-    ax = res.Ti.plot(color="k")
-    ax1 = ax.twinx()
-    res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    ax.legend(["Ti"])
-    ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    
-    plt.show()    
-    """
     
     plt.rcParams.update({'font.size': 11})
 
     fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
+    plt.show()    
+    # plot diff_Q, which drives the learning: 
+    df = boptest.get_data(tf=k*mpc.dt)
+    df.index = gains.index
+    ax = (df.phi_h/(mpc.u_nom)).plot()
+    gains.diff_Q.plot(ax=ax)
     plt.show()    
     
     #### parameter evolution plot ####:

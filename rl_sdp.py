@@ -78,8 +78,6 @@ class RL_SDP(object):
         
         #P_step = cp.Variable(shape=(self.n_P, 1))
         
-        # TODO: find out how casadi veccats P. row major or col major.
-        
         # NB: rewrite to enforce this as constraint.
         
         # reshape P0, P
@@ -94,6 +92,8 @@ class RL_SDP(object):
                 #P_step[n] = P[n] + del_theta[n]
                 #constraints.append(P_reshaped[n] == P0[n] + del_theta[n])
                 constraints.append(P[row, col] == P0[row, col] + del_theta[row, col])
+                if row == col:
+                    constraints.append(P0[row, col] + del_theta[row, col] >= 0)
             
             
             

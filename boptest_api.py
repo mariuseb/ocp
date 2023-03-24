@@ -445,7 +445,7 @@ class Boptest(RestApi):
         
         #res.Ti.iloc[:-1] = res.Ti.iloc[1:] 
         #res = res.iloc[:-1]
-        fig = plt.figure(figsize=(10,12))
+        fig = plt.figure(figsize=(8,6))
         
         # Add plots vertically:
         

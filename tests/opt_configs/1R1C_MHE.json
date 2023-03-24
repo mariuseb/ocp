@@ -1,34 +1,27 @@
 {
     "model": {
         "ode": {
-            "dTi": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + Ai*(phi_s/Ci) + w1",
-            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + w2"
+            "dTi": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
         },
         "alg": {
             "h": "y1 - Ti - v1"
         },
         "p": [
-            "Rie",
-            "Rea",
-            "Ci",
-            "Ce",
-            "Ai"
+            "Ria",
+            "Ci"
         ],
         "u": [
             "phi_h"
             ],
         "r":
             [
-            "Ta", 
-            "phi_s"
+            "Ta"
             ],
         "x": [
-            "Ti",
-            "Te"
+            "Ti"
         ],
         "w": [
-            "w1",
-            "w2"
+            "w1"
         ],
         "v": [
             "v1"
@@ -41,7 +34,7 @@
     "dt": 3600,
     "method": "multiple_shooting",
     "integrator": 
-        {
+       {
         "name": "IRK",
         "method": "legendre",
         "degree": 3,
@@ -53,7 +46,11 @@
         "verbose": false,
         "ipopt.linear_solver": "ma27",
         "ipopt.ma57_pre_alloc": 3,
-        "ipopt.max_cpu_time": 10
+        "ipopt.max_cpu_time": 10,
+        "bound_consistency": true,
+        "clip_inactive_lam": true,
+        "calc_lam_x": false,
+        "calc_lam_p": false
     },
     "codegen": false
 }

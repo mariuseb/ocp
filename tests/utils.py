@@ -102,7 +102,15 @@ class Bounds(object):
                 ub_day[i] = ub_d[name]
             else:
                 ub_day[i] = 500
-                
+        
+        if lb_night.shape == (1,):
+            lb_night = lb_night.reshape((1,1))
+        if ub_night.shape == (1,):
+            ub_night = ub_night.reshape((1,1))
+        if ub_day.shape == (1,):
+            ub_day = ub_day.reshape((1,1))
+        if lb_day.shape == (1,):
+            lb_day = lb_day.reshape((1,1))
 
         
         self.df.loc[0:self.t_h*7, "lb"] = lb_night

@@ -1,26 +1,20 @@
 {
     "model": {
         "ode": {
-            "dTi": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + Ai*(phi_s/Ci)",
-            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+            "dTi": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
         },
         "p": [
-            "Rie",
-            "Rea",
-            "Ci",
-            "Ce",
-            "Ai"
+            "Ria",
+            "Ci"
         ],
         "u": [
             "phi_h"
         ],
         "r": [
-            "Ta", 
-            "phi_s"
+            "Ta"
         ],
         "x": [
-            "Ti",
-            "Te"
+            "Ti"
         ]
     },
     "bounds": {
@@ -29,22 +23,27 @@
             "ubu": [5000]
         }
     },
-    "N": 24,
+    "N": 3,
     "dt": 3600,
     "method": "collocation",
     "integrator": 
         {
         "name": "IRK",
-        "method": "legendre",
+        "method": "radau",
         "degree": 3,
-        "n_steps": 1
+        "n_steps": 1,
+        "quadrature": "TODO" 
         }
     ,
     "solver": "gauss-newton",
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma27",
-        "ipopt.ma57_pre_alloc": 3
+        "ipopt.ma57_pre_alloc": 3,
+        "bound_consistency": true,
+        "clip_inactive_lam": true,
+        "calc_lam_x": false,
+        "calc_lam_p": false
     },
     "codegen": false
 }

@@ -10,7 +10,7 @@ import json
 #import sys
 #import pdb
 #import pprint
-from ocp.shooting import MultipleShooting, SingleShooting
+from ocp.shooting import MultipleShooting, SingleShooting, Collocation
 import copy
 
 #from tables import Col
@@ -143,7 +143,8 @@ class OCP(metaclass=ABCMeta):
 
         if self.method in (
                            "multiple_shooting",
-                           "single_shooting"
+                           "single_shooting",
+                           "collocation"
                            ): # haven't implemented SS yet
             
             integr_name = integr_cfg.pop("name")
@@ -153,7 +154,12 @@ class OCP(metaclass=ABCMeta):
             # init integrator:
             self.integrator = integr_klass(dae, **integr_cfg) 
         else: 
-            raise ValueError("Only multiple shooting implemented.")
+            # TODO: set "shadow"-integrator for simulation etc.
+            #self.integrator = None
+            #integr_cfg["dae"] = self.dae
+            raise NotImplementedError("Have only implemented direct methods")
+            
+        #integr_cfg["dt"] = dt
          
         # for discretization:
         #if param_guess is None:
@@ -161,8 +167,15 @@ class OCP(metaclass=ABCMeta):
         #else:
             #self.scale = self.get_scale(param_guess)
 
-        self.w_nom = 1/(self.x_nom/self.integrator.dt)
-        self.v_nom = 1/self.x_nom
+        #self.w_nom = 1/(self.x_nom/self.integrator.dt)
+        #self.w_nom = 1/self.x_nom**2/self.integrator.dt
+        #self.w_nom = 1*self.x_nom
+        #self.v_nom = 1*self.x_nom
+        #self.v_nom = 1/self.x_nom
+        #self.w_nom = 1/self.x_nom
+        #self.w_nom = 1/self.x_nom
+        self.w_nom = 1
+        self.v_nom = 1
 
         if self.method == "multiple_shooting":
             
@@ -181,7 +194,36 @@ class OCP(metaclass=ABCMeta):
             
         elif self.method == "single_shooting":
             
-            self.strategy = SingleShooting(self.integrator)
+            self.strategy = SingleShooting(self.integrator,
+                                           N,
+                                            **{
+                                                "x_nom": self.x_nom,
+                                                "y_nom": self.y_nom,
+                                                "p_nom": self.p_nom,
+                                                "r_nom": self.r_nom,
+                                                "u_nom": self.u_nom,
+                                                "w_nom": self.w_nom,
+                                                "v_nom": self.v_nom
+                                              }
+                                            )
+            
+        elif self.method == "collocation": # no integrator, "all-at-once" method
+            # require: 
+            assert isinstance(self.integrator, integrators.IRK)
+            self.strategy = Collocation(
+                                        self.integrator,
+                                        N,
+                                        **{
+                                            "x_nom": self.x_nom,
+                                            "y_nom": self.y_nom,
+                                            "p_nom": self.p_nom,
+                                            #"p_nom": ca.repmat(ca.DM([1]), len(self.dae.p)),
+                                            "r_nom": self.r_nom,
+                                            "u_nom": self.u_nom,
+                                            "w_nom": self.w_nom,
+                                            "v_nom": self.v_nom
+                                            }
+                                        )
 
         if config["codegen"]:
             self.with_jit = True
@@ -197,7 +239,7 @@ class OCP(metaclass=ABCMeta):
         self.nlp, self.nlp_parser = self.strategy.transcribe_nlp()
         self.opt = config["opt"]
         # get duals:
-        self.opt["calc_multipliers"] = True
+        #self.opt["calc_multipliers"] = True
   
     
     def _init_solver(self, init_qp_solver=True):
@@ -212,19 +254,30 @@ class OCP(metaclass=ABCMeta):
                                     compiler=self.compiler, \
                                     **self.opt)
                             )
+        #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
+        #self.hsolver_ipopt = self.jsolver_ipopt.factory('h', self.solver.name_in(), ['jac:jac_f_p:p'])
+        #self.hsolver_ipopt = self.solver.factory('h', self.solver.name_in(), ['hess:f:p:p'])
+        #self.sqp_adj = self.solver.reverse(1)
         
         if init_qp_solver:
             
             opts = dict(
                         qpsol='qrqp',
+                        #qpsol='qrqp',
                         qpsol_options=dict(print_iter=False,error_on_fail=False), 
-                        print_time=False
+                        print_time=True,
+                        #regularize=True,
+                        #min_step_size=1E-10
                         )
             
-            self.qp_solver = ca.nlpsol('solver',
+            self.sqp_solver = ca.nlpsol('solver',
                                        'sqpmethod',
                                        self.nlp,
                                        opts)
+            
+            #self.jsolver_sqp = self.sqp_solver.factory('h', self.sqp_solver.name_in(), ['jac:f:p'])
+            #self.sqp_adj = self.sqp_solver.reverse(1)
+            #self.sqp_forward = self.sqp_solver.forward(self.nlp["p"].shape[0])
                 
     def set_bounds(self):
         
@@ -285,11 +338,21 @@ class OCP(metaclass=ABCMeta):
                     x0 = np.append(x0, np.repeat([0], v["dim"]))
                 else:
                     x0 = np.append(x0, bound_dict["lb"])
+               
+               
+            # check if u, modify initial guess:
                     
             else:
                 if k == "p":
                     print(bound_dict["x0"])
+                
+                #if k == "u":
+                #    bound_dict["x0"] = (bound_dict["lb"] + bound_dict["ub"])/200000
+                    
                 x0 = np.append(x0, bound_dict["x0"])
+                
+                
+                
                     #else:
                     #lbx = np.append(lbx, bound_dict["lb"])
                     #ubx = np.append(ubx, bound_dict["ub"])
@@ -329,15 +392,18 @@ class OCP(metaclass=ABCMeta):
         #self.nlp_parser.vars["slack"] = slack_dict
          
         #self.lbx = lbx       
-        #self.ubx = ubx       
+        #self.ubx = ubx     
+          
         
         # nan issue:
         lbx = np.nan_to_num(lbx, nan=0)
         ubx = np.nan_to_num(ubx, nan=0)
         
         # rounding issue
-        self.lbx = lbx.round(7)       
-        self.ubx = ubx.round(7)       
+        self.lbx = lbx       
+        self.ubx = ubx       
+        #self.lbx = lbx.round(7)       
+        #self.ubx = ubx.round(7)       
         self.x0 = x0
         
         # add to slacks:
@@ -392,7 +458,12 @@ class OCP(metaclass=ABCMeta):
         if varname != "p":
             if sym_var.shape[0] != self.N:
                 dim_var = getattr(self, "n_" + varname)
-                sym_var = sym_var.reshape((dim_var, self.N))
+                # TODO: explicit here:
+                try:
+                    sym_var = sym_var.reshape((dim_var, self.N))
+                except:
+                    #sym_var = sym_var.reshape((dim_var, self.N-1))
+                    pass
         
         return sym_var
         
@@ -587,6 +658,9 @@ class OCP(metaclass=ABCMeta):
                  
         for varname in varnames:
             
+            #if varname == "u":
+            #    print(varname)
+            
             bounds[varname] = {}
             names = getattr(self, varname + "_names")
             
@@ -601,8 +675,12 @@ class OCP(metaclass=ABCMeta):
             else:
                 try:    
                     vals = data[names].values
-                    vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
-                    
+                    try:
+                        vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
+                    except ValueError:
+                        vals = vals[:-1, :]
+                        vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
+                        
                     try:
                         scale = getattr(self, varname + "_nom")
                     except AttributeError:
@@ -628,13 +706,13 @@ class OCP(metaclass=ABCMeta):
                         
                         bounds[varname]["lb"] = \
                                 bounds[varname]["x0"] = \
-                                    np.array(bounds_cfg[varname]["lb" + varname]*dim)
+                                    np.array(bounds_cfg[varname]["lb" + varname]*dim)/scale
                                     #p.tile(dim, bounds_cfg[varname]["lb" + varname])/scale
                         #np.tile(bounds_cfg[varname]["lb" + varname], dim)/scale
                         
                         # tile here:            
                         #bounds[varname]["ub"] = np.tile(dim, bounds_cfg[varname]["ub" + varname])/scale
-                        bounds[varname]["ub"] = np.array(bounds_cfg[varname]["ub" + varname]*dim)
+                        bounds[varname]["ub"] = np.array(bounds_cfg[varname]["ub" + varname]*dim)/scale
                                     
                     else:
                         bounds[varname]["lb"] = \
@@ -723,12 +801,17 @@ class OCP(metaclass=ABCMeta):
             
             if name == "p":
                 #scale = self.get_scale()
-                params = np.array(sol_x[start:stop]*self.scale).flatten()
+                
+                if start != stop:
+                    params = np.array(sol_x[start:stop]*self.scale).flatten()
+                else:
+                    params = solution["p"]
                 _vals = np.tile(
                                 (np.array(
-                                         params)).reshape((1,self.n_p)), self.N).reshape(
-                                         (self.N, self.n_p)
+                                        params)).reshape((1,self.n_p)), self.N).reshape(
+                                        (self.N, self.n_p)
                                 )
+                    
             else:
                 #if name == "x":
                 #    scale = self.x_nom
@@ -738,8 +821,29 @@ class OCP(metaclass=ABCMeta):
                     scale = getattr(self, name + "_nom")
                 except AttributeError:
                     scale = 1
+                
+                if name == "x":
+                    if self.method == "multiple_shooting":
+                        _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name)))
+                #if self.method == "multiple_shooting" or name != "x":
+                    elif self.method == "single_shooting":
+                        _vals = np.array(sol_x[start:stop]*scale)
+                        _vals = np.append(_vals, solution["g"][0:(self.n_x*(self.N-1))]*scale).reshape((self.N, getattr(self, attr_name)))
+                    else:
+                        #raise NotImplementedError("Nt implmntd.")
+                        assert self.method == "collocation"
+                        d = self.strategy.d
+                        _vals = np.array(sol_x[start:stop]*scale).reshape(((self.N-1)*(d+1) + 1, self.n_x))
+                        _vals = _vals[start:stop:(d+1)]
+                else:
                     
-                _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name)))
+                    _vals = np.array(sol_x[start:stop]*scale) #.reshape((self.N, getattr(self, attr_name)))
+                    try:
+                        _vals = _vals.reshape((self.N, getattr(self, attr_name)))
+                    except ValueError:
+                        _vals = _vals.reshape((self.N-1, getattr(self, attr_name)))
+                        newrow = np.repeat(np.nan, getattr(self, attr_name))
+                        _vals = np.vstack([_vals, newrow])
                 
             #all_vals = np.append(all_vals, vals)
             try:
@@ -768,7 +872,7 @@ class OCP(metaclass=ABCMeta):
                   }
         """
         
-        return sol_df, pd.Series(data=params, index=self.dae.p)
+        return sol_df, pd.Series(data=np.array(params).flatten(), index=self.dae.p)
         
 
 

@@ -40,7 +40,26 @@
     "ZEBLL":
     {
       "misc": {
-        "h": 900,
+        "h":3600,
+        "N": 24,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "u" : {"phi_h": "oveAct"},
+        "y": {"Ti": "TRooAir_y"},
+        "boptest_to_ocp": {"phi_h": "PHea_y", "Ti": "TRooAir_y"},
+        "sampling": {
+                     "integrate": ["phi_h"],
+                     "point": ["Ta", "phi_s", "Ti"]
+                    }
+      }
+    },
+    "testcase1_wea":
+    {
+      "misc": {
+        "h": 3600,
         "N": 25,
         "start_time": 0,
         "warmup_period": 604800
@@ -50,6 +69,25 @@
         "u" : {"phi_h": "oveAct"},
         "y": {"Ti": "TRooAir_y"},
         "boptest_to_ocp": {"phi_h": "PHea_y", "Ti": "TRooAir_y"},
+        "sampling": {
+                     "integrate": ["phi_h"],
+                     "point": ["Ta", "phi_s", "Ti"]
+                    }
+      }
+    },
+    "bestest_hydronic":
+    {
+      "misc": {
+        "h": 900,
+        "N": 25,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "u" : {"Tset": "oveTSetHea"},
+        "y": {"Ti": "reaTRoo_y"},
+        "boptest_to_ocp": {"phi_h": "reaQHea_y", "Ti": "reaTRoo_y"},
         "sampling": {
                      "integrate": ["phi_h"],
                      "point": ["Ta", "phi_s", "Ti"]

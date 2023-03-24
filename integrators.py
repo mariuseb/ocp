@@ -348,7 +348,7 @@ class IRK(Integrator):
         
 
 
-class RungeKutta4(Integrator):
+class RK4(Integrator):
     ''' 
     Simple RK4 implementation. 
 
@@ -359,35 +359,93 @@ class RungeKutta4(Integrator):
     
     TODO: can we generalize this to n-step RK-methods?
     '''
-    def __init__(self, dt, n_steps, dae):
+    def __init__(self, dae, **kwds):
         self.dae = dae
-        self.dt = dt/n_steps # corrected
+        dt = kwds.pop("dt")
+        n_steps = kwds.pop("n_steps")
 
         assert n_steps >= 1
 
         self.n_steps = n_steps
-        self.set_ode_func()
+        self.dt = dt/n_steps
+        self.set_ode_expr()
+        self.set_ode_func()     
+        self.set_h_expr()
+        self.set_h()
+        self.set_g_expr()
+        self.set_g()
         self.one_step = self.get_one_step()
         self.one_sample = self.get_one_sample()
 
+    def set_ode_expr(self):
+        self.ode = vertcat(*self.dae.dae.ode)
+    
+    ''' def set_meas_expr(self):
+        self._h = vertcat(*self.dae.algs.values())
+        
+    def set_meas_func(self):
+        self.g = Function('g', [self.x, self.y, self.v], [self._h], ["x", "y", "v"], ["g"]) '''
+        
+    def set_h_expr(self):
+        """
+        Set measurement expressions.
+        
+        Rule:
+            Any expression in config-file under
+            keys "model", "alg" starting with
+            "h" is taken as measurement expr.
+        """
+        exprs = (v for k, v in self.dae.algs.items() if k.startswith("h"))
+        self.h_expr = vertcat(*exprs)
+        
+    def set_h(self):
+        self.h = Function('h',
+                          [self.y, self.x, self.z, self.u, self.p, self.v, self.r],
+                          [self.h_expr],
+                          ["y", "x", "z", "u", "p", "v", "r"],
+                          ["h"])
+    
+    def set_g_expr(self):
+        """
+        Set algebraic expressions.
+        
+        Rule:
+            Any expression in config-file under
+            keys "model", "alg" NOT starting with
+            "h" is taken as algebraic expr.
+        """
+        exprs = (v for k, v in self.dae.algs.items() if not k.startswith("h"))
+        self.g_expr = vertcat(*exprs)
+        
+    def set_g(self):
+        self.g = Function('g',
+                          [self.x, self.z, self.u, self.p, self.v, self.r],
+                          [self.g_expr],
+                          ["x", "z", "u", "p", "v", "r"],
+                          ["g"])
+        
     def set_ode_func(self):
-        self.ode = Function('ode',[self.x,self.u,self.p],[vertcat(*self.dae.dae.ode)])
+        self.f = Function('f',
+                          [self.x, self.z, self.u, self.p, self.w, self.r],
+                          [self.ode],
+                          ["x", "z", "u", "p", "w", "r"],
+                          ["f"])
         
     @property
     def k1(self):
-        return self.ode(self.x, self.u, self.p)
+        return self.f(self.x, self.z, self.u, self.p, self.w, self.r)
 
     @property
     def k2(self):
-        return self.ode(self.x + self.dt/2.0*self.k1, self.u, self.p)
+        return self.f(self.x + self.dt/2.0*self.k1, self.z, self.u, self.p, self.w, self.r)
 
     @property
     def k3(self):
-        return self.ode(self.x + self.dt/2.0*self.k2, self.u, self.p)
+        return self.f(self.x + self.dt/2.0*self.k2, self.z, self.u, self.p, self.w, self.r)
     #X = self.x
     @property
     def k4(self):
-        return self.ode(self.x + self.dt*self.k3, self.u, self.p)
+        return self.f(self.x + self.dt*self.k3, self.z, self.u, self.p, self.w, self.r)
     
     @property
     def states_final(self):
@@ -398,15 +456,18 @@ class RungeKutta4(Integrator):
     def final_expr(self):
         X = self.x
         for i in range(self.n_steps):
-            X = self.one_step(X, self.u, self.p)
+            X = self.one_step(X, self.z, self.u, self.p, self.w, self.r)
         return X
 
     def get_one_sample(self):
-        return Function('one_sample',[self.x, self.u, self.p], [self.final_expr], ["x", "u", "p"], ["X"])  
+        return Function('one_sample',
+                        [self.x, self.z, self.u, self.p, self.w, self.r],
+                        [self.final_expr],
+                        ["x0", "z", "u", "p", "w", "r"], ["xf"])  
     
 
     def get_one_step(self): # return Function-object
-        return Function('one_step',[self.x, self.u, self.p], [self.states_final], ["x", "u", "p"], ["x"]) 
+        return Function('one_step',[self.x, self.z, self.u, self.p, self.w, self.r], [self.states_final], ["x", "z", "u", "p", "w", "r"], ["x"]) 
 
     def simulate(self, x0, U, params):
         """ 

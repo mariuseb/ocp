@@ -52,7 +52,7 @@ class ParameterEstimation(OCP):
         
         super().__init__(**kwargs) # does all the work.
         
-        #self.nlp["f"]= self.get_nlp_obj(self.nlp_v, self.nlp_w) 
+        self.nlp["f"]= self.get_nlp_obj(self.nlp_v, self.nlp_w) 
         
         #self.set_bounds(y=self.Y,
         #                u=self.U)
@@ -109,6 +109,9 @@ class ParameterEstimation(OCP):
                                      w),
                             ca.mtimes(w.T,
                                       ca.sqrt(ca.inv(self.Q))).T)
+                
+                
+
                 
     def set_hess_obj(self):
         """
@@ -341,7 +344,7 @@ class ParameterEstimation(OCP):
         Objective for sysid.
         """          
         # define Q, R here:
-
+        """
         self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
         self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
         # actual:
@@ -383,6 +386,67 @@ class ParameterEstimation(OCP):
                             ca.mtimes(w.T,
                                       self.Q_square_root).T), \
                 ca.veccat(self.Q, self.R)
+        """     
+        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        
+        #self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
+        #                           [self.Q_SX],
+        #                           [ca.sqrt(ca.inv(self.Q_SX))],
+        #                           ["Q"],
+        #                           ["Q_sqrt_inv"])
+
+        #self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
+        #                            [Q0, Q1, Q2, Q3],
+        #                            [ca.sqrt(ca.inv(self.Q))],
+        #                            ["Q"],
+        #                            ["Q_sqrt_inv"])
+        
+        #self.R_sqrt_inv = ca.Function("R_sqrt_inv",
+        #                             [self.R_SX],
+        #                             [ca.sqrt(ca.inv(self.R_SX))],
+        #                             ["R"],
+        #                             ["R_sqrt_inv"])
+            
+        #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
+        #self.R_square_root = ca.sqrt(ca.inv(self.R))
+        
+        #self.R_square_root = self.R_sqrt_inv(self.R)
+        #self.Q_square_root = self.Q_sqrt_inv(self.Q)
+        
+        self.R_square_root = ca.sqrt(ca.inv(self.R))
+        self.Q_square_root = ca.sqrt(ca.inv(self.Q))
+        
+        #self.nlp["x"] = ca.vertcat(self.nlp["x"], ca.veccat(self.Q, self.R))
+        
+        return 0.5*ca.dot(ca.mtimes(ca.sqrt(ca.inv(self.R)),
+                                    v),
+                            ca.mtimes(v.T,
+                                      ca.sqrt(ca.inv(self.R))).T) \
+                + \
+                0.5*ca.dot(ca.mtimes(ca.sqrt(ca.inv(self.Q)),
+                                     w),
+                            ca.mtimes(w.T,
+                                      ca.sqrt(ca.inv(self.Q))).T), \
+                ca.veccat(self.Q, self.R)
+                
+                
+                
+        
+                
+        
+    """
+    def get_nlp_obj(self, w, v):
+        y_inds = self.nlp_parser["y"]["range"]
+        x_inds = self.nlp_parser["x"]["range"]
+        
+        x1 = self.nlp["x"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
+        y = self.nlp["x"][y_inds["a"]:y_inds["b"]]
+        
+        res = y-x1
+        
+        return 0.5*ca.dot(res, res), 0
+    """
                 
     def set_hess_obj(self):
         """
@@ -773,7 +837,7 @@ class ParameterEstimation(OCP):
         #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
         #                                        self.nlp_w) 
         
-        self.set_hess_obj()
+        #self.set_hess_obj()
         
         #self.nlp["f"] = self.alt_obj
         
@@ -832,6 +896,7 @@ class ParameterEstimation(OCP):
             self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
             self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
+        #p = self.nlp.pop("p")
         self._init_solver()
         
         solution = self.solver(

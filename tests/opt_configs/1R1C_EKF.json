@@ -1,18 +1,14 @@
 {
     "model": {
         "ode": {
-            "dTi": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + Ai*(phi_s/Ci)",
-            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+            "dTi": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
         },
         "alg": {
             "h": "Ti"
         },
         "p": [
-            "Rie",
-            "Rea",
-            "Ci",
-            "Ce",
-            "Ai"
+            "Ria",
+            "Ci"
         ],
         "u": [
             "phi_h"
@@ -22,8 +18,7 @@
             "phi_s"
         ],
         "x": [
-            "Ti",
-            "Te"
+            "Ti"
         ],
         "y": [
             ["y1", "Ti"]
@@ -37,6 +32,6 @@
         "degree": 1,
         "n_steps": 1
         },
-    "Q": [1,1],
+    "Q": [1],
     "R": [1]
 }

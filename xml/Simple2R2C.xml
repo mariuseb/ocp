@@ -1,0 +1,1240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenModelicaModelDescription
+  xmlns:exp="https://github.com/JModelica/JModelica/tree/master/XML/daeExpressions.xsd"
+  xmlns:equ="https://github.com/JModelica/JModelica/tree/master/XML/daeEquations.xsd"
+  xmlns:fun="https://github.com/JModelica/JModelica/tree/master/XML/daeFunctions.xsd"
+  xmlns:opt="https://github.com/JModelica/JModelica/tree/master/XML/daeOptimization.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  fmiVersion="1.0"
+  modelName="Simple2R2C"
+  modelIdentifier="Simple2R2C"
+  guid="{74bec44d-9869-4048-bf34-bd01fb599762}"
+  generationDateAndTime="2023-02-24T11:25:19"
+  variableNamingConvention="structured"
+  numberOfContinuousStates="2"
+  numberOfEventIndicators="0"
+  >
+  
+  <VendorAnnotations>
+    <Tool name="OpenModelica Compiler OpenModelica 1.21.0~dev-268-g59d7f9f"> </Tool>
+  </VendorAnnotations>
+
+
+  <ModelVariables>
+    <ScalarVariable name="Ce.T" description="Temperature of element" valueReference="0" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="293.15" fixed="true" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ce"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>state</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ci.T" description="Temperature of element" valueReference="1" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="293.15" fixed="true" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ci"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>state</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="der(Ce.T)" description="der(Temperature of element)" valueReference="2" variability="continuous" causality="internal" alias="noAlias">
+      <Real    unit="s-1.K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ce"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>derivative</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="der(Ci.T)" description="der(Temperature of element)" valueReference="3" variability="continuous" causality="internal" alias="noAlias">
+      <Real    unit="s-1.K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ci"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>derivative</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="Ai.y" description="Output signal connector" valueReference="4" variability="continuous" causality="internal" alias="noAlias">
+      <Real     />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ai"/>
+        <exp:QualifiedNamePart name="y"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ce.der_T" description="Time derivative of temperature (= der(T))" valueReference="5" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="K/s" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ce"/>
+        <exp:QualifiedNamePart name="der_T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ce.port.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="6" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ce"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ci.der_T" description="Time derivative of temperature (= der(T))" valueReference="7" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="K/s" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ci"/>
+        <exp:QualifiedNamePart name="der_T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ci.port.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="8" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ci"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rea.Q_flow" description="Heat flow rate from port_a -&gt; port_b" valueReference="9" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rea.dT" description="port_a.T - port_b.T" valueReference="10" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="dT"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rie.Q_flow" description="Heat flow rate from port_a -&gt; port_b" valueReference="11" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rie.dT" description="port_a.T - port_b.T" valueReference="12" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"   unit="K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="dT"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="TZone"  valueReference="13" variability="continuous" causality="output" alias="noAlias">
+      <Real start="293.15" fixed="false"    />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="TZone"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ta"  valueReference="14" variability="continuous" causality="input" alias="noAlias">
+      <Real     />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ta"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="phi_h"  valueReference="15" variability="continuous" causality="input" alias="noAlias">
+      <Real     />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="phi_h"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="phi_s"  valueReference="16" variability="continuous" causality="input" alias="noAlias">
+      <Real     />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="phi_s"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preHeat.port.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="17" variability="continuous" causality="internal" alias="noAlias">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preHeat"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="prescribedHeatFlow.port.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="18" variability="continuous" causality="internal" alias="noAlias">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="senTZone.port.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="19" variability="continuous" causality="internal" alias="noAlias">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="senTZone"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="TZone"  valueReference="20" variability="continuous" causality="output" alias="noAlias">
+      <Real start="293.15" fixed="false"    />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="TZone"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="Ai.u" description="Input signal connector" valueReference="21" variability="continuous" causality="internal" alias="phi_s">
+      <Real     />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ai"/>
+        <exp:QualifiedNamePart name="u"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ce.port.T" description="Port temperature" valueReference="22" variability="continuous" causality="internal" alias="Ce.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ce"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ci.port.T" description="Port temperature" valueReference="23" variability="continuous" causality="internal" alias="Ci.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ci"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rea.port_a.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="24" variability="continuous" causality="internal" alias="Rea.Q_flow">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="port_a"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rea.port_a.T" description="Port temperature" valueReference="25" variability="continuous" causality="internal" alias="Ta">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="port_a"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rea.port_b.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="26" variability="continuous" causality="internal" alias="-Rea.Q_flow">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="port_b"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rea.port_b.T" description="Port temperature" valueReference="27" variability="continuous" causality="internal" alias="Ce.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="port_b"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rie.port_a.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="28" variability="continuous" causality="internal" alias="Rie.Q_flow">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="port_a"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rie.port_a.T" description="Port temperature" valueReference="29" variability="continuous" causality="internal" alias="Ce.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="port_a"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rie.port_b.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="30" variability="continuous" causality="internal" alias="-Rie.Q_flow">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="port_b"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rie.port_b.T" description="Port temperature" valueReference="31" variability="continuous" causality="internal" alias="Ci.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="port_b"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preHeat.Q_flow"  valueReference="32" variability="continuous" causality="internal" alias="phi_h">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preHeat"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preHeat.port.T" description="Port temperature" valueReference="33" variability="continuous" causality="internal" alias="Ci.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preHeat"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preTOut.T"  valueReference="34" variability="continuous" causality="internal" alias="Ta">
+      <Real    unit="K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preTOut"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preTOut.port.Q_flow" description="Heat flow rate (positive if flowing from outside into the component)" valueReference="35" variability="continuous" causality="internal" alias="-Rea.Q_flow">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preTOut"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preTOut.port.T" description="Port temperature" valueReference="36" variability="continuous" causality="internal" alias="Ta">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preTOut"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="prescribedHeatFlow.Q_flow"  valueReference="37" variability="continuous" causality="internal" alias="Ai.y">
+      <Real    unit="W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+        <exp:QualifiedNamePart name="Q_flow"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="prescribedHeatFlow.port.T" description="Port temperature" valueReference="38" variability="continuous" causality="internal" alias="Ci.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="senTZone.T" description="Absolute temperature as output signal" valueReference="39" variability="continuous" causality="internal" alias="Ci.T">
+      <Real    unit="K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="senTZone"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="senTZone.port.T" description="Port temperature" valueReference="40" variability="continuous" causality="internal" alias="Ci.T">
+      <Real start="288.15" fixed="false" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="senTZone"/>
+        <exp:QualifiedNamePart name="port"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="Ai.k" description="Gain value multiplied with input signal" valueReference="41" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="5.0" fixed="true"   unit="1" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ai"/>
+        <exp:QualifiedNamePart name="k"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ce.C" description="Heat capacity of element (= cp*m)" valueReference="42" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="5000000.0" fixed="true"   unit="J/K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ce"/>
+        <exp:QualifiedNamePart name="C"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Ci.C" description="Heat capacity of element (= cp*m)" valueReference="43" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="1000000.0" fixed="true"   unit="J/K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Ci"/>
+        <exp:QualifiedNamePart name="C"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rea.R" description="Constant thermal resistance of material" valueReference="44" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.01" fixed="true"   unit="K/W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="R"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="Rie.R" description="Constant thermal resistance of material" valueReference="45" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.001" fixed="true"   unit="K/W" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="R"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preHeat.T_ref" description="Reference temperature" valueReference="46" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="293.15" fixed="true" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preHeat"/>
+        <exp:QualifiedNamePart name="T_ref"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="preHeat.alpha" description="Temperature coefficient of heat flow rate" valueReference="47" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.0" fixed="true"   unit="1/K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="preHeat"/>
+        <exp:QualifiedNamePart name="alpha"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="prescribedHeatFlow.T_ref" description="Reference temperature" valueReference="48" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="293.15" fixed="true" min="0.0"  unit="K" displayUnit="degC"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+        <exp:QualifiedNamePart name="T_ref"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="prescribedHeatFlow.alpha" description="Temperature coefficient of heat flow rate" valueReference="49" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.0" fixed="true"   unit="1/K" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+        <exp:QualifiedNamePart name="alpha"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+  </ModelVariables>
+
+  <equ:BindingEquations>
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="Ai"/>
+        <exp:QualifiedNamePart name="k"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>5.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="Ce"/>
+        <exp:QualifiedNamePart name="C"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>5000000.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="Ci"/>
+        <exp:QualifiedNamePart name="C"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>1000000.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="Rea"/>
+        <exp:QualifiedNamePart name="R"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.01</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="Rie"/>
+        <exp:QualifiedNamePart name="R"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.001</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="preHeat"/>
+        <exp:QualifiedNamePart name="T_ref"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>293.15</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="preHeat"/>
+        <exp:QualifiedNamePart name="alpha"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+        <exp:QualifiedNamePart name="T_ref"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>293.15</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+        <exp:QualifiedNamePart name="alpha"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+  </equ:BindingEquations>
+
+  <equ:DynamicEquations>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ai"/>
+          <exp:QualifiedNamePart name="y"/>
+        </exp:Identifier>
+        <exp:Mul>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ai"/>
+            <exp:QualifiedNamePart name="k"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="phi_s"/>
+          </exp:Identifier>
+        </exp:Mul>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+          <exp:QualifiedNamePart name="port"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:Mul>
+            <exp:Neg>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="Ai"/>
+                <exp:QualifiedNamePart name="y"/>
+              </exp:Identifier>
+            </exp:Neg>
+          <exp:Add>
+            <exp:RealLiteral>1.0</exp:RealLiteral>
+            <exp:Mul>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+                <exp:QualifiedNamePart name="alpha"/>
+              </exp:Identifier>
+              <exp:Sub>
+                <exp:Identifier>
+                  <exp:QualifiedNamePart name="Ci"/>
+                  <exp:QualifiedNamePart name="T"/>
+                </exp:Identifier>
+                <exp:Identifier>
+                  <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+                  <exp:QualifiedNamePart name="T_ref"/>
+                </exp:Identifier>
+              </exp:Sub>
+            </exp:Mul>
+          </exp:Add>
+        </exp:Mul>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rie"/>
+          <exp:QualifiedNamePart name="dT"/>
+        </exp:Identifier>
+        <exp:Sub>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ce"/>
+            <exp:QualifiedNamePart name="T"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ci"/>
+            <exp:QualifiedNamePart name="T"/>
+          </exp:Identifier>
+        </exp:Sub>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rie"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:Div>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Rie"/>
+            <exp:QualifiedNamePart name="dT"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Rie"/>
+            <exp:QualifiedNamePart name="R"/>
+          </exp:Identifier>
+        </exp:Div>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="preHeat"/>
+          <exp:QualifiedNamePart name="port"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:Mul>
+            <exp:Neg>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="phi_h"/>
+              </exp:Identifier>
+            </exp:Neg>
+          <exp:Add>
+            <exp:RealLiteral>1.0</exp:RealLiteral>
+            <exp:Mul>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="preHeat"/>
+                <exp:QualifiedNamePart name="alpha"/>
+              </exp:Identifier>
+              <exp:Sub>
+                <exp:Identifier>
+                  <exp:QualifiedNamePart name="Ci"/>
+                  <exp:QualifiedNamePart name="T"/>
+                </exp:Identifier>
+                <exp:Identifier>
+                  <exp:QualifiedNamePart name="preHeat"/>
+                  <exp:QualifiedNamePart name="T_ref"/>
+                </exp:Identifier>
+              </exp:Sub>
+            </exp:Mul>
+          </exp:Add>
+        </exp:Mul>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="port"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:Sub>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Rie"/>
+            <exp:QualifiedNamePart name="Q_flow"/>
+          </exp:Identifier>
+          <exp:Add>
+            <exp:Identifier>
+              <exp:QualifiedNamePart name="prescribedHeatFlow"/>
+              <exp:QualifiedNamePart name="port"/>
+              <exp:QualifiedNamePart name="Q_flow"/>
+            </exp:Identifier>
+            <exp:Identifier>
+              <exp:QualifiedNamePart name="preHeat"/>
+              <exp:QualifiedNamePart name="port"/>
+              <exp:QualifiedNamePart name="Q_flow"/>
+            </exp:Identifier>
+          </exp:Add>
+        </exp:Sub>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="der_T"/>
+        </exp:Identifier>
+        <exp:Div>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ci"/>
+            <exp:QualifiedNamePart name="port"/>
+            <exp:QualifiedNamePart name="Q_flow"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ci"/>
+            <exp:QualifiedNamePart name="C"/>
+          </exp:Identifier>
+        </exp:Div>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Der>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ci"/>
+            <exp:QualifiedNamePart name="T"/>
+          </exp:Identifier>
+        </exp:Der>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="der_T"/>
+        </exp:Identifier>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rea"/>
+          <exp:QualifiedNamePart name="dT"/>
+        </exp:Identifier>
+        <exp:Sub>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ta"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ce"/>
+            <exp:QualifiedNamePart name="T"/>
+          </exp:Identifier>
+        </exp:Sub>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rea"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:Div>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Rea"/>
+            <exp:QualifiedNamePart name="dT"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Rea"/>
+            <exp:QualifiedNamePart name="R"/>
+          </exp:Identifier>
+        </exp:Div>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="port"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:Sub>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Rea"/>
+            <exp:QualifiedNamePart name="Q_flow"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Rie"/>
+            <exp:QualifiedNamePart name="Q_flow"/>
+          </exp:Identifier>
+        </exp:Sub>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="der_T"/>
+        </exp:Identifier>
+        <exp:Div>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ce"/>
+            <exp:QualifiedNamePart name="port"/>
+            <exp:QualifiedNamePart name="Q_flow"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ce"/>
+            <exp:QualifiedNamePart name="C"/>
+          </exp:Identifier>
+        </exp:Div>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Der>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="Ce"/>
+            <exp:QualifiedNamePart name="T"/>
+          </exp:Identifier>
+        </exp:Der>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="der_T"/>
+        </exp:Identifier>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="TZone"/>
+        </exp:Identifier>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="T"/>
+        </exp:Identifier>
+      </exp:Sub>
+    </equ:Equation>
+  </equ:DynamicEquations>
+
+  <equ:InitialEquations>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="T"/>
+        </exp:Identifier>
+        <exp:RealLiteral>293.15</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="T"/>
+        </exp:Identifier>
+        <exp:RealLiteral>293.15</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="der_T"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="port"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="der_T"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="port"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rea"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rea"/>
+          <exp:QualifiedNamePart name="dT"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rie"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Rie"/>
+          <exp:QualifiedNamePart name="dT"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="TZone"/>
+        </exp:Identifier>
+        <exp:RealLiteral>293.15</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="senTZone"/>
+          <exp:QualifiedNamePart name="port"/>
+          <exp:QualifiedNamePart name="Q_flow"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="T"/>
+        </exp:Identifier>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="$START"/>
+          <exp:QualifiedNamePart name="Ci"/>
+          <exp:QualifiedNamePart name="T"/>
+        </exp:Identifier>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="T"/>
+        </exp:Identifier>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="$START"/>
+          <exp:QualifiedNamePart name="Ce"/>
+          <exp:QualifiedNamePart name="T"/>
+        </exp:Identifier>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+  </equ:InitialEquations>
+
+  <fun:Algorithm>
+  </fun:Algorithm>
+
+  <fun:RecordsList>
+  </fun:RecordsList>
+
+  <fun:FunctionsList>
+  </fun:FunctionsList>
+
+
+</OpenModelicaModelDescription>

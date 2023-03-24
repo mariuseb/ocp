@@ -13,6 +13,7 @@ from ocp.filters import EKF, KalmanBucy
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
+from copy import deepcopy
 
 # text:
 rc('mathtext', default='regular')
@@ -37,11 +38,19 @@ if __name__ == "__main__":
                     6.64E6,
                     5.53])
     
-    mpc = MPC(
-              config=mpc_cfg
-              #N=N,
-              #dt=dt
-              ) # to remove, replace with N
+    kwargs = {
+        "x_nom": 300,
+        "u_nom": 5000,
+        "r_nom": 300,
+        "y_nom": 300,
+        #"slack": True
+        "slack": True
+    }
+    
+    mpc = MPC(config=mpc_cfg,
+              param_guess=params, 
+              **deepcopy(kwargs))  # to remove, replace with N
+    
     
     ekf = KalmanBucy(ekf_cfg)
     # set params:
@@ -72,15 +81,15 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0 = np.array([295.05, 293.15])
+    x0 = np.array([294.05, 293.15])
     
     # sim horizon: 2 days
-    days = 45
+    days = 7
     K = days*24*bounds.t_h
 
     for k in range(K):
         
-        lbx, ubx = bounds.get_bounds(k, mpc.N)
+        lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
         
         sol, u, x0 = mpc.solve(
                                data,
@@ -99,6 +108,12 @@ if __name__ == "__main__":
                           r=data.iloc[0].values
                           )
 
+    plt.rcParams.update({'font.size': 12})
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
+    fig.tight_layout()
+    plt.show()    
+
+    """
     plt.rcParams.update({'font.size': 11})
     
     res = boptest.get_data(tf=K*boptest.h)
@@ -147,3 +162,4 @@ if __name__ == "__main__":
     
     fig.tight_layout()
     plt.show()    
+    """
