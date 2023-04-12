@@ -120,6 +120,8 @@ class RL(metaclass=ABCMeta):
         
         self._init_MHE_sens(mhe)
         self.sens = pd.DataFrame(columns=mpc.dae.p + mpc.dae.x)
+        self.sens_Q = pd.DataFrame(columns=mhe.dae.x*mhe.dae.n_x)
+        self.sens_R = pd.DataFrame(columns=mhe.dae.y_names*mhe.dae.n_y)
         self.sens_sdp = pd.DataFrame(columns=mpc.dae.p + mpc.dae.x)
         self.sens_mhe = pd.DataFrame(columns=mpc.dae.p + mpc.dae.x)
         
@@ -646,17 +648,24 @@ class Qlearning(RL):
         
         # solve SDP for Δθ
         dim_P0 = P0.shape[0]*P0.shape[1]
+        dim_Q = Q.shape[0]*Q.shape[1]
+        dim_R = R.shape[0]*R.shape[1]
         # last elems:
         #start = grad_Q_theta.shape[1] - dim_P0
         #stop = grad_Q_theta.shape[1]
         
-        # correction: first elems:
-        start = 0
-        stop = dim_P0
-        grad_Q_P0 = np.array(grad_Q_theta[start:stop])
+        # correction: P0 first elems:
+        # next Q, then R
+        start_P0 = 0
+        stop_P0 = dim_P0
+        stop_Q = stop_P0 + dim_Q
+        stop_R = stop_Q + dim_R
+        grad_Q_P0 = np.array(grad_Q_theta[start_P0:stop_P0])
+        grad_Q_Q = np.array(grad_Q_theta[stop_P0:stop_Q])
+        grad_Q_R = np.array(grad_Q_theta[stop_Q:stop_R])
         
         # for MHE-obj:
-        grad_Q_hat_P0 = np.array(dQ_hat_dtheta[start:stop]).reshape((P0.shape[0], P0.shape[1]))
+        grad_Q_hat_P0 = np.array(dQ_hat_dtheta[start_P0:stop_P0]).reshape((P0.shape[0], P0.shape[1]))
         
         alpha_grad_Q_hat_P0 = self.alpha*grad_Q_hat_P0
         alpha_grad_Q_hat_P0_mat = alpha_grad_Q_hat_P0.reshape((P0.shape[0], P0.shape[1]))
@@ -666,17 +675,29 @@ class Qlearning(RL):
             alpha_delta_k = self.alpha*float(R_k_plus_1 + diff_Q)
         else:
             alpha_delta_k = alpha*float(R_k_plus_1 + diff_Q)
-        alpha_delta_grad_Q = alpha_delta_k*grad_Q_P0
+            
+        alpha_delta_grad_Q_P0 = alpha_delta_k*grad_Q_P0
+        alpha_delta_grad_Q_Q = alpha_delta_k*grad_Q_Q
+        alpha_delta_grad_Q_R = alpha_delta_k*grad_Q_R
         
         grad_Q_P0_mat = grad_Q_P0.reshape((P0.shape[0], P0.shape[1]))
         # try to recover covariance step:
-        alpha_delta_grad_Q_mat = alpha_delta_grad_Q.reshape((P0.shape[0], P0.shape[1]))
+        alpha_delta_grad_Q_P0_mat = alpha_delta_grad_Q_P0.reshape((P0.shape[0], P0.shape[1]))
+        alpha_delta_grad_Q_Q_mat = alpha_delta_grad_Q_Q.reshape((Q.shape[0], Q.shape[1]))
+        alpha_delta_grad_Q_R_mat = alpha_delta_grad_Q_R.reshape((R.shape[0], R.shape[1]))
         
         # keep Ce sens:
         self.sens.loc[k, :] = np.diag(grad_Q_P0_mat)
+        self.sens_Q.loc[k, :] = np.array(grad_Q_Q)
+        self.sens_R.loc[k, :] = np.array(grad_Q_R)
+        
+        #self.sens.loc[k, :] = np.diag(grad_Q_P0_mat)
         self.sens_mhe.loc[k, :] = np.diag(grad_Q_hat_P0)
         
-        return alpha_delta_grad_Q_mat
+        return alpha_delta_grad_Q_P0_mat, \
+               alpha_delta_grad_Q_Q_mat, \
+               alpha_delta_grad_Q_R_mat
+                
         #except:
         #    return np.zeros((P0.shape[0], P0.shape[1]))
         # times alpha

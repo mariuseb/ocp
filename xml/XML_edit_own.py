@@ -130,6 +130,8 @@ def inspect_xml(source):
   root = tree.getroot()
   my_namespaces = root.nsmap
 
+  """
+
   print("List of states")
   scalars=tree.findall("//ScalarVariable[VariableCategory='state']", my_namespaces)
   i = 0
@@ -150,6 +152,8 @@ def inspect_xml(source):
   for e in scalars:
     print("inputs  {i}. {name}".format(i=i,name=e.attrib['name']))
     i=i+1
+
+  """
 
   print("List of functions")
   i = 0
@@ -213,6 +217,82 @@ def inspect_xml(source):
     keep[fname] = F
 
 
+  
+def get_functions_xml(source):
+    
+  parser = etree.XMLParser(remove_blank_text=True)
+
+  tree = etree.parse(source,parser = parser)
+  root = tree.getroot()
+  my_namespaces = root.nsmap
+
+
+  print("List of functions")
+  i = 0
+  functions=tree.findall("//fun:Function", my_namespaces)
+  fs = []
+  keep = {}
+  for f in functions:
+    
+    # First, get name:
+    fname = get_name(f[0], my_namespaces)   
+    
+    # get input vars
+    num_outs = 0
+    outs = []
+    for output_var in f[1:]:
+        if output_var.tag.endswith("OutputVariable"):
+              # what is the name
+          name = construct_expr(output_var, my_namespaces, keep)
+          import casadi
+          var = casadi.MX.sym(name)
+          outs.append(var)
+          
+          num_outs += 1
+          keep[name] = var
+        else:
+          break # we are at input vars
+     
+     
+    num_ins = 0
+    ins = []   
+    for input_var in f[(1+num_outs):]:
+        if input_var.tag.endswith("InputVariable"):
+          # what is the name
+          name = construct_expr(input_var, my_namespaces, keep)
+          import casadi
+          var = casadi.MX.sym(name)
+          ins.append(var)
+          keep[name] = var
+          num_ins += 1
+          
+        else:
+          break # we are at input vars
+    
+       
+        
+    #print("equation  {i}. {str}".format(i=i,str=construct_expr(f[0],my_namespaces, keep)))
+    
+    """
+    New logic for parsing functions:
+      Name, inputs, outputs are flat.
+      Algorithm, i.e. the function body, is nested.
+    """
+    
+    # call construct expr on algorithm section:
+    _f = construct_expr(f[1+num_outs+num_ins], my_namespaces, keep)
+    F = casadi.Function(fname, ins, [_f])    
+    print("function  {i}. {str}".format(i=i,str=F))
+    i=i+1
+    
+    #fs.append(F)
+    keep[fname] = F
+    
+    return keep
+
+
+
+  """
   print("List of equations")
   i = 0
   equations=tree.findall("//equ:DynamicEquations/equ:Equation", my_namespaces)
@@ -228,7 +308,8 @@ def inspect_xml(source):
     i=i+1
     
   print(keep)
-
+  """
+  
 def get_name(node, my_namespaces):
   """
   First node: name
@@ -289,6 +370,7 @@ def repr_expr(e,my_namespaces):
     return -repr_expr(e[0],my_namespaces)
   #elif "Abs" in e.tag:
   elif e.tag.endswith("Abs"):
+    import casadi
     return (casadi.fabs(repr_expr(e[0],my_namespaces)))
   #elif "RealLiteral" in e.tag:
   elif e.tag.endswith("RealLiteral"):

@@ -215,7 +215,7 @@ if __name__ == "__main__":
         #    print(lbx)
         
         sol, u, x0 = mpc.solve(
-                               data,
+                               data[0:mpc.N],
                                x0=x0,
                                lbx=lbx,
                                ubx=ubx,
@@ -237,6 +237,13 @@ if __name__ == "__main__":
                           )
     
        
-    plt.rcParams.update({'font.size': 11})
+    # params:
+    params[0] *= 1000
+    params[1] *= 1000
+    params[2] /= 3.6e6
+    params[3] /= 3.6e6
+       
+    plt.rcParams.update({'font.size': 14})
     fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
-    plt.show()       
+    fig.tight_layout()
+    plt.show()    

@@ -42,12 +42,26 @@ if __name__ == "__main__":
                                   6.64E6,
                                   5.53])
     
+
+    """
     kwargs = {
               "x_nom": 300,
               "u_nom": 5000,
               "r_nom": 300,
               "y_nom": 300
               }
+    """
+    kwargs = {
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 5000,
+        "r_nom": 300,
+        "y_nom": 12,
+        "y_nom_b": 289.15,
+        #"slack": True
+        "slack": True
+    }
+    
     
     mpc = MPC(config=mpc_cfg, param_guess=params, **deepcopy(kwargs)) # to remove, replace with N
     #mhe = MHE(config=mhe_cfg, param_guess=params)
@@ -83,10 +97,10 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0 = np.array([295.05, 293.15])
+    x0 = np.array([294.05, 293.15])
     
     # sim horizon: 2 days
-    days = 2
+    days = 7
     K = days*24*bounds.t_h
     
     # mhe settings:
@@ -100,6 +114,7 @@ if __name__ == "__main__":
     #P0[mhe.n_p:, mhe.n_p:] *= 1E32
     #P0 *= 1E-7
     #P0 *= 1E-9
+    P0 *= 0
     
     #params_lb = ca.DM([0.001,0.01,1E5,1E6,1])
     #params_ub = ca.DM([0.1,0.1,1E7,1E8,50])
@@ -117,7 +132,7 @@ if __name__ == "__main__":
         #data["Ti_ref"] = ref
         
         sol_mpc, u, x0 = mpc.solve(
-                               data,
+                               data[0:mpc.N],
                                x0=x0,
                                lbx=lbx,
                                ubx=ubx,
@@ -178,96 +193,36 @@ if __name__ == "__main__":
                               r=data.iloc[0].values
                               )
 
-    """
-    res = boptest.get_data(tf=K*boptest.h)
-    ax = res.Ti.plot(color="k")
-    ax1 = ax.twinx()
-    res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    ax.legend(["Ti"])
-    ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    
-    plt.show()    
-    """
-    
-    plt.rcParams.update({'font.size': 11})
-    
-    res = boptest.get_data(tf=K*boptest.h)
-    fig = plt.figure(figsize=(10,6))
-    ax = fig.add_subplot(111)
-    
-    # colors
-    colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
-    #for i in range(n):
-    #c = next(colors)
-    #plt.plot(x, y, c=c)
-    
-    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
-    
-    #l1 = res.Ti.plot(ax=ax, color="k")
-    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
-    l1 = ax.plot(dt_index, (res.Ti-273.15), color=next(colors), label="$T_i$")
-    ax1 = ax.twinx()
-    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
-    l2 = ax1.plot(dt_index, res.phi_h, color=next(colors), label="$\phi_h$")
-    
-    #ax.legend([l1, l2], , loc=0)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-    fig.autofmt_xdate()
-    #ax.legend(["Ti"])
-    #ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{lb}$")
-    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{ub}$")
-    lns = l1+l2+l3+l4
-    labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs, loc='upper center', ncol=4)
-    _min, _max = ax.get_ylim()
-    ax.set_ylim([_min, _max+1])
-    _min, _max = ax1.get_ylim()
-    ax1.set_ylim([_min, _max+1000])
-    
-    ax.set_ylabel(r"Temperature [$^\circ$C]")
-    ax1.set_ylabel(r"Power [W]")
-    
+    plt.rcParams.update({'font.size': 12})
+
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
     fig.tight_layout()
-    plt.show()    
-    
-    #### parameter evolution plot ####:
+    plt.show()
+
+    # parameter evolution plot ####:
     mhe.df.index = dt_index[-len(mhe.df):]
-    fig, ax = plt.subplots(5,1, figsize=(8,10))
-    (mhe.df.Ci/3.6E6).plot(ax=ax[0], color="k") # to kWh/C
-    (mhe.df.Ce/3.6E6).plot(ax=ax[1], color="k") # to kWh/C
-    (mhe.df.Rie*1000).plot(ax=ax[2], color="k") # to K/kW
-    (mhe.df.Rea*1000).plot(ax=ax[3], color="k") # to K/kW
+    fig, ax = plt.subplots(5, 1, figsize=(8, 10))
+    (mhe.df.Ci/3.6E6).plot(ax=ax[0], color="k")  # to kWh/C
+    (mhe.df.Ce/3.6E6).plot(ax=ax[1], color="k")  # to kWh/C
+    (mhe.df.Rie*1000).plot(ax=ax[2], color="k")  # to K/kW
+    (mhe.df.Rea*1000).plot(ax=ax[3], color="k")  # to K/kW
     mhe.df.Ai.plot(ax=ax[4], color="k")
-    
+
     ax[0].set_ylabel(r"Cap. [$\frac{kWh}{K}$]")
     ax[1].set_ylabel(r"Cap. [$\frac{kWh}{K}$]")
     ax[2].set_ylabel(r"Res. [$\frac{K}{kW}$]")
     ax[3].set_ylabel(r"Res. [$\frac{K}{kW}$]")
     ax[4].set_ylabel(r"Area [$m^2$]")
-    
+
     ax[0].legend([r"$C_i$"])
     ax[1].legend([r"$C_e$"])
-    ax[2].legend([r"$R_{ie}$"])
+    ax[2].legend([r"$R_{ia}$"])
     ax[3].legend([r"$R_{ea}$"])
     ax[4].legend([r"$A_w$"])
-    
+
     ax[0].axes.get_xaxis().set_visible(False)
     ax[1].axes.get_xaxis().set_visible(False)
     ax[2].axes.get_xaxis().set_visible(False)
     ax[3].axes.get_xaxis().set_visible(False)
-    
+    fig.tight_layout()
     plt.show()

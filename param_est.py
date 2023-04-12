@@ -418,7 +418,7 @@ class ParameterEstimation(OCP):
         self.Q_square_root = ca.sqrt(ca.inv(self.Q))
         
         #self.nlp["x"] = ca.vertcat(self.nlp["x"], ca.veccat(self.Q, self.R))
-        
+        """
         return 0.5*ca.dot(ca.mtimes(ca.sqrt(ca.inv(self.R)),
                                     v),
                             ca.mtimes(v.T,
@@ -429,25 +429,72 @@ class ParameterEstimation(OCP):
                             ca.mtimes(w.T,
                                       ca.sqrt(ca.inv(self.Q))).T), \
                 ca.veccat(self.Q, self.R)
+        """        
+        return 0.5*ca.dot(ca.mtimes(self.R, v), ca.mtimes(v.T, self.R).T) + \
+            0.5*ca.dot(ca.mtimes(self.Q, w), ca.mtimes(w.T, self.Q).T), \
+          ca.veccat(self.Q, self.R)
                 
-                
-                
+     
+    def get_nlp_obj(self, w, v):
+        y_inds = self.nlp_parser["y"]["range"]
+        x_inds = self.nlp_parser["x"]["range"]
+        v_inds = self.nlp_parser["v"]["range"]
+        #z_inds = self.nlp_parser["z"]["range"]
         
-                
+        #x1 = self.nlp_parser["x"]["boundary_vars"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
+        x1 = self.nlp["x"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
+        #x1 = self.nlp_parser["x"]["boundary_vars"][0:-1:self.dae.n_x]
+        y_Ti = self.nlp["x"][y_inds["a"]:y_inds["b"]:self.dae.n_y]
+        #v1 = self.nlp["x"][v_inds["a"]:v_inds["b"]:self.dae.n_y]
+        #v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
+        v1 = self.nlp["x"][v_inds["a"]:int((v_inds["b"]/2))]
+        v2 = self.nlp["x"][int((v_inds["a"]/2)):v_inds["b"]]
+        #v = self.nlp["x"][v_inds["a"]:v_inds["b"]]
+        #z1 = self.nlp["x"][z_inds["a"]:z_inds["b"]]
+        #y_Ph = self.nlp["x"][y_inds["a"]+1:y_inds["b"]:self.dae.n_y]
         
+        self.res = y_Ti - x1
+        #res_Ph = y_Ph - z1
+        
+        #return 0.5*ca.dot(v1, v1) + 0.5*ca.dot(v2, v2), 0 #+ 0.5*ca.dot(v2, v2), 0 # + 0.5*ca.dot(res_Ph, res_Ph), 0
+        #return 0.5*ca.dot(v, v), 0
+        #return 0.5*ca.dot(v1, v1) + 0.01*ca.dot(v2, v2), 0
+        return 0.5*ca.dot(v1, v1) + 0.001*ca.dot(v2, v2), 0
+    
     """
     def get_nlp_obj(self, w, v):
         y_inds = self.nlp_parser["y"]["range"]
         x_inds = self.nlp_parser["x"]["range"]
+        z_inds = self.nlp_parser["z"]["range"]
+        
+        x1 = self.nlp["x"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
+        y_Ti = self.nlp["x"][y_inds["a"]:y_inds["b"]:self.dae.n_y]
+        z1 = self.nlp["x"][z_inds["a"]:z_inds["b"]]
+        y_Ph = self.nlp["x"][y_inds["a"]+1:y_inds["b"]:self.dae.n_y]
+        
+        res_Ti = y_Ti - x1
+        res_Ph = y_Ph - z1
+        
+        return 0.5*ca.dot(res_Ti, res_Ti) + 0.5*ca.dot(res_Ph, res_Ph), 0
+    
+    def get_nlp_obj(self, w, v):
+        y_inds = self.nlp_parser["y"]["range"]
+        x_inds = self.nlp_parser["x"]["range"]
+        r_inds = self.nlp_parser["r"]["range"]
+        u_inds = self.nlp_parser["u"]["range"]
         
         x1 = self.nlp["x"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
         y = self.nlp["x"][y_inds["a"]:y_inds["b"]]
         
-        res = y-x1
+        r1 = self.nlp["x"][r_inds["a"]:r_inds["b"]:self.dae.n_r]
+        u = self.nlp["x"][u_inds["a"]:u_inds["b"]]
         
-        return 0.5*ca.dot(res, res), 0
+        res_y = y-x1
+        res_u = u-r1
+        
+        return 0.5*ca.dot(res_y, res_y) + 5*ca.dot(res_u, res_u), 0
     """
-                
+             
     def set_hess_obj(self):
         """
         For covariance estimation.
@@ -857,16 +904,27 @@ class ParameterEstimation(OCP):
         
         ####################### method ###########################
         
-        y = self.data[self.y_names].values.flatten()
-                    
+        #y = self.data[self.y_names].values.flatten()
+        
+        # check overlap:
+        y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
+        y = self.data[y_x_overlap].values.flatten()
         x_guess = y
         
         # TODO: handle edge-cases, e.g. n_y = 2 and n_x = 3
         #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
-        diff = int(self.integrator.dae.n_x/self.integrator.dae.n_y) - 1
-        
-        for n in range(diff):
-            x_guess = ca.horzcat(x_guess, y)
+        if self.strategy.name == "Collocation":
+            _x_guess = np.ones((self.n_x, ((self.N-1)*(self.strategy.d+1)+1)))     
+            # if direct collocation, fill between
+            for n in range(self.N-1):
+                _x_guess[:, n:(n + self.strategy.d+1)] = x_guess[n]
+            last = (self.N-1)*(self.strategy.d+1)
+            _x_guess[:,last:last+1] = x_guess[-1]
+            x_guess = _x_guess
+        else:        
+            diff = int(self.integrator.dae.n_x/len(y_x_overlap)) - 1
+            for n in range(diff):
+                x_guess = ca.horzcat(x_guess, y)
 
         ##########################################################
         
@@ -896,16 +954,41 @@ class ParameterEstimation(OCP):
             self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
             self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
-        #p = self.nlp.pop("p")
+        p = self.nlp.pop("p")
         self._init_solver()
+        
+        # check jac_g_x
+        """
+        jac_g_x = ca.jacobian(self.nlp["g"], self.nlp["x"])
+        jac_g_x_ = ca.Function("jac_g_x", [self.nlp["x"]], [jac_g_x],
+                               ["x"], ["jac_g_x"])
+        jac_g_x_sx = jac_g_x_.expand()
+        
+        # test eval:
+        test_sx = np.array(jac_g_x_sx(self.x0))
+        test_mx = np.array(jac_g_x_(self.x0))
+        print(np.isnan(test_mx).any())
+        print(np.isnan(test_sx).any())
+        
+        solver_func = self.solver.get_function("nlp_jac_g")
+        test_ = solver_func(self.x0, 0)[0]
+        print(np.isnan(test_).any())
+        
+        #np.where(self.x0 == 0)
+        self.x0[np.where(self.x0 == 0)] = 0.01
+        test_ = solver_func(self.x0, 0)[0]
+        print(np.isnan(test_).any())
+        
+        np.where(test_sx == np.nan)
+        """
         
         solution = self.solver(
                                x0=self.x0,
                                lbg=self.lbg, # option for path-constraints?
                                ubg=self.ubg, # --"--
                                lbx=self.lbx,
-                               ubx=self.ubx,
-                               p=covar
+                               ubx=self.ubx
+                               #p=covar
                                )
         """        
         solution = self.solver(

@@ -3,10 +3,10 @@
         "ode": {
             "dTi": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci)",
             "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
-            "dTh": "(1/Ch)*UA_nom*(Tsup - Th) + (Ti - Th)/(Rih*Ch)"
+            "dTh": "(1/Ch)*UA_nom*(Tsup - Ti) + (Ti - Th)/(Rih*Ch)"
         },
         "alg": {
-            "h": "Ti"
+            "h1": "y1 - Ti - v1"
         },
         "p": [
             "Rie",
@@ -19,29 +19,37 @@
             "UA_nom"
         ],
         "u": [
-            "Tsup"
-        ],
-        "r": [
+            "Tsup",
             "Ta", 
             "phi_s"
         ],
         "x": [
             "Ti",
-            "Te", 
+            "Te",
             "Th"
+        ],
+        "v": [
+            "v1"
         ],
         "y": [
             ["y1", "Ti"]
         ]
     },
-    "dt": 3600,
+    "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",
         "method": "legendre",
-        "degree": 1,
-        "n_steps": 1
-        },
-    "Q": [1,1,1],
-    "R": [1]
+        "degree": 3,
+        "n_steps": 3
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
 }

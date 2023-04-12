@@ -66,8 +66,10 @@ class MPC(OCP):
         if slack:
             #self.s = s = ca.MX.sym("s",
             #                        self.nlp_parser["x"]["dim"])
+            #self.s = s = ca.MX.sym("s",
+            #                        (self.N-1)*self.n_x)
             self.s = s = ca.MX.sym("s",
-                                    (self.N-1)*self.n_x)
+                                    self.N*self.n_x)
             
             self.nlp["x"] = ca.vertcat(self.nlp["x"],
                                        s)
@@ -88,7 +90,7 @@ class MPC(OCP):
             self.n_s = self.n_x
             self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_s)))
             
-        self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref, slack=slack)
+        self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_z, ref=ref, slack=slack)
         
         #self.add_pseudo_params()
         
@@ -125,7 +127,7 @@ class MPC(OCP):
         
         
     #def get_nlp_obj(self, u, slack):
-    def get_nlp_obj(self, u, ref=False, slack=False):
+    def get_nlp_obj(self, u, z, ref=False, slack=False):
         """ 
         Objective for MPC.
         
@@ -166,17 +168,23 @@ class MPC(OCP):
                 # value function:
                 self.V = self.L.map(self.N-1)
                 
+                dim_s = self.nlp_parser.vars["s"]["dim"]
+                s_sym = self.s[0:(dim_s-self.n_s)]
+                
                 V_call = self.V(self.nlp_u.reshape((self.n_u, self.N-1)),
-                                self.s.reshape((self.n_s, self.N-1)))
+                                s_sym.reshape((self.n_s, self.N-1)))
                 
                 sqrt_call = ca.sqrt(V_call)
                 
-                return ca.mtimes(sqrt_call, sqrt_call.T)
+                last_s = self.s[dim_s-self.n_s:]
+                
+                return ca.mtimes(sqrt_call, sqrt_call.T) + 1E8*last_s.T@last_s
                 
                          
                 
             else:
-                return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
+                #return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
+                return 0.5*ca.dot(z, z) # + 0.01*ca.dot(slack, slack)
         else: # reference tracking
             
             # how to know which state to track?
@@ -207,7 +215,8 @@ class MPC(OCP):
             x_info = self.nlp_parser["x"]
             
             if self.strategy.name == "MultipleShooting":
-                x = self.nlp["x"][x_info["range"]["a"]:x_info["range"]["b"]]
+                #x = self.nlp["x"][(x_info["range"]["a"] + self.n_x):x_info["range"]["b"]]
+                x = self.nlp["x"][(x_info["range"]["a"]):x_info["range"]["b"]]
                 lbx = np.append(x0, lbx)
                 ubx = np.append(x0, ubx)
             else:
@@ -241,11 +250,13 @@ class MPC(OCP):
             # add bounds, -inf and inf in dim(s) and 0 for x0
             if self.slack:
                 
+                assert self.n_x == self.n_s
+
                 self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.nlp_parser.vars["s"]["dim"]))
                 self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["s"]["dim"]))
                 self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["s"]["dim"]))
                 
-                h_x += self.s
+                h_x += self.s[self.n_s:]
                 
             # modify x0 with feasible value for sqp:
             #self.x0[x_info["range"]["a"]:x_info["range"]["b"]] = lbx
@@ -290,9 +301,9 @@ class MPC(OCP):
                 
                 self.nlp["g"][self.nlp_parser.x_bounds_g[0]:self.nlp_parser.x_bounds_g[1]-1] += self.s[self.n_x:(self.n_x*self.N)]
                 
-                self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.n_x*self.N))
-                self.ubx = np.append(self.ubx, np.repeat([np.inf], self.n_x*self.N))
-                self.x0 = np.append(self.x0, np.repeat([0], self.n_x*self.N))
+                self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.n_x*(self.N-1)))
+                self.ubx = np.append(self.ubx, np.repeat([np.inf], self.n_x*(self.N-1)))
+                self.x0 = np.append(self.x0, np.repeat([0], self.n_x*(self.N-1)))
                 
                 
             
@@ -377,11 +388,11 @@ class MPC(OCP):
         # ADD: option for slack:
         #self.add_path_constraints(x0=x0, lbx=lbx, ubx=ubx)
         
-        # TODO: only do this once :: 
+        # TODO: only do this once (symbolically):: 
         self.add_path_constraints(
-                                  x0=x0/self.x_nom,
-                                  lbx=lbx/self.x_nom,
-                                  ubx=ubx/self.x_nom
+                                  x0=(x0 - self.x_nom_b)/self.x_nom,
+                                  lbx=(lbx - self.x_nom_b)/self.x_nom,
+                                  ubx=(ubx - self.x_nom_b)/self.x_nom,
                                   )
                                   #slack=slack)
         
@@ -403,7 +414,7 @@ class MPC(OCP):
         self.lbx = np.array([val if abs(val) < 1e8 else -np.inf for val in self.lbx])
         self.ubx = np.array([val if val < 1e8 else np.inf for val in self.ubx])
           
-        self.p_val = np.append(x0/self.x_nom, params/self.scale)
+        self.p_val = np.append((x0 - self.x_nom_b)/self.x_nom, params/self.scale)
               
         sol = self.solver(
                             x0=self.x0,

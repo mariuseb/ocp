@@ -1,11 +1,11 @@
 {
     "model": {
         "ode": {
-            "dTi": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + Ai*(phi_s/Ci) + w1",
+            "dTi": "(Te - Ti)/(Rie*Ci) + (1/Ci)*Ph + Ai*(phi_s/Ci) + w1",
             "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + w2"
         },
         "alg": {
-            "h": "y1 - Ti - v1"
+            "h1": "y1 - Ti - v1"
         },
         "p": [
             "Rie",
@@ -15,13 +15,10 @@
             "Ai"
         ],
         "u": [
-            "phi_h"
-            ],
-        "r":
-            [
+            "Ph",
             "Ta", 
             "phi_s"
-            ],
+        ],
         "x": [
             "Ti",
             "Te"
@@ -37,13 +34,11 @@
             ["y1", "Ti"]
         ]
     },
-    "N": 24,
-    "dt": 3600,
-    "method": "collocation",
+    "method": "multiple_shooting",
     "integrator": 
         {
-        "name": "IRK",
-        "method": "legendre",
+        "name": "RK4",
+        "method": "radau",
         "degree": 3,
         "n_steps": 1
         }
@@ -51,9 +46,8 @@
     "solver": "gauss-newton",
     "opt": {
         "verbose": false,
-        "ipopt.linear_solver": "ma27",
-        "ipopt.ma57_pre_alloc": 3,
-        "ipopt.max_cpu_time": 10
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3
     },
     "codegen": false
 }

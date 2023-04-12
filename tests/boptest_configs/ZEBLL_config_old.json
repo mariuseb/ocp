@@ -85,12 +85,12 @@
       },
       "maps" : {
         "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
-        "u" : {"Tsup": "oveTSetSup"},
+        "u" : {"Tsup": "oveTSetSup", "TsetHea": "oveTSetHea", "ovePum": "ovePum"},
         "y": {"Ti": "reaTRoo_y"},
-        "boptest_to_ocp": {"Ph": "reaQHea_y", "Tsup": "oveTSetSup_u", "Ti": "reaTRoo_y"},
+        "boptest_to_ocp": {"Ph": "reaQHea_y", "Ti": "reaTRoo_y"},
         "sampling": {
                      "integrate": ["Ph"],
-                     "point": ["Ta", "phi_s", "Ti", "Tsup"]
+                     "point": ["Ta", "phi_s", "Ti"]
                     }
       }
     }

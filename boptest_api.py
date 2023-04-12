@@ -144,8 +144,10 @@ class Boptest(RestApi):
             
         self.forecast_df = pd.DataFrame(columns=list(self.r.keys()))
         
-        self.result_df = pd.DataFrame(columns = list(map(lambda x: x + "_u", list(self.u.values()))) + \
-            list(self.boptest_to_ocp.values()))
+        #self.result_df = pd.DataFrame(columns = \
+        #    list(set(list(map(lambda x: x + "_u", list(self.u.values()))) + \
+        #    list(self.boptest_to_ocp.values()))))
+        self.result_df = pd.DataFrame(columns = list(self.boptest_to_ocp.values()))
         
         self.result_df.loc[0] = [0]*len(self.result_df.columns)
         
@@ -155,9 +157,10 @@ class Boptest(RestApi):
                        
         self.y_names = list(self.y.values())
         
-        self.u_names = list(map(lambda x: x + "_u", \
-                                list(self.u.values()))) + \
-                                    [v for k, v in self.boptest_to_ocp.items() if v not in self.y_names]
+        #self.u_names = list(map(lambda x: x + "_u", \
+        #                        list(self.u.values()))) + \
+        #                            [v for k, v in self.boptest_to_ocp.items() if v not in self.y_names]
+        self.u_names = [col for col in self.result_df.columns if col not in self.y_names]
         
         self.result_df.loc[int(res.index[0]), self.y_names] = res.loc[res.index[0], self.y_names]
         
@@ -478,10 +481,12 @@ class Boptest(RestApi):
             #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
             
             # TODO: map from temperature to heater:
-            l2 = ax1.plot(dt_index, res.phi_h, color=next(colors), linestyle="dashed", label="$\phi_h$")
+            #l2 = ax1.plot(dt_index, res.phi_h/1000, color=next(colors), linestyle="dashed", label="$\phi_h$")
+            l2 = ax1.plot(dt_index, res.Tsup, color=next(colors), linestyle="dashed", label="$\phi_h$")
             
             #ax.legend([l1, l2], , loc=0)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
+            #ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
             fig.autofmt_xdate()
             #ax.legend(["Ti"])
             #ax1.legend(["phi_h"])
@@ -544,7 +549,7 @@ class Boptest(RestApi):
             ax.set_ylim([_min, _max+2])
             
             ax.set_ylabel(r"Temperature [$^\circ$C]")
-            ax1.set_ylabel(r"Power [W]")
+            ax1.set_ylabel(r"Power [kW]")
             
             axes.append(ax)
             axes.append(ax1)

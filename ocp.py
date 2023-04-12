@@ -88,6 +88,8 @@ class OCP(metaclass=ABCMeta):
                 ):
 
         config = kwargs.pop("config")
+        #if config["solver"] == "gauss_newton":
+        #    self.gauss_newton = True
         #data = kwargs.pop("data")
         N = kwargs.pop("N", None)
         dt = kwargs.pop("dt", None)
@@ -102,9 +104,15 @@ class OCP(metaclass=ABCMeta):
         # TODO: include all entities
         #if scale_nlp:
         self.x_nom = kwargs.pop("x_nom", 1)
+        self.x_nom_b = kwargs.pop("x_nom_b", 0)
+        self.z_nom = kwargs.pop("z_nom", 1)
+        self.z_nom_b = kwargs.pop("z_nom_b", 0)
         self.y_nom = kwargs.pop("y_nom", 1)
+        self.y_nom_b = kwargs.pop("y_nom_b", 0)
         self.r_nom = kwargs.pop("r_nom", 1)
+        self.r_nom_b = kwargs.pop("r_nom_b", 0)
         self.u_nom = kwargs.pop("u_nom", 1)
+        self.u_nom_b = kwargs.pop("u_nom_b", 0)
        
             
         
@@ -126,6 +134,12 @@ class OCP(metaclass=ABCMeta):
         # mainly on 
         self.bounds_cfg = config.pop("bounds", None)
         #self.data = data
+        # solver tricks:
+        if config["solver"] == "gauss-newton":
+            self.gauss_newton = True
+        else:
+            self.gauss_newton = False
+            
 
         # special:
         if param_guess is not None:
@@ -171,11 +185,21 @@ class OCP(metaclass=ABCMeta):
         #self.w_nom = 1/self.x_nom**2/self.integrator.dt
         #self.w_nom = 1*self.x_nom
         #self.v_nom = 1*self.x_nom
-        #self.v_nom = 1/self.x_nom
         #self.w_nom = 1/self.x_nom
-        #self.w_nom = 1/self.x_nom
-        self.w_nom = 1
+        #self.w_nom = 1
+        #self.v_nom = 1
+        #self.v_nom = 1/5e4
+        #self.w_nom = 1/5e4
+        #self.v_nom = 1/1e5
+        #self.w_nom = 1/1e5
+        #self.v_nom = 1/1e4
+        #self.w_nom = 1/1e4
+        #self.v_nom = 1/1e4
+        #self.w_nom = 1/1e4
         self.v_nom = 1
+        self.w_nom = 1
+        self.w_nom_b = 0
+        self.v_nom_b = 0
 
         if self.method == "multiple_shooting":
             
@@ -183,7 +207,9 @@ class OCP(metaclass=ABCMeta):
                                              N,
                                             **{
                                                 "x_nom": self.x_nom,
+                                                "x_nom_b": self.x_nom_b,
                                                 "y_nom": self.y_nom,
+                                                "y_nom_b": self.y_nom_b,
                                                 "p_nom": self.p_nom,
                                                 "r_nom": self.r_nom,
                                                 "u_nom": self.u_nom,
@@ -215,7 +241,9 @@ class OCP(metaclass=ABCMeta):
                                         N,
                                         **{
                                             "x_nom": self.x_nom,
+                                            "x_nom_b": self.x_nom_b,
                                             "y_nom": self.y_nom,
+                                            "y_nom_b": self.y_nom_b,
                                             "p_nom": self.p_nom,
                                             #"p_nom": ca.repmat(ca.DM([1]), len(self.dae.p)),
                                             "r_nom": self.r_nom,
@@ -242,7 +270,22 @@ class OCP(metaclass=ABCMeta):
         #self.opt["calc_multipliers"] = True
   
     
+    def get_hess_lag(self, residual, nlp_x):
+      # objective only indirectly affected by collocation points...
+        J = ca.jacobian(residual, nlp_x)
+        H = ca.triu(ca.mtimes(J.T, J))
+        sigma = ca.MX.sym("sigma")
+        hess_lag = ca.Function('nlp_hess_l',{'x':nlp_x,'lam_f':sigma, 'hess_gamma_x_x':sigma*H},
+                                ['x','p','lam_f','lam_g'], ['hess_gamma_x_x'],
+                                dict(jit=self.with_jit, compiler=self.compiler))
+        return hess_lag
+            
     def _init_solver(self, init_qp_solver=True):
+        
+        if self.gauss_newton:
+            hess_lag = self.get_hess_lag(self.res, self.nlp["x"])
+        else:
+            hess_lag = None
         
         self.solver = ca.nlpsol(
                                 "solver", \
@@ -250,6 +293,7 @@ class OCP(metaclass=ABCMeta):
                                 self.nlp, \
                                 #dict(hess_lag=hessLag, \
                                 dict(
+                                    hess_lag=hess_lag,
                                     jit=self.with_jit, \
                                     compiler=self.compiler, \
                                     **self.opt)
@@ -350,51 +394,6 @@ class OCP(metaclass=ABCMeta):
                 #    bound_dict["x0"] = (bound_dict["lb"] + bound_dict["ub"])/200000
                     
                 x0 = np.append(x0, bound_dict["x0"])
-                
-                
-                
-                    #else:
-                    #lbx = np.append(lbx, bound_dict["lb"])
-                    #ubx = np.append(ubx, bound_dict["ub"])
-                
-                    #if k == "x":
-                    
-                    #lslack = MX.sym("lslack", v["dim"], 1)
-                    #uslack = MX.sym("uslack", v["dim"], 1)
-                    #self.slack = slack = MX.sym("slack", v["dim"], 1)
-                    #lbx = lbx - lslack
-                    #ubx = ubx + uslack
-                    
-                    # add slack to x in nlp:
-                    #self.nlp["x"][v["range"]["a"]:v["range"]["b"]] = self.nlp["x"][v["range"]["a"]:v["range"]["b"]] + slack
-                    #      pass 
-                    # add to nlp struct
-                    #self.nlp["x"] = ca.veccat(self.nlp["x"], lslack, uslack)
-                    #self.nlp["x"] = ca.veccat(self.nlp["x"], slack)
-                    # add to nlp_parser:
-                    #slack_dict = {}
-                    #slack_dict["dim"] = slack.shape[0]
-                    #slack_dict["range"] = {}
-                    #slack_dict["range"]["a"] = self.nlp_parser.vars["r"]["range"]["b"]
-                    #slack_dict["range"]["b"] = self.nlp_parser.vars["r"]["range"]["b"] + slack_dict["dim"]
-                    
-                    #uslack_dict = {}
-                    #uslack_dict["dim"] = uslack.shape[0]
-                    #uslack_dict["range"] = {}
-                    #uslack_dict["range"]["a"] = lslack_dict["range"]["b"]
-                    #uslack_dict["range"]["b"] = lslack_dict["range"]["b"] + uslack_dict["dim"]
-                # set lb to initial guess:
-                #x0 = np.append(x0, bound_dict["lb"])
-    
-        # add to nlp parser
-        #self.nlp_parser.vars["uslack"] = uslack_dict
-        #self.nlp_parser.vars["lslack"] = lslack_dict
-        #self.nlp_parser.vars["slack"] = slack_dict
-         
-        #self.lbx = lbx       
-        #self.ubx = ubx     
-          
-        
         # nan issue:
         lbx = np.nan_to_num(lbx, nan=0)
         ubx = np.nan_to_num(ubx, nan=0)
@@ -402,18 +401,7 @@ class OCP(metaclass=ABCMeta):
         # rounding issue
         self.lbx = lbx       
         self.ubx = ubx       
-        #self.lbx = lbx.round(7)       
-        #self.ubx = ubx.round(7)       
         self.x0 = x0
-        
-        # add to slacks:
-        #self.lbx = np.append(self.lbx, [-np.inf]*slack.shape[0])
-        #self.lbx = np.append(self.lbx, [-np.inf]*uslack.shape[0])
-        #self.ubx = np.append(self.ubx, [np.inf]*slack.shape[0])
-        #self.ubx = np.append(self.ubx, [np.inf]*uslack.shape[0])
-        #self.x0 = np.append(self.x0, [0]*slack.shape[0])
-        #self.x0 = np.append(self.x0, [0]*uslack.shape[0])
-        #return lbx, ubx
         
     #def set_x_guess(self, )
             
@@ -442,10 +430,10 @@ class OCP(metaclass=ABCMeta):
                                 )
                         ).flatten()
         
-        #prefix = param_guess/dec_scale
-        #ceiled = np.ceil(prefix)
-        #return np.multiply(ceiled, dec_scale)
-        return dec_scale
+        prefix = param_guess/dec_scale
+        ceiled = np.ceil(prefix)
+        return np.multiply(ceiled, dec_scale)
+        #return dec_scale
       
     def get_nlp_var(self, varname):
         """
@@ -462,8 +450,12 @@ class OCP(metaclass=ABCMeta):
                 try:
                     sym_var = sym_var.reshape((dim_var, self.N))
                 except:
-                    #sym_var = sym_var.reshape((dim_var, self.N-1))
-                    pass
+                    if varname != "x":
+                        sym_var = sym_var.reshape((dim_var, self.N-1))
+                    else: # x, collocation, fix:
+                        sym_var = sym_var.reshape((dim_var, (self.N-1)*(self.strategy.d+1)+1))
+                        
+                    #pass
         
         return sym_var
         
@@ -654,7 +646,8 @@ class OCP(metaclass=ABCMeta):
             bounds["x"]["ub"] = ubx
             bounds["x"]["lb"] = lbx
             # not None:
-            bounds["x"]["x0"] = x_init/self.x_nom
+            #bounds["x"]["x0"] = x_init/self.x_nom
+            bounds["x"]["x0"] = (x_init - self.x_nom_b)/self.x_nom
                  
         for varname in varnames:
             
@@ -683,17 +676,23 @@ class OCP(metaclass=ABCMeta):
                         
                     try:
                         scale = getattr(self, varname + "_nom")
+                        bias = getattr(self, varname + "_nom_b")
                     except AttributeError:
                         scale = 1    
+                        bias = 0    
                     
                     bounds[varname]["lb"] = \
                         bounds[varname]["ub"] = \
                             bounds[varname]["x0"] = \
-                                ca.DM(vals)/scale
+                                (ca.DM(vals) - bias)/scale
+                                #ca.DM(vals)/scale
                                 
                 except KeyError:
                     # not in data.
                     # in bounds_cfg?
+                    
+                    # must be u, or else None is set:
+                    
                     if bounds_cfg is not None and varname in bounds_cfg:
                         
                         # self.set_bounds expects array that fits nlp:
@@ -824,7 +823,7 @@ class OCP(metaclass=ABCMeta):
                 
                 if name == "x":
                     if self.method == "multiple_shooting":
-                        _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name)))
+                        _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name))) + self.x_nom_b
                 #if self.method == "multiple_shooting" or name != "x":
                     elif self.method == "single_shooting":
                         _vals = np.array(sol_x[start:stop]*scale)
@@ -833,7 +832,7 @@ class OCP(metaclass=ABCMeta):
                         #raise NotImplementedError("Nt implmntd.")
                         assert self.method == "collocation"
                         d = self.strategy.d
-                        _vals = np.array(sol_x[start:stop]*scale).reshape(((self.N-1)*(d+1) + 1, self.n_x))
+                        _vals = np.array(sol_x[start:stop]*scale).reshape(((self.N-1)*(d+1) + 1, self.n_x)) + self.x_nom_b
                         _vals = _vals[start:stop:(d+1)]
                 else:
                     

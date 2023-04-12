@@ -3,53 +3,57 @@
         "ode": {
             "dTi": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci)",
             "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
-            "dTh": "(1/Ch)*UA_nom*(Tsup - Th) + (Ti - Th)/(Rih*Ch)"
+            "dTh": "(Tsup - Th)/(Ch*Rwh) + (Ti - Th)/(Rih*Ch)"
         },
         "alg": {
-            "g1": "Ph - (1/Ch)*UA_nom*(Tsup - Th)"
+            "h1": "y1 - Ti - v1",
+            "h2": "y2 - (Tsup - Th)/(Ch*Rwh) - (Th - Ti)/(Rih*Ci) - v2"
         },
         "p": [
             "Rie",
             "Rea",
             "Rih",
+            "Rwh",
             "Ci",
             "Ce",
             "Ch",
-            "Ai",
-            "UA_nom"
+            "Ai"
         ],
         "u": [
-            "Tsup"
-        ],
-        "z": [
-            "Ph"  
-        ],
-        "r": [
+            "Ph",
+            "Tsup",
             "Ta", 
             "phi_s"
         ],
         "x": [
             "Ti",
-            "Te", 
+            "Te",
             "Th"
+        ],
+        "v": [
+            "v1",
+            "v2"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Ph"]
         ]
     },
-    "N": 24,
-    "dt": 3600,
     "method": "multiple_shooting",
     "integrator": 
         {
-        "name": "IRK",
-        "method": "legendre",
-        "degree": 1,
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
         "n_steps": 1
         }
     ,
-    "solver": "none",
+    "solver": "gauss-newton",
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma57",
-        "ipopt.ma57_pre_alloc": 3
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
     },
     "codegen": false
 }

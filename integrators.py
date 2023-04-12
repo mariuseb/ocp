@@ -143,6 +143,7 @@ class IRK(Integrator):
         self.set_h()
         self.set_g_expr()
         self.set_g()
+        #self.set_G()
         self.init_integrator()
         #self.one_sample = self.get_one_sample()
     
@@ -193,6 +194,49 @@ class IRK(Integrator):
                           [self.g_expr],
                           ["x", "z", "u", "p", "v", "r"],
                           ["g"])
+        
+    def set_G(self):
+        """ g non-explicit."""
+        
+        """        
+        nx = len(self.dae.dae.x)
+        nu = len(self.dae.dae.u)
+        nz = len(self.dae.dae.z)        
+        np = len(self.dae.dae.p)
+        nw = len(self.dae.w_names)
+        nr = len(self.dae.r_names)
+        
+        # x0, p, u, r, z, w, v:
+        X0 = MX.sym('X0',nx)
+        P = MX.sym('P',np)
+        U = MX.sym('U',nu)
+        R = MX.sym('U',nr)
+        Z = MX.sym('Z',nz)
+        W = MX.sym('W',nw)
+        #V = MX.sym('V', d*nx)
+        
+        vfcn = Function(
+                        'vfcn',
+                        [X0, Z, U, P, W, R],
+                        [self.g_expr]
+                        )
+        """
+        # Convert to SX to decrease overhead
+        #vfcn_sx = self.g.expand()
+        # Create a implicit function instance to solve the system of equations
+        #rootfinder('myarctan', 'newton', dict(x=x, p=p, g=tan(x)-p))
+        
+        # TODO: fix for all vars:
+        
+        ifcn = rootfinder('ifcn_g', 'fast_newton', dict(x=self.z, \
+                                                        p=vertcat(
+                                                                  self.x,
+                                                                  self.u,
+                                                                  self.p
+                                                                  ),
+                                                        g=self.g_expr))
+        
+        self.G = ifcn
         
     def set_ode_func(self):
         self.f = Function('f', [self.x, self.z, self.u, self.p, self.w, self.r], [self.ode], ["x", "z", "u", "p", "w", "r"], ["f"])

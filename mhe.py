@@ -39,7 +39,7 @@ class MHE(OCP):
         #self.Q = ca.MX.sym("Q", ca.Sparsity.diag(self.n_x))
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
         self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        self.set_hess_obj()
+        #self.set_hess_obj()
         
     # skip this:
     def set_hess_obj(self):
@@ -515,12 +515,16 @@ class MHE(OCP):
         
         #self.P0_sqrt_inv = ca.sqrt(ca.inv(P0))
         #self.P0_sqrt_inv = ca.MX.sym("P0", self.n_x + self.n_p, self.n_x + self.n_p)
+        #dim_P0 = self.n_x + self.n_p
+        #self.P0 = ca.MX.sym("P0", dim_P0, dim_P0)
         self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
         #self.P0_sqrt_inv = ca.MX.sym("P0", self.n_x + self.n_p, self.n_x + self.n_p)
         # arrival cost:
         #self.P0_sqrt = ca.sqrt(P0)
         
         #P0_sqrt_inv = ca.sqrt(ca.inv(self.P0))
+        #R_sqrt_inv = ca.sqrt(ca.inv(self.R))
+        #Q_sqrt_inv = ca.sqrt(ca.inv(self.Q))
         #R_sqrt_inv = ca.sqrt(ca.inv(self.R))
         #Q_sqrt_inv = ca.sqrt(ca.inv(self.Q))
         #P0_sqrt = ca.sqrt(self.P0)
@@ -539,8 +543,10 @@ class MHE(OCP):
                                      w),
                             ca.mtimes(w.T,
                                       self.Q).T)
-                
+        
         """
+        nlp_obj = ca.dot(ca.mtimes(w, w.T), self.Q) + \
+                  ca.dot(ca.mtimes(v, v.T), self.R)
         nlp_obj = ca.dot(ca.mtimes(R_sqrt,
                                     v),
                             ca.mtimes(v.T,
@@ -579,12 +585,12 @@ class MHE(OCP):
                                     #P0_sqrt).T
                             )
             """
-            #arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
+            arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
             #arrival_cost = (self.P0@(costate - self.costate_prior).T)@(self.P0@(costate - self.costate_prior))
             #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
             #P0 = (ca.MX.eye(self.n_x + self.n_p) - ca.expm(-self.P0))
             #P0 = ca.expm(self.P0)
-            arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
+            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
             #arrival_cost = ((P0@(costate - self.costate_prior)).T)@(P0@(costate - self.costate_prior))
             nlp_obj += arrival_cost
             
@@ -640,8 +646,10 @@ class MHE(OCP):
                                                         arrival_cost=arrival_cost
                                                         ) 
         
-        y = self.data[self.y_names].values.flatten()           
-        x_guess = y/self.y_nom
+        y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
+        y = self.data[y_x_overlap].values.flatten()
+        #x_guess = y         
+        x_guess = (y-self.y_nom_b)/self.y_nom
         
         #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
         #for n in range(diff):
@@ -656,17 +664,18 @@ class MHE(OCP):
             last = (self.N-1)*(self.strategy.d+1)
             _x_guess[:,last:last+1] = x_guess[-1]
             x_guess = _x_guess
+        else:     
+            diff = int(self.integrator.dae.n_x/len(y_x_overlap)) - 1
+            for n in range(diff):
+                x_guess = ca.horzcat(x_guess, (y-self.y_nom_b)/self.y_nom)
+                #x_guess = ca.horzcat(x_guess, _x_guess)
         
-        diff = int(self.integrator.dae.n_x/self.integrator.dae.n_y) - 1
-        for n in range(diff):
-            x_guess = ca.horzcat(x_guess, y/self.y_nom)
-    
         self.separate_data(
                           data,
                           lbp=lbp,
                           ubp=ubp,
-                          lbx=0.5*x_guess,
-                          ubx=1.5*x_guess,
+                          #lbx=0.5*x_guess,
+                          #ubx=1.5*x_guess,
                           x_guess=x_guess,
                           param_guess=param_guess
                           )
@@ -692,7 +701,7 @@ class MHE(OCP):
         # TODO: branching on arrival cost:
         if arrival_cost:        
             p0 = param_guess/self.p_nom
-            x_N = x_N/self.x_nom
+            x_N = (x_N - self.x_nom_b)/self.x_nom
             #p0 = param_guess
             #x_N = x_N
             costate_prior = ca.vertcat(p0, x_N)

@@ -27,13 +27,17 @@ class Shooting(metaclass=ABCMeta):
         #self.Y = Y
         self.N = N 
         #self.scale = scale
-        self.x_nom = kwargs.pop("x_nom")
-        self.u_nom = kwargs.pop("u_nom")
-        self.r_nom = kwargs.pop("r_nom")
-        self.y_nom = kwargs.pop("y_nom")
-        self.p_nom = kwargs.pop("p_nom")
-        self.w_nom = kwargs.pop("w_nom")
-        self.v_nom = kwargs.pop("v_nom")
+        self.x_nom = kwargs.pop("x_nom", 1)
+        self.x_nom_b = kwargs.pop("x_nom_b", 0)
+        self.z_nom = kwargs.pop("z_nom", 1)
+        self.z_nom_b = kwargs.pop("z_nom_b", 0)
+        self.u_nom = kwargs.pop("u_nom", 1)
+        self.r_nom = kwargs.pop("r_nom", 1)
+        self.y_nom = kwargs.pop("y_nom", 1)
+        self.y_nom_b = kwargs.pop("y_nom_b", 0)
+        self.p_nom = kwargs.pop("p_nom", 1)
+        self.w_nom = kwargs.pop("w_nom", 1)
+        self.v_nom = kwargs.pop("v_nom", 1)
         #self.w_nom = kwargs.pop("w_nom", 1E-3)
         #self.w_nom = kwargs.pop("w_nom", 1/(self.x_nom*self.F.dt))
         #self.v_nom = kwargs.pop("v_nom", 1/self.x_nom)
@@ -168,6 +172,7 @@ class MultipleShooting(Shooting):
         self.F_map = self.map_F()
         self.h_map = self.map_h()
         self.g_map = self.map_g()
+        #self.G_map = self.map_G()
         
         
         
@@ -185,42 +190,67 @@ class MultipleShooting(Shooting):
         # hardcode scaling here:
         
         xn = self.F_map(
-                        x0=x*self.x_nom,
-                        z=z,
+                        x0=x[:,:-1]*self.x_nom,
+                        #x0=x*self.x_nom,
+                        #x0=x*self.x_nom + self.x_nom_b,
+                        z=z[:,:-1]*self.z_nom,
+                        #z=z*self.z_nom,
                         u=u*self.u_nom,
-                        p=self.p_nom*ca.repmat(p, 1, self.N),
+                        p=self.p_nom*ca.repmat(p, 1, self.N-1),
+                        #p=self.p_nom*ca.repmat(p, 1, self.N),
                         #p=ca.repmat(p, 1, self.N),
                         # w same unit as dT/dt -> factor: 1/300/900
                         w=w*self.w_nom,
                         r=r*self.r_nom
                         )["xf"]
         
-        x_gaps = xn[:,:-1]-self.x_nom*x[:,1:] 
-        #x_gaps = xn - x[:,1:] 
+        #x_gaps = xn[:,:-1]-self.x_nom*x[:,1:] 
+        #x_gaps = xn[:,:-1] - (self.x_nom*x[:,1:]) # + self.x_nom_b)
+        #x_gaps = xn - (self.x_nom*x[:,1:]) # + self.x_nom_b)
+        x_gaps = xn - x[:,1:] 
         
         h_gaps = self.h_map(
+                            #y=y*self.y_nom + self.y_nom_b,
+                            #x=x*self.x_nom + self.x_nom_b,
                             y=y*self.y_nom,
                             x=x*self.x_nom,
-                            z=z,
-                            u=u*self.u_nom,
+                            z=z*self.z_nom,
+                            #u=u*self.u_nom,
+                            u=0,
                             #p=ca.repmat(p, 1, self.N),
-                            p=self.p_nom*ca.repmat(p, 1, self.N),
+                            #p=self.p_nom*ca.repmat(p, 1, self.N),
+                            p=0,
                             #p=self.scale*ca.repmat(p, 1, self.N),
                             v=v*self.v_nom,
-                            r=r*self.r_nom
+                            #r=r*self.r_nom
+                            r=0 
                             )["h"]
         
+        #G_p = ca.vertcat(x*self.x_nom, u*self.u_nom, p*self.p_nom, v*self.v_nom, r*self.r_nom)
+        #G_p = ca.vertcat(x*self.x_nom, u*self.u_nom, p*self.p_nom, v*self.v_nom, r*self.r_nom)
+    
+        #p_for_G = self.p_nom*ca.repmat(p, 1, self.N)
+        #G_p = ca.vertcat(x, u, p_for_G)
+        
+        """
+        g_gaps = self.G_map(x0=z*self.z_nom, p=G_p)["x"]
+        """
+        
         g_gaps = self.g_map(
-                            x=x*self.x_nom,
-                            z=z,
+                            x=x[:,:-1]*self.x_nom,
+                            #x=x*self.x_nom,
+                            z=z[:,:-1]*self.z_nom,
+                            #z=z*self.z_nom,
+                            #u=u*self.u_nom,
                             u=u*self.u_nom,
                             #p=ca.repmat(p, 1, self.N),
-                            p=self.p_nom*ca.repmat(p, 1, self.N),
-                            #p=self.scale*ca.repmat(p, 1, self.N),
-                            v=v*self.v_nom,
+                            p=self.p_nom*ca.repmat(p, 1, self.N-1),
+                            #p=self.p_nom*ca.repmat(p, 1, self.N),
+                            #v=v*self.v_nom,
+                            v=0,
                             r=r*self.r_nom
+                            #r=0
                             )["g"]
-        
         ###################################################
         
         # constraints:
@@ -307,7 +337,8 @@ class MultipleShooting(Shooting):
     
     def get_w(self):
         """ Process noise. """
-        return ca.MX.sym("w", self.n_w, self.N)
+        return ca.MX.sym("w", self.n_w, self.N-1)
+        #return ca.MX.sym("w", self.n_w, self.N)
 
     def get_y(self):
         """ Process noise. """
@@ -317,7 +348,8 @@ class MultipleShooting(Shooting):
     def get_u(self):
         """ Process noise. """
         #return ca.MX.sym("u", self.n_u, self.N)*self.u_nom
-        return ca.MX.sym("u", self.n_u, self.N)
+        return ca.MX.sym("u", self.n_u, self.N-1)
+        #return ca.MX.sym("u", self.n_u, self.N)
 
     def get_z(self):
         """ Process noise. """
@@ -331,7 +363,8 @@ class MultipleShooting(Shooting):
     def get_r(self):
         """ Process noise. """
         #return ca.MX.sym("r", self.n_r, self.N)*self.r_nom
-        return ca.MX.sym("r", self.n_r, self.N)
+        return ca.MX.sym("r", self.n_r, self.N-1)
+        #return ca.MX.sym("r", self.n_r, self.N)
     
     def get_p(self):
         """ Parameters. """
@@ -339,8 +372,8 @@ class MultipleShooting(Shooting):
         return self.F.p #*self.p_nom
     
     def map_F(self):
-        return self.F.one_sample.map(self.N, "openmp")
-        #return self.F.one_sample.map(self.N)
+        return self.F.one_sample.map(self.N-1, "openmp")
+        #return self.F.one_sample.map(self.N, "openmp")
     
     def map_h(self):
         """ Paralell map of measurement eqs """
@@ -349,8 +382,13 @@ class MultipleShooting(Shooting):
     
     def map_g(self):
         """ Paralell map of algebraic eqs """
-        return self.F.g.map(self.N, "openmp")
+        return self.F.g.map(self.N-1, "openmp")
         #return self.F.g.map(self.N)
+
+    def map_G(self):
+        """ Paralell map of algebraic eqs """
+        #return self.F.g.map(self.N-1, "openmp")
+        return self.F.G.map(self.N)
         
     
 # TODO: fix
@@ -680,11 +718,13 @@ class Collocation(Shooting):
         h_gaps = []
         
         x_nom = self.x_nom 
+        x_nom_b = self.x_nom_b
         u_nom = self.u_nom 
         p_nom = self.p_nom 
         r_nom = self.r_nom 
         w_nom = self.w_nom 
         y_nom = self.y_nom 
+        y_nom_b = self.y_nom_b
         v_nom = self.v_nom 
         
         n_x = self.n_x
@@ -741,6 +781,7 @@ class Collocation(Shooting):
         X0 = Xk = ca.MX.sym('X0', n_x)
         # X0 as parameter:
         x.append(Xk)
+        xb.append(Xk)
         #lbw.append([0, 1])
         #ubw.append([0, 1])
         #w0.append([0, 1])
@@ -792,7 +833,7 @@ class Collocation(Shooting):
 
                 # Append collocation equations
                 #fj, qj = f(Xc[j-1]*x_nom, P*p_nom, Uk*u_nom)
-                fj = self.f(Xc[j-1]*x_nom, 0, Uk*u_nom, P*p_nom, Wk*w_nom, Rk*r_nom)
+                fj = self.f(Xc[j-1]*x_nom + x_nom_b, 0, Uk*u_nom, P*p_nom, Wk*w_nom, Rk*r_nom)
                 #fj = self.f(Xc[j-1]*x_nom, 0, Uk*u_nom, P*p_nom, Wk, Rk*r_nom)
                 g.append(h*fj - xp*x_nom)
                 #lbg.append([0, 0])
@@ -816,7 +857,7 @@ class Collocation(Shooting):
             v.append(Vk)
             y.append(Yk)
             
-            g.append(self.F.h(Yk*y_nom, Xk*x_nom, 0, 0, 0, Vk*v_nom, 0))
+            g.append(self.F.h(Yk*y_nom + y_nom_b, Xk*x_nom + x_nom_b, 0, 0, 0, Vk*v_nom, 0))
             #g.append(self.F.h(Yk*y_nom, Xk*x_nom, 0, 0, 0, Vk, 0))
             h_gaps.append(g[-1])
             
@@ -832,8 +873,8 @@ class Collocation(Shooting):
             #x_plot.append(Xk)
 
             # Add equality constraint
-            #g.append(Xk_end - Xk)
-            g.append(x_nom*Xk_end - x_nom*Xk)
+            g.append(Xk_end - Xk)
+            #g.append(x_nom*Xk_end - x_nom*Xk)
             x_gaps.append(g[-1])
             #lbg.append([0, 0])
             #ubg.append([0, 0])
@@ -845,7 +886,7 @@ class Collocation(Shooting):
         v.append(Vk)
         y.append(Yk)
         # add last measurement equation
-        g.append(self.F.h(Yk*y_nom, Xk*x_nom, 0, 0, 0, Vk*v_nom, 0))
+        g.append(self.F.h(Yk*y_nom + y_nom_b, Xk*x_nom + x_nom_b, 0, 0, 0, Vk*v_nom, 0))
         #g.append(self.F.h(Yk*y_nom, Xk*x_nom, 0, 0, 0, Vk, 0))
         h_gaps.append(g[-1])
 

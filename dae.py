@@ -1,4 +1,6 @@
-from casadi import *
+#from casadi import *
+import casadi as ca
+import re
 
 class DAE(object):
     """
@@ -6,7 +8,7 @@ class DAE(object):
     """
     def __init__(self, config):
 
-        self.dae = DaeBuilder()
+        self.dae = ca.DaeBuilder()
         self.config = config
         self.add_params()
         self.add_states()
@@ -38,7 +40,7 @@ class DAE(object):
             for name in self.config["w"]:
                 # can't add to dae:
                 # state = self.dae.add_x(name)
-                noise = MX.sym(name)
+                noise = ca.MX.sym(name)
                 self.__setattr__(name, noise)
 
             self.__setattr__("w_names", self.config["w"])
@@ -55,7 +57,7 @@ class DAE(object):
             for name in self.config["v"]:
                 # can't add to dae:
                 # state = self.dae.add_x(name)
-                noise = MX.sym(name)
+                noise = ca.MX.sym(name)
                 self.__setattr__(name, noise)
 
             self.__setattr__("v_names", self.config["v"])
@@ -71,7 +73,7 @@ class DAE(object):
             for name in self.config["r"]:
                 # can't add to dae:
                 # state = self.dae.add_x(name)
-                noise = MX.sym(name)
+                noise = ca.MX.sym(name)
                 self.__setattr__(name, noise)
 
             self.__setattr__("r_names", self.config["r"])
