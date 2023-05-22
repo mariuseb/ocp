@@ -1,0 +1,4270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="Buildings.HeatTransfer.Windows.Examples.WindowCustomNoHeat"
+  guid="{e56e7a70-0d14-432d-b989-74257136a85e}"
+  description="Test model for the window"
+  generationTool="OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"
+  generationDateAndTime="2023-04-25T11:50:47Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="2">
+  <ModelExchange
+    modelIdentifier="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat" providesDirectionalDerivative="true">
+    <SourceFiles>
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_functions.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_records.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_01exo.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_02nls.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_03lsy.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_04set.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_05evt.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_06inz.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_07dly.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_08bnd.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_09alg.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_10asr.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_11mix.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_12jac.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_13opt.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_14lnz.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_15syn.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_16dae.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_17inl.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_18spd.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_init_fmu.c" />
+      <File name="Buildings_HeatTransfer_Windows_Examples_WindowCustomNoHeat_FMU.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/jacobian_util.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+      <File name="./simulation/solver/linearSystem.c" />
+      <File name="./simulation/solver/linearSolverLapack.c" />
+      <File name="./simulation/solver/linearSolverTotalPivot.c" />
+    </SourceFiles>
+  </ModelExchange>
+  <UnitDefinitions>
+    <Unit name="m/s">
+      <BaseUnit m="1" s="-1" />
+    </Unit>
+    <Unit name="s">
+      <BaseUnit s="1" />
+    </Unit>
+    <Unit name="m">
+      <BaseUnit m="1" />
+    </Unit>
+    <Unit name="N.s/(m2.K)">
+      <BaseUnit m="-1" s="-1" K="-1" kg="1" />
+    </Unit>
+    <Unit name="W/(m.K2)">
+      <BaseUnit m="1" s="-3" K="-2" kg="1" />
+    </Unit>
+    <Unit name="J/(kg.K2)">
+      <BaseUnit m="2" s="-2" K="-2" />
+    </Unit>
+    <Unit name="Pa.s">
+      <BaseUnit m="-1" s="-1" kg="1" />
+    </Unit>
+    <Unit name="W/(m.K)">
+      <BaseUnit m="1" s="-3" K="-1" kg="1" />
+    </Unit>
+    <Unit name="J/(kg.K)">
+      <BaseUnit m="2" s="-2" K="-1" />
+    </Unit>
+    <Unit name="Pa">
+      <BaseUnit m="-1" s="-2" kg="1" />
+    </Unit>
+    <Unit name="kg/mol">
+      <BaseUnit mol="-1" kg="1" />
+    </Unit>
+    <Unit name="W/(m2.K)">
+      <BaseUnit s="-3" K="-1" kg="1" />
+    </Unit>
+    <Unit name="1">
+      <BaseUnit />
+    </Unit>
+    <Unit name="rad">
+      <BaseUnit />
+    </Unit>
+    <Unit name="m2">
+      <BaseUnit m="2" />
+    </Unit>
+    <Unit name="W/m2">
+      <BaseUnit s="-3" kg="1" />
+    </Unit>
+    <Unit name="K4">
+      <BaseUnit K="4" />
+    </Unit>
+    <Unit name="W/K">
+      <BaseUnit m="2" s="-3" K="-1" kg="1" />
+    </Unit>
+    <Unit name="K">
+      <BaseUnit K="1" />
+    </Unit>
+    <Unit name="W">
+      <BaseUnit m="2" s="-3" kg="1" />
+    </Unit>
+  </UnitDefinitions>
+  <TypeDefinitions>
+    <SimpleType name="Buildings.HeatTransfer.Types.InteriorConvection">
+      <Enumeration>
+        <Item name="Fixed" value="1"/>
+        <Item name="Temperature" value="2"/>
+      </Enumeration>
+    </SimpleType>
+  </TypeDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="1.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="QAbsSha_flow"
+    valueReference="0"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="QAbsUns_flow"
+    valueReference="1"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="QSolAbsExt_flow"
+    valueReference="2"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="QSolAbsInt_flow"
+    valueReference="3"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="TBlaSky"
+    valueReference="4"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="TOut"
+    valueReference="5"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="TOuts.port.Q_flow"
+    valueReference="6"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="TRAir.port.Q_flow"
+    valueReference="7"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="TRAir.port.T"
+    valueReference="8"
+    description="Port temperature"
+    initial="exact">
+    <Real start="288.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="extCon.JInSha"
+    valueReference="9"
+    description="Incoming radiosity that connects to shaded part of glass"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="extCon.JInUns"
+    valueReference="10"
+    description="Incoming radiosity that connects to unshaded part of glass"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="extCon.JOutSha"
+    valueReference="11"
+    description="Outgoing radiosity that connects to shaded part of glass"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="extCon.JOutUns"
+    valueReference="12"
+    description="Outgoing radiosity that connects to unshaded part of glass"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="extCon.conCoeFra.GCon"
+    valueReference="13"
+    description="Convective thermal conductance"
+    >
+    <Real unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="extCon.conCoeGla.GCon"
+    valueReference="14"
+    description="Convective thermal conductance"
+    >
+    <Real unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="extCon.conFra.dT"
+    valueReference="15"
+    description="= solid.T - fluid.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="extCon.conWinUns.Gc"
+    valueReference="16"
+    description="Signal representing the convective thermal conductance in [W/K]"
+    >
+    <Real unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="extCon.conWinUns.Q_flow"
+    valueReference="17"
+    description="Heat flow rate from solid -&gt; fluid"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="extCon.conWinUns.dT"
+    valueReference="18"
+    description="= solid.T - fluid.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="extCon.glaSha.Q_flow"
+    valueReference="19"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="extCon.radOut.JOut"
+    valueReference="20"
+    description="Radiosity that flows out of component"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="extCon.radOut.TRad"
+    valueReference="21"
+    description="Mean radiant temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="extCon.radOut.TRad4"
+    valueReference="22"
+    description="4th power of the mean outdoor temperature"
+    >
+    <Real unit="K4"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="extCon.shaRad.QRadAbs_flow"
+    valueReference="27"
+    description="Total net radiation that is absorbed by the shade (positive if absorbed)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="extCon.shaRad.u"
+    valueReference="30"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="fixedHeatFlow.port.Q_flow"
+    valueReference="32"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="fixedHeatFlow.port.T"
+    valueReference="33"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "28" -->
+  <ScalarVariable
+    name="indRad.JIn"
+    valueReference="34"
+    description="Incoming radiosity"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "29" -->
+  <ScalarVariable
+    name="indRad.heatPort.Q_flow"
+    valueReference="36"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "30" -->
+  <ScalarVariable
+    name="intShaCon.QRadAbs_flow"
+    valueReference="37"
+    description="Total net radiation that is absorbed by the shade (positive if absorbed)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "31" -->
+  <ScalarVariable
+    name="intShaCon.TSha"
+    valueReference="38"
+    description="Shade temperature"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "32" -->
+  <ScalarVariable
+    name="intShaCon.conCoeGla.GCon"
+    valueReference="39"
+    description="Convective thermal conductance"
+    initial="exact">
+    <Real start="0.0" unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "33" -->
+  <ScalarVariable
+    name="intShaCon.conFra.Q_flow"
+    valueReference="40"
+    description="Heat flow rate from solid -&gt; fluid"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "34" -->
+  <ScalarVariable
+    name="intShaCon.conFra.dT"
+    valueReference="41"
+    description="= solid.T - fluid.T"
+    initial="approx">
+    <Real start="0.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "35" -->
+  <ScalarVariable
+    name="intShaCon.conFra.q_flow"
+    valueReference="42"
+    description="Convective heat flux from solid -&gt; fluid"
+    >
+    <Real unit="W/m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "36" -->
+  <ScalarVariable
+    name="intShaCon.conFra.u"
+    valueReference="43"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "37" -->
+  <ScalarVariable
+    name="intShaCon.conSha.Gc"
+    valueReference="44"
+    description="Signal representing the convective thermal conductance"
+    >
+    <Real unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "38" -->
+  <ScalarVariable
+    name="intShaCon.conSha.air.Q_flow"
+    valueReference="45"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "39" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.Q_flow"
+    valueReference="46"
+    description="Heat flow rate from solid -&gt; fluid"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "40" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.dT"
+    valueReference="47"
+    description="= solid.T - fluid.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "41" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.q_flow"
+    valueReference="48"
+    description="Convective heat flux from solid -&gt; fluid"
+    >
+    <Real unit="W/m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "42" -->
+  <ScalarVariable
+    name="intShaCon.glaSha.Q_flow"
+    valueReference="49"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "43" -->
+  <ScalarVariable
+    name="intShaCon.glaSha.T"
+    valueReference="50"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "44" -->
+  <ScalarVariable
+    name="intShaRad.JIn_air"
+    valueReference="53"
+    description="Incoming radiosity at the air-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "45" -->
+  <ScalarVariable
+    name="intShaRad.JIn_glass"
+    valueReference="54"
+    description="Incoming radiosity at the glass-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "46" -->
+  <ScalarVariable
+    name="intShaRad.JOut_air"
+    valueReference="55"
+    description="Outgoing radiosity at the air-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "47" -->
+  <ScalarVariable
+    name="intShaRad.JOut_glass"
+    valueReference="56"
+    description="Outgoing radiosity at the glass-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "48" -->
+  <ScalarVariable
+    name="shaSig.y"
+    valueReference="58"
+    description="Connector of Real output signal"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "49" -->
+  <ScalarVariable
+    name="shaSig.yCom"
+    valueReference="59"
+    description="1-u"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "50" -->
+  <ScalarVariable
+    name="uSha.y"
+    valueReference="60"
+    description="Connector of Real output signal"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "51" -->
+  <ScalarVariable
+    name="vWin"
+    valueReference="61"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "52" -->
+  <ScalarVariable
+    name="window.JInUns_b"
+    valueReference="62"
+    description="Incoming radiosity that connects to unshaded part of glass at room-side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "53" -->
+  <ScalarVariable
+    name="window.JOutUns_b"
+    valueReference="63"
+    description="Outgoing radiosity that connects to unshaded part of glass at room-side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "54" -->
+  <ScalarVariable
+    name="window.fra_a.T"
+    valueReference="64"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "55" -->
+  <ScalarVariable
+    name="window.fra_b.T"
+    valueReference="65"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "56" -->
+  <ScalarVariable
+    name="window.frame.dT"
+    valueReference="66"
+    description="port_a.T - port_b.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "57" -->
+  <ScalarVariable
+    name="window.glaSha.u"
+    valueReference="71"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "58" -->
+  <ScalarVariable
+    name="window.glaSha_a.T"
+    valueReference="72"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "59" -->
+  <ScalarVariable
+    name="window.glaUns.u"
+    valueReference="77"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "60" -->
+  <ScalarVariable
+    name="window.glaUns_a.T"
+    valueReference="78"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "61" -->
+  <ScalarVariable
+    name="window.glaUns_b.T"
+    valueReference="79"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "62" -->
+  <ScalarVariable
+    name="A"
+    valueReference="80"
+    description="Window surface area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "63" -->
+  <ScalarVariable
+    name="AFra"
+    valueReference="81"
+    description="Frame area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "64" -->
+  <ScalarVariable
+    name="AGla"
+    valueReference="82"
+    description="Glass area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "65" -->
+  <ScalarVariable
+    name="TRAir.T"
+    valueReference="83"
+    description="Fixed temperature at port"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "66" -->
+  <ScalarVariable
+    name="azi"
+    valueReference="84"
+    description="Surface azimuth"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "67" -->
+  <ScalarVariable
+    name="extCon.A"
+    valueReference="85"
+    description="Heat transfer area of frame and window"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "68" -->
+  <ScalarVariable
+    name="extCon.AFra"
+    valueReference="86"
+    description="Frame area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "69" -->
+  <ScalarVariable
+    name="extCon.AGla"
+    valueReference="87"
+    description="Glass area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "70" -->
+  <ScalarVariable
+    name="extCon.absIRSha_air"
+    valueReference="88"
+    description="Infrared absorptivity of shade surface that faces air"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "71" -->
+  <ScalarVariable
+    name="extCon.absIRSha_glass"
+    valueReference="89"
+    description="Infrared absorptivity of shade surface that faces glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "72" -->
+  <ScalarVariable
+    name="extCon.conCoeFra.A"
+    valueReference="90"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "73" -->
+  <ScalarVariable
+    name="extCon.conCoeGla.A"
+    valueReference="91"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "74" -->
+  <ScalarVariable
+    name="extCon.fFra"
+    valueReference="92"
+    description="Fraction of window frame divided by total window area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "75" -->
+  <ScalarVariable
+    name="extCon.radOut.A"
+    valueReference="93"
+    description="Area of receiving surface"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "76" -->
+  <ScalarVariable
+    name="extCon.radOut.T0"
+    valueReference="94"
+    description="Temperature used to linearize radiative heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "77" -->
+  <ScalarVariable
+    name="extCon.radOut.vieFacSky"
+    valueReference="97"
+    description="View factor from receiving surface to sky (=1 for roofs)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "78" -->
+  <ScalarVariable
+    name="extCon.shaRad.A"
+    valueReference="100"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "79" -->
+  <ScalarVariable
+    name="extCon.shaRad.T0"
+    valueReference="101"
+    description="Temperature used to linearize radiative heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "80" -->
+  <ScalarVariable
+    name="extCon.shaRad.absIR_air"
+    valueReference="103"
+    description="Infrared absorptivity of surface that faces air"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "81" -->
+  <ScalarVariable
+    name="extCon.shaRad.absIR_glass"
+    valueReference="104"
+    description="Infrared absorptivity of surface that faces glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "82" -->
+  <ScalarVariable
+    name="extCon.shaRad.rhoIR_air"
+    valueReference="105"
+    description="Infrared reflectivity of surface that faces air"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "83" -->
+  <ScalarVariable
+    name="extCon.shaRad.rhoIR_glass"
+    valueReference="106"
+    description="Infrared reflectivity of surface that faces glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "84" -->
+  <ScalarVariable
+    name="extCon.shaRad.tauIR_air"
+    valueReference="107"
+    description="Infrared transmissivity of shade for radiation coming from the exterior or the room"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "85" -->
+  <ScalarVariable
+    name="extCon.shaRad.tauIR_glass"
+    valueReference="108"
+    description="Infrared transmissivity of shade for radiation coming from the glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "86" -->
+  <ScalarVariable
+    name="extCon.tauIRSha_air"
+    valueReference="109"
+    description="Infrared transmissivity of shade for radiation coming from the exterior or the room"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "87" -->
+  <ScalarVariable
+    name="extCon.tauIRSha_glass"
+    valueReference="110"
+    description="Infrared transmissivity of shade for radiation coming from the glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "88" -->
+  <ScalarVariable
+    name="extCon.vieFacSky"
+    valueReference="111"
+    description="View factor from receiving surface to sky"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "89" -->
+  <ScalarVariable
+    name="fFra"
+    valueReference="112"
+    description="Fraction of frame, = frame area divided by total area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "90" -->
+  <ScalarVariable
+    name="fixedHeatFlow.Q_flow"
+    valueReference="113"
+    description="Fixed heat flow rate at port"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "91" -->
+  <ScalarVariable
+    name="glaSys.UFra"
+    valueReference="114"
+    description="U-value of frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "92" -->
+  <ScalarVariable
+    name="glaSys.absIRFra"
+    valueReference="115"
+    description="Infrared absorptivity of window frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "93" -->
+  <ScalarVariable
+    name="glaSys.absSolFra"
+    valueReference="116"
+    description="Solar absorptivity of window frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "94" -->
+  <ScalarVariable
+    name="glaSys.gas[1].MM"
+    valueReference="117"
+    description="Molar mass (of mixture or single fluid)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.02897" min="0.0" unit="kg/mol"/>
+  </ScalarVariable>
+  <!-- Index of variable = "95" -->
+  <ScalarVariable
+    name="glaSys.gas[1].P0"
+    valueReference="118"
+    description="Normal pressure"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="101325.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "96" -->
+  <ScalarVariable
+    name="glaSys.gas[1].a_c"
+    valueReference="119"
+    description="Constant coefficient for specific heat capacity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1002.737" unit="J/(kg.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "97" -->
+  <ScalarVariable
+    name="glaSys.gas[1].a_k"
+    valueReference="120"
+    description="Constant coefficient for thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.002873" unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "98" -->
+  <ScalarVariable
+    name="glaSys.gas[1].a_mu"
+    valueReference="121"
+    description="Constant coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="3.723e-06" min="0.0" unit="Pa.s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "99" -->
+  <ScalarVariable
+    name="glaSys.gas[1].b_c"
+    valueReference="122"
+    description="Temperature dependent coefficient for specific heat capacity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.012324" unit="J/(kg.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "100" -->
+  <ScalarVariable
+    name="glaSys.gas[1].b_k"
+    valueReference="123"
+    description="Temperature dependent coefficient for thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="7.76e-05" unit="W/(m.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "101" -->
+  <ScalarVariable
+    name="glaSys.gas[1].b_mu"
+    valueReference="124"
+    description="Temperature dependent coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="4.94e-08" unit="N.s/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "102" -->
+  <ScalarVariable
+    name="glaSys.gas[1].x"
+    valueReference="125"
+    description="Gas layer thickness"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="-1.0" unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "103" -->
+  <ScalarVariable
+    name="glaSys.glass[1].absIR_a"
+    valueReference="126"
+    description="Infrared absorptivity of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.84" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "104" -->
+  <ScalarVariable
+    name="glaSys.glass[1].absIR_b"
+    valueReference="127"
+    description="Infrared absorptivity of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.84" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "105" -->
+  <ScalarVariable
+    name="glaSys.glass[1].k"
+    valueReference="128"
+    description="Thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1.0" unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "106" -->
+  <ScalarVariable
+    name="glaSys.glass[1].rhoSol_a[1]"
+    valueReference="129"
+    description="Solar reflectance of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.075" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "107" -->
+  <ScalarVariable
+    name="glaSys.glass[1].rhoSol_b[1]"
+    valueReference="130"
+    description="Solar reflectance of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.075" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "108" -->
+  <ScalarVariable
+    name="glaSys.glass[1].tauIR"
+    valueReference="131"
+    description="Infrared transmissivity of glass"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "109" -->
+  <ScalarVariable
+    name="glaSys.glass[1].tauSol[1]"
+    valueReference="132"
+    description="Solar transmittance"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.834" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "110" -->
+  <ScalarVariable
+    name="glaSys.glass[1].x"
+    valueReference="133"
+    description="Thickness"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.003" unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "111" -->
+  <ScalarVariable
+    name="glaSys.shade.absIR_a"
+    valueReference="134"
+    description="Infrared absorptivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "112" -->
+  <ScalarVariable
+    name="glaSys.shade.absIR_b"
+    valueReference="135"
+    description="Infrared absorptivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "113" -->
+  <ScalarVariable
+    name="glaSys.shade.rhoSol_a"
+    valueReference="136"
+    description="Solar reflection coefficient of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "114" -->
+  <ScalarVariable
+    name="glaSys.shade.rhoSol_b"
+    valueReference="137"
+    description="Solar reflection coefficient of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "115" -->
+  <ScalarVariable
+    name="glaSys.shade.tauIR_a"
+    valueReference="138"
+    description="Infrared transmissivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "116" -->
+  <ScalarVariable
+    name="glaSys.shade.tauIR_b"
+    valueReference="139"
+    description="Infrared transmissivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "117" -->
+  <ScalarVariable
+    name="glaSys.shade.tauSol_a"
+    valueReference="140"
+    description="Solar transmissivity of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "118" -->
+  <ScalarVariable
+    name="glaSys.shade.tauSol_b"
+    valueReference="141"
+    description="Solar transmissivity of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "119" -->
+  <ScalarVariable
+    name="indRad.A"
+    valueReference="142"
+    description="Surface area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "120" -->
+  <ScalarVariable
+    name="indRad.T0"
+    valueReference="143"
+    description="Temperature used to linearize radiative heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "121" -->
+  <ScalarVariable
+    name="indRad.absIR"
+    valueReference="146"
+    description="Infrared absorptivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "122" -->
+  <ScalarVariable
+    name="indRad.rhoIR"
+    valueReference="147"
+    description="Infrared reflectivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "123" -->
+  <ScalarVariable
+    name="indRad.tauIR"
+    valueReference="148"
+    description="Infrared transmissivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "124" -->
+  <ScalarVariable
+    name="intShaCon.A"
+    valueReference="149"
+    description="Heat transfer area of frame and window"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "125" -->
+  <ScalarVariable
+    name="intShaCon.AFra"
+    valueReference="150"
+    description="Frame area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "126" -->
+  <ScalarVariable
+    name="intShaCon.AGla"
+    valueReference="151"
+    description="Glass area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "127" -->
+  <ScalarVariable
+    name="intShaCon.conCoeGla.A"
+    valueReference="152"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "128" -->
+  <ScalarVariable
+    name="intShaCon.conFra.A"
+    valueReference="153"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "129" -->
+  <ScalarVariable
+    name="intShaCon.conFra.hFixed"
+    valueReference="155"
+    description="Constant convection coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "130" -->
+  <ScalarVariable
+    name="intShaCon.conFra.til"
+    valueReference="157"
+    description="Surface tilt"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "131" -->
+  <ScalarVariable
+    name="intShaCon.conSha.A"
+    valueReference="158"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "132" -->
+  <ScalarVariable
+    name="intShaCon.conSha.k"
+    valueReference="159"
+    description="Coefficient used to scale convection between shade and glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "133" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.A"
+    valueReference="160"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "134" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.hFixed"
+    valueReference="162"
+    description="Constant convection coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "135" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.til"
+    valueReference="164"
+    description="Surface tilt"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "136" -->
+  <ScalarVariable
+    name="intShaCon.fFra"
+    valueReference="165"
+    description="Fraction of window frame divided by total window area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "137" -->
+  <ScalarVariable
+    name="intShaCon.hFixed"
+    valueReference="166"
+    description="Constant convection coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "138" -->
+  <ScalarVariable
+    name="intShaCon.til"
+    valueReference="167"
+    description="Surface tilt"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "139" -->
+  <ScalarVariable
+    name="intShaRad.A"
+    valueReference="168"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "140" -->
+  <ScalarVariable
+    name="intShaRad.T0"
+    valueReference="169"
+    description="Temperature used to linearize radiative heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "141" -->
+  <ScalarVariable
+    name="intShaRad.absIR_air"
+    valueReference="171"
+    description="Infrared absorptivity of surface that faces air"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "142" -->
+  <ScalarVariable
+    name="intShaRad.absIR_glass"
+    valueReference="172"
+    description="Infrared absorptivity of surface that faces glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "143" -->
+  <ScalarVariable
+    name="intShaRad.rhoIR_air"
+    valueReference="173"
+    description="Infrared reflectivity of surface that faces air"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "144" -->
+  <ScalarVariable
+    name="intShaRad.rhoIR_glass"
+    valueReference="174"
+    description="Infrared reflectivity of surface that faces glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "145" -->
+  <ScalarVariable
+    name="intShaRad.tauIR_air"
+    valueReference="175"
+    description="Infrared transmissivity of shade for radiation coming from the exterior or the room"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "146" -->
+  <ScalarVariable
+    name="intShaRad.tauIR_glass"
+    valueReference="176"
+    description="Infrared transmissivity of shade for radiation coming from the glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "147" -->
+  <ScalarVariable
+    name="til"
+    valueReference="179"
+    description="Surface tilt"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "148" -->
+  <ScalarVariable
+    name="uSha.duration"
+    valueReference="180"
+    description="Duration of ramp (= 0.0 gives a Step)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "149" -->
+  <ScalarVariable
+    name="uSha.height"
+    valueReference="181"
+    description="Height of ramps"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "150" -->
+  <ScalarVariable
+    name="uSha.offset"
+    valueReference="182"
+    description="Offset of output signal y"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "151" -->
+  <ScalarVariable
+    name="uSha.startTime"
+    valueReference="183"
+    description="Output y = offset for time &lt; startTime"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "152" -->
+  <ScalarVariable
+    name="window.A"
+    valueReference="184"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "153" -->
+  <ScalarVariable
+    name="window.AFra"
+    valueReference="185"
+    description="Frame area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "154" -->
+  <ScalarVariable
+    name="window.AGla"
+    valueReference="186"
+    description="Glass area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "155" -->
+  <ScalarVariable
+    name="window.fFra"
+    valueReference="187"
+    description="Fraction of frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "156" -->
+  <ScalarVariable
+    name="window.frame.G"
+    valueReference="188"
+    description="Constant thermal conductance of material"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "157" -->
+  <ScalarVariable
+    name="window.glaSha.A"
+    valueReference="189"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "158" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.UFra"
+    valueReference="190"
+    description="U-value of frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "159" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.absIRFra"
+    valueReference="191"
+    description="Infrared absorptivity of window frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "160" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.absSolFra"
+    valueReference="192"
+    description="Solar absorptivity of window frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "161" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].MM"
+    valueReference="193"
+    description="Molar mass (of mixture or single fluid)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/mol"/>
+  </ScalarVariable>
+  <!-- Index of variable = "162" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].P0"
+    valueReference="194"
+    description="Normal pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "163" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].a_c"
+    valueReference="195"
+    description="Constant coefficient for specific heat capacity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/(kg.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "164" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].a_k"
+    valueReference="196"
+    description="Constant coefficient for thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "165" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].a_mu"
+    valueReference="197"
+    description="Constant coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa.s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "166" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].b_c"
+    valueReference="198"
+    description="Temperature dependent coefficient for specific heat capacity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/(kg.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "167" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].b_k"
+    valueReference="199"
+    description="Temperature dependent coefficient for thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "168" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].b_mu"
+    valueReference="200"
+    description="Temperature dependent coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="N.s/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "169" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.gas[1].x"
+    valueReference="201"
+    description="Gas layer thickness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "170" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].absIR_a"
+    valueReference="202"
+    description="Infrared absorptivity of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "171" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].absIR_b"
+    valueReference="203"
+    description="Infrared absorptivity of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "172" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].k"
+    valueReference="204"
+    description="Thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "173" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].rhoSol_a[1]"
+    valueReference="205"
+    description="Solar reflectance of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "174" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].rhoSol_b[1]"
+    valueReference="206"
+    description="Solar reflectance of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "175" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].tauIR"
+    valueReference="207"
+    description="Infrared transmissivity of glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "176" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].tauSol[1]"
+    valueReference="208"
+    description="Solar transmittance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "177" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.glass[1].x"
+    valueReference="209"
+    description="Thickness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "178" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.absIR_a"
+    valueReference="210"
+    description="Infrared absorptivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "179" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.absIR_b"
+    valueReference="211"
+    description="Infrared absorptivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "180" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.rhoSol_a"
+    valueReference="212"
+    description="Solar reflection coefficient of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "181" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.rhoSol_b"
+    valueReference="213"
+    description="Solar reflection coefficient of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "182" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.tauIR_a"
+    valueReference="214"
+    description="Infrared transmissivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "183" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.tauIR_b"
+    valueReference="215"
+    description="Infrared transmissivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "184" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.tauSol_a"
+    valueReference="216"
+    description="Solar transmissivity of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "185" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.shade.tauSol_b"
+    valueReference="217"
+    description="Solar transmissivity of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "186" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].A"
+    valueReference="218"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "187" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].T0"
+    valueReference="220"
+    description="Temperature used to linearize radiative heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "188" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].absIR_a"
+    valueReference="223"
+    description="Infrared absorptivity of surface a"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "189" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].absIR_b"
+    valueReference="224"
+    description="Infrared absorptivity of surface b"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "190" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].k"
+    valueReference="225"
+    description="Thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "191" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].rhoIR_a"
+    valueReference="226"
+    description="Infrared reflectivity of surface a"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "192" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].rhoIR_b"
+    valueReference="227"
+    description="Infrared reflectivity of surface b"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "193" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].tauIR"
+    valueReference="228"
+    description="Infrared transmissivity of glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "194" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].x"
+    valueReference="229"
+    description="Material thickness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "195" -->
+  <ScalarVariable
+    name="window.glaSha.til"
+    valueReference="230"
+    description="Surface tilt (only 90 degrees=vertical is implemented)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "196" -->
+  <ScalarVariable
+    name="window.glaSys.UFra"
+    valueReference="231"
+    description="U-value of frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "197" -->
+  <ScalarVariable
+    name="window.glaSys.absIRFra"
+    valueReference="232"
+    description="Infrared absorptivity of window frame"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.8" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "198" -->
+  <ScalarVariable
+    name="window.glaSys.absSolFra"
+    valueReference="233"
+    description="Solar absorptivity of window frame"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.5" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "199" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].MM"
+    valueReference="234"
+    description="Molar mass (of mixture or single fluid)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.02897" min="0.0" unit="kg/mol"/>
+  </ScalarVariable>
+  <!-- Index of variable = "200" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].P0"
+    valueReference="235"
+    description="Normal pressure"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="101325.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "201" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].a_c"
+    valueReference="236"
+    description="Constant coefficient for specific heat capacity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1002.737" unit="J/(kg.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "202" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].a_k"
+    valueReference="237"
+    description="Constant coefficient for thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.002873" unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "203" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].a_mu"
+    valueReference="238"
+    description="Constant coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="3.723e-06" min="0.0" unit="Pa.s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "204" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].b_c"
+    valueReference="239"
+    description="Temperature dependent coefficient for specific heat capacity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.012324" unit="J/(kg.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "205" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].b_k"
+    valueReference="240"
+    description="Temperature dependent coefficient for thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="7.76e-05" unit="W/(m.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "206" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].b_mu"
+    valueReference="241"
+    description="Temperature dependent coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="4.94e-08" unit="N.s/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "207" -->
+  <ScalarVariable
+    name="window.glaSys.gas[1].x"
+    valueReference="242"
+    description="Gas layer thickness"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="-1.0" unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "208" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].absIR_a"
+    valueReference="243"
+    description="Infrared absorptivity of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.84" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "209" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].absIR_b"
+    valueReference="244"
+    description="Infrared absorptivity of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.84" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "210" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].k"
+    valueReference="245"
+    description="Thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1.0" unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "211" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].rhoSol_a[1]"
+    valueReference="246"
+    description="Solar reflectance of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.075" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "212" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].rhoSol_b[1]"
+    valueReference="247"
+    description="Solar reflectance of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.075" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "213" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].tauIR"
+    valueReference="248"
+    description="Infrared transmissivity of glass"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "214" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].tauSol[1]"
+    valueReference="249"
+    description="Solar transmittance"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.834" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "215" -->
+  <ScalarVariable
+    name="window.glaSys.glass[1].x"
+    valueReference="250"
+    description="Thickness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "216" -->
+  <ScalarVariable
+    name="window.glaSys.shade.absIR_a"
+    valueReference="251"
+    description="Infrared absorptivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "217" -->
+  <ScalarVariable
+    name="window.glaSys.shade.absIR_b"
+    valueReference="252"
+    description="Infrared absorptivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "218" -->
+  <ScalarVariable
+    name="window.glaSys.shade.rhoSol_a"
+    valueReference="253"
+    description="Solar reflection coefficient of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "219" -->
+  <ScalarVariable
+    name="window.glaSys.shade.rhoSol_b"
+    valueReference="254"
+    description="Solar reflection coefficient of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "220" -->
+  <ScalarVariable
+    name="window.glaSys.shade.tauIR_a"
+    valueReference="255"
+    description="Infrared transmissivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "221" -->
+  <ScalarVariable
+    name="window.glaSys.shade.tauIR_b"
+    valueReference="256"
+    description="Infrared transmissivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "222" -->
+  <ScalarVariable
+    name="window.glaSys.shade.tauSol_a"
+    valueReference="257"
+    description="Solar transmissivity of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "223" -->
+  <ScalarVariable
+    name="window.glaSys.shade.tauSol_b"
+    valueReference="258"
+    description="Solar transmissivity of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "224" -->
+  <ScalarVariable
+    name="window.glaUns.A"
+    valueReference="259"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "225" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.UFra"
+    valueReference="260"
+    description="U-value of frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "226" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.absIRFra"
+    valueReference="261"
+    description="Infrared absorptivity of window frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "227" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.absSolFra"
+    valueReference="262"
+    description="Solar absorptivity of window frame"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "228" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].MM"
+    valueReference="263"
+    description="Molar mass (of mixture or single fluid)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/mol"/>
+  </ScalarVariable>
+  <!-- Index of variable = "229" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].P0"
+    valueReference="264"
+    description="Normal pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "230" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].a_c"
+    valueReference="265"
+    description="Constant coefficient for specific heat capacity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/(kg.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "231" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].a_k"
+    valueReference="266"
+    description="Constant coefficient for thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "232" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].a_mu"
+    valueReference="267"
+    description="Constant coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa.s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "233" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].b_c"
+    valueReference="268"
+    description="Temperature dependent coefficient for specific heat capacity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/(kg.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "234" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].b_k"
+    valueReference="269"
+    description="Temperature dependent coefficient for thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "235" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].b_mu"
+    valueReference="270"
+    description="Temperature dependent coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="N.s/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "236" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.gas[1].x"
+    valueReference="271"
+    description="Gas layer thickness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "237" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].absIR_a"
+    valueReference="272"
+    description="Infrared absorptivity of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "238" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].absIR_b"
+    valueReference="273"
+    description="Infrared absorptivity of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "239" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].k"
+    valueReference="274"
+    description="Thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "240" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].rhoSol_a[1]"
+    valueReference="275"
+    description="Solar reflectance of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "241" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].rhoSol_b[1]"
+    valueReference="276"
+    description="Solar reflectance of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "242" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].tauIR"
+    valueReference="277"
+    description="Infrared transmissivity of glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "243" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].tauSol[1]"
+    valueReference="278"
+    description="Solar transmittance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "244" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.glass[1].x"
+    valueReference="279"
+    description="Thickness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "245" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.absIR_a"
+    valueReference="280"
+    description="Infrared absorptivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "246" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.absIR_b"
+    valueReference="281"
+    description="Infrared absorptivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "247" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.rhoSol_a"
+    valueReference="282"
+    description="Solar reflection coefficient of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "248" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.rhoSol_b"
+    valueReference="283"
+    description="Solar reflection coefficient of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "249" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.tauIR_a"
+    valueReference="284"
+    description="Infrared transmissivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "250" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.tauIR_b"
+    valueReference="285"
+    description="Infrared transmissivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "251" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.tauSol_a"
+    valueReference="286"
+    description="Solar transmissivity of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "252" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.shade.tauSol_b"
+    valueReference="287"
+    description="Solar transmissivity of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "253" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].A"
+    valueReference="288"
+    description="Heat transfer area"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "254" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].T0"
+    valueReference="290"
+    description="Temperature used to linearize radiative heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "255" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].absIR_a"
+    valueReference="293"
+    description="Infrared absorptivity of surface a"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "256" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].absIR_b"
+    valueReference="294"
+    description="Infrared absorptivity of surface b"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "257" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].k"
+    valueReference="295"
+    description="Thermal conductivity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "258" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].rhoIR_a"
+    valueReference="296"
+    description="Infrared reflectivity of surface a"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "259" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].rhoIR_b"
+    valueReference="297"
+    description="Infrared reflectivity of surface b"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "260" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].tauIR"
+    valueReference="298"
+    description="Infrared transmissivity of glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "261" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].x"
+    valueReference="299"
+    description="Material thickness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "262" -->
+  <ScalarVariable
+    name="window.glaUns.til"
+    valueReference="300"
+    description="Surface tilt (only 90 degrees=vertical is implemented)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "263" -->
+  <ScalarVariable
+    name="window.til"
+    valueReference="323"
+    description="Surface tilt"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "264" -->
+  <ScalarVariable
+    name="TOuts.T"
+    valueReference="5"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "265" -->
+  <ScalarVariable
+    name="TOuts.port.T"
+    valueReference="5"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "266" -->
+  <ScalarVariable
+    name="extCon.QSolAbs_flow"
+    valueReference="2"
+    description="Solar radiation absorbed by shade"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "267" -->
+  <ScalarVariable
+    name="extCon.TBlaSky"
+    valueReference="4"
+    description="Black body sky temperature"
+    >
+    <Real min="0.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "268" -->
+  <ScalarVariable
+    name="extCon.TOut"
+    valueReference="5"
+    description="Outside temperature"
+    >
+    <Real min="0.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "269" -->
+  <ScalarVariable
+    name="extCon.air.Q_flow"
+    valueReference="329"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "270" -->
+  <ScalarVariable
+    name="extCon.air.T"
+    valueReference="5"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "271" -->
+  <ScalarVariable
+    name="extCon.conCoeFra.v"
+    valueReference="61"
+    description="Wind speed"
+    >
+    <Real unit="m/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "272" -->
+  <ScalarVariable
+    name="extCon.conCoeGla.v"
+    valueReference="61"
+    description="Wind speed"
+    >
+    <Real unit="m/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "273" -->
+  <ScalarVariable
+    name="extCon.conFra.Gc"
+    valueReference="13"
+    description="Signal representing the convective thermal conductance in [W/K]"
+    >
+    <Real unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "274" -->
+  <ScalarVariable
+    name="extCon.conFra.Q_flow"
+    valueReference="334"
+    description="Heat flow rate from solid -&gt; fluid"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "275" -->
+  <ScalarVariable
+    name="extCon.conFra.fluid.Q_flow"
+    valueReference="40"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "276" -->
+  <ScalarVariable
+    name="extCon.conFra.fluid.T"
+    valueReference="5"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "277" -->
+  <ScalarVariable
+    name="extCon.conFra.solid.Q_flow"
+    valueReference="337"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "278" -->
+  <ScalarVariable
+    name="extCon.conFra.solid.T"
+    valueReference="64"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "279" -->
+  <ScalarVariable
+    name="extCon.conWinUns.fluid.Q_flow"
+    valueReference="339"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "280" -->
+  <ScalarVariable
+    name="extCon.conWinUns.fluid.T"
+    valueReference="5"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "281" -->
+  <ScalarVariable
+    name="extCon.conWinUns.solid.Q_flow"
+    valueReference="17"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "282" -->
+  <ScalarVariable
+    name="extCon.conWinUns.solid.T"
+    valueReference="78"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "283" -->
+  <ScalarVariable
+    name="extCon.frame.Q_flow"
+    valueReference="343"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "284" -->
+  <ScalarVariable
+    name="extCon.frame.T"
+    valueReference="64"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "285" -->
+  <ScalarVariable
+    name="extCon.glaSha.T"
+    valueReference="72"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "286" -->
+  <ScalarVariable
+    name="extCon.glaUns.Q_flow"
+    valueReference="17"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "287" -->
+  <ScalarVariable
+    name="extCon.glaUns.T"
+    valueReference="78"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "288" -->
+  <ScalarVariable
+    name="extCon.radOut.TBlaSky"
+    valueReference="4"
+    description="Black body sky temperature"
+    >
+    <Real min="0.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "289" -->
+  <ScalarVariable
+    name="extCon.radOut.TOut"
+    valueReference="5"
+    description="Outside temperature"
+    >
+    <Real min="0.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "290" -->
+  <ScalarVariable
+    name="extCon.shaRad.JIn_air"
+    valueReference="11"
+    description="Incoming radiosity at the air-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "291" -->
+  <ScalarVariable
+    name="extCon.shaRad.JIn_glass"
+    valueReference="9"
+    description="Incoming radiosity at the glass-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "292" -->
+  <ScalarVariable
+    name="extCon.shaRad.JOut_air"
+    valueReference="9"
+    description="Outgoing radiosity at the air-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "293" -->
+  <ScalarVariable
+    name="extCon.shaRad.JOut_glass"
+    valueReference="11"
+    description="Outgoing radiosity at the glass-side surface of the shade"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "294" -->
+  <ScalarVariable
+    name="extCon.shaRad.QSolAbs_flow"
+    valueReference="2"
+    description="Solar radiation absorbed by shade"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "295" -->
+  <ScalarVariable
+    name="extCon.uSha"
+    valueReference="60"
+    description="Input connector, used to scale the surface area to take into account an operable shading device, 0: unshaded; 1: fully shaded"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "296" -->
+  <ScalarVariable
+    name="extCon.vWin"
+    valueReference="61"
+    description="Wind speed"
+    >
+    <Real unit="m/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "297" -->
+  <ScalarVariable
+    name="indRad.JOut"
+    valueReference="34"
+    description="Outgoing radiosity"
+    >
+    <Real nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "298" -->
+  <ScalarVariable
+    name="indRad.heatPort.T"
+    valueReference="33"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "299" -->
+  <ScalarVariable
+    name="intShaCon.air.Q_flow"
+    valueReference="377"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "300" -->
+  <ScalarVariable
+    name="intShaCon.air.T"
+    valueReference="8"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "301" -->
+  <ScalarVariable
+    name="intShaCon.conFra.fluid.Q_flow"
+    valueReference="379"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "302" -->
+  <ScalarVariable
+    name="intShaCon.conFra.fluid.T"
+    valueReference="8"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "303" -->
+  <ScalarVariable
+    name="intShaCon.conFra.solid.Q_flow"
+    valueReference="40"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "304" -->
+  <ScalarVariable
+    name="intShaCon.conFra.solid.T"
+    valueReference="65"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "305" -->
+  <ScalarVariable
+    name="intShaCon.conSha.QRadAbs_flow"
+    valueReference="37"
+    description="Total net radiation that is absorbed by the shade (positive if absorbed)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "306" -->
+  <ScalarVariable
+    name="intShaCon.conSha.TSha"
+    valueReference="38"
+    description="Shade temperature"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "307" -->
+  <ScalarVariable
+    name="intShaCon.conSha.air.T"
+    valueReference="8"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "308" -->
+  <ScalarVariable
+    name="intShaCon.conSha.glass.Q_flow"
+    valueReference="49"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "309" -->
+  <ScalarVariable
+    name="intShaCon.conSha.glass.T"
+    valueReference="50"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "310" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.fluid.Q_flow"
+    valueReference="388"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "311" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.fluid.T"
+    valueReference="8"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "312" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.solid.Q_flow"
+    valueReference="46"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "313" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.solid.T"
+    valueReference="79"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "314" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.u"
+    valueReference="43"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "315" -->
+  <ScalarVariable
+    name="intShaCon.frame.Q_flow"
+    valueReference="40"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "316" -->
+  <ScalarVariable
+    name="intShaCon.frame.T"
+    valueReference="65"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "317" -->
+  <ScalarVariable
+    name="intShaCon.glaUns.Q_flow"
+    valueReference="46"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "318" -->
+  <ScalarVariable
+    name="intShaCon.glaUns.T"
+    valueReference="79"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "319" -->
+  <ScalarVariable
+    name="intShaCon.uSha"
+    valueReference="60"
+    description="Input connector, used to scale the surface area to take into account an operable shading device, 0: unshaded; 1: fully shaded"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "320" -->
+  <ScalarVariable
+    name="intShaRad.QRadAbs_flow"
+    valueReference="37"
+    description="Total net radiation that is absorbed by the shade (positive if absorbed)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "321" -->
+  <ScalarVariable
+    name="intShaRad.QSolAbs_flow"
+    valueReference="3"
+    description="Solar radiation absorbed by shade"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "322" -->
+  <ScalarVariable
+    name="intShaRad.TSha"
+    valueReference="38"
+    description="Shade temperature"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "323" -->
+  <ScalarVariable
+    name="intShaRad.u"
+    valueReference="58"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "324" -->
+  <ScalarVariable
+    name="shaSig.u"
+    valueReference="60"
+    description="Shading control signal, 0: unshaded; 1: fully shaded"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "325" -->
+  <ScalarVariable
+    name="window.JInSha_a"
+    valueReference="11"
+    description="Incoming radiosity that connects to shaded part of glass at exterior side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "326" -->
+  <ScalarVariable
+    name="window.JInSha_b"
+    valueReference="56"
+    description="Incoming radiosity that connects to shaded part of glass at room-side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "327" -->
+  <ScalarVariable
+    name="window.JInUns_a"
+    valueReference="12"
+    description="Incoming radiosity that connects to unshaded part of glass at exterior side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "328" -->
+  <ScalarVariable
+    name="window.JOutSha_a"
+    valueReference="9"
+    description="Outgoing radiosity that connects to shaded part of glass at exterior side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "329" -->
+  <ScalarVariable
+    name="window.JOutSha_b"
+    valueReference="54"
+    description="Outgoing radiosity that connects to shaded part of glass at room-side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "330" -->
+  <ScalarVariable
+    name="window.JOutUns_a"
+    valueReference="10"
+    description="Outgoing radiosity that connects to unshaded part of glass at exterior side"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "331" -->
+  <ScalarVariable
+    name="window.QAbsSha_flow[1]"
+    valueReference="0"
+    description="Solar radiation absorbed by shaded part of glass"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "332" -->
+  <ScalarVariable
+    name="window.QAbsUns_flow[1]"
+    valueReference="1"
+    description="Solar radiation absorbed by unshaded part of glass"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "333" -->
+  <ScalarVariable
+    name="window.fra_a.Q_flow"
+    valueReference="40"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "334" -->
+  <ScalarVariable
+    name="window.fra_b.Q_flow"
+    valueReference="428"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "335" -->
+  <ScalarVariable
+    name="window.frame.Q_flow"
+    valueReference="40"
+    description="Heat flow rate from port_a -&gt; port_b"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "336" -->
+  <ScalarVariable
+    name="window.frame.port_a.Q_flow"
+    valueReference="40"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "337" -->
+  <ScalarVariable
+    name="window.frame.port_a.T"
+    valueReference="64"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "338" -->
+  <ScalarVariable
+    name="window.frame.port_b.Q_flow"
+    valueReference="432"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "339" -->
+  <ScalarVariable
+    name="window.frame.port_b.T"
+    valueReference="65"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "340" -->
+  <ScalarVariable
+    name="window.glaSha.JIn_a"
+    valueReference="11"
+    description="Incoming radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "341" -->
+  <ScalarVariable
+    name="window.glaSha.JIn_b"
+    valueReference="56"
+    description="Incoming radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "342" -->
+  <ScalarVariable
+    name="window.glaSha.JOut_a"
+    valueReference="9"
+    description="Outgoing radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "343" -->
+  <ScalarVariable
+    name="window.glaSha.JOut_b"
+    valueReference="54"
+    description="Outgoing radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "344" -->
+  <ScalarVariable
+    name="window.glaSha.QAbs_flow[1]"
+    valueReference="0"
+    description="Solar radiation absorbed by glass"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "345" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].JIn_a"
+    valueReference="11"
+    description="Incoming radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "346" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].JIn_b"
+    valueReference="56"
+    description="Incoming radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "347" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].JOut_a"
+    valueReference="9"
+    description="Outgoing radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "348" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].JOut_b"
+    valueReference="54"
+    description="Outgoing radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "349" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].QAbs_flow"
+    valueReference="0"
+    description="Solar radiation absorbed by glass"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "350" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].port_a.Q_flow"
+    valueReference="444"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "351" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].port_a.T"
+    valueReference="72"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "352" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].port_b.Q_flow"
+    valueReference="446"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "353" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].port_b.T"
+    valueReference="50"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "354" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].u"
+    valueReference="71"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "355" -->
+  <ScalarVariable
+    name="window.glaSha.glass_a.Q_flow"
+    valueReference="449"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "356" -->
+  <ScalarVariable
+    name="window.glaSha.glass_a.T"
+    valueReference="72"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "357" -->
+  <ScalarVariable
+    name="window.glaSha.glass_b.Q_flow"
+    valueReference="451"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "358" -->
+  <ScalarVariable
+    name="window.glaSha.glass_b.T"
+    valueReference="50"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "359" -->
+  <ScalarVariable
+    name="window.glaSha_a.Q_flow"
+    valueReference="453"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "360" -->
+  <ScalarVariable
+    name="window.glaSha_b.Q_flow"
+    valueReference="454"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "361" -->
+  <ScalarVariable
+    name="window.glaSha_b.T"
+    valueReference="50"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "362" -->
+  <ScalarVariable
+    name="window.glaUns.JIn_a"
+    valueReference="12"
+    description="Incoming radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "363" -->
+  <ScalarVariable
+    name="window.glaUns.JIn_b"
+    valueReference="62"
+    description="Incoming radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "364" -->
+  <ScalarVariable
+    name="window.glaUns.JOut_a"
+    valueReference="10"
+    description="Outgoing radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "365" -->
+  <ScalarVariable
+    name="window.glaUns.JOut_b"
+    valueReference="63"
+    description="Outgoing radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "366" -->
+  <ScalarVariable
+    name="window.glaUns.QAbs_flow[1]"
+    valueReference="1"
+    description="Solar radiation absorbed by glass"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "367" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].JIn_a"
+    valueReference="12"
+    description="Incoming radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "368" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].JIn_b"
+    valueReference="62"
+    description="Incoming radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "369" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].JOut_a"
+    valueReference="10"
+    description="Outgoing radiosity at surface a"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "370" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].JOut_b"
+    valueReference="63"
+    description="Outgoing radiosity at surface b"
+    >
+    <Real min="0.0" nominal="419.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "371" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].QAbs_flow"
+    valueReference="1"
+    description="Solar radiation absorbed by glass"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "372" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].port_a.Q_flow"
+    valueReference="466"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "373" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].port_a.T"
+    valueReference="78"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "374" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].port_b.Q_flow"
+    valueReference="468"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "375" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].port_b.T"
+    valueReference="79"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "376" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].u"
+    valueReference="77"
+    description="Input connector, used to scale the surface area to take into account an operable shading device"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "377" -->
+  <ScalarVariable
+    name="window.glaUns.glass_a.Q_flow"
+    valueReference="471"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "378" -->
+  <ScalarVariable
+    name="window.glaUns.glass_a.T"
+    valueReference="78"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "379" -->
+  <ScalarVariable
+    name="window.glaUns.glass_b.Q_flow"
+    valueReference="473"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "380" -->
+  <ScalarVariable
+    name="window.glaUns.glass_b.T"
+    valueReference="79"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "381" -->
+  <ScalarVariable
+    name="window.glaUns_a.Q_flow"
+    valueReference="475"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "382" -->
+  <ScalarVariable
+    name="window.glaUns_b.Q_flow"
+    valueReference="476"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "383" -->
+  <ScalarVariable
+    name="window.uSha"
+    valueReference="60"
+    description="Control signal for the shading device. 0: unshaded; 1: fully shaded (removed if no shade is present)"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "384" -->
+  <ScalarVariable
+    name="intShaCon.conFra.conMod"
+    valueReference="0"
+    description="Convective heat transfer model"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.HeatTransfer.Types.InteriorConvection"/>
+  </ScalarVariable>
+  <!-- Index of variable = "385" -->
+  <ScalarVariable
+    name="intShaCon.conMod"
+    valueReference="1"
+    description="Convective heat transfer model"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.HeatTransfer.Types.InteriorConvection"/>
+  </ScalarVariable>
+  <!-- Index of variable = "386" -->
+  <ScalarVariable
+    name="intShaCon.conWinUns.conMod"
+    valueReference="2"
+    description="Convective heat transfer model"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.HeatTransfer.Types.InteriorConvection"/>
+  </ScalarVariable>
+  <!-- Index of variable = "387" -->
+  <ScalarVariable
+    name="extCon.haveExteriorShade"
+    valueReference="0"
+    description="Set to true if window has exterior shade (at surface a)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "388" -->
+  <ScalarVariable
+    name="extCon.haveInteriorShade"
+    valueReference="1"
+    description="Set to true if window has interior shade (at surface b)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "389" -->
+  <ScalarVariable
+    name="extCon.haveShade"
+    valueReference="2"
+    description="Set to true if window system has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "390" -->
+  <ScalarVariable
+    name="extCon.linearizeRadiation"
+    valueReference="3"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "391" -->
+  <ScalarVariable
+    name="extCon.radOut.linearize"
+    valueReference="4"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "392" -->
+  <ScalarVariable
+    name="extCon.shaRad.linearize"
+    valueReference="6"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "393" -->
+  <ScalarVariable
+    name="extCon.shaRad.thisSideHasShade"
+    valueReference="7"
+    description="Set to true if this side of the window has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "394" -->
+  <ScalarVariable
+    name="extCon.thisSideHasShade"
+    valueReference="9"
+    description="Set to true if this side of the model has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "395" -->
+  <ScalarVariable
+    name="glaSys.haveControllableWindow"
+    valueReference="10"
+    description="Flag, true if the window allows multiple states, such as for electrochromic windows"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "396" -->
+  <ScalarVariable
+    name="glaSys.haveExteriorShade"
+    valueReference="11"
+    description="Set to true if window has an exterior shade (at surface a)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "397" -->
+  <ScalarVariable
+    name="glaSys.haveInteriorShade"
+    valueReference="12"
+    description="Set to true if window has an interior shade (at surface b)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "398" -->
+  <ScalarVariable
+    name="glaSys.haveShade"
+    valueReference="13"
+    description="Parameter that is true if the construction has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "399" -->
+  <ScalarVariable
+    name="indRad.linearize"
+    valueReference="14"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "400" -->
+  <ScalarVariable
+    name="intShaCon.conSha.thisSideHasShade"
+    valueReference="17"
+    description="Set to true if this side of the window has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "401" -->
+  <ScalarVariable
+    name="intShaCon.haveExteriorShade"
+    valueReference="20"
+    description="Set to true if window has exterior shade (at surface a)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "402" -->
+  <ScalarVariable
+    name="intShaCon.haveInteriorShade"
+    valueReference="21"
+    description="Set to true if window has interior shade (at surface b)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "403" -->
+  <ScalarVariable
+    name="intShaCon.haveShade"
+    valueReference="22"
+    description="Set to true if window system has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "404" -->
+  <ScalarVariable
+    name="intShaCon.thisSideHasShade"
+    valueReference="24"
+    description="Set to true if this side of the model has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "405" -->
+  <ScalarVariable
+    name="intShaRad.linearize"
+    valueReference="25"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "406" -->
+  <ScalarVariable
+    name="intShaRad.thisSideHasShade"
+    valueReference="26"
+    description="Set to true if this side of the window has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "407" -->
+  <ScalarVariable
+    name="linearize"
+    valueReference="27"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "408" -->
+  <ScalarVariable
+    name="shaSig.haveShade"
+    valueReference="28"
+    description="Set to true if a shade is present"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "409" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.haveControllableWindow"
+    valueReference="29"
+    description="Flag, true if the window allows multiple states, such as for electrochromic windows"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "410" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.haveExteriorShade"
+    valueReference="30"
+    description="Set to true if window has an exterior shade (at surface a)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "411" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.haveInteriorShade"
+    valueReference="31"
+    description="Set to true if window has an interior shade (at surface b)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "412" -->
+  <ScalarVariable
+    name="window.glaSha.glaSys.haveShade"
+    valueReference="32"
+    description="Parameter that is true if the construction has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "413" -->
+  <ScalarVariable
+    name="window.glaSha.glass[1].linearize"
+    valueReference="33"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "414" -->
+  <ScalarVariable
+    name="window.glaSha.linearize"
+    valueReference="35"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "415" -->
+  <ScalarVariable
+    name="window.glaSys.haveControllableWindow"
+    valueReference="36"
+    description="Flag, true if the window allows multiple states, such as for electrochromic windows"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "416" -->
+  <ScalarVariable
+    name="window.glaSys.haveExteriorShade"
+    valueReference="37"
+    description="Set to true if window has an exterior shade (at surface a)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "417" -->
+  <ScalarVariable
+    name="window.glaSys.haveInteriorShade"
+    valueReference="38"
+    description="Set to true if window has an interior shade (at surface b)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "418" -->
+  <ScalarVariable
+    name="window.glaSys.haveShade"
+    valueReference="39"
+    description="Parameter that is true if the construction has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "419" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.haveControllableWindow"
+    valueReference="40"
+    description="Flag, true if the window allows multiple states, such as for electrochromic windows"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "420" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.haveExteriorShade"
+    valueReference="41"
+    description="Set to true if window has an exterior shade (at surface a)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "421" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.haveInteriorShade"
+    valueReference="42"
+    description="Set to true if window has an interior shade (at surface b)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "422" -->
+  <ScalarVariable
+    name="window.glaUns.glaSys.haveShade"
+    valueReference="43"
+    description="Parameter that is true if the construction has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "423" -->
+  <ScalarVariable
+    name="window.glaUns.glass[1].linearize"
+    valueReference="44"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "424" -->
+  <ScalarVariable
+    name="window.glaUns.linearize"
+    valueReference="46"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "425" -->
+  <ScalarVariable
+    name="window.linearize"
+    valueReference="48"
+    description="Set to true to linearize emissive power"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "426" -->
+  <ScalarVariable
+    name="window.steadyState"
+    valueReference="52"
+    description="Flag, if true, then window is steady-state, else capacity is added at room-side"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <InitialUnknowns>
+      <Unknown index="62" dependencies="" dependenciesKind="" />
+      <Unknown index="63" dependencies="" dependenciesKind="" />
+      <Unknown index="64" dependencies="" dependenciesKind="" />
+      <Unknown index="65" dependencies="" dependenciesKind="" />
+      <Unknown index="66" dependencies="" dependenciesKind="" />
+      <Unknown index="67" dependencies="" dependenciesKind="" />
+      <Unknown index="68" dependencies="" dependenciesKind="" />
+      <Unknown index="69" dependencies="" dependenciesKind="" />
+      <Unknown index="70" dependencies="" dependenciesKind="" />
+      <Unknown index="71" dependencies="" dependenciesKind="" />
+      <Unknown index="72" dependencies="" dependenciesKind="" />
+      <Unknown index="73" dependencies="" dependenciesKind="" />
+      <Unknown index="74" dependencies="" dependenciesKind="" />
+      <Unknown index="75" dependencies="" dependenciesKind="" />
+      <Unknown index="76" dependencies="" dependenciesKind="" />
+      <Unknown index="77" dependencies="" dependenciesKind="" />
+      <Unknown index="78" dependencies="" dependenciesKind="" />
+      <Unknown index="79" dependencies="" dependenciesKind="" />
+      <Unknown index="80" dependencies="" dependenciesKind="" />
+      <Unknown index="81" dependencies="" dependenciesKind="" />
+      <Unknown index="82" dependencies="" dependenciesKind="" />
+      <Unknown index="83" dependencies="" dependenciesKind="" />
+      <Unknown index="84" dependencies="" dependenciesKind="" />
+      <Unknown index="85" dependencies="" dependenciesKind="" />
+      <Unknown index="86" dependencies="" dependenciesKind="" />
+      <Unknown index="87" dependencies="" dependenciesKind="" />
+      <Unknown index="88" dependencies="" dependenciesKind="" />
+      <Unknown index="89" dependencies="" dependenciesKind="" />
+      <Unknown index="90" dependencies="" dependenciesKind="" />
+      <Unknown index="91" dependencies="" dependenciesKind="" />
+      <Unknown index="92" dependencies="" dependenciesKind="" />
+      <Unknown index="93" dependencies="" dependenciesKind="" />
+      <Unknown index="111" dependencies="" dependenciesKind="" />
+      <Unknown index="112" dependencies="" dependenciesKind="" />
+      <Unknown index="115" dependencies="" dependenciesKind="" />
+      <Unknown index="116" dependencies="" dependenciesKind="" />
+      <Unknown index="119" dependencies="" dependenciesKind="" />
+      <Unknown index="120" dependencies="" dependenciesKind="" />
+      <Unknown index="121" dependencies="" dependenciesKind="" />
+      <Unknown index="122" dependencies="" dependenciesKind="" />
+      <Unknown index="123" dependencies="" dependenciesKind="" />
+      <Unknown index="124" dependencies="" dependenciesKind="" />
+      <Unknown index="125" dependencies="" dependenciesKind="" />
+      <Unknown index="126" dependencies="" dependenciesKind="" />
+      <Unknown index="127" dependencies="" dependenciesKind="" />
+      <Unknown index="128" dependencies="" dependenciesKind="" />
+      <Unknown index="129" dependencies="" dependenciesKind="" />
+      <Unknown index="130" dependencies="" dependenciesKind="" />
+      <Unknown index="131" dependencies="" dependenciesKind="" />
+      <Unknown index="132" dependencies="" dependenciesKind="" />
+      <Unknown index="133" dependencies="" dependenciesKind="" />
+      <Unknown index="134" dependencies="" dependenciesKind="" />
+      <Unknown index="135" dependencies="" dependenciesKind="" />
+      <Unknown index="136" dependencies="" dependenciesKind="" />
+      <Unknown index="137" dependencies="" dependenciesKind="" />
+      <Unknown index="138" dependencies="" dependenciesKind="" />
+      <Unknown index="139" dependencies="" dependenciesKind="" />
+      <Unknown index="140" dependencies="" dependenciesKind="" />
+      <Unknown index="141" dependencies="" dependenciesKind="" />
+      <Unknown index="142" dependencies="" dependenciesKind="" />
+      <Unknown index="143" dependencies="" dependenciesKind="" />
+      <Unknown index="144" dependencies="" dependenciesKind="" />
+      <Unknown index="145" dependencies="" dependenciesKind="" />
+      <Unknown index="146" dependencies="" dependenciesKind="" />
+      <Unknown index="147" dependencies="" dependenciesKind="" />
+      <Unknown index="148" dependencies="" dependenciesKind="" />
+      <Unknown index="149" dependencies="" dependenciesKind="" />
+      <Unknown index="150" dependencies="" dependenciesKind="" />
+      <Unknown index="151" dependencies="" dependenciesKind="" />
+      <Unknown index="152" dependencies="" dependenciesKind="" />
+      <Unknown index="153" dependencies="" dependenciesKind="" />
+      <Unknown index="154" dependencies="" dependenciesKind="" />
+      <Unknown index="155" dependencies="" dependenciesKind="" />
+      <Unknown index="156" dependencies="" dependenciesKind="" />
+      <Unknown index="157" dependencies="" dependenciesKind="" />
+      <Unknown index="158" dependencies="" dependenciesKind="" />
+      <Unknown index="159" dependencies="" dependenciesKind="" />
+      <Unknown index="160" dependencies="" dependenciesKind="" />
+      <Unknown index="161" dependencies="" dependenciesKind="" />
+      <Unknown index="162" dependencies="" dependenciesKind="" />
+      <Unknown index="163" dependencies="" dependenciesKind="" />
+      <Unknown index="164" dependencies="" dependenciesKind="" />
+      <Unknown index="165" dependencies="" dependenciesKind="" />
+      <Unknown index="166" dependencies="" dependenciesKind="" />
+      <Unknown index="167" dependencies="" dependenciesKind="" />
+      <Unknown index="168" dependencies="" dependenciesKind="" />
+      <Unknown index="169" dependencies="" dependenciesKind="" />
+      <Unknown index="170" dependencies="" dependenciesKind="" />
+      <Unknown index="171" dependencies="" dependenciesKind="" />
+      <Unknown index="172" dependencies="" dependenciesKind="" />
+      <Unknown index="173" dependencies="" dependenciesKind="" />
+      <Unknown index="174" dependencies="" dependenciesKind="" />
+      <Unknown index="175" dependencies="" dependenciesKind="" />
+      <Unknown index="176" dependencies="" dependenciesKind="" />
+      <Unknown index="177" dependencies="" dependenciesKind="" />
+      <Unknown index="178" dependencies="" dependenciesKind="" />
+      <Unknown index="179" dependencies="" dependenciesKind="" />
+      <Unknown index="180" dependencies="" dependenciesKind="" />
+      <Unknown index="181" dependencies="" dependenciesKind="" />
+      <Unknown index="182" dependencies="" dependenciesKind="" />
+      <Unknown index="183" dependencies="" dependenciesKind="" />
+      <Unknown index="184" dependencies="" dependenciesKind="" />
+      <Unknown index="185" dependencies="" dependenciesKind="" />
+      <Unknown index="186" dependencies="" dependenciesKind="" />
+      <Unknown index="187" dependencies="" dependenciesKind="" />
+      <Unknown index="188" dependencies="" dependenciesKind="" />
+      <Unknown index="189" dependencies="" dependenciesKind="" />
+      <Unknown index="190" dependencies="" dependenciesKind="" />
+      <Unknown index="191" dependencies="" dependenciesKind="" />
+      <Unknown index="192" dependencies="" dependenciesKind="" />
+      <Unknown index="193" dependencies="" dependenciesKind="" />
+      <Unknown index="194" dependencies="" dependenciesKind="" />
+      <Unknown index="195" dependencies="" dependenciesKind="" />
+      <Unknown index="196" dependencies="" dependenciesKind="" />
+      <Unknown index="215" dependencies="" dependenciesKind="" />
+      <Unknown index="224" dependencies="" dependenciesKind="" />
+      <Unknown index="225" dependencies="" dependenciesKind="" />
+      <Unknown index="226" dependencies="" dependenciesKind="" />
+      <Unknown index="227" dependencies="" dependenciesKind="" />
+      <Unknown index="228" dependencies="" dependenciesKind="" />
+      <Unknown index="229" dependencies="" dependenciesKind="" />
+      <Unknown index="230" dependencies="" dependenciesKind="" />
+      <Unknown index="231" dependencies="" dependenciesKind="" />
+      <Unknown index="232" dependencies="" dependenciesKind="" />
+      <Unknown index="233" dependencies="" dependenciesKind="" />
+      <Unknown index="234" dependencies="" dependenciesKind="" />
+      <Unknown index="235" dependencies="" dependenciesKind="" />
+      <Unknown index="236" dependencies="" dependenciesKind="" />
+      <Unknown index="237" dependencies="" dependenciesKind="" />
+      <Unknown index="238" dependencies="" dependenciesKind="" />
+      <Unknown index="239" dependencies="" dependenciesKind="" />
+      <Unknown index="240" dependencies="" dependenciesKind="" />
+      <Unknown index="241" dependencies="" dependenciesKind="" />
+      <Unknown index="242" dependencies="" dependenciesKind="" />
+      <Unknown index="243" dependencies="" dependenciesKind="" />
+      <Unknown index="244" dependencies="" dependenciesKind="" />
+      <Unknown index="245" dependencies="" dependenciesKind="" />
+      <Unknown index="246" dependencies="" dependenciesKind="" />
+      <Unknown index="247" dependencies="" dependenciesKind="" />
+      <Unknown index="248" dependencies="" dependenciesKind="" />
+      <Unknown index="249" dependencies="" dependenciesKind="" />
+      <Unknown index="250" dependencies="" dependenciesKind="" />
+      <Unknown index="251" dependencies="" dependenciesKind="" />
+      <Unknown index="252" dependencies="" dependenciesKind="" />
+      <Unknown index="253" dependencies="" dependenciesKind="" />
+      <Unknown index="254" dependencies="" dependenciesKind="" />
+      <Unknown index="255" dependencies="" dependenciesKind="" />
+      <Unknown index="256" dependencies="" dependenciesKind="" />
+      <Unknown index="257" dependencies="" dependenciesKind="" />
+      <Unknown index="258" dependencies="" dependenciesKind="" />
+      <Unknown index="259" dependencies="" dependenciesKind="" />
+      <Unknown index="260" dependencies="" dependenciesKind="" />
+      <Unknown index="261" dependencies="" dependenciesKind="" />
+      <Unknown index="262" dependencies="" dependenciesKind="" />
+      <Unknown index="263" dependencies="" dependenciesKind="" />
+      <Unknown index="384" dependencies="" dependenciesKind="" />
+      <Unknown index="385" dependencies="" dependenciesKind="" />
+      <Unknown index="386" dependencies="" dependenciesKind="" />
+      <Unknown index="387" dependencies="" dependenciesKind="" />
+      <Unknown index="388" dependencies="" dependenciesKind="" />
+      <Unknown index="389" dependencies="" dependenciesKind="" />
+      <Unknown index="390" dependencies="" dependenciesKind="" />
+      <Unknown index="391" dependencies="" dependenciesKind="" />
+      <Unknown index="392" dependencies="" dependenciesKind="" />
+      <Unknown index="393" dependencies="" dependenciesKind="" />
+      <Unknown index="394" dependencies="" dependenciesKind="" />
+      <Unknown index="395" dependencies="" dependenciesKind="" />
+      <Unknown index="396" dependencies="" dependenciesKind="" />
+      <Unknown index="397" dependencies="" dependenciesKind="" />
+      <Unknown index="398" dependencies="" dependenciesKind="" />
+      <Unknown index="399" dependencies="" dependenciesKind="" />
+      <Unknown index="400" dependencies="" dependenciesKind="" />
+      <Unknown index="401" dependencies="" dependenciesKind="" />
+      <Unknown index="402" dependencies="" dependenciesKind="" />
+      <Unknown index="403" dependencies="" dependenciesKind="" />
+      <Unknown index="404" dependencies="" dependenciesKind="" />
+      <Unknown index="405" dependencies="" dependenciesKind="" />
+      <Unknown index="406" dependencies="" dependenciesKind="" />
+      <Unknown index="407" dependencies="" dependenciesKind="" />
+      <Unknown index="408" dependencies="" dependenciesKind="" />
+      <Unknown index="409" dependencies="" dependenciesKind="" />
+      <Unknown index="410" dependencies="" dependenciesKind="" />
+      <Unknown index="411" dependencies="" dependenciesKind="" />
+      <Unknown index="412" dependencies="" dependenciesKind="" />
+      <Unknown index="413" dependencies="" dependenciesKind="" />
+      <Unknown index="414" dependencies="" dependenciesKind="" />
+      <Unknown index="415" dependencies="" dependenciesKind="" />
+      <Unknown index="416" dependencies="" dependenciesKind="" />
+      <Unknown index="417" dependencies="" dependenciesKind="" />
+      <Unknown index="418" dependencies="" dependenciesKind="" />
+      <Unknown index="419" dependencies="" dependenciesKind="" />
+      <Unknown index="420" dependencies="" dependenciesKind="" />
+      <Unknown index="421" dependencies="" dependenciesKind="" />
+      <Unknown index="422" dependencies="" dependenciesKind="" />
+      <Unknown index="423" dependencies="" dependenciesKind="" />
+      <Unknown index="424" dependencies="" dependenciesKind="" />
+      <Unknown index="425" dependencies="" dependenciesKind="" />
+      <Unknown index="426" dependencies="" dependenciesKind="" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

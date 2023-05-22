@@ -1,6 +1,6 @@
 #from ast import Param
 from ocp.param_est import ParameterEstimation
-from ocp.covar_solve import CovarianceSolver
+#from ocp.covar_solve import CovarianceSolver
 import numpy as np
 import json
 import casadi as ca
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     plt.show()
     """
     
-    #y_data = y_data.iloc[0:10]
+    #y_data = y_data.iloc[0:3]
     
     N = len(y_data)
     dt = y_data.index[1] - y_data.index[0]
@@ -126,106 +126,9 @@ if __name__ == "__main__":
                                       covar=ca.veccat(Q, R)
                                       )
     
-        # true residuals:
-        w = param_est.x_gaps(sol[param_est.x_names].values.flatten(),
-                        0,
-                        y_data[param_est.u_names].values.flatten(),
-                        params.values,
-                        0,
-                        0,
-                        y_data[param_est.y_names].values.flatten(),
-                        0)
-    
-        v = param_est.y_gaps(sol[param_est.x_names].values.flatten(),
-                         0,
-                         y_data[param_est.u_names].values.flatten(),
-                         params.values,
-                         0,
-                         0,
-                         y_data[param_est.y_names].values.flatten(),
-                         0)
-    
-        w = np.array(w)
-        v = np.array(v)
-        
-        W = pd.DataFrame(w.T, columns = param_est.w_names)
-        V = pd.DataFrame(v.T, columns = param_est.v_names)
-    
-        pprint(params)
-        
-        #v = sol[["v1"]].values.T
-        #w = sol[["w1", "w2"]].values.T
-        
-        covar_est = CovarianceSolver(v, w)
-        R, Q = covar_est.solve()
-        
-        
-        # function for one-step ahead residuals
-        # compare with CTSM-R:s
-        # compare with CTSM-R:
-        # param_est.one_step_residual(x0, params, y_data, R=R, Q=Q)
-        
-        # do one simulation of this with Q = R = I.
-        # then do one with Q, R obtained from CTSM-R
-        """
-        Q:
-        p_11 = -1.412111e+01 
-        p_22 = -5.157392e+00 
-        
-        formulated as np.exp(p_xx)
-        
-        R:
-        e_11 = -6.087085e+00 
-        
-        dt = 900
-        
-        For interpretation of noise covariances:
-        see Appendix in https://www.ctsm.info/building2.pdf
-        
-        Try with params iden. from CTSM-R:
-        params:
-        Ti0           Te0            Aw            Ce            Ci           e11           p11           p22           Rea 
-        2.940592e+02  2.931072e+02  7.559631e+00  6.130762e+06  1.301290e+06 -6.087085e+00 -1.412111e+01 -5.157392e+00  1.151022e-02 
-                Rie 
-        1.389899e-03 
-        """
-        p_11 = -1.412111E1 
-        p_22 = -5.157392E0 
-        e_11 = -6.087085E0  
-        dt = 900
-        
-        Q_ctsm = ca.DM(np.diag([np.exp(p_11), np.exp(p_22)]))
-        #Q = ca.DM(np.diag([np.sqrt(np.exp(p_11)), np.sqrt(np.exp(p_22))]))
-        #R = ca.DM(np.diag([np.sqrt(np.exp(e_11))]))
-        R_ctsm = ca.DM(np.diag([np.exp(e_11)]))
-         
-        x0_ipopt = sol[["Ti", "Te"]].iloc[0].values # this is ~model prediction (can get exact)
-        x0_ctsm = np.array([2.940592e02, 2.931072e+2])
-        
-        params_ctsm = np.array([1.389899e-03, 1.151022e-02, 1.301290e+06, 6.130762e+06, 7.559631e+00])
-        
-        res_ctsm = param_est.one_step_residual(ekf_config, x0_ctsm, params_ctsm, y_data, R=R_ctsm, Q=Q_ctsm)
-        res_ipopt = param_est.one_step_residual(ekf_config, x0_ipopt, params, y_data, R=R, Q=Q)
-        
-        # plot ctsm:
-        res_ctsm.res.plot()
+        ax = sol["Ti"].plot(color="r")
+        sol["y1"].plot(color="k", ax=ax)
+        ax.legend()
         plt.show()
-        # plot ipopt:
-        res_ipopt.res.plot()
-        plt.show()
+        print(params)
         
-        #truth = y_data["Ti"].iloc[1:]
-        #truth.index = res.index
-        #ax = truth.plot(color="black", linestyle="dashed")
-        #res.y_pred.plot(ax=ax, color="r")
-        #plt.show()
-        
-        # transpose:
-        
-        
-        ax = sol["Ti"].plot(color="grey")
-        ax = y_data["Ti"].plot(color="black", linestyle="dashed")
-        ax.legend(["Estimated", "True"])
-        plt.show()
-        
-        #assert(ca.norm_inf(p_sol-true_params)<1e-8)

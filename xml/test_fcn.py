@@ -5,27 +5,28 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-#try: # CasADi develop
-#    model = DaeBuilder("foo")
-#except: # CasADi 3.5.5
-#    model = DaeBuilder()
 
-model_path = "Buildings.Utilities.Math.Examples.RegNonZeroPower.xml"
+model = DaeBuilder("foo")
+
+
+model_path = "Buildings.Utilities.Math.Functions.Examples.RegNonZeroPower.xml"
 processed_path = "RegNonZeroPower.xml"
 
 patch_xml(model_path, processed_path)
 
-print("Check states and equations")
+#print("Check states and equations")
 
 #inspect_xml(processed_path)
 #inspect_xml(model_path)
 #model.parse_fmi(processed_path)
+model.parse_fmi(processed_path)
+#f = model.fun('Buildings.Utilities.Math.Functions.regNonZeroPower')
 
-functions = get_functions_xml(model_path)
+#functions = get_functions_xml(model_path)
 
-print(functions)
+#print(functions)
 
-F = functions["Buildings_Utilities_Math_Functions_regNonZeroPower"]
+#F = functions["Buildings_Utilities_Math_Functions_regNonZeroPower"]
 # test output over 0, 1, .. , 10 with step ramp
 
 xs = np.arange(0,1,step=0.01)

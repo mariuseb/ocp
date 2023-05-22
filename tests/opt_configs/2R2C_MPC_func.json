@@ -1,0 +1,46 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05)  + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ph": "regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05) - Ph"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_nom"
+        ],
+        "z": [
+            "Ph"
+        ],
+        "r": [
+            "Tsup",
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "N": 24,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "idas"
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma27",
+        "ipopt.ma57_pre_alloc": 3
+    },
+    "codegen": false
+}

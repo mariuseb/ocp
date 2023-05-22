@@ -183,8 +183,8 @@ class MPC(OCP):
                          
                 
             else:
-                #return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
-                return 0.5*ca.dot(z, z) # + 0.01*ca.dot(slack, slack)
+                return 0.5*ca.dot(u, u) # + 0.01*ca.dot(slack, slack)
+                #return 0.5*ca.dot(z, z) # + 0.01*ca.dot(slack, slack)
         else: # reference tracking
             
             # how to know which state to track?

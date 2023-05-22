@@ -27,18 +27,27 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC.json")
+    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_idas.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
 
     # pass in config?
+    """
     params = ca.DM([0.0015,
                     0.0116,
                     1.33E6,
                     6.64E6,
                     5.53])
+    """
+    params = ca.DM([
+                    2.008534e-03,
+                    1.126790e-02,
+                    1.552069e+06,
+                    8.145441e+06,
+                    8.818424e+00
+                    ])
     
-    
+    """
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
@@ -49,23 +58,25 @@ if __name__ == "__main__":
         #"slack": True
         "slack": True
     }
+    """
     kwargs = {
-        "x_nom": 300,
-        "u_nom": 5000,
-        "r_nom": 300,
-        "y_nom": 300,
+        "x_nom": 1,
+        "u_nom": 1,
+        "r_nom": 1,
+        "y_nom": 1,
         #"slack": True
-        "slack": True
+        "slack": False
     }
+    
+    ekf = KalmanBucy(ekf_cfg)
+    # set params:
+    ekf.set_params(params)
     
     mpc = MPC(config=mpc_cfg,
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
     
     
-    ekf = KalmanBucy(ekf_cfg)
-    # set params:
-    ekf.set_params(params)
     
     boptest = Boptest(
                       boptest_cfg,

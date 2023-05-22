@@ -331,7 +331,7 @@ class ParameterEstimation(OCP):
         super().__init__(**kwargs) # does all the work.
         
         self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
-                                                        self.nlp_w) 
+                                                        self.nlp_s) 
     
         #self.set_bounds(y=self.Y,
         #                u=self.U)
@@ -447,9 +447,9 @@ class ParameterEstimation(OCP):
         y_Ti = self.nlp["x"][y_inds["a"]:y_inds["b"]:self.dae.n_y]
         #v1 = self.nlp["x"][v_inds["a"]:v_inds["b"]:self.dae.n_y]
         #v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
-        v1 = self.nlp["x"][v_inds["a"]:int((v_inds["b"]/2))]
-        v2 = self.nlp["x"][int((v_inds["a"]/2)):v_inds["b"]]
-        #v = self.nlp["x"][v_inds["a"]:v_inds["b"]]
+        #v1 = self.nlp["x"][v_inds["a"]:int((v_inds["b"]/2))]
+        #v2 = self.nlp["x"][int((v_inds["a"]/2)):v_inds["b"]]
+        v = self.nlp["x"][v_inds["a"]:v_inds["b"]]
         #z1 = self.nlp["x"][z_inds["a"]:z_inds["b"]]
         #y_Ph = self.nlp["x"][y_inds["a"]+1:y_inds["b"]:self.dae.n_y]
         
@@ -457,9 +457,9 @@ class ParameterEstimation(OCP):
         #res_Ph = y_Ph - z1
         
         #return 0.5*ca.dot(v1, v1) + 0.5*ca.dot(v2, v2), 0 #+ 0.5*ca.dot(v2, v2), 0 # + 0.5*ca.dot(res_Ph, res_Ph), 0
-        #return 0.5*ca.dot(v, v), 0
+        return 0.5*ca.dot(v, v), 0
         #return 0.5*ca.dot(v1, v1) + 0.01*ca.dot(v2, v2), 0
-        return 0.5*ca.dot(v1, v1) + 0.001*ca.dot(v2, v2), 0
+        #return 0.5*ca.dot(v1, v1) + 0.001*ca.dot(v2, v2), 0
     
     """
     def get_nlp_obj(self, w, v):

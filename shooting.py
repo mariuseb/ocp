@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod, ABCMeta
 import numpy as np
 import casadi as ca
 from pprint import pprint
+from ocp.integrators import idas, Cvodes
 
 """
 TODO: common transcription class 
@@ -37,6 +38,7 @@ class Shooting(metaclass=ABCMeta):
         self.y_nom_b = kwargs.pop("y_nom_b", 0)
         self.p_nom = kwargs.pop("p_nom", 1)
         self.w_nom = kwargs.pop("w_nom", 1)
+        self.s_nom = kwargs.pop("s_nom", 1)
         self.v_nom = kwargs.pop("v_nom", 1)
         #self.w_nom = kwargs.pop("w_nom", 1E-3)
         #self.w_nom = kwargs.pop("w_nom", 1/(self.x_nom*self.F.dt))
@@ -75,6 +77,10 @@ class Shooting(metaclass=ABCMeta):
     @property
     def n_w(self):
         return self.F.dae.n_w
+    
+    @property
+    def n_s(self):
+        return self.F.dae.n_s
 
     @property
     def n_v(self):
@@ -86,7 +92,7 @@ class Shooting(metaclass=ABCMeta):
 
     @property
     def n_p(self):
-        return len(self.F.dae.dae.p)
+        return len(self.F.dae.dae.p())
 
 # TODO: pass in order as from dae.
 class NLPParser(object):
@@ -101,11 +107,11 @@ class NLPParser(object):
         """
         Parameters:
             var_tuple: 
-                tuple - expect order "x", "z", "u", "p", "w", "v", "y"
+                tuple - expect order "x", "z", "u", "p", "s", "v", "y"
         """
         
         d = {}
-        varnames = ("x", "z", "u", "p", "w", "v", "y", "r")
+        varnames = ("x", "z", "u", "p", "s", "v", "y", "r")
         #varnames = ("x", "z", "p", "w", "v")
         
         prev = 0
@@ -159,7 +165,8 @@ class MultipleShooting(Shooting):
         #self.p_nom = self.scale
         
         x = self.get_x()
-        w = self.get_w()
+        #w = self.get_w()
+        s = self.get_s()
         v = self.get_v()
         y = self.get_y()
         u = self.get_u()
@@ -169,9 +176,58 @@ class MultipleShooting(Shooting):
         #p = self.F.p
         p = self.get_p()
         
-        self.F_map = self.map_F()
-        self.h_map = self.map_h()
-        self.g_map = self.map_g()
+        # TODO: refactor
+        if isinstance(self.F, (idas, Cvodes)):
+            """
+            res = self.F_map(
+                            x0=x[:,:-1]*self.x_nom,
+                            z0=z[:,:-1]*self.z_nom,
+                            u=u*self.u_nom,
+                            p=ca.vertcat(self.p_nom*ca.repmat(p, 1, self.N-1), r*self.r_nom),
+                            )
+            """
+            X = x[:,0]
+            Z = z[:,0]
+            x_gaps = []
+            g_gaps = ca.MX()
+            for n in range(self.N-1):
+                Fk = self.F.one_sample(x0=X, z0=Z, u=u[:,n], p=ca.vertcat(p, r[:,n]))
+                x_gaps.append(Fk["xf"] - X)
+                #g_gaps.append(Fk["zf"] - Z)
+                X = Fk["xf"]
+                Z = Fk["zf"]
+            #xn = res["xf"]
+            #zn = res["zf"]
+            x_gaps = ca.vertcat(*x_gaps)
+        else:
+            self.F_map = self.map_F()
+            xn = self.F_map(
+                            x0=x[:,:-1]*self.x_nom,
+                            #x0=x*self.x_nom,
+                            #x0=x*self.x_nom + self.x_nom_b,
+                            z=z[:,:-1]*self.z_nom,
+                            #z=z*self.z_nom,
+                            u=u*self.u_nom,
+                            p=self.p_nom*ca.repmat(p, 1, self.N-1),
+                            #p=self.p_nom*ca.repmat(p, 1, self.N),
+                            #p=ca.repmat(p, 1, self.N),
+                            # w same unit as dT/dt -> factor: 1/300/900
+                            #w=w*self.w_nom,
+                            s=s*self.s_nom,
+                            r=r*self.r_nom
+                            )["xf"]
+            x_gaps = xn - x[:,1:] 
+        #x_gaps = xn[:,:-1]-self.x_nom*x[:,1:] 
+        #x_gaps = xn[:,:-1] - (self.x_nom*x[:,1:]) # + self.x_nom_b)
+        #x_gaps = xn - (self.x_nom*x[:,1:]) # + self.x_nom_b)
+        # TODO: skip this for built-in integrators, e.g. IDAS 
+        # h and g will hold if passed as algebraic equations
+        
+        try:
+            self.h_map = self.map_h()
+            self.g_map = self.map_g()
+        except AttributeError:
+            pass
         #self.G_map = self.map_G()
         
         
@@ -189,43 +245,26 @@ class MultipleShooting(Shooting):
         
         # hardcode scaling here:
         
-        xn = self.F_map(
-                        x0=x[:,:-1]*self.x_nom,
-                        #x0=x*self.x_nom,
-                        #x0=x*self.x_nom + self.x_nom_b,
-                        z=z[:,:-1]*self.z_nom,
-                        #z=z*self.z_nom,
-                        u=u*self.u_nom,
-                        p=self.p_nom*ca.repmat(p, 1, self.N-1),
-                        #p=self.p_nom*ca.repmat(p, 1, self.N),
-                        #p=ca.repmat(p, 1, self.N),
-                        # w same unit as dT/dt -> factor: 1/300/900
-                        w=w*self.w_nom,
-                        r=r*self.r_nom
-                        )["xf"]
-        
-        #x_gaps = xn[:,:-1]-self.x_nom*x[:,1:] 
-        #x_gaps = xn[:,:-1] - (self.x_nom*x[:,1:]) # + self.x_nom_b)
-        #x_gaps = xn - (self.x_nom*x[:,1:]) # + self.x_nom_b)
-        x_gaps = xn - x[:,1:] 
-        
-        h_gaps = self.h_map(
-                            #y=y*self.y_nom + self.y_nom_b,
-                            #x=x*self.x_nom + self.x_nom_b,
-                            y=y*self.y_nom,
-                            x=x*self.x_nom,
-                            z=z*self.z_nom,
-                            #u=u*self.u_nom,
-                            u=0,
-                            #p=ca.repmat(p, 1, self.N),
-                            #p=self.p_nom*ca.repmat(p, 1, self.N),
-                            p=0,
-                            #p=self.scale*ca.repmat(p, 1, self.N),
-                            v=v*self.v_nom,
-                            #r=r*self.r_nom
-                            r=0 
-                            )["h"]
-        
+        try:
+            h_gaps = self.h_map(
+                                #y=y*self.y_nom + self.y_nom_b,
+                                #x=x*self.x_nom + self.x_nom_b,
+                                y=y*self.y_nom,
+                                x=x*self.x_nom,
+                                z=z*self.z_nom,
+                                #u=u*self.u_nom,
+                                u=0,
+                                #p=ca.repmat(p, 1, self.N),
+                                #p=self.p_nom*ca.repmat(p, 1, self.N),
+                                p=0,
+                                #p=self.scale*ca.repmat(p, 1, self.N),
+                                v=v*self.v_nom,
+                                #r=r*self.r_nom
+                                r=0 
+                                )["h"]
+        except AttributeError:
+            h_gaps = ca.MX()
+            
         #G_p = ca.vertcat(x*self.x_nom, u*self.u_nom, p*self.p_nom, v*self.v_nom, r*self.r_nom)
         #G_p = ca.vertcat(x*self.x_nom, u*self.u_nom, p*self.p_nom, v*self.v_nom, r*self.r_nom)
     
@@ -235,22 +274,24 @@ class MultipleShooting(Shooting):
         """
         g_gaps = self.G_map(x0=z*self.z_nom, p=G_p)["x"]
         """
-        
-        g_gaps = self.g_map(
-                            x=x[:,:-1]*self.x_nom,
-                            #x=x*self.x_nom,
-                            z=z[:,:-1]*self.z_nom,
-                            #z=z*self.z_nom,
-                            #u=u*self.u_nom,
-                            u=u*self.u_nom,
-                            #p=ca.repmat(p, 1, self.N),
-                            p=self.p_nom*ca.repmat(p, 1, self.N-1),
-                            #p=self.p_nom*ca.repmat(p, 1, self.N),
-                            #v=v*self.v_nom,
-                            v=0,
-                            r=r*self.r_nom
-                            #r=0
-                            )["g"]
+        try:
+            g_gaps = self.g_map(
+                                x=x[:,:-1]*self.x_nom,
+                                #x=x*self.x_nom,
+                                z=z[:,:-1]*self.z_nom,
+                                #z=z*self.z_nom,
+                                #u=u*self.u_nom,
+                                u=u*self.u_nom,
+                                #p=ca.repmat(p, 1, self.N),
+                                p=self.p_nom*ca.repmat(p, 1, self.N-1),
+                                #p=self.p_nom*ca.repmat(p, 1, self.N),
+                                #v=v*self.v_nom,
+                                r=r*self.r_nom
+                                #r=0
+                                )["g"]
+        except AttributeError:
+            #g_gaps = zn - z[:,1:]  
+            pass
         ###################################################
         
         # constraints:
@@ -264,9 +305,11 @@ class MultipleShooting(Shooting):
             y = h(x, p, v)            (3)
         
         """
-        V = ca.veccat(x, z, u, p, w, v, y, r)
+        #V = ca.veccat(x, z, u, p, w, v, y, r)
+        V = ca.veccat(x, z, u, p, s, v, y, r)
         
-        nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
+        #nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
+        nlp_parser = NLPParser((x, z, u, p, s, v, y, r))
         # keep orig g:
         nlp_parser.set_g(g)  
         nlp_parser.set_x_orig(x)  
@@ -335,33 +378,39 @@ class MultipleShooting(Shooting):
         """ Measurement noise. """
         return ca.MX.sym("v", self.n_v, self.N)
     
+    
     def get_w(self):
-        """ Process noise. """
+        """ Dep vars. """
         return ca.MX.sym("w", self.n_w, self.N-1)
+        #return ca.MX.sym("w", self.n_w, self.N)
+    
+    def get_s(self):
+        """ Process noise. """
+        return ca.MX.sym("s", self.n_s, self.N-1)
         #return ca.MX.sym("w", self.n_w, self.N)
 
     def get_y(self):
-        """ Process noise. """
+        """ Measurements. """
         #return ca.MX.sym("y", self.n_y, self.N)*self.x_nom
         return ca.MX.sym("y", self.n_y, self.N)
     
     def get_u(self):
-        """ Process noise. """
+        """ Controllable inputs. """
         #return ca.MX.sym("u", self.n_u, self.N)*self.u_nom
         return ca.MX.sym("u", self.n_u, self.N-1)
         #return ca.MX.sym("u", self.n_u, self.N)
 
     def get_z(self):
-        """ Process noise. """
+        """ Alg vars. """
         return ca.MX.sym("z", self.n_z, self.N)
     
     def get_x(self):
-        """ Process noise. """
+        """ State vars. """
         #return ca.MX.sym("x", self.n_x, self.N)*self.x_nom
         return ca.MX.sym("x", self.n_x, self.N)
 
     def get_r(self):
-        """ Process noise. """
+        """ Uncontrollable inputs. """
         #return ca.MX.sym("r", self.n_r, self.N)*self.r_nom
         return ca.MX.sym("r", self.n_r, self.N-1)
         #return ca.MX.sym("r", self.n_r, self.N)

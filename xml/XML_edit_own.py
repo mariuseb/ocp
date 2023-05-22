@@ -281,7 +281,7 @@ def get_functions_xml(source):
     
     # call construct expr on algorithm section:
     _f = construct_expr(f[1+num_outs+num_ins], my_namespaces, keep)
-    F = casadi.Function(fname, ins, [_f])    
+    F = casadi.Function(fname, ins, [_f], [list(map(lambda x: x.name(), ins))], ["y"])    
     print("function  {i}. {str}".format(i=i,str=F))
     i=i+1
     
@@ -461,7 +461,7 @@ def construct_expr(e, my_namespaces, keep):
     
     # TODO: implement check against 'keep'
     
-    return construct_expr(e[1], my_namespaces, keep)
+    return construct_expr(e[0], my_namespaces, keep) = construct_expr(e[1], my_namespaces, keep)
   
   elif e.tag.endswith("Expression"):
     
@@ -582,3 +582,128 @@ def construct_expr(e, my_namespaces, keep):
     return casadi.MX.sym("der_"+repr_expr(e[0],my_namespaces).name())
   else:
     raise Exception(e)
+  
+  """
+  def read_expr(node):
+
+    
+    fullname = node.name
+    
+    if (name=="Add"): 
+      return read_expr(node[0]) + read_expr(node[1])
+    elif (name=="Acos"):
+      return acos(read_expr(node[0]))
+    elif (name=="Asin"):
+      return asin(read_expr(node[0]))
+    elsif (name=="Atan") {
+      return atan(read_expr(node[0]));
+    } else if (name=="Cos") {
+      return cos(read_expr(node[0]));
+    } else if (name=="Der") {
+      return variable(read_variable(node[0]).der_of).v;
+    } else if (name=="Div") {
+      return read_expr(node[0]) / read_expr(node[1]);
+    } else if (name=="Exp") {
+      return exp(read_expr(node[0]));
+    } else if (name=="Identifier") {
+      return read_variable(node).v;
+    } else if (name=="IntegerLiteral" || name=="BooleanLiteral") {
+      casadi_int val;
+      node.get(&val);
+      return val;
+    } else if (name=="Instant") {
+      double val;
+      node.get(&val);
+      return val;
+    } else if (name=="Log") {
+      return log(read_expr(node[0]));
+    } else if (name=="LogLeq") { // Logical less than equal
+      return read_expr(node[0]) <= read_expr(node[1]);
+    } else if (name=="LogGeq") { // Logical greater than equal
+      return read_expr(node[0]) >= read_expr(node[1]);
+    } else if (name=="LogLt") { // Logical less than
+      return read_expr(node[0]) < read_expr(node[1]);
+    } else if (name=="LogGt") { // Logical greater than
+      return read_expr(node[0]) > read_expr(node[1]);
+    } else if (name=="Max") {
+      return fmax(read_expr(node[0]), read_expr(node[1]));
+    } else if (name=="Min") {
+      return fmin(read_expr(node[0]), read_expr(node[1]));
+    } else if (name=="Mul") { // Multiplication
+      return read_expr(node[0]) * read_expr(node[1]);
+    } else if (name=="Neg") {
+      return -read_expr(node[0]);
+    } else if (name=="NoEvent") {
+      // NOTE: This is a workaround, we assume that whenever NoEvent occurs,
+      // what is meant is a switch
+      casadi_int n = node.size();
+
+      // Default-expression
+      MX ex = read_expr(node[n-1]);
+
+      // Evaluate ifs
+      for (casadi_int i=n-3; i>=0; i -= 2) {
+        ex = if_else(read_expr(node[i]), read_expr(node[i+1]), ex);
+      }
+
+      return ex;
+    } else if (name=="Pow") {
+      return pow(read_expr(node[0]), read_expr(node[1]));
+    } else if (name=="RealLiteral") {
+      double val;
+      node.get(&val);
+      return val;
+    } else if (name=="Sin") {
+      return sin(read_expr(node[0]));
+    } else if (name=="Sqrt") {
+      return sqrt(read_expr(node[0]));
+    } else if (name=="StringLiteral") {
+      casadi_error(node.text);
+    } else if (name=="Sub") {
+      return read_expr(node[0]) - read_expr(node[1]);
+    } else if (name=="Tan") {
+      return tan(read_expr(node[0]));
+    } else if (name=="Time") {
+      return var(t_.at(0));
+    } else if (name=="TimedVariable") {
+      return read_variable(node[0]).v;
+    } else if (name=="FunctionCall") {
+      // Get the name of the function
+      std::string fname = qualified_name(node["exp:Name"]);
+      casadi_warning("Function call to '" + fname + "' incomplete");
+      // Collect the arguments
+      const XmlNode& args = node["exp:Arguments"];
+      std::vector<MX> farg(args.size());
+      for (casadi_int i = 0; i < args.size(); ++i) {
+        // Lift input arguments
+        Variable& v = new_variable("w_" + str(w_.size()));
+        v.v = MX::sym(v.name);
+        // Add to list of variables
+        w_.push_back(v.index);
+        // Set binding expression
+        v.beq = read_expr(args[i]);
+        // Add to list of function arguments
+        farg[i] = v.v;
+      }
+      // Return argument (scalar for now)
+      Variable& r = new_variable("w_" + str(w_.size()));
+      r.v = MX::sym(r.name);
+      // Add to list of variables
+      w_.push_back(r.index);
+      // Return output variable
+      return r.v;
+    } else if (name=="Array") {
+      // Array of arguments
+      std::vector<MX> v(node.size());
+      for (casadi_int i = 0; i < v.size(); ++i) v[i] = read_expr(node[i]);
+      return vertcat(v);
+    }
+
+    // throw error if reached this point
+    casadi_error("Unknown node: " + name);
+  } catch (std::exception& e) {
+    THROW_ERROR_NODE("read_expr", node, e.what());
+    return {};
+  }
+}
+"""

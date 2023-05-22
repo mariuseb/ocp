@@ -88,6 +88,7 @@ class OCP(metaclass=ABCMeta):
                 ):
 
         config = kwargs.pop("config")
+        functions = kwargs.pop("functions", None)
         #if config["solver"] == "gauss_newton":
         #    self.gauss_newton = True
         #data = kwargs.pop("data")
@@ -130,6 +131,7 @@ class OCP(metaclass=ABCMeta):
         else:
             self.dt = dt
         
+        config["model"]["functions"] = functions
         self.dae = dae = DAE(config["model"])
         # mainly on 
         self.bounds_cfg = config.pop("bounds", None)
@@ -334,7 +336,13 @@ class OCP(metaclass=ABCMeta):
         z = bounds.pop("z")
         u = bounds.pop("u")
         p = bounds.pop("p")
-        w = bounds.pop("w")
+        #w = bounds.pop("w")
+        """
+        TODO: name collision with slack variable.
+        Fix
+        """
+        s = bounds.pop("s")
+        
         v = bounds.pop("v")
         y = bounds.pop("y")
         r = bounds.pop("r")
@@ -344,7 +352,7 @@ class OCP(metaclass=ABCMeta):
         ubx = np.array([])
         x0 = np.array([])
         
-        for bound_dict, (k, v) in zip((x, z, u, p, w, v, y, r), self.nlp_parser.vars.items()):
+        for bound_dict, (k, v) in zip((x, z, u, p, s, v, y, r), self.nlp_parser.vars.items()):
         #for arr, (k, v) in zip((x, z, p, w, v), self.nlp_parser.vars.items()):
             # TODO: check also lb
             #if bound_dict["ub"] is None:
@@ -464,9 +472,15 @@ class OCP(metaclass=ABCMeta):
     def nlp_v(self):
         return self.get_nlp_var("v")
     
+    """
     @property
     def nlp_w(self):
         return self.get_nlp_var("w")
+    """
+    
+    @property
+    def nlp_s(self):
+        return self.get_nlp_var("s")
 
     @property
     def nlp_u(self):
@@ -520,6 +534,10 @@ class OCP(metaclass=ABCMeta):
         return self.dae.n_p
 
     @property
+    def n_s(self):
+        return self.dae.n_s
+
+    @property
     def n_u(self):
         return self.dae.n_u
         
@@ -561,27 +579,32 @@ class OCP(metaclass=ABCMeta):
 
     @property
     def u_names(self):
-        return list(map(lambda x: x.name(), self.dae.dae.u))
+        #return list(map(lambda x: x.name(), self.dae.dae.u))
+        return self.dae.u
      
     @property
     def y_names(self):
-        return list(map(lambda x: x.name(), self.dae.dae.y))
+        #return list(map(lambda x: x.name(), self.dae.dae.y))
+        return self.dae.dae.y()
 
     @property
     def x_names(self):
-        return list(map(lambda x: x.name(), self.dae.dae.x))
+        #return list(map(lambda x: x.name(), self.dae.dae.x))
+        return self.dae.x
      
     @property
     def z_names(self):
-        return list(map(lambda x: x.name(), self.dae.dae.z))
+        #return list(map(lambda x: x.name(), self.dae.dae.z))
+        return self.dae.z
      
     @property
     def p_names(self):
-        return list(map(lambda x: x.name(), self.dae.dae.p))
+        #return list(map(lambda x: x.name(), self.dae.dae.p))
+        return self.dae.p
 
     @property
-    def w_names(self):
-        return self.dae.w_names
+    def s_names(self):
+        return self.dae.s_names
 
     @property
     def v_names(self):

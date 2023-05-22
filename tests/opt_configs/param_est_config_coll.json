@@ -1,8 +1,8 @@
 {
     "model": {
         "ode": {
-            "x1dot": "dx1",
-            "dx1dot": "(u1-k_NL*x1**3-k*x1-c*dx1)/M"
+            "x1": "x2",
+            "x2": "(u1-k_NL*x1**3-k*x1-c*x2)/M"
         },
         "p": [
             "M",
@@ -15,7 +15,7 @@
         ],
         "x": [
             "x1",
-            "dx1"
+            "x2"
             ]
     },
     "n_steps": 10,
@@ -24,6 +24,6 @@
         "name": "IRK",
         "method": "legendre",
         "degree": 3,
-        "n_steps": 1
+        "n_steps": 10
         }
 }

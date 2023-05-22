@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenModelicaModelDescription
+  xmlns:exp="https://github.com/JModelica/JModelica/tree/master/XML/daeExpressions.xsd"
+  xmlns:equ="https://github.com/JModelica/JModelica/tree/master/XML/daeEquations.xsd"
+  xmlns:fun="https://github.com/JModelica/JModelica/tree/master/XML/daeFunctions.xsd"
+  xmlns:opt="https://github.com/JModelica/JModelica/tree/master/XML/daeOptimization.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  fmiVersion="1.0"
+  modelName="Buildings.Utilities.Math.Examples.RegNonZeroPower"
+  modelIdentifier="Buildings_Utilities_Math_Examples_RegNonZeroPower"
+  guid="{ff678303-6902-4c50-9043-6194637ce4e0}"
+  generationDateAndTime="2023-04-12T09:10:36"
+  variableNamingConvention="structured"
+  numberOfContinuousStates="0"
+  numberOfEventIndicators="2"
+  >
+  
+  <VendorAnnotations>
+    <Tool name="OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"> </Tool>
+  </VendorAnnotations>
+
+  <fun:FunctionsList>
+    <fun:Function>
+      <fun:Name>
+        <exp:QualifiedNamePart name="Buildings"/>
+        <exp:QualifiedNamePart name="Utilities"/>
+        <exp:QualifiedNamePart name="Math"/>
+        <exp:QualifiedNamePart name="Functions"/>
+        <exp:QualifiedNamePart name="regNonZeroPower"/>
+      </fun:Name>
+      <fun:OutputVariable type="Real">
+        <fun:Name>
+          <exp:QualifiedNamePart name="y"/>
+        </fun:Name>
+      </fun:OutputVariable>
+      <fun:InputVariable type="Real">
+        <fun:Name>
+          <exp:QualifiedNamePart name="x"/>
+        </fun:Name>
+      </fun:InputVariable>
+      <fun:InputVariable type="Real">
+        <fun:Name>
+          <exp:QualifiedNamePart name="n"/>
+        </fun:Name>
+      </fun:InputVariable>
+      <fun:InputVariable type="Real">
+        <fun:Name>
+          <exp:QualifiedNamePart name="delta"/>
+        </fun:Name>
+      </fun:InputVariable>
+      <fun:Algorithm>
+        <fun:If>
+          <fun:Condition>
+            <exp:LogGt>
+              <exp:Abs>
+                <exp:Identifier>
+                  <exp:QualifiedNamePart name="x"/>
+                </exp:Identifier>
+              </exp:Abs>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="delta"/>
+              </exp:Identifier>
+            </exp:LogGt>
+          </fun:Condition>
+          <fun:Statements>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="y"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Pow>
+                  <exp:Abs>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="x"/>
+                    </exp:Identifier>
+                  </exp:Abs>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="n"/>
+                  </exp:Identifier>
+                </exp:Pow>
+              </fun:Expression>
+            </fun:Assign>
+          </fun:Statements>
+          <fun:Else>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="delta2"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Mul>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="delta"/>
+                  </exp:Identifier>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="delta"/>
+                  </exp:Identifier>
+                </exp:Mul>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="x2"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Mul>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="x"/>
+                  </exp:Identifier>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="x"/>
+                  </exp:Identifier>
+                </exp:Mul>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="y_d"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Pow>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="delta"/>
+                  </exp:Identifier>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="n"/>
+                  </exp:Identifier>
+                </exp:Pow>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="yP_d"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Mul>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="n"/>
+                  </exp:Identifier>
+                  <exp:Pow>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="delta"/>
+                    </exp:Identifier>
+                    <exp:Sub>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="n"/>
+                      </exp:Identifier>
+                      <exp:RealLiteral>1.0</exp:RealLiteral>
+                    </exp:Sub>
+                  </exp:Pow>
+                </exp:Mul>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="yPP_d"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Mul>
+                  <exp:Mul>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="n"/>
+                    </exp:Identifier>
+                    <exp:Sub>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="n"/>
+                      </exp:Identifier>
+                      <exp:RealLiteral>1.0</exp:RealLiteral>
+                    </exp:Sub>
+                  </exp:Mul>
+                  <exp:Pow>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="delta"/>
+                    </exp:Identifier>
+                    <exp:Sub>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="n"/>
+                      </exp:Identifier>
+                      <exp:RealLiteral>2.0</exp:RealLiteral>
+                    </exp:Sub>
+                  </exp:Pow>
+                </exp:Mul>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="a1"/>
+              </exp:Identifier>
+              <fun:Expression>
+                  <exp:Neg>
+                    <exp:Div>
+                      <exp:Div>
+                        <exp:Sub>
+                          <exp:Div>
+                            <exp:Identifier>
+                              <exp:QualifiedNamePart name="yP_d"/>
+                            </exp:Identifier>
+                            <exp:Identifier>
+                              <exp:QualifiedNamePart name="delta"/>
+                            </exp:Identifier>
+                          </exp:Div>
+                          <exp:Identifier>
+                            <exp:QualifiedNamePart name="yPP_d"/>
+                          </exp:Identifier>
+                        </exp:Sub>
+                        <exp:Identifier>
+                          <exp:QualifiedNamePart name="delta2"/>
+                        </exp:Identifier>
+                      </exp:Div>
+                      <exp:RealLiteral>8.0</exp:RealLiteral>
+                    </exp:Div>
+                  </exp:Neg>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="a3"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Div>
+                  <exp:Sub>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="yPP_d"/>
+                    </exp:Identifier>
+                    <exp:Mul>
+                      <exp:Mul>
+                        <exp:RealLiteral>12.0</exp:RealLiteral>
+                        <exp:Identifier>
+                          <exp:QualifiedNamePart name="a1"/>
+                        </exp:Identifier>
+                      </exp:Mul>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="delta2"/>
+                      </exp:Identifier>
+                    </exp:Mul>
+                  </exp:Sub>
+                  <exp:RealLiteral>2.0</exp:RealLiteral>
+                </exp:Div>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="a5"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Sub>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="y_d"/>
+                  </exp:Identifier>
+                  <exp:Mul>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="delta2"/>
+                    </exp:Identifier>
+                    <exp:Add>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="a3"/>
+                      </exp:Identifier>
+                      <exp:Mul>
+                        <exp:Identifier>
+                          <exp:QualifiedNamePart name="delta2"/>
+                        </exp:Identifier>
+                        <exp:Identifier>
+                          <exp:QualifiedNamePart name="a1"/>
+                        </exp:Identifier>
+                      </exp:Mul>
+                    </exp:Add>
+                  </exp:Mul>
+                </exp:Sub>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assign>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="y"/>
+              </exp:Identifier>
+              <fun:Expression>
+                <exp:Add>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="a5"/>
+                  </exp:Identifier>
+                  <exp:Mul>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="x2"/>
+                    </exp:Identifier>
+                    <exp:Add>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="a3"/>
+                      </exp:Identifier>
+                      <exp:Mul>
+                        <exp:Identifier>
+                          <exp:QualifiedNamePart name="x2"/>
+                        </exp:Identifier>
+                        <exp:Identifier>
+                          <exp:QualifiedNamePart name="a1"/>
+                        </exp:Identifier>
+                      </exp:Mul>
+                    </exp:Add>
+                  </exp:Mul>
+                </exp:Add>
+              </fun:Expression>
+            </fun:Assign>
+            <fun:Assertion>
+              <fun:Condition>
+                <exp:And>
+                  <exp:And>
+                    <exp:LogGt>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="a5"/>
+                      </exp:Identifier>
+                      <exp:RealLiteral>0.0</exp:RealLiteral>
+                    </exp:LogGt>
+                    <exp:LogLt>
+                      <exp:RealLiteral>0.0</exp:RealLiteral>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="n"/>
+                      </exp:Identifier>
+                    </exp:LogLt>
+                  </exp:And>
+                  <exp:LogLt>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="n"/>
+                    </exp:Identifier>
+                    <exp:RealLiteral>2.0</exp:RealLiteral>
+                  </exp:LogLt>
+                </exp:And>
+              </fun:Condition>
+              <fun:Message>
+              </fun:Message>
+            </fun:Assertion>
+          </fun:Else>
+        </fun:If>
+      </fun:Algorithm>
+    </fun:Function>
+  </fun:FunctionsList>
+
+
+</OpenModelicaModelDescription>

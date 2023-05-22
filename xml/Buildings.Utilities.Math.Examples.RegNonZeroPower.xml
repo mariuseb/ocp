@@ -19,6 +19,307 @@
     <Tool name="OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"> </Tool>
   </VendorAnnotations>
 
+
+  <ModelVariables>
+    <ScalarVariable name="regNonZeroPower.y" description="Connector of Real output signal" valueReference="0" variability="continuous" causality="internal" alias="noAlias">
+      <Real     />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="regNonZeroPower"/>
+        <exp:QualifiedNamePart name="y"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="x1.y" description="Connector of Real output signal" valueReference="1" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="false"    />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="y"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="regNonZeroPower.u" description="Connector of Real input signal" valueReference="2" variability="continuous" causality="internal" alias="x1.y">
+      <Real     />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="regNonZeroPower"/>
+        <exp:QualifiedNamePart name="u"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="regNonZeroPower.delta" description="Abscissa value where transition occurs" valueReference="3" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.01" fixed="true"    />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="regNonZeroPower"/>
+        <exp:QualifiedNamePart name="delta"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="regNonZeroPower.n" description="Exponent" valueReference="4" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.5" fixed="true"    />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="regNonZeroPower"/>
+        <exp:QualifiedNamePart name="n"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="x1.duration" description="Duration of ramp (= 0.0 gives a Step)" valueReference="5" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="1.0" fixed="true" min="0.0"  unit="s" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="duration"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="x1.height" description="Height of ramps" valueReference="6" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="1.0" fixed="true"    />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="height"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="x1.offset" description="Offset of output signal y" valueReference="7" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.0" fixed="true"    />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="offset"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+
+    <ScalarVariable name="x1.startTime" description="Output y = offset for time &lt; startTime" valueReference="8" variability="parameter" causality="parameter" alias="noAlias">
+      <Real start="0.0" fixed="true"   unit="s" />
+      <QualifiedName>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="startTime"/>
+      </QualifiedName>
+    <isLinearTimedVariables>
+      <TimePoint index="0" isLinear="true"/>
+    </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+  </ModelVariables>
+
+  <equ:BindingEquations>
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="regNonZeroPower"/>
+        <exp:QualifiedNamePart name="delta"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.01</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="regNonZeroPower"/>
+        <exp:QualifiedNamePart name="n"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.5</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="duration"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>1.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="height"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>1.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="offset"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="x1"/>
+        <exp:QualifiedNamePart name="startTime"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+  </equ:BindingEquations>
+
+  <equ:DynamicEquations>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="x1"/>
+          <exp:QualifiedNamePart name="y"/>
+        </exp:Identifier>
+        <fun:If>
+          <fun:Condition>
+            <exp:LogLt>
+              <exp:Time>time</exp:Time>
+              <exp:Identifier>
+                <exp:QualifiedNamePart name="x1"/>
+                <exp:QualifiedNamePart name="startTime"/>
+              </exp:Identifier>
+            </exp:LogLt>
+          </fun:Condition>
+          <fun:Statements>
+            <exp:RealLiteral>0.0</exp:RealLiteral>
+          </fun:Statements>
+          <fun:Else>
+            <fun:If>
+              <fun:Condition>
+                <exp:LogLt>
+                  <exp:Time>time</exp:Time>
+                  <exp:Add>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="x1"/>
+                      <exp:QualifiedNamePart name="startTime"/>
+                    </exp:Identifier>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="x1"/>
+                      <exp:QualifiedNamePart name="duration"/>
+                    </exp:Identifier>
+                  </exp:Add>
+                </exp:LogLt>
+              </fun:Condition>
+              <fun:Statements>
+                <exp:Div>
+                  <exp:Mul>
+                    <exp:Sub>
+                      <exp:Time>time</exp:Time>
+                      <exp:Identifier>
+                        <exp:QualifiedNamePart name="x1"/>
+                        <exp:QualifiedNamePart name="startTime"/>
+                      </exp:Identifier>
+                    </exp:Sub>
+                    <exp:Identifier>
+                      <exp:QualifiedNamePart name="x1"/>
+                      <exp:QualifiedNamePart name="height"/>
+                    </exp:Identifier>
+                  </exp:Mul>
+                  <exp:Identifier>
+                    <exp:QualifiedNamePart name="x1"/>
+                    <exp:QualifiedNamePart name="duration"/>
+                  </exp:Identifier>
+                </exp:Div>
+              </fun:Statements>
+              <fun:Else>
+                <exp:Identifier>
+                  <exp:QualifiedNamePart name="x1"/>
+                  <exp:QualifiedNamePart name="height"/>
+                </exp:Identifier>
+              </fun:Else>
+            </fun:If>
+          </fun:Else>
+        </fun:If>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="regNonZeroPower"/>
+          <exp:QualifiedNamePart name="y"/>
+        </exp:Identifier>
+        <exp:FunctionCall>
+          <exp:Name>
+            <exp:QualifiedNamePart name="Buildings"/>
+            <exp:QualifiedNamePart name="Utilities"/>
+            <exp:QualifiedNamePart name="Math"/>
+            <exp:QualifiedNamePart name="Functions"/>
+            <exp:QualifiedNamePart name="regNonZeroPower"/>
+          </exp:Name>
+          <exp:Arguments>
+            <exp:Identifier>
+              <exp:QualifiedNamePart name="x1"/>
+              <exp:QualifiedNamePart name="y"/>
+            </exp:Identifier>
+            <exp:Identifier>
+              <exp:QualifiedNamePart name="regNonZeroPower"/>
+              <exp:QualifiedNamePart name="n"/>
+            </exp:Identifier>
+            <exp:Identifier>
+              <exp:QualifiedNamePart name="regNonZeroPower"/>
+              <exp:QualifiedNamePart name="delta"/>
+            </exp:Identifier>
+          </exp:Arguments>
+        </exp:FunctionCall>
+      </exp:Sub>
+    </equ:Equation>
+  </equ:DynamicEquations>
+
+  <equ:InitialEquations>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="x1"/>
+          <exp:QualifiedNamePart name="y"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+         
+      </exp:Sub>
+    </equ:Equation>
+  </equ:InitialEquations>
+
+  <fun:Algorithm>
+  </fun:Algorithm>
+
+  <fun:RecordsList>
+  </fun:RecordsList>
+
   <fun:FunctionsList>
     <fun:Function>
       <fun:Name>

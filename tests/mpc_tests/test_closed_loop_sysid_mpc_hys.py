@@ -14,6 +14,7 @@ from pprint import pprint
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 rc('mathtext', default='regular')
+import matplotlib.pyplot as plt
 # datetime:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
@@ -56,11 +57,10 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     #dt = mpc.dt
-    lb_night = 289.15
-    ub_night = 301.15
-    lb_day = 293.15#import sysid.dae as dae
-#import sysid.integrators as integrators
-    ub_day = 296.15
+    lb_night = {"Ti": 289.15}
+    ub_night = {"Ti": 301.15}
+    lb_day = {"Ti": 293.15}
+    ub_day = {"Ti": 296.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     
     cfg_path = os.path.join(opt_config_base, "2R2C.json")
     y_data = boptest.get_data(tf=N*boptest.h) #, downsample=False)
-    y_data.index = range(0, mpc.dt*N, mpc.dt)
+    y_data.index = range(0, mpc.dt*(N+1), mpc.dt)
     y_data["y1"] = y_data.Ti
     #y_data.to_csv("data/data_ZEBLL_hysteresis.csv", index=True)
     # columns:
@@ -130,14 +130,14 @@ if __name__ == "__main__":
     # init state:
     x0 = np.array([294.05, 293.15])
     
-    days = 28
+    days = 7
     K = days*24*bounds.t_h
     # estimated state at sysid horizon end:
     #x0 = sol.iloc[-1][mpc.dae.x].values
         
     for k in range(K):
         
-        lbx, ubx = bounds.get_bounds(k, mpc.N)
+        lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
         
         sol, u, x0 = mpc.solve(
                                data,
@@ -156,60 +156,7 @@ if __name__ == "__main__":
                           r=data.iloc[0].values
                           )
     
-    # get data only for MPC operation:s
-    
-    """
-    res = boptest.get_data(ts=(N+1)*boptest.h, tf=(K+N)*boptest.h)
-    ax = res.Ti.plot(color="k")
-    ax1 = ax.twinx()
-    res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    ax.legend(["Ti"])
-    ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    
-    plt.show()    
-    """
-    #res = boptest.get_data(ts=(N+1)*boptest.h, tf=(K+N)*boptest.h)
-    res = boptest.get_data(tf=K*boptest.h)
-    fig = plt.figure(figsize=(10,6))
-    ax = fig.add_subplot(111)
-    
-    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
-    
-    #l1 = res.Ti.plot(ax=ax, color="k")
-    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
-    l1 = ax.plot(dt_index, (res.Ti-273.15), color="k", label="$T_i$")
-    ax1 = ax.twinx()
-    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
-    l2 = ax1.plot(dt_index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
-    
-    #ax.legend([l1, l2], , loc=0)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-    fig.autofmt_xdate()
-    #ax.legend(["Ti"])
-    #ax1.legend(["phi_h"])
-    # plot bounds:
-    #bounds_plt = pd.concat([bounds]*days)
-    bounds_plt = bounds.get_full(days)
-    bounds_plt.index = res.index
-    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{lb}$")
-    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{ub}$")
-    lns = l1+l2+l3+l4
-    labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs, loc='upper center', ncol=4)
-    _min, _max = ax.get_ylim()
-    ax.set_ylim([_min, _max+2])
-    
-    ax.set_ylabel(r"Temperature [$^\circ$C]")
-    ax1.set_ylabel(r"Power [W]")
-    
+    plt.rcParams.update({'font.size': 12})
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
     fig.tight_layout()
-    plt.show()    
+    plt.show()

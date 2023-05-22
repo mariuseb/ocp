@@ -1,0 +1,2587 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="Buildings.HeatTransfer.Windows.BaseClasses.Examples.DataTest"
+  guid="{3c8d7f0a-ec17-489f-aa2f-306325f4e1a3}"
+  description="Test model for window radiation"
+  generationTool="OpenModelica Compiler OpenModelica 1.22.0~dev-17-g88d7b96"
+  generationDateAndTime="2023-04-21T13:31:49Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="0">
+  <ModelExchange
+    modelIdentifier="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest">
+    <SourceFiles>
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_functions.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_records.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_01exo.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_02nls.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_03lsy.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_04set.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_05evt.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_06inz.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_07dly.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_08bnd.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_09alg.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_10asr.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_11mix.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_12jac.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_13opt.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_14lnz.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_15syn.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_16dae.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_17inl.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_18spd.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_init_fmu.c" />
+      <File name="Buildings_HeatTransfer_Windows_BaseClasses_Examples_DataTest_FMU.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/jacobian_util.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+    </SourceFiles>
+  </ModelExchange>
+  <UnitDefinitions>
+    <Unit name="m">
+      <BaseUnit m="1" />
+    </Unit>
+    <Unit name="N.s/(m2.K)">
+      <BaseUnit m="-1" s="-1" K="-1" kg="1" />
+    </Unit>
+    <Unit name="W/(m.K2)">
+      <BaseUnit m="1" s="-3" K="-2" kg="1" />
+    </Unit>
+    <Unit name="J/(kg.K2)">
+      <BaseUnit m="2" s="-2" K="-2" />
+    </Unit>
+    <Unit name="Pa.s">
+      <BaseUnit m="-1" s="-1" kg="1" />
+    </Unit>
+    <Unit name="W/(m.K)">
+      <BaseUnit m="1" s="-3" K="-1" kg="1" />
+    </Unit>
+    <Unit name="J/(kg.K)">
+      <BaseUnit m="2" s="-2" K="-1" />
+    </Unit>
+    <Unit name="Pa">
+      <BaseUnit m="-1" s="-2" kg="1" />
+    </Unit>
+    <Unit name="kg/mol">
+      <BaseUnit mol="-1" kg="1" />
+    </Unit>
+    <Unit name="1">
+      <BaseUnit />
+    </Unit>
+    <Unit name="W/(m2.K)">
+      <BaseUnit s="-3" K="-1" kg="1" />
+    </Unit>
+    <Unit name="rad">
+      <BaseUnit />
+    </Unit>
+  </UnitDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="864000.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="recordTest[1,1,1]"
+    valueReference="0"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="recordTest[1,2,1]"
+    valueReference="1"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="recordTest[1,3,1]"
+    valueReference="2"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="recordTest[1,4,1]"
+    valueReference="3"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="recordTest[1,5,1]"
+    valueReference="4"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="recordTest[1,6,1]"
+    valueReference="5"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="recordTest[1,7,1]"
+    valueReference="6"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="recordTest[1,8,1]"
+    valueReference="7"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="recordTest[1,9,1]"
+    valueReference="8"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="recordTest[1,10,1]"
+    valueReference="9"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="recordTest[1,11,1]"
+    valueReference="10"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="y[1,1,1]"
+    valueReference="11"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="y[1,2,1]"
+    valueReference="12"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="y[1,3,1]"
+    valueReference="13"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="y[1,4,1]"
+    valueReference="14"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="y[1,5,1]"
+    valueReference="15"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="y[1,6,1]"
+    valueReference="16"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="y[1,7,1]"
+    valueReference="17"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="y[1,8,1]"
+    valueReference="18"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="y[1,9,1]"
+    valueReference="19"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="y[1,10,1]"
+    valueReference="20"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="y[1,11,1]"
+    valueReference="21"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="azi"
+    valueReference="44"
+    description="Surface azimuth"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="glaSys.UFra"
+    valueReference="45"
+    description="U-value of frame"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="2.0" unit="W/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="glaSys.absIRFra"
+    valueReference="46"
+    description="Infrared absorptivity of window frame"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.8" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="glaSys.absSolFra"
+    valueReference="47"
+    description="Solar absorptivity of window frame"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.5" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="glaSys.gas[1].MM"
+    valueReference="48"
+    description="Molar mass (of mixture or single fluid)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.02897" min="0.0" unit="kg/mol"/>
+  </ScalarVariable>
+  <!-- Index of variable = "28" -->
+  <ScalarVariable
+    name="glaSys.gas[1].P0"
+    valueReference="49"
+    description="Normal pressure"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="101325.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "29" -->
+  <ScalarVariable
+    name="glaSys.gas[1].a_c"
+    valueReference="50"
+    description="Constant coefficient for specific heat capacity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1002.737" unit="J/(kg.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "30" -->
+  <ScalarVariable
+    name="glaSys.gas[1].a_k"
+    valueReference="51"
+    description="Constant coefficient for thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.002873" unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "31" -->
+  <ScalarVariable
+    name="glaSys.gas[1].a_mu"
+    valueReference="52"
+    description="Constant coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="3.723e-06" min="0.0" unit="Pa.s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "32" -->
+  <ScalarVariable
+    name="glaSys.gas[1].b_c"
+    valueReference="53"
+    description="Temperature dependent coefficient for specific heat capacity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.012324" unit="J/(kg.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "33" -->
+  <ScalarVariable
+    name="glaSys.gas[1].b_k"
+    valueReference="54"
+    description="Temperature dependent coefficient for thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="7.76e-05" unit="W/(m.K2)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "34" -->
+  <ScalarVariable
+    name="glaSys.gas[1].b_mu"
+    valueReference="55"
+    description="Temperature dependent coefficient for dynamic viscosity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="4.94e-08" unit="N.s/(m2.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "35" -->
+  <ScalarVariable
+    name="glaSys.gas[1].x"
+    valueReference="56"
+    description="Gas layer thickness"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="-1.0" unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "36" -->
+  <ScalarVariable
+    name="glaSys.glass[1].absIR_a"
+    valueReference="57"
+    description="Infrared absorptivity of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.84" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "37" -->
+  <ScalarVariable
+    name="glaSys.glass[1].absIR_b"
+    valueReference="58"
+    description="Infrared absorptivity of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.84" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "38" -->
+  <ScalarVariable
+    name="glaSys.glass[1].k"
+    valueReference="59"
+    description="Thermal conductivity"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1.0" unit="W/(m.K)"/>
+  </ScalarVariable>
+  <!-- Index of variable = "39" -->
+  <ScalarVariable
+    name="glaSys.glass[1].rhoSol_a[1]"
+    valueReference="60"
+    description="Solar reflectance of surface a (usually outside-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.075" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "40" -->
+  <ScalarVariable
+    name="glaSys.glass[1].rhoSol_b[1]"
+    valueReference="61"
+    description="Solar reflectance of surface b (usually room-facing surface)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.075" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "41" -->
+  <ScalarVariable
+    name="glaSys.glass[1].tauIR"
+    valueReference="62"
+    description="Infrared transmissivity of glass"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "42" -->
+  <ScalarVariable
+    name="glaSys.glass[1].tauSol[1]"
+    valueReference="63"
+    description="Solar transmittance"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.834" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "43" -->
+  <ScalarVariable
+    name="glaSys.glass[1].x"
+    valueReference="64"
+    description="Thickness"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.003" unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "44" -->
+  <ScalarVariable
+    name="glaSys.shade.absIR_a"
+    valueReference="65"
+    description="Infrared absorptivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "45" -->
+  <ScalarVariable
+    name="glaSys.shade.absIR_b"
+    valueReference="66"
+    description="Infrared absorptivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "46" -->
+  <ScalarVariable
+    name="glaSys.shade.rhoSol_a"
+    valueReference="67"
+    description="Solar reflection coefficient of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "47" -->
+  <ScalarVariable
+    name="glaSys.shade.rhoSol_b"
+    valueReference="68"
+    description="Solar reflection coefficient of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "48" -->
+  <ScalarVariable
+    name="glaSys.shade.tauIR_a"
+    valueReference="69"
+    description="Infrared transmissivity of surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "49" -->
+  <ScalarVariable
+    name="glaSys.shade.tauIR_b"
+    valueReference="70"
+    description="Infrared transmissivity of surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "50" -->
+  <ScalarVariable
+    name="glaSys.shade.tauSol_a"
+    valueReference="71"
+    description="Solar transmissivity of shade surface a (surface that faces the outside or the room)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "51" -->
+  <ScalarVariable
+    name="glaSys.shade.tauSol_b"
+    valueReference="72"
+    description="Solar transmissivity of shade surface b (surface that faces the glass)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.25" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "52" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,1,1]"
+    valueReference="73"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "53" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,2,1]"
+    valueReference="74"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "54" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,3,1]"
+    valueReference="75"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "55" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,4,1]"
+    valueReference="76"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "56" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,5,1]"
+    valueReference="77"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "57" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,6,1]"
+    valueReference="78"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "58" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,7,1]"
+    valueReference="79"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "59" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,8,1]"
+    valueReference="80"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "60" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,9,1]"
+    valueReference="81"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "61" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,10,1]"
+    valueReference="82"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "62" -->
+  <ScalarVariable
+    name="radDat.absExtIrrExtSha[1,11,1]"
+    valueReference="83"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "63" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,1,1]"
+    valueReference="84"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "64" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,2,1]"
+    valueReference="85"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "65" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,3,1]"
+    valueReference="86"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "66" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,4,1]"
+    valueReference="87"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "67" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,5,1]"
+    valueReference="88"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "68" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,6,1]"
+    valueReference="89"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "69" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,7,1]"
+    valueReference="90"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "70" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,8,1]"
+    valueReference="91"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "71" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,9,1]"
+    valueReference="92"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "72" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,10,1]"
+    valueReference="93"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "73" -->
+  <ScalarVariable
+    name="radDat.absExtIrrIntSha[1,11,1]"
+    valueReference="94"
+    description="Angular and hemispherical absorptivity of each glass layer&#10;     for exterior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "74" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,1,1]"
+    valueReference="95"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "75" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,2,1]"
+    valueReference="96"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "76" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,3,1]"
+    valueReference="97"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "77" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,4,1]"
+    valueReference="98"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "78" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,5,1]"
+    valueReference="99"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "79" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,6,1]"
+    valueReference="100"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "80" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,7,1]"
+    valueReference="101"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "81" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,8,1]"
+    valueReference="102"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "82" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,9,1]"
+    valueReference="103"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "83" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,10,1]"
+    valueReference="104"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "84" -->
+  <ScalarVariable
+    name="radDat.absExtIrrNoSha[1,11,1]"
+    valueReference="105"
+    description="Angular and hemispherical absorptivity of each glass pane&#10;      for exterior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "85" -->
+  <ScalarVariable
+    name="radDat.absIntIrrExtSha[1,1]"
+    valueReference="106"
+    description="Hemispherical absorptivity of each glass pane&#10;      for interior irradiation with exterior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "86" -->
+  <ScalarVariable
+    name="radDat.absIntIrrIntSha[1,1]"
+    valueReference="107"
+    description="Hemispherical absorptivity of each glass pane&#10;      for interior irradiation with interior shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "87" -->
+  <ScalarVariable
+    name="radDat.absIntIrrNoSha[1,1]"
+    valueReference="108"
+    description="Hemispherical absorptivity of each glass pane&#10;      for interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "88" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[1,1]"
+    valueReference="109"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "89" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[2,1]"
+    valueReference="110"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "90" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[3,1]"
+    valueReference="111"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "91" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[4,1]"
+    valueReference="112"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "92" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[5,1]"
+    valueReference="113"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "93" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[6,1]"
+    valueReference="114"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "94" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[7,1]"
+    valueReference="115"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "95" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[8,1]"
+    valueReference="116"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "96" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[9,1]"
+    valueReference="117"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "97" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[10,1]"
+    valueReference="118"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "98" -->
+  <ScalarVariable
+    name="radDat.devAbsExtIrrIntShaDev[11,1]"
+    valueReference="119"
+    description="Angular and hemispherical absorptivity of an interior shading device&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "99" -->
+  <ScalarVariable
+    name="radDat.devAbsIntIrrIntSha[1]"
+    valueReference="120"
+    description="Hemiperical absorptivity of an interior shading device for interior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "100" -->
+  <ScalarVariable
+    name="radDat.glass[1,1,1]"
+    valueReference="121"
+    description="Glass solar transmissivity, solar reflectivity at surface a and b, at normal incident angle"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "101" -->
+  <ScalarVariable
+    name="radDat.glass[2,1,1]"
+    valueReference="122"
+    description="Glass solar transmissivity, solar reflectivity at surface a and b, at normal incident angle"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "102" -->
+  <ScalarVariable
+    name="radDat.glass[3,1,1]"
+    valueReference="123"
+    description="Glass solar transmissivity, solar reflectivity at surface a and b, at normal incident angle"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "103" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,1,1]"
+    valueReference="124"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "104" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,2,1]"
+    valueReference="125"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "105" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,3,1]"
+    valueReference="126"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "106" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,4,1]"
+    valueReference="127"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "107" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,5,1]"
+    valueReference="128"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "108" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,6,1]"
+    valueReference="129"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "109" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,7,1]"
+    valueReference="130"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "110" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,8,1]"
+    valueReference="131"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "111" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,9,1]"
+    valueReference="132"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "112" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,10,1]"
+    valueReference="133"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "113" -->
+  <ScalarVariable
+    name="radDat.layer[1,1,11,1]"
+    valueReference="134"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "114" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,1,1]"
+    valueReference="135"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "115" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,2,1]"
+    valueReference="136"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "116" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,3,1]"
+    valueReference="137"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "117" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,4,1]"
+    valueReference="138"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "118" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,5,1]"
+    valueReference="139"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "119" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,6,1]"
+    valueReference="140"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "120" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,7,1]"
+    valueReference="141"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "121" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,8,1]"
+    valueReference="142"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "122" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,9,1]"
+    valueReference="143"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "123" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,10,1]"
+    valueReference="144"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "124" -->
+  <ScalarVariable
+    name="radDat.layer[2,1,11,1]"
+    valueReference="145"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "125" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,1,1]"
+    valueReference="146"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "126" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,2,1]"
+    valueReference="147"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "127" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,3,1]"
+    valueReference="148"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "128" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,4,1]"
+    valueReference="149"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "129" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,5,1]"
+    valueReference="150"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "130" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,6,1]"
+    valueReference="151"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "131" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,7,1]"
+    valueReference="152"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "132" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,8,1]"
+    valueReference="153"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "133" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,9,1]"
+    valueReference="154"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "134" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,10,1]"
+    valueReference="155"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "135" -->
+  <ScalarVariable
+    name="radDat.layer[3,1,11,1]"
+    valueReference="156"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      of each glass pane"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "136" -->
+  <ScalarVariable
+    name="radDat.psi[1]"
+    valueReference="157"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "137" -->
+  <ScalarVariable
+    name="radDat.psi[2]"
+    valueReference="158"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "138" -->
+  <ScalarVariable
+    name="radDat.psi[3]"
+    valueReference="159"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "139" -->
+  <ScalarVariable
+    name="radDat.psi[4]"
+    valueReference="160"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "140" -->
+  <ScalarVariable
+    name="radDat.psi[5]"
+    valueReference="161"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "141" -->
+  <ScalarVariable
+    name="radDat.psi[6]"
+    valueReference="162"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "142" -->
+  <ScalarVariable
+    name="radDat.psi[7]"
+    valueReference="163"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "143" -->
+  <ScalarVariable
+    name="radDat.psi[8]"
+    valueReference="164"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "144" -->
+  <ScalarVariable
+    name="radDat.psi[9]"
+    valueReference="165"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "145" -->
+  <ScalarVariable
+    name="radDat.psi[10]"
+    valueReference="166"
+    description="Incident angles used for solar radiation calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "146" -->
+  <ScalarVariable
+    name="radDat.rhoGlaSol_a[1,1]"
+    valueReference="167"
+    description="Solar reflectivity of glass at surface a (facing outside)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "147" -->
+  <ScalarVariable
+    name="radDat.rhoGlaSol_b[1,1]"
+    valueReference="168"
+    description="Solar reflectivity of glass at surface b (facing room-side)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "148" -->
+  <ScalarVariable
+    name="radDat.rhoShaSol_a"
+    valueReference="169"
+    description="Solar reflectivity of shade for irradiation from air-side"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "149" -->
+  <ScalarVariable
+    name="radDat.rhoShaSol_b"
+    valueReference="170"
+    description="Solar reflectivity of shade for irradiation from glass-side"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "150" -->
+  <ScalarVariable
+    name="radDat.tauGlaSol[1,1]"
+    valueReference="171"
+    description="Solar transmissivity of glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "151" -->
+  <ScalarVariable
+    name="radDat.tauShaSol_a"
+    valueReference="172"
+    description="Solar transmissivity of shade for irradiation from air-side"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "152" -->
+  <ScalarVariable
+    name="radDat.tauShaSol_b"
+    valueReference="173"
+    description="Solar transmissivity of shade for irradiation from glass-side"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "153" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,1,1]"
+    valueReference="174"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "154" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,2,1]"
+    valueReference="175"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "155" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,3,1]"
+    valueReference="176"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "156" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,4,1]"
+    valueReference="177"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "157" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,5,1]"
+    valueReference="178"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "158" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,6,1]"
+    valueReference="179"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "159" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,7,1]"
+    valueReference="180"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "160" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,8,1]"
+    valueReference="181"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "161" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,9,1]"
+    valueReference="182"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "162" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,10,1]"
+    valueReference="183"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "163" -->
+  <ScalarVariable
+    name="radDat.traRef[1,1,1,11,1]"
+    valueReference="184"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "164" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,1,1]"
+    valueReference="185"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "165" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,2,1]"
+    valueReference="186"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "166" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,3,1]"
+    valueReference="187"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "167" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,4,1]"
+    valueReference="188"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "168" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,5,1]"
+    valueReference="189"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "169" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,6,1]"
+    valueReference="190"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "170" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,7,1]"
+    valueReference="191"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "171" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,8,1]"
+    valueReference="192"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "172" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,9,1]"
+    valueReference="193"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "173" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,10,1]"
+    valueReference="194"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "174" -->
+  <ScalarVariable
+    name="radDat.traRef[2,1,1,11,1]"
+    valueReference="195"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "175" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,1,1]"
+    valueReference="196"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "176" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,2,1]"
+    valueReference="197"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "177" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,3,1]"
+    valueReference="198"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "178" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,4,1]"
+    valueReference="199"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "179" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,5,1]"
+    valueReference="200"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "180" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,6,1]"
+    valueReference="201"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "181" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,7,1]"
+    valueReference="202"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "182" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,8,1]"
+    valueReference="203"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "183" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,9,1]"
+    valueReference="204"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "184" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,10,1]"
+    valueReference="205"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "185" -->
+  <ScalarVariable
+    name="radDat.traRef[3,1,1,11,1]"
+    valueReference="206"
+    description="Angular and hemispherical transmissivity, front (outside-facing) and back (room facing) reflectivity&#10;      between glass panes for exterior or interior irradiation without shading"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "186" -->
+  <ScalarVariable
+    name="radDat.traRefShaDev[1,1]"
+    valueReference="207"
+    description="Shading device property"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "187" -->
+  <ScalarVariable
+    name="radDat.traRefShaDev[1,2]"
+    valueReference="208"
+    description="Shading device property"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "188" -->
+  <ScalarVariable
+    name="radDat.traRefShaDev[2,1]"
+    valueReference="209"
+    description="Shading device property"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "189" -->
+  <ScalarVariable
+    name="radDat.traRefShaDev[2,2]"
+    valueReference="210"
+    description="Shading device property"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "190" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[1,1]"
+    valueReference="211"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "191" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[2,1]"
+    valueReference="212"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "192" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[3,1]"
+    valueReference="213"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "193" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[4,1]"
+    valueReference="214"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "194" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[5,1]"
+    valueReference="215"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "195" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[6,1]"
+    valueReference="216"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "196" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[7,1]"
+    valueReference="217"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "197" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[8,1]"
+    valueReference="218"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "198" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[9,1]"
+    valueReference="219"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "199" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[10,1]"
+    valueReference="220"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "200" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrExtSha[11,1]"
+    valueReference="221"
+    description="Angular and hemispherical transmissivity of a window system (glass + exterior shading device)&#10;     for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "201" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[1,1]"
+    valueReference="222"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "202" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[2,1]"
+    valueReference="223"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "203" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[3,1]"
+    valueReference="224"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "204" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[4,1]"
+    valueReference="225"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "205" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[5,1]"
+    valueReference="226"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "206" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[6,1]"
+    valueReference="227"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "207" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[7,1]"
+    valueReference="228"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "208" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[8,1]"
+    valueReference="229"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "209" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[9,1]"
+    valueReference="230"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "210" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[10,1]"
+    valueReference="231"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "211" -->
+  <ScalarVariable
+    name="radDat.winTraExtIrrIntSha[11,1]"
+    valueReference="232"
+    description="Angular and hemispherical transmissivity of a window system (glass and interior shading device)&#10;      for exterior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "212" -->
+  <ScalarVariable
+    name="radDat.winTraRefIntIrrExtSha[1,1]"
+    valueReference="233"
+    description="Hemisperical transmissivity and reflectivity of a window system (glass and exterior shadig device)&#10;      for interior irradiation. traRefIntIrrExtSha[1]: transmissivity,&#10;      traRefIntIrrExtSha[2]: Back reflectivity; traRefIntIrrExtSha[3]: dummy value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "213" -->
+  <ScalarVariable
+    name="radDat.winTraRefIntIrrExtSha[2,1]"
+    valueReference="234"
+    description="Hemisperical transmissivity and reflectivity of a window system (glass and exterior shadig device)&#10;      for interior irradiation. traRefIntIrrExtSha[1]: transmissivity,&#10;      traRefIntIrrExtSha[2]: Back reflectivity; traRefIntIrrExtSha[3]: dummy value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "214" -->
+  <ScalarVariable
+    name="radDat.winTraRefIntIrrExtSha[3,1]"
+    valueReference="235"
+    description="Hemisperical transmissivity and reflectivity of a window system (glass and exterior shadig device)&#10;      for interior irradiation. traRefIntIrrExtSha[1]: transmissivity,&#10;      traRefIntIrrExtSha[2]: Back reflectivity; traRefIntIrrExtSha[3]: dummy value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "215" -->
+  <ScalarVariable
+    name="radDat.winTraRefIntIrrIntSha[1,1]"
+    valueReference="236"
+    description="Hemisperical transmissivity and back reflectivity of a window system (glass and interior shadig device)&#10;      for interior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "216" -->
+  <ScalarVariable
+    name="radDat.winTraRefIntIrrIntSha[2,1]"
+    valueReference="237"
+    description="Hemisperical transmissivity and back reflectivity of a window system (glass and interior shadig device)&#10;      for interior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "217" -->
+  <ScalarVariable
+    name="radDat.winTraRefIntIrrIntSha[3,1]"
+    valueReference="238"
+    description="Hemisperical transmissivity and back reflectivity of a window system (glass and interior shadig device)&#10;      for interior irradiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "218" -->
+  <ScalarVariable
+    name="radDat.xGla[1]"
+    valueReference="239"
+    description="Thickness of glass"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "219" -->
+  <ScalarVariable
+    name="til"
+    valueReference="240"
+    description="Surface tilt"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1.5707963267949" unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "220" -->
+  <ScalarVariable
+    name="radDat.HEM"
+    valueReference="0"
+    description="Index of hemispherical integration"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "221" -->
+  <ScalarVariable
+    name="radDat.N"
+    valueReference="1"
+    description="Number of glass layers"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "222" -->
+  <ScalarVariable
+    name="radDat.NDIR"
+    valueReference="2"
+    description="Number of incident angles"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "223" -->
+  <ScalarVariable
+    name="radDat.NSta"
+    valueReference="3"
+    description="Number of window states for electrochromic windows (set to 1 for regular windows)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "224" -->
+  <ScalarVariable
+    name="glaSys.haveControllableWindow"
+    valueReference="0"
+    description="Flag, true if the window allows multiple states, such as for electrochromic windows"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "225" -->
+  <ScalarVariable
+    name="glaSys.haveExteriorShade"
+    valueReference="1"
+    description="Set to true if window has an exterior shade (at surface a)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "226" -->
+  <ScalarVariable
+    name="glaSys.haveInteriorShade"
+    valueReference="2"
+    description="Set to true if window has an interior shade (at surface b)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "227" -->
+  <ScalarVariable
+    name="glaSys.haveShade"
+    valueReference="3"
+    description="Parameter that is true if the construction has a shade"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="1" dependencies="" dependenciesKind="" />
+      <Unknown index="2" dependencies="" dependenciesKind="" />
+      <Unknown index="3" dependencies="" dependenciesKind="" />
+      <Unknown index="4" dependencies="" dependenciesKind="" />
+      <Unknown index="5" dependencies="" dependenciesKind="" />
+      <Unknown index="6" dependencies="" dependenciesKind="" />
+      <Unknown index="7" dependencies="" dependenciesKind="" />
+      <Unknown index="8" dependencies="" dependenciesKind="" />
+      <Unknown index="9" dependencies="" dependenciesKind="" />
+      <Unknown index="10" dependencies="" dependenciesKind="" />
+      <Unknown index="11" dependencies="" dependenciesKind="" />
+      <Unknown index="12" dependencies="" dependenciesKind="" />
+      <Unknown index="13" dependencies="" dependenciesKind="" />
+      <Unknown index="14" dependencies="" dependenciesKind="" />
+      <Unknown index="15" dependencies="" dependenciesKind="" />
+      <Unknown index="16" dependencies="" dependenciesKind="" />
+      <Unknown index="17" dependencies="" dependenciesKind="" />
+      <Unknown index="18" dependencies="" dependenciesKind="" />
+      <Unknown index="19" dependencies="" dependenciesKind="" />
+      <Unknown index="20" dependencies="" dependenciesKind="" />
+      <Unknown index="21" dependencies="" dependenciesKind="" />
+      <Unknown index="22" dependencies="" dependenciesKind="" />
+    </Outputs>
+    <InitialUnknowns>
+      <Unknown index="1" dependencies="" dependenciesKind="" />
+      <Unknown index="2" dependencies="" dependenciesKind="" />
+      <Unknown index="3" dependencies="" dependenciesKind="" />
+      <Unknown index="4" dependencies="" dependenciesKind="" />
+      <Unknown index="5" dependencies="" dependenciesKind="" />
+      <Unknown index="6" dependencies="" dependenciesKind="" />
+      <Unknown index="7" dependencies="" dependenciesKind="" />
+      <Unknown index="8" dependencies="" dependenciesKind="" />
+      <Unknown index="9" dependencies="" dependenciesKind="" />
+      <Unknown index="10" dependencies="" dependenciesKind="" />
+      <Unknown index="11" dependencies="" dependenciesKind="" />
+      <Unknown index="12" dependencies="" dependenciesKind="" />
+      <Unknown index="13" dependencies="" dependenciesKind="" />
+      <Unknown index="14" dependencies="" dependenciesKind="" />
+      <Unknown index="15" dependencies="" dependenciesKind="" />
+      <Unknown index="16" dependencies="" dependenciesKind="" />
+      <Unknown index="17" dependencies="" dependenciesKind="" />
+      <Unknown index="18" dependencies="" dependenciesKind="" />
+      <Unknown index="19" dependencies="" dependenciesKind="" />
+      <Unknown index="20" dependencies="" dependenciesKind="" />
+      <Unknown index="21" dependencies="" dependenciesKind="" />
+      <Unknown index="22" dependencies="" dependenciesKind="" />
+      <Unknown index="52" dependencies="" dependenciesKind="" />
+      <Unknown index="53" dependencies="" dependenciesKind="" />
+      <Unknown index="54" dependencies="" dependenciesKind="" />
+      <Unknown index="55" dependencies="" dependenciesKind="" />
+      <Unknown index="56" dependencies="" dependenciesKind="" />
+      <Unknown index="57" dependencies="" dependenciesKind="" />
+      <Unknown index="58" dependencies="" dependenciesKind="" />
+      <Unknown index="59" dependencies="" dependenciesKind="" />
+      <Unknown index="60" dependencies="" dependenciesKind="" />
+      <Unknown index="61" dependencies="" dependenciesKind="" />
+      <Unknown index="62" dependencies="" dependenciesKind="" />
+      <Unknown index="63" dependencies="" dependenciesKind="" />
+      <Unknown index="64" dependencies="" dependenciesKind="" />
+      <Unknown index="65" dependencies="" dependenciesKind="" />
+      <Unknown index="66" dependencies="" dependenciesKind="" />
+      <Unknown index="67" dependencies="" dependenciesKind="" />
+      <Unknown index="68" dependencies="" dependenciesKind="" />
+      <Unknown index="69" dependencies="" dependenciesKind="" />
+      <Unknown index="70" dependencies="" dependenciesKind="" />
+      <Unknown index="71" dependencies="" dependenciesKind="" />
+      <Unknown index="72" dependencies="" dependenciesKind="" />
+      <Unknown index="73" dependencies="" dependenciesKind="" />
+      <Unknown index="74" dependencies="" dependenciesKind="" />
+      <Unknown index="75" dependencies="" dependenciesKind="" />
+      <Unknown index="76" dependencies="" dependenciesKind="" />
+      <Unknown index="77" dependencies="" dependenciesKind="" />
+      <Unknown index="78" dependencies="" dependenciesKind="" />
+      <Unknown index="79" dependencies="" dependenciesKind="" />
+      <Unknown index="80" dependencies="" dependenciesKind="" />
+      <Unknown index="81" dependencies="" dependenciesKind="" />
+      <Unknown index="82" dependencies="" dependenciesKind="" />
+      <Unknown index="83" dependencies="" dependenciesKind="" />
+      <Unknown index="84" dependencies="" dependenciesKind="" />
+      <Unknown index="85" dependencies="" dependenciesKind="" />
+      <Unknown index="86" dependencies="" dependenciesKind="" />
+      <Unknown index="87" dependencies="" dependenciesKind="" />
+      <Unknown index="88" dependencies="" dependenciesKind="" />
+      <Unknown index="89" dependencies="" dependenciesKind="" />
+      <Unknown index="90" dependencies="" dependenciesKind="" />
+      <Unknown index="91" dependencies="" dependenciesKind="" />
+      <Unknown index="92" dependencies="" dependenciesKind="" />
+      <Unknown index="93" dependencies="" dependenciesKind="" />
+      <Unknown index="94" dependencies="" dependenciesKind="" />
+      <Unknown index="95" dependencies="" dependenciesKind="" />
+      <Unknown index="96" dependencies="" dependenciesKind="" />
+      <Unknown index="97" dependencies="" dependenciesKind="" />
+      <Unknown index="98" dependencies="" dependenciesKind="" />
+      <Unknown index="99" dependencies="" dependenciesKind="" />
+      <Unknown index="100" dependencies="" dependenciesKind="" />
+      <Unknown index="101" dependencies="" dependenciesKind="" />
+      <Unknown index="102" dependencies="" dependenciesKind="" />
+      <Unknown index="103" dependencies="" dependenciesKind="" />
+      <Unknown index="104" dependencies="" dependenciesKind="" />
+      <Unknown index="105" dependencies="" dependenciesKind="" />
+      <Unknown index="106" dependencies="" dependenciesKind="" />
+      <Unknown index="107" dependencies="" dependenciesKind="" />
+      <Unknown index="108" dependencies="" dependenciesKind="" />
+      <Unknown index="109" dependencies="" dependenciesKind="" />
+      <Unknown index="110" dependencies="" dependenciesKind="" />
+      <Unknown index="111" dependencies="" dependenciesKind="" />
+      <Unknown index="112" dependencies="" dependenciesKind="" />
+      <Unknown index="113" dependencies="" dependenciesKind="" />
+      <Unknown index="114" dependencies="" dependenciesKind="" />
+      <Unknown index="115" dependencies="" dependenciesKind="" />
+      <Unknown index="116" dependencies="" dependenciesKind="" />
+      <Unknown index="117" dependencies="" dependenciesKind="" />
+      <Unknown index="118" dependencies="" dependenciesKind="" />
+      <Unknown index="119" dependencies="" dependenciesKind="" />
+      <Unknown index="120" dependencies="" dependenciesKind="" />
+      <Unknown index="121" dependencies="" dependenciesKind="" />
+      <Unknown index="122" dependencies="" dependenciesKind="" />
+      <Unknown index="123" dependencies="" dependenciesKind="" />
+      <Unknown index="124" dependencies="" dependenciesKind="" />
+      <Unknown index="125" dependencies="" dependenciesKind="" />
+      <Unknown index="126" dependencies="" dependenciesKind="" />
+      <Unknown index="127" dependencies="" dependenciesKind="" />
+      <Unknown index="128" dependencies="" dependenciesKind="" />
+      <Unknown index="129" dependencies="" dependenciesKind="" />
+      <Unknown index="130" dependencies="" dependenciesKind="" />
+      <Unknown index="131" dependencies="" dependenciesKind="" />
+      <Unknown index="132" dependencies="" dependenciesKind="" />
+      <Unknown index="133" dependencies="" dependenciesKind="" />
+      <Unknown index="134" dependencies="" dependenciesKind="" />
+      <Unknown index="135" dependencies="" dependenciesKind="" />
+      <Unknown index="136" dependencies="" dependenciesKind="" />
+      <Unknown index="137" dependencies="" dependenciesKind="" />
+      <Unknown index="138" dependencies="" dependenciesKind="" />
+      <Unknown index="139" dependencies="" dependenciesKind="" />
+      <Unknown index="140" dependencies="" dependenciesKind="" />
+      <Unknown index="141" dependencies="" dependenciesKind="" />
+      <Unknown index="142" dependencies="" dependenciesKind="" />
+      <Unknown index="143" dependencies="" dependenciesKind="" />
+      <Unknown index="144" dependencies="" dependenciesKind="" />
+      <Unknown index="145" dependencies="" dependenciesKind="" />
+      <Unknown index="146" dependencies="39" dependenciesKind="dependent" />
+      <Unknown index="147" dependencies="40" dependenciesKind="dependent" />
+      <Unknown index="148" dependencies="46" dependenciesKind="dependent" />
+      <Unknown index="149" dependencies="47" dependenciesKind="dependent" />
+      <Unknown index="150" dependencies="42" dependenciesKind="dependent" />
+      <Unknown index="151" dependencies="50" dependenciesKind="dependent" />
+      <Unknown index="152" dependencies="51" dependenciesKind="dependent" />
+      <Unknown index="153" dependencies="" dependenciesKind="" />
+      <Unknown index="154" dependencies="" dependenciesKind="" />
+      <Unknown index="155" dependencies="" dependenciesKind="" />
+      <Unknown index="156" dependencies="" dependenciesKind="" />
+      <Unknown index="157" dependencies="" dependenciesKind="" />
+      <Unknown index="158" dependencies="" dependenciesKind="" />
+      <Unknown index="159" dependencies="" dependenciesKind="" />
+      <Unknown index="160" dependencies="" dependenciesKind="" />
+      <Unknown index="161" dependencies="" dependenciesKind="" />
+      <Unknown index="162" dependencies="" dependenciesKind="" />
+      <Unknown index="163" dependencies="" dependenciesKind="" />
+      <Unknown index="164" dependencies="" dependenciesKind="" />
+      <Unknown index="165" dependencies="" dependenciesKind="" />
+      <Unknown index="166" dependencies="" dependenciesKind="" />
+      <Unknown index="167" dependencies="" dependenciesKind="" />
+      <Unknown index="168" dependencies="" dependenciesKind="" />
+      <Unknown index="169" dependencies="" dependenciesKind="" />
+      <Unknown index="170" dependencies="" dependenciesKind="" />
+      <Unknown index="171" dependencies="" dependenciesKind="" />
+      <Unknown index="172" dependencies="" dependenciesKind="" />
+      <Unknown index="173" dependencies="" dependenciesKind="" />
+      <Unknown index="174" dependencies="" dependenciesKind="" />
+      <Unknown index="175" dependencies="" dependenciesKind="" />
+      <Unknown index="176" dependencies="" dependenciesKind="" />
+      <Unknown index="177" dependencies="" dependenciesKind="" />
+      <Unknown index="178" dependencies="" dependenciesKind="" />
+      <Unknown index="179" dependencies="" dependenciesKind="" />
+      <Unknown index="180" dependencies="" dependenciesKind="" />
+      <Unknown index="181" dependencies="" dependenciesKind="" />
+      <Unknown index="182" dependencies="" dependenciesKind="" />
+      <Unknown index="183" dependencies="" dependenciesKind="" />
+      <Unknown index="184" dependencies="" dependenciesKind="" />
+      <Unknown index="185" dependencies="" dependenciesKind="" />
+      <Unknown index="186" dependencies="" dependenciesKind="" />
+      <Unknown index="187" dependencies="" dependenciesKind="" />
+      <Unknown index="188" dependencies="" dependenciesKind="" />
+      <Unknown index="189" dependencies="" dependenciesKind="" />
+      <Unknown index="190" dependencies="" dependenciesKind="" />
+      <Unknown index="191" dependencies="" dependenciesKind="" />
+      <Unknown index="192" dependencies="" dependenciesKind="" />
+      <Unknown index="193" dependencies="" dependenciesKind="" />
+      <Unknown index="194" dependencies="" dependenciesKind="" />
+      <Unknown index="195" dependencies="" dependenciesKind="" />
+      <Unknown index="196" dependencies="" dependenciesKind="" />
+      <Unknown index="197" dependencies="" dependenciesKind="" />
+      <Unknown index="198" dependencies="" dependenciesKind="" />
+      <Unknown index="199" dependencies="" dependenciesKind="" />
+      <Unknown index="200" dependencies="" dependenciesKind="" />
+      <Unknown index="201" dependencies="" dependenciesKind="" />
+      <Unknown index="202" dependencies="" dependenciesKind="" />
+      <Unknown index="203" dependencies="" dependenciesKind="" />
+      <Unknown index="204" dependencies="" dependenciesKind="" />
+      <Unknown index="205" dependencies="" dependenciesKind="" />
+      <Unknown index="206" dependencies="" dependenciesKind="" />
+      <Unknown index="207" dependencies="" dependenciesKind="" />
+      <Unknown index="208" dependencies="" dependenciesKind="" />
+      <Unknown index="209" dependencies="" dependenciesKind="" />
+      <Unknown index="210" dependencies="" dependenciesKind="" />
+      <Unknown index="211" dependencies="" dependenciesKind="" />
+      <Unknown index="212" dependencies="" dependenciesKind="" />
+      <Unknown index="213" dependencies="" dependenciesKind="" />
+      <Unknown index="214" dependencies="" dependenciesKind="" />
+      <Unknown index="215" dependencies="" dependenciesKind="" />
+      <Unknown index="216" dependencies="" dependenciesKind="" />
+      <Unknown index="217" dependencies="" dependenciesKind="" />
+      <Unknown index="218" dependencies="43" dependenciesKind="dependent" />
+      <Unknown index="220" dependencies="" dependenciesKind="" />
+      <Unknown index="221" dependencies="" dependenciesKind="" />
+      <Unknown index="222" dependencies="" dependenciesKind="" />
+      <Unknown index="223" dependencies="" dependenciesKind="" />
+      <Unknown index="224" dependencies="" dependenciesKind="" />
+      <Unknown index="225" dependencies="" dependenciesKind="" />
+      <Unknown index="226" dependencies="" dependenciesKind="" />
+      <Unknown index="227" dependencies="" dependenciesKind="" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

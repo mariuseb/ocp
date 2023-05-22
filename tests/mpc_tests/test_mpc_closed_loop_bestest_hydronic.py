@@ -14,6 +14,7 @@ from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
 from copy import deepcopy
+from ocp.functions import functions
 
 # text:
 rc('mathtext', default='regular')
@@ -27,16 +28,25 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC.json")
+    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_func.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
+    ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF_func.json")
 
     # pass in config?
-    params = ca.DM([0.0015,
-                    0.0116,
-                    1.33E6,
-                    6.64E6,
-                    5.53])
+    """
+    Rie       6.987636e-04
+    Rea       3.184517e-03
+    Ci        5.407161e+06
+    Ce        4.533857e+07
+    Ai        2.767623e+01
+    UA_nom    3.915722e+01
+    """
+    params = ca.DM([6.987636e-04,
+                    3.184517e-03,
+                    5.407161e+06,
+                    4.533857e+07,
+                    2.767623e+01,
+                    3.915722e+01])
     
     
     kwargs = {
@@ -54,11 +64,12 @@ if __name__ == "__main__":
         "u_nom": 5000,
         "r_nom": 300,
         "y_nom": 300,
-        #"slack": True
+        #"slack": Trues
         "slack": True
     }
     
     mpc = MPC(config=mpc_cfg,
+              functions=functions,
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
     
@@ -69,7 +80,7 @@ if __name__ == "__main__":
     
     boptest = Boptest(
                       boptest_cfg,
-                      name="ZEBLL"
+                      name="bestest_hydronic"
                       )
     # first forecast:
     data = boptest.forecast()

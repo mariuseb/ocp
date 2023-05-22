@@ -478,11 +478,12 @@ class Boptest(RestApi):
             l1 = ax.plot(dt_index, (res[y_name]-273.15), color=next(colors), label="$%s_%s$" % (prefix, suffix))
             ax1 = ax.twinx()
             #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-            #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
+            #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
+            l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
             
             # TODO: map from temperature to heater:
             #l2 = ax1.plot(dt_index, res.phi_h/1000, color=next(colors), linestyle="dashed", label="$\phi_h$")
-            l2 = ax1.plot(dt_index, res.Tsup, color=next(colors), linestyle="dashed", label="$\phi_h$")
+            #l2 = ax1.plot(dt_index, res.Tsup, color=next(colors), linestyle="dashed", label="$\phi_h$")
             
             #ax.legend([l1, l2], , loc=0)
             #ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))

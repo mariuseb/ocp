@@ -40,7 +40,7 @@
     "ZEBLL":
     {
       "misc": {
-        "h":3600,
+        "h": 3600,
         "N": 25,
         "start_time": 0,
         "warmup_period": 604800

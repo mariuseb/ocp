@@ -1,0 +1,46 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05)  + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "w": {
+            "v1": "Ti - y1", 
+            "v2": "regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05) - y2"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_nom"
+        ],
+        "u": [
+            "Ph",
+            "phi_s"
+        ],
+        "r": [
+            "Tsup",
+            "Ta"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Ph"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1],
+    "R": [1]
+}

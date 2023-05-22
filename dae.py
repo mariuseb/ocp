@@ -1,6 +1,7 @@
 #from casadi import *
 import casadi as ca
 import re
+import pdb
 
 class DAE(object):
     """
@@ -8,8 +9,18 @@ class DAE(object):
     """
     def __init__(self, config):
 
-        self.dae = ca.DaeBuilder()
+        self.dae = ca.DaeBuilder("foo")
         self.config = config
+        
+        # get functions:
+        functions = config.pop("functions", None)
+        if functions is not None:
+            for k, v in functions.items():
+                setattr(self, k, v)
+        
+        # set z empty
+        #self.z = []
+        
         self.add_params()
         self.add_states()
         self.add_alg_states()
@@ -18,9 +29,10 @@ class DAE(object):
         self.add_process_noise()
         self.add_meas_noise()
         self.add_refs()
+        self.add_w()
+        #self.add_meas()
         self.add_odes()
         self.add_algs()
-        #self.add_meas()
 
 
     def add_params(self):
@@ -31,36 +43,44 @@ class DAE(object):
 
         self.__setattr__("p", self.config["p"])
         
-    def add_process_noise(self):
+    def add_process_noise(self): # s
         """
         Add:
             - process noise/disturbance.
         """
         try:
-            for name in self.config["w"]:
+            for name in self.config["s"]:
                 # can't add to dae:
                 # state = self.dae.add_x(name)
                 noise = ca.MX.sym(name)
                 self.__setattr__(name, noise)
+                self.dae.add_w(noise)
 
-            self.__setattr__("w_names", self.config["w"])
+            self.__setattr__("s_names", self.config["s"])
         except KeyError:
-            self.__setattr__("w_names", [])
+            self.__setattr__("s_names", [])
             
         
     def add_meas_noise(self):
         """
         Add:
             - measurement noise
+            
+        NOTE: as algebraic var
         """
         try:
             for name in self.config["v"]:
                 # can't add to dae:
                 # state = self.dae.add_x(name)
-                noise = ca.MX.sym(name)
-                self.__setattr__(name, noise)
+                #noise = ca.MX.sym(name)
+                #alg = self.dae.add_z(name)
+                #mx = self.dae.get(name)
+                #self.__setattr__(name, alg)
+                print("Do not add v yet..")
+                
 
             self.__setattr__("v_names", self.config["v"])
+            #self.z.extend(self.v_names)
         except KeyError:
             self.__setattr__("v_names", [])
             
@@ -83,12 +103,16 @@ class DAE(object):
 
     def add_controls(self):
         self.u_names = []
-        for name in self.config["u"]:
-            control = self.dae.add_u(name)
-            self.__setattr__(name, control)
-            self.u_names.append(name)
-        
-        self.__setattr__("u", self.config["u"])
+        try:
+            for name in self.config["u"]:
+                control = self.dae.add_u(name)
+                self.__setattr__(name, control)
+                self.u_names.append(name)
+            
+            self.__setattr__("u", self.config["u"])
+        except KeyError:
+            self.__setattr__("u", [])
+            
         
 
     def add_states(self):
@@ -166,7 +190,6 @@ class DAE(object):
     @property
     def z_names(self):
         return self.z 
-    '''
     
     @property
     def n_x(self):
@@ -199,22 +222,59 @@ class DAE(object):
     @property
     def n_y(self):
         return len(self.dae.y)
+    '''
+    
+    @property
+    def n_x(self):
+        return self.dae.nx()
+
+    @property
+    def n_z(self):
+        return self.dae.nz()
+
+    @property
+    def n_p(self):
+        return self.dae.np()
+
+    @property
+    def n_w(self):
+        return self.dae.nw()
+
+    @property
+    def n_v(self):
+        return len(self.v_names)
+    
+    @property
+    def n_s(self):
+        return len(self.s_names)
+    
+    @property
+    def n_r(self):
+        return len(self.r_names)
+
+    @property
+    def n_u(self):
+        return self.dae.nu()
+
+    @property
+    def n_y(self):
+        return self.dae.ny()
     
     @property
     def order(self):
-        return ("x", "z", "u", "p", "w", "v", "y", "r")
+        return ("x", "z", "u", "p", "s", "v", "y", "r")
     
     @property
     def all_names(self):
         """
         Order:
-            x, z, u, p, w, v, y, r
+            x, z, u, p, s, v, y, r
         """
         return self.x + \
                self.z + \
                self.u + \
                self.p + \
-               self.w_names + \
+               self.s_names + \
                self.v_names + \
                list(self.y.keys()) + \
                self.r_names
@@ -265,12 +325,22 @@ class DAE(object):
         if kind == "ode":
             
             self.odes = expr_dict = {}
-            method = self.dae.add_ode
+            #method = self.dae.add_ode
+            method = self.dae.set_ode
             
         elif kind == "alg":
             
             self.algs = expr_dict = {}
-            method = self.dae.add_alg
+            #method = self.dae.add_alg
+            #method = self.dae.set_alg
+            method = self.dae.set_alg
+        
+        elif kind == "w":
+            
+            self.algs = expr_dict = {}
+            #method = self.dae.add_alg
+            #method = self.dae.set_alg
+            method = self.dae.add_w
             
         try:
             for expr_name, _string in self.config[kind].items():
@@ -282,15 +352,42 @@ class DAE(object):
                 #exec(f'self.%s["{expr_name}"] =' + expr_string)
                 exec(f'expr_dict["{expr_name}"] =' + expr_string)
                 #self.dae.add_ode(expr_name, expr_dict[expr_name])
-                method(expr_name, expr_dict[expr_name])
+                mx = method(expr_name, expr_dict[expr_name])
+                
+                if mx is not None:
+                    self.__setattr__(expr_name, mx)
+                    
+                    """
+                    Observe strict naming rules:
+                    v : measurement noise
+                    s : process noise
+                    """
+                    
+                    if expr_name.startswith("v"):
+                        self.v_names.append(expr_name)
+                    elif expr_name.startswith("s"):
+                        self.s_names.append(expr_name)
+                    else: # other kinds of dependent variables, not handled yet
+                        pdb.set_trace()
+                    
+                elif hasattr(self, expr_name):
+                    print("Already existing variable. Check.")
+                    assert kind == "ode" or kind == "alg"
+                    print("It is an equation, OK.")
+                    
+                    
         except KeyError:
-            pass
+            setattr(self, kind, [])
+            #pass
             
     def add_odes(self):
         self._init_exprs("ode")
         
     def add_algs(self):
         self._init_exprs("alg")
+    
+    def add_w(self):
+        self._init_exprs("w")
         
 '''     
     def add_odes(self):

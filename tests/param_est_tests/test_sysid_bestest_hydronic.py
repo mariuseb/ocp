@@ -15,7 +15,7 @@ from pprint import pprint
 from ocp.filters import EKF
 from matplotlib import rc
 from pprint import pprint
-from ocp.covar_solve import CovarianceSolver
+#from ocp.covar_solve import CovarianceSolver
 import os
 import matplotlib.pyplot as plt
 rc('mathtext', default='regular')
@@ -33,7 +33,8 @@ if __name__ == "__main__":
     #cfg_path = os.path.join(opt_config_base, "3R3C_bestest_hydronic_gn.json")
     #cfg_path = os.path.join(opt_config_base, "3R3C_bestest_Tsup_linear.json")
     #cfg_path = os.path.join(opt_config_base, "2R3C_bestest_Tsup_DAE.json")
-    cfg_path = os.path.join(opt_config_base, "2R2C_bestest_Tsup_linear_UAnom_2meas.json")
+    #cfg_path = os.path.join(opt_config_base, "2R2C_bestest_Tsup_linear_UAnom_1meas.json")
+    cfg_path = os.path.join(opt_config_base, "2R2C_func.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
     GENERATE_DATA = False
@@ -132,8 +133,8 @@ if __name__ == "__main__":
     lbp = param_guess*0.01
     ubp = param_guess*100
     len_p = param_guess.shape[0]
-    #lbp[len_p-1] = 0.1*param_guess[len_p-1]
-    #ubp[len_p-1] = 10*param_guess[len_p-1]
+    lbp[len_p-1] = 0.99*param_guess[len_p-1]
+    ubp[len_p-1] = 1.01*param_guess[len_p-1]
     #lbp[len_p-2] = 0.99*param_guess[len_p-2]
     #ubp[len_p-2] = 1.01*param_guess[len_p-2]
     
@@ -167,7 +168,107 @@ if __name__ == "__main__":
              }
     """
     
+    # TODO: move this!
+    
+    """
+    Specify function here. 
+    Modelica function is as follows:
+    
+    function regNonZeroPower
+    "Power function, regularized near zero, but nonzero value for x=0"
+    extends Modelica.Icons.Function;
+
+        input Real x "Abscissa value";
+        input Real n(
+        min=0.000001,
+        max=1.999999) "Exponent";
+        input Real delta = 0.01 "Abscissa value where transition occurs";
+        output Real y "Function value";
+    protected
+        Real a1;
+        Real a3;
+        Real a5;
+        Real delta2;
+        Real x2;
+        Real y_d "=y(delta)";
+        Real yP_d "=dy(delta)/dx";
+        Real yPP_d "=d^2y(delta)/dx^2";
+    algorithm
+    if abs(x) > delta then
+        y := abs(x)^n;
+    else
+        delta2 :=delta*delta;
+        x2 :=x*x;
+        y_d :=delta^n;
+        yP_d :=n*delta^(n - 1);
+        yPP_d :=n*(n - 1)*delta^(n - 2);
+        a1 := -(yP_d/delta - yPP_d)/delta2/8;
+        a3 := (yPP_d - 12 * a1 * delta2)/2;
+        a5 := (y_d - delta2 * (a3 + delta2 * a1));
+        y := a5 + x2 * (a3 + x2 * a1);
+        assert(a5 > 0 and 0 < n and n < 2, "Delta is too small for this exponent or n is outside (0, 2).");
+    end if;
+    """
+    
+    # inputs
+    x = ca.MX.sym("x")
+    n = ca.MX.sym("n")
+    delta = ca.MX.sym("delta")
+    # protected:
+    delta2 = delta*delta
+    x2 = x*x
+    y_d = delta**n
+    yP_d = n*delta**(n-1)
+    yPP_d = n*(n-1)*delta**(n-2)
+    a1 = -(yP_d/delta - yPP_d)/delta2/8
+    a3 = (yPP_d - 12 * a1 * delta2)/2
+    a5 = (y_d - delta2 * (a3 + delta2 * a1))
+    # output
+    #y = ca.MX.sym("y")
+    
+    # expressions:
+    y_if = ca.fabs(x)**n
+    y_else = a5 + x2*(a3 + x2*a1)
+    
+    # output
+    y = ca.if_else(ca.fabs(x) > delta, y_if, y_else)
+    regNonZeroPower = ca.Function(
+                                  "regNonZeroPower", 
+                                  [x, n, delta],
+                                  [y]
+                                  #["x", "n", "delta"],
+                                  #["y"]
+                                  )
+    
+    """
+    # test it with one input:
+    test = regNonZeroPower(1, 1.24, 10)
+    print(test)
+    
+    # test over x \in [0, ..., 10]
+    xs = np.arange(0,1,step=0.01)
+    #xs = np.append(xs, np.arange(1,10,step=1))
+    n = 0.5
+    delta = 0.01
+    y = np.array([])
+    for x in xs:
+        y = np.append(y, regNonZeroPower(x, n, delta))
+
+    plt.plot(xs, y)
+    plt.show()
+    """
+    
+    # TODO: enable calling this function in model defintion
+    """
+    First: construct the function outside initialization,
+    pass it as a separate object, which must be part of 
+    namespace when init'ing DAE object.
+    """
+
+    functions = {"regNonZeroPower": regNonZeroPower}
+    
     with ParameterEstimation(config=cfg_path,
+                             functions=functions,
                              N=N,
                              dt=dt,
                              param_guess=param_guess) \
@@ -199,20 +300,21 @@ if __name__ == "__main__":
         
         ax = sol["Ti"].plot(color="r")
         sol["y1"].plot(color="k", ax=ax)
+        ax.legend()
         plt.show()
         print(params)
         
     
-    # compare inferred heat with measured:    
-    ax = (params["UA_nom"]*(y_data.Tsup-y_data.Ti)**2).plot(color="k", drawstyle="steps-post")
-    ax1 = ax.twinx()
-    y_data.Ph.plot(color="r", drawstyle="steps-post", linestyle="dashed", ax=ax1)
+    # compare inferred heat with measured:  
+    UA_nom = params["UA_nom"]
+    ax = (UA_nom*(y_data.Tsup-y_data.Ti)**1.24).plot(color="k", drawstyle="steps-post")
+    #ax1 = ax.twinx()
+    y_data.Ph.plot(color="r", drawstyle="steps-post", linestyle="dashed", ax=ax)
     #ax.legend(["deltaT"])
-    ax.legend(["Ph_inf"], loc="upper left")
-    ax1.legend(["Ph"])
+    ax.legend(["Ph_inf", "Ph"], loc="upper left")
+    #ax1.legend(["Ph"])
     plt.show()
     
-
 
 
 

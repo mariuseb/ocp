@@ -1,0 +1,29 @@
+{
+    "model": {
+        "ode": {
+            "x1": "x2",
+            "x2": "(u1-k_NL*x1-k*x1-c*x2)/M"
+        },
+        "p": [
+            "M",
+            "c",
+            "k",
+            "k_NL"
+        ],
+        "u": [
+            "u1"
+        ],
+        "x": [
+            "x1",
+            "x2"
+            ]
+    },
+    "n_steps": 10,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 10
+        }
+}

@@ -1,8 +1,8 @@
 {
     "model": {
         "ode": {
-            "dTi": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + Ai*(phi_s/Ci)",
-            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+            "Ti": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "p": [
             "Rie",
@@ -31,7 +31,7 @@
     },
     "N": 24,
     "dt": 3600,
-    "method": "collocation",
+    "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",
@@ -40,7 +40,7 @@
         "n_steps": 1
         }
     ,
-    "solver": "gauss-newton",
+    "solver": "",
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma27",
