@@ -12,7 +12,7 @@ import json
 #import pprint
 from ocp.shooting import MultipleShooting, SingleShooting, Collocation
 import copy
-
+import re
 #from tables import Col
 #from integrators import RungeKutta4, Cvodes, IRK
 import ocp.integrators as integrators
@@ -20,6 +20,7 @@ from ocp.dae import DAE
 #from shooting import MultipleShooting
 #from callback import ProcessIdCallback
 import os
+import subprocess
 #from shooting import Collocation
 #from sysid.ocp import OCP
 #import typing
@@ -88,15 +89,15 @@ class OCP(metaclass=ABCMeta):
                 ):
 
         config = kwargs.pop("config")
-        functions = kwargs.pop("functions", None)
+        self.functions = functions = kwargs.pop("functions", None)
         #if config["solver"] == "gauss_newton":
         #    self.gauss_newton = True
         #data = kwargs.pop("data")
         N = kwargs.pop("N", None)
         dt = kwargs.pop("dt", None)
-        
         # new:
         self.slack_names = []
+        self.c_files = []
         
         # mostly for sysid:
         param_guess = kwargs.pop("param_guess", None)    
@@ -114,6 +115,9 @@ class OCP(metaclass=ABCMeta):
         self.r_nom_b = kwargs.pop("r_nom_b", 0)
         self.u_nom = kwargs.pop("u_nom", 1)
         self.u_nom_b = kwargs.pop("u_nom_b", 0)
+        self.s_nom = kwargs.pop("s_nom", 1)
+        self.v_nom = kwargs.pop("v_nom", 1)
+        self.v_nom_b = kwargs.pop("v_nom_b", 0)
        
             
         
@@ -132,6 +136,9 @@ class OCP(metaclass=ABCMeta):
             self.dt = dt
         
         config["model"]["functions"] = functions
+        ## objective:
+        self.obj_string = config.pop("objective", None)
+        ##
         self.dae = dae = DAE(config["model"])
         # mainly on 
         self.bounds_cfg = config.pop("bounds", None)
@@ -156,6 +163,45 @@ class OCP(metaclass=ABCMeta):
 
         self.method = config.pop("method")
         integr_cfg = config.pop("integrator")
+        
+        # ocp constraints (e.g. to enforce physical solutions)
+        
+        ################ TO OWN METHOD #######################
+        _ocp = config.pop("ocp", None)
+        # only deal in inequality constraints for now:
+        self.h_exprs = dict()
+        if _ocp is not None:
+            h = _ocp.pop("h")
+            """
+            self.h_exprs = {
+                            "lhs": [],
+                            "body": [],
+                            "symbols": [],
+                            "rhs": []
+                            }
+            """
+            for i, expr in enumerate(h):
+                self.h_exprs[i] = {}
+                elems = expr.split("<=")
+                if len(elems) < 2: # we picked up the the wrong sign 
+                    elems = expr.split(">=")
+                    elems = elems.reverse()
+                #elif len(elems) == 2: # 'standard' case
+                """
+                elif len(elems) <      
+                else:
+                    raise ValueError("Improve handling " + \
+                                    "of inequality constraints")
+                """                
+                elems = list(map(lambda x: x.strip(), elems))
+                
+                symbols = re.findall("|".join(self.dae.all_names), elems[1])
+                
+                self.h_exprs[i]["lhs"] = float(elems[0]) # needs to be a number ??
+                self.h_exprs[i]["body"] = elems[1]
+                self.h_exprs[i]["symbols"] = symbols
+                self.h_exprs[i]["rhs"] = np.inf
+            #########################################################    
 
         if self.method in (
                            "multiple_shooting",
@@ -198,10 +244,13 @@ class OCP(metaclass=ABCMeta):
         #self.w_nom = 1/1e4
         #self.v_nom = 1/1e4
         #self.w_nom = 1/1e4
-        self.v_nom = 1
-        self.w_nom = 1
-        self.w_nom_b = 0
-        self.v_nom_b = 0
+        #self.v_nom = 1
+        #self.w_nom = 1
+        #self.w_nom_b = 0
+        #self.v_nom_b = 0
+        
+        #
+        map_eval = config.pop("map_eval", True)
 
         if self.method == "multiple_shooting":
             
@@ -212,11 +261,17 @@ class OCP(metaclass=ABCMeta):
                                                 "x_nom_b": self.x_nom_b,
                                                 "y_nom": self.y_nom,
                                                 "y_nom_b": self.y_nom_b,
+                                                "z_nom": self.z_nom,
+                                                "z_nom_b": self.z_nom_b,
                                                 "p_nom": self.p_nom,
                                                 "r_nom": self.r_nom,
+                                                "r_nom_b": self.r_nom_b,
                                                 "u_nom": self.u_nom,
-                                                "w_nom": self.w_nom,
-                                                "v_nom": self.v_nom
+                                                "u_nom_b": self.u_nom_b,
+                                                "s_nom": self.s_nom,
+                                                "v_nom": self.v_nom, 
+                                                "v_nom_b": self.v_nom_b, 
+                                                "map_eval": map_eval
                                               }
                                             )
             
@@ -230,7 +285,7 @@ class OCP(metaclass=ABCMeta):
                                                 "p_nom": self.p_nom,
                                                 "r_nom": self.r_nom,
                                                 "u_nom": self.u_nom,
-                                                "w_nom": self.w_nom,
+                                                "s_nom": self.s_nom,
                                                 "v_nom": self.v_nom
                                               }
                                             )
@@ -249,8 +304,9 @@ class OCP(metaclass=ABCMeta):
                                             "p_nom": self.p_nom,
                                             #"p_nom": ca.repmat(ca.DM([1]), len(self.dae.p)),
                                             "r_nom": self.r_nom,
+                                            "r_nom_b": self.r_nom_b,
                                             "u_nom": self.u_nom,
-                                            "w_nom": self.w_nom,
+                                            "s_nom": self.s_nom,
                                             "v_nom": self.v_nom
                                             }
                                         )
@@ -284,11 +340,12 @@ class OCP(metaclass=ABCMeta):
             
     def _init_solver(self, init_qp_solver=True):
         
+        # TODO: fix residual:
         if self.gauss_newton:
             hess_lag = self.get_hess_lag(self.res, self.nlp["x"])
         else:
             hess_lag = None
-        
+
         self.solver = ca.nlpsol(
                                 "solver", \
                                 "ipopt", \
@@ -298,7 +355,8 @@ class OCP(metaclass=ABCMeta):
                                     hess_lag=hess_lag,
                                     jit=self.with_jit, \
                                     compiler=self.compiler, \
-                                    **self.opt)
+                                    **self.opt
+                                    )
                             )
         #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
         #self.hsolver_ipopt = self.jsolver_ipopt.factory('h', self.solver.name_in(), ['jac:jac_f_p:p'])
@@ -405,6 +463,7 @@ class OCP(metaclass=ABCMeta):
         # nan issue:
         lbx = np.nan_to_num(lbx, nan=0)
         ubx = np.nan_to_num(ubx, nan=0)
+        x0 = np.nan_to_num(x0, nan=0)
         
         # rounding issue
         self.lbx = lbx       
@@ -440,8 +499,56 @@ class OCP(metaclass=ABCMeta):
         
         prefix = param_guess/dec_scale
         ceiled = np.ceil(prefix)
-        return np.multiply(ceiled, dec_scale)
+        #return np.multiply(ceiled, dec_scale)
+        return np.array(np.multiply(ceiled, dec_scale)).flatten()
         #return dec_scale
+    
+    def __del__(self):
+        for file in self.c_files:
+            print("Deleting %s..." % file)
+            os.remove(file)
+        #print("")
+    
+    def get_c_code_name(self):
+        return "%s_solver_id_" % type(self).__name__ + \
+                str(hash(self)) + \
+                ".c"
+        
+    def pregenerate_c_code(self, gen_code_filename, **kwargs):
+        """
+        Requires gcc. Make sure it is installed.
+        
+        NOTE: only tested on Linux.
+        
+        TODO: test on another platform.
+        """
+        so_filename = gen_code_filename.replace(".c", ".so")
+        # keep names for later:
+        self.c_files.append(gen_code_filename)
+        self.c_files.append(so_filename)
+        
+        compiler = kwargs.pop("compiler", "gcc")
+        flags = kwargs.pop("flags", ["-O3"])
+        
+        self.solver.generate_dependencies(gen_code_filename)
+        cmd_args = [compiler,"-fPIC","-shared"] + \
+                    flags + \
+                    [gen_code_filename, "-o", so_filename]
+        # compile:
+        subprocess.run(cmd_args)
+        # Create a new NLP solver instance from the compiled code
+        self.opt.pop("verbose")
+        #self.opt.pop("ipopt.hessian_approximation")
+        opts = dict()
+        opts["ipopt"] = dict()
+        for k, v in self.opt.items():
+            opts["ipopt"][k.replace("ipopt.", "")] = v
+        # re-init solver object:
+        self.solver = ca.nlpsol("solver", 
+                                "ipopt",
+                                so_filename,
+                                opts)
+    
       
     def get_nlp_var(self, varname):
         """
@@ -467,6 +574,45 @@ class OCP(metaclass=ABCMeta):
         
         return sym_var
         
+    
+    def get_ocp_name_and_offset(self, name):
+        # TODO: include all:
+        for varname in ("x", "u", "z", "p", "s", "v"):
+            if varname in ("x", "u", "z", "p"):
+                varlist = getattr(self.dae.dae, varname)()
+            elif varname in ("s", "v"): # TODO: add v, r
+                varlist = getattr(self.dae, name[0] + "_names")
+                varname = name[0]
+            offset = 0
+            for _name in varlist:
+                if _name == name:
+                    return varname, offset
+                offset += 1
+        else:
+            raise ValueError("DAE has no variable %s" % 
+                             (name))
+        
+    def get(self, name):
+        ocp_name, offset = self.get_ocp_name_and_offset(name)
+        n_ocp_var = getattr(self.dae, "n_" + ocp_name)
+        nlp_var = self.get_nlp_var(ocp_name)
+        
+        if n_ocp_var == 1:
+            #ret_val = nlp_var.T
+            ret_val = nlp_var
+        else:
+            ret_val = nlp_var[offset::n_ocp_var]
+            
+        # TODO: more robust handling of variable
+        # length ocp variables for h 
+        # (e.g. constraint only in X)
+        
+        #if ocp_name in ("x", "z"):
+        #    ret_val = ret_val[:-1]
+            
+        return ret_val
+            
+                
     
     @property
     def nlp_v(self):
@@ -691,12 +837,13 @@ class OCP(metaclass=ABCMeta):
             else:
                 try:    
                     vals = data[names].values
+                    """
                     try:
                         vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
                     except ValueError:
                         vals = vals[:-1, :]
                         vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
-                        
+                    """ 
                     try:
                         scale = getattr(self, varname + "_nom")
                         bias = getattr(self, varname + "_nom_b")
@@ -704,11 +851,26 @@ class OCP(metaclass=ABCMeta):
                         scale = 1    
                         bias = 0    
                     
+                    # original:
+                    """
                     bounds[varname]["lb"] = \
                         bounds[varname]["ub"] = \
                             bounds[varname]["x0"] = \
                                 (ca.DM(vals) - bias)/scale
+                    """
+                    
+                    vals -= bias
+                    vals /= scale
+                    bounds[varname]["lb"] = \
+                        bounds[varname]["ub"] = \
+                            bounds[varname]["x0"] = \
+                                vals
                                 #ca.DM(vals)/scale
+                    try:
+                        vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
+                    except ValueError:
+                        vals = vals[:-1, :]
+                        vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
                                 
                 except KeyError:
                     # not in data.
@@ -725,16 +887,29 @@ class OCP(metaclass=ABCMeta):
                         dim = int(self.nlp_parser[varname]["dim"]/len(getattr(self.dae, varname)))
                         
                         scale = self.u_nom
+                        bias = self.u_nom_b
+                        
+                        lb_vals = np.array(bounds_cfg[varname]["lb" + varname]*dim) - bias
+                        #lb_vals /= scale
+                        lb_vals = lb_vals/scale
+                        
+                        #bounds[varname]["lb"] = \
+                        #        bounds[varname]["x0"] = \
+                        #            np.array(bounds_cfg[varname]["lb" + varname]*dim)/scale
                         
                         bounds[varname]["lb"] = \
                                 bounds[varname]["x0"] = \
-                                    np.array(bounds_cfg[varname]["lb" + varname]*dim)/scale
+                                    lb_vals
                                     #p.tile(dim, bounds_cfg[varname]["lb" + varname])/scale
                         #np.tile(bounds_cfg[varname]["lb" + varname], dim)/scale
                         
                         # tile here:            
+                        ub_vals = np.array(bounds_cfg[varname]["ub" + varname]*dim) - bias
+                        #ub_vals /= scale
+                        ub_vals = ub_vals/scale
                         #bounds[varname]["ub"] = np.tile(dim, bounds_cfg[varname]["ub" + varname])/scale
-                        bounds[varname]["ub"] = np.array(bounds_cfg[varname]["ub" + varname]*dim)/scale
+                        #bounds[varname]["ub"] = np.array(bounds_cfg[varname]["ub" + varname]*dim)/scale
+                        bounds[varname]["ub"] = ub_vals
                                     
                     else:
                         bounds[varname]["lb"] = \
@@ -822,10 +997,11 @@ class OCP(metaclass=ABCMeta):
             attr_name = "n_" + name
             
             if name == "p":
-                #scale = self.get_scale()
+                scale = self.scale
+                bias = 0
                 
                 if start != stop:
-                    params = np.array(sol_x[start:stop]*self.scale).flatten()
+                    params = np.array(sol_x[start:stop]*scale).flatten()
                 else:
                     params = solution["p"]
                 _vals = np.tile(
@@ -841,8 +1017,10 @@ class OCP(metaclass=ABCMeta):
                 #    scale = 1
                 try:
                     scale = getattr(self, name + "_nom")
+                    bias = getattr(self, name + "_nom_b")
                 except AttributeError:
                     scale = 1
+                    bias = 0
                 
                 if name == "x":
                     if self.method == "multiple_shooting":
@@ -858,20 +1036,42 @@ class OCP(metaclass=ABCMeta):
                         _vals = np.array(sol_x[start:stop]*scale).reshape(((self.N-1)*(d+1) + 1, self.n_x)) + self.x_nom_b
                         _vals = _vals[start:stop:(d+1)]
                 else:
+                    n_name = getattr(self, "n_" + name)
+                    _vals = sol_x[start:stop]
+                    if n_name == 0:
+                        continue
                     
-                    _vals = np.array(sol_x[start:stop]*scale) #.reshape((self.N, getattr(self, attr_name)))
                     try:
                         _vals = _vals.reshape((self.N, getattr(self, attr_name)))
                     except ValueError:
                         _vals = _vals.reshape((self.N-1, getattr(self, attr_name)))
                         newrow = np.repeat(np.nan, getattr(self, attr_name))
                         _vals = np.vstack([_vals, newrow])
+                        
+                    _vals *= scale
+                    _vals += bias
+                    # OLD:
+                    #_vals = np.array(sol_x[start:stop]*scale) #.reshape((self.N, getattr(self, attr_name)))
+                    """
+                    try:
+                        _vals = _vals.reshape((self.N, getattr(self, attr_name)))
+                    except ValueError:
+                        _vals = _vals.reshape((self.N-1, getattr(self, attr_name)))
+                        newrow = np.repeat(np.nan, getattr(self, attr_name))
+                        _vals = np.vstack([_vals, newrow])
+                    """
+                    
+            # reverse scaling again:
+            _scaled_vals = (_vals - bias)/scale
                 
             #all_vals = np.append(all_vals, vals)
             try:
                 vals = np.hstack((vals, _vals))
+                scaled_vals = np.hstack((scaled_vals, _scaled_vals))
             except UnboundLocalError:
                 vals = _vals
+                scaled_vals = _scaled_vals
+                
           
         #all_names = self.dae.all_names + ["us1", "us2", "ls1", "ls2"]
         
@@ -883,6 +1083,11 @@ class OCP(metaclass=ABCMeta):
                               all_names, 
                               data = vals
                              )
+        self.scaled_sol_df = pd.DataFrame(
+                                            columns = 
+                                            all_names, 
+                                            data = scaled_vals
+                                         )
         # return time-series, params  
         sol_df.index = self.data.index 
         

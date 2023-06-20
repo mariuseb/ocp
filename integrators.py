@@ -153,29 +153,38 @@ class idas(Integrator):
 
         self.dae = dae
         
+        dt = kwds.pop("dt", None)
+        
+        """
         opts = {
             #"step0":    kwds["dt"],
             #"min_step_size": dt,
             #"max_step_size": dt,
-            "abstol"  : 1E-8,
-                }
-
-        dt = kwds.pop("dt", None)
+            "abstol"  : 1E-4
+            #"linear_solver": "csparse"
+            }
+        """
         self.set_ode_func()
         self.set_alg_func()
         # u->z in integrator call (algebraic var, constant on between phase boundaries (check term. in Betts ch. 4))
+        
+        
         self.one_sample = ca.integrator("I", \
             "idas", \
             {
              "x": self.x,
              "u": self.u,
+             "z": self.z,
              "p": ca.vertcat(self.p, self.r),
             "ode": self.ode,
             "alg": self.alg
             },
             0,
             [dt],
-            opts)
+            kwds)
+        
+        #self.one_sample.print_options()
+        #self.one_sample.print_options()
        
         #self.one_sample = self.get_one_sample()
         
@@ -207,13 +216,22 @@ class idas(Integrator):
         U = ca.MX.sym('U',nu)
         R = ca.MX.sym('U',nr)
         Z = ca.MX.sym('Z',nz)
-        S = ca.MX.sym('W',ns)
+        S = ca.MX.sym('S',ns)
         #V = ca.MX.sym('V', d*nx)
         
         #return self.I(x0=self.x, p=self.p)
         
         # TODO: handle noise, S and V
-        return self.I(x0=X0, z0=Z, u=ca.vertcat(U, R), p=P)
+        #return self.I(x0=X0, z0=Z, u=ca.vertcat(U, R), p=P)
+        fcn_call = self.I(x0=X0, z0=Z, u=ca.vertcat(U, R), p=ca.vertcat(P,S))
+    
+        one_sample = ca.Function("F",
+                                 [X0, Z, U, P, S, R],
+                                 [fcn_call["xf"]],
+                                 ["x", "z", "u", "p", "s", "r"],
+                                 ["f"])
+        
+        return one_sample
 
     
     """
@@ -305,12 +323,38 @@ class IRK(Integrator):
         exprs = (self.dae.y[name] for name in self.dae.dae.y())
         self.h_expr = ca.vertcat(*exprs)
         
+    def set_h_expr(self):
+        
+        # collect meas noise:
+        lhs = self.v
+        """
+        if element in w starts with 'v',
+        then it defines an expression for measurement 
+        nois
+        """
+        exprs = []
+        for w, expr in zip(self.dae.dae.w(), self.dae.dae.wdef()):
+            if w.startswith("v"):
+                exprs.append(expr)
+                
+        #rhs = ca.vertcat(*self.dae.dae.wdef())
+        rhs = ca.vertcat(*exprs)
+        #exprs =  -rhs - lhs
+        exprs = lhs - rhs
+        #exprs = (v for k, v in self.dae.algs.items() if k.startswith("v"))
+        #exprs
+        #self.h_expr = vertcat(*exprs)
+        self.h_expr = exprs
+        
+        # TODO: concatenate z and x for h
+    
     def set_h(self):
         self.h = ca.Function('h',
                           [self.y, self.x, self.z, self.u, self.p, self.v, self.r],
                           [self.h_expr],
                           ["y", "x", "z", "u", "p", "v", "r"],
                           ["h"])
+        
     
     def set_g_expr(self):
         """
@@ -326,37 +370,36 @@ class IRK(Integrator):
         
     def set_g(self):
         self.g = ca.Function('g',
-                          [self.x, self.z, self.u, self.p, self.v, self.r],
+                          [self.z, self.x, self.u, self.p, self.v, self.r],
                           [self.g_expr],
-                          ["x", "z", "u", "p", "v", "r"],
+                          ["z", "x", "u", "p", "v", "r"],
                           ["g"])
         
     def set_G(self):
         """ g non-explicit."""
         
-        """        
-        nx = len(self.dae.dae.x)
-        nu = len(self.dae.dae.u)
-        nz = len(self.dae.dae.z)        
-        np = len(self.dae.dae.p)
-        nw = len(self.dae.w_names)
+        nx = len(self.dae.dae.x())
+        nu = len(self.dae.dae.u())
+        nz = len(self.dae.dae.z())        
+        np = len(self.dae.dae.p())
+        ns = len(self.dae.s_names)
         nr = len(self.dae.r_names)
         
         # x0, p, u, r, z, w, v:
-        X0 = MX.sym('X0',nx)
-        P = MX.sym('P',np)
-        U = MX.sym('U',nu)
-        R = MX.sym('U',nr)
-        Z = MX.sym('Z',nz)
-        W = MX.sym('W',nw)
+        X = ca.MX.sym('X',nx)
+        P = ca.MX.sym('P',np)
+        U = ca.MX.sym('U',nu)
+        R = ca.MX.sym('U',nr)
+        Z = ca.MX.sym('Z',nz)
+        S = ca.MX.sym('W',ns)
         #V = MX.sym('V', d*nx)
         
+        """        
         vfcn = Function(
                         'vfcn',
                         [X0, Z, U, P, W, R],
                         [self.g_expr]
                         )
-        """
         # Convert to SX to decrease overhead
         #vfcn_sx = self.g.expand()
         # Create a implicit function instance to solve the system of equations
@@ -373,6 +416,35 @@ class IRK(Integrator):
                                                         g=self.g_expr))
         
         self.G = ifcn
+        """
+        
+        """
+        vfcn = ca.Function(
+                'vfcn',
+                [Z, X, U, P, S, R],
+                [self.g_expr]
+                )
+                #[V, X0, _Z, U, P, S, R],
+                #[ca.vertcat(V, _Z), X0, U, P, S, R],
+        zfcn = ca.Function(
+                        'zfcn',
+                        #[V, X0, _Z, U, P, S, R],
+                        [_Z, X0, V, U, P, S, R],
+                        [Z_eq]
+                        )
+        """
+        # Convert to SX to decrease overhead
+        #vfcn_sx = vfcn.expand()
+        #zfcn_sx = zfcn.expand()
+
+        # Create a implicit function instance to solve the system of equations
+        #v_ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
+        #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        #ifcn = ca.rootfinder('g_rootfinder', 'fast_newton', self.g)
+        ifcn = ca.rootfinder('g_rf', 'newton', self.g)
+        self.G = ifcn
+        
         
     def set_ode_func(self):
         self.f = ca.Function('f',
@@ -424,7 +496,7 @@ class IRK(Integrator):
     def init_integrator(self):
         
         # improve handling:
-        d, C, D, h, n, f = self.d, self.C, self.D, self.dt_n, self.n, self.f
+        d, C, D, h, n, f, g = self.d, self.C, self.D, self.dt_n, self.n, self.f, self.g
         
         nx = len(self.dae.dae.x())
         nu = len(self.dae.dae.u())
@@ -438,6 +510,7 @@ class IRK(Integrator):
         P = ca.MX.sym('P',np)
         U = ca.MX.sym('U',nu)
         R = ca.MX.sym('U',nr)
+        #_Z = ca.MX.sym('Z',d*nz)
         Z = ca.MX.sym('Z',nz)
         S = ca.MX.sym('W',ns)
         V = ca.MX.sym('V', d*nx)
@@ -447,55 +520,96 @@ class IRK(Integrator):
 
         # Get the state at each collocation point
         X = [X0] + ca.vertsplit(V, [r*nx for r in range(d+1)])
+        #Z = ca.vertsplit(_Z, [r*nz for r in range(d+1)])
 
         # Get the collocation quations (that define V)
         V_eq = []
+        #Z_eq = []
         for j in range(1,d+1):
             # Expression for the state derivative at the collocation point
             xp_j = 0
             for r in range (d+1):
                 xp_j += C[r,j]*X[r]
 
-            # Append collocation equations
+
+            # TODO: needs re-formulation, algebraic variables only defined on collocation points
             f_j = f(X[j], Z, U, P, S, R)
+            #g_j = g(X[j], Z, U, P, S, R)
+            #f_j = f(X[j], Z[j-1], U, P, S, R)
+            #g_j = g(X[j], Z[j-1], U, P, S, R)
+            # Append collocation equations
             V_eq.append(h*f_j - xp_j)
+            # Append algebraic equations 
+            #Z_eq.append(g_j)
+            #V_eq.append(g_j)
 
         # Concatenate constraints
         V_eq = ca.vertcat(*V_eq)
+        #Z_eq = ca.vertcat(*Z_eq)
 
         # Root-finding function, implicitly defines V as a function of X0 and P
         vfcn = ca.Function(
                         'vfcn',
                         [V, X0, Z, U, P, S, R],
+                        #[V, X0, _Z, U, P, S, R],
+                        #[ca.vertcat(V, _Z), X0, U, P, S, R],
                         [V_eq]
                         )
-
+        """
+        zfcn = ca.Function(
+                        'zfcn',
+                        #[V, X0, _Z, U, P, S, R],
+                        [_Z, X0, V, U, P, S, R],
+                        [Z_eq]
+                        )
+        """
         # Convert to SX to decrease overhead
         vfcn_sx = vfcn.expand()
+        #zfcn_sx = zfcn.expand()
 
         # Create a implicit function instance to solve the system of equations
+        #v_ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
         ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        
         V = ifcn(ca.MX(), X0, Z, U, P, S, R)
+        #V = ifcn(ca.MX(), X0, U, P, S, R)
         X = [X0 if r==0 else V[(r-1)*nx:r*nx] for r in range(d+1)]
+        #offset = d*nx
+        #Z = [V[(offset + r*nz):(offset + (r+1)*nz)] for r in range(d)]
 
-        # Get an expression for the state at the end of the finie element
+        # Get an expression for the state at the end of the finite element
         XF = 0
+        #ZF = 0
         for r in range(d+1):
             XF += D[r]*X[r]
+            #if r != d:
+            #    ZF += D[r]*Z[r]
+                
+                
 
         # Get the discrete time dynamics
         F = ca.Function('F', [X0, Z, U, P, S, R], [XF])
+        #F = ca.Function('F', [X0, _Z, U, P, S, R], [XF])
+        #F = ca.Function('F', [X0, U, P, S, R], [XF])
+        #F_Z = ca.Function('F_Z', [X0, U, P, S, R], [ZF])
 
         # Do this iteratively for all finite elements
         X = X0
         for i in range(n):
             X = F(X, Z, U, P, S, R)       
+            #X = F(X, U, P, S, R)       
+            #Z = F_Z(X, U, P, S, R)       
         
         self.one_sample = ca.Function(
                                    'irk_integrator',
                                    [X0, Z, U, P, S, R],
+                                   #[X0, _Z, U, P, S, R],
+                                   #[X0, U, P, S, R],
+                                   #[X, Z],
                                    [X],
                                    ["x0", "z", "u", "p", "s", "r"],
+                                   #["x", "u", "p", "s", "r"],
                                    ["xf"]
                                    )
         
@@ -556,6 +670,7 @@ class RK4(Integrator):
         self.set_ode_func()     
         self.set_h_expr()
         self.set_h()
+        self.set_H()
         self.set_g_expr()
         self.set_g()
         self.one_step = self.get_one_step()
@@ -588,7 +703,8 @@ class RK4(Integrator):
         # collect meas noise:
         lhs = self.v
         rhs = ca.vertcat(*self.dae.dae.wdef())
-        exprs =  -rhs - lhs
+        #exprs =  -rhs - lhs
+        exprs = lhs - rhs
         #exprs = (v for k, v in self.dae.algs.items() if k.startswith("v"))
         #exprs
         
@@ -597,10 +713,14 @@ class RK4(Integrator):
         
     def set_h(self):
         self.h = ca.Function('h',
-                          [self.y, self.x, self.z, self.u, self.p, self.v, self.r],
+                          [self.v, self.y, self.x, self.z, self.u, self.p, self.r],
                           [self.h_expr],
-                          ["y", "x", "z", "u", "p", "v", "r"],
+                          ["v", "y", "x", "z", "u", "p", "r"],
                           ["h"])
+        
+    def set_H(self):
+        ifcn = ca.rootfinder('g_rf', 'newton', self.h)
+        self.H = ifcn
     
     def set_g_expr(self):
         """

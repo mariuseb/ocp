@@ -25,10 +25,10 @@ class DAE(object):
         self.add_states()
         self.add_alg_states()
         self.add_controls()
+        self.add_refs()
         self.add_meas()
         self.add_process_noise()
         self.add_meas_noise()
-        self.add_refs()
         self.add_w()
         #self.add_meas()
         self.add_odes()
@@ -52,9 +52,9 @@ class DAE(object):
             for name in self.config["s"]:
                 # can't add to dae:
                 # state = self.dae.add_x(name)
-                noise = ca.MX.sym(name)
+                _noise = ca.MX.sym(name)
+                noise = self.dae.add_w(name, _noise)
                 self.__setattr__(name, noise)
-                self.dae.add_w(noise)
 
             self.__setattr__("s_names", self.config["s"])
         except KeyError:
@@ -116,11 +116,14 @@ class DAE(object):
         
 
     def add_states(self):
-        for name in self.config["x"]:
-            state = self.dae.add_x(name)
-            self.__setattr__(name, state)
+        try:
+            for name in self.config["x"]:
+                state = self.dae.add_x(name)
+                self.__setattr__(name, state)
 
-        self.__setattr__("x", self.config["x"])
+            self.__setattr__("x", self.config["x"])
+        except KeyError:
+            self.__setattr__("x", [])
 
     def add_alg_states(self):
         """

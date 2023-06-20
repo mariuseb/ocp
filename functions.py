@@ -20,6 +20,7 @@ a5 = (y_d - delta2 * (a3 + delta2 * a1))
 
 # expressions:
 y_if = ca.fabs(x)**n
+#y_if = x**n
 y_else = a5 + x2*(a3 + x2*a1)
 
 # output
@@ -27,10 +28,10 @@ y = ca.if_else(ca.fabs(x) > delta, y_if, y_else)
 regNonZeroPower = ca.Function(
                                 "regNonZeroPower", 
                                 [x, n, delta],
-                                [y]
-                                #["x", "n", "delta"],
-                                #["y"]
-                                )
+                                [y],
+                                ["x", "n", "delta"],
+                                ["y"]
+                              )
 
 """
 # test it with one input:

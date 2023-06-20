@@ -429,7 +429,7 @@ class Boptest(RestApi):
         return f"${name}_{typ}$"
     
     
-    def plot_temperatures(self, K, days, bounds, solar=False):
+    def plot_temperatures(self, K, days, bounds, solar=False, heat_key="phi_h"):
         """
         Plot temperatures.
         """
@@ -444,7 +444,8 @@ class Boptest(RestApi):
         dt_index = pd.to_datetime(res.index, origin="2020-01-01 00:00", unit="s").round("s")
         res.index = dt_index
         
-        y = list(self.y.keys())
+        #y = list(self.y.keys())
+        y = [k for k in self.y.keys() if k.startswith("Ti")]
         
         #res.Ti.iloc[:-1] = res.Ti.iloc[1:] 
         #res = res.iloc[:-1]
@@ -475,11 +476,19 @@ class Boptest(RestApi):
             
             #l1 = res.Ti.plot(ax=ax, color="k")
             #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
-            l1 = ax.plot(dt_index, (res[y_name]-273.15), color=next(colors), label="$%s_%s$" % (prefix, suffix))
+            if y_name.startswith("T"):
+                ser = (res[y_name]-273.15)
+            else:
+                ser = res[y_name]
+                
+            l1 = ax.plot(dt_index, ser, color=next(colors), label="$%s_%s$" % (prefix, suffix))
             ax1 = ax.twinx()
             #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
             #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-            l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
+            l2 = ax1.plot(res.index, res[[heat_key]], color="k", linestyle="dashed", label="$\phi_h$")
+            #l2 = ax1.plot(res.index, res.Ph, color="k", linestyle="dashed", label="$\phi_h$")
+            #l2 = ax1.plot(res.index, res.Ph, color="k", linestyle="dashed", label="$\phi_h$")
+            #l2 = ax1.plot(res.index, res.Ph, color=next(colors), linestyle="dashed", label="$\phi_h$")
             
             # TODO: map from temperature to heater:
             #l2 = ax1.plot(dt_index, res.phi_h/1000, color=next(colors), linestyle="dashed", label="$\phi_h$")
@@ -527,18 +536,21 @@ class Boptest(RestApi):
                     style = "post"
                 else:
                     style = "pre"
+                   
+                try: 
+                    l_upper = ax.plot(dt_index,
+                                    (df[("ub", y_name)]), 
+                                    drawstyle="steps-" + style,
+                                    color=cols_bds[0],
+                                    label="$%s_{%s}^{ub}$" % (prefix, suffix))
                     
-                l_upper = ax.plot(dt_index,
-                                  (df[("ub", y_name)]), 
-                                  drawstyle="steps-" + style,
-                                  color=cols_bds[0],
-                                  label="$%s_{%s}^{ub}$" % (prefix, suffix))
-                
-                l_lower = ax.plot(dt_index, 
-                                  (df[("lb", y_name)]),
-                                  drawstyle="steps-" + style,
-                                  color=cols_bds[1],
-                                  label="$%s_{%s}^{lb}$" % (prefix, suffix))
+                    l_lower = ax.plot(dt_index, 
+                                    (df[("lb", y_name)]),
+                                    drawstyle="steps-" + style,
+                                    color=cols_bds[1],
+                                    label="$%s_{%s}^{lb}$" % (prefix, suffix))
+                except:
+                    pass
                 
                 if i == 0:
                     lns += l_upper
@@ -550,7 +562,7 @@ class Boptest(RestApi):
             ax.set_ylim([_min, _max+2])
             
             ax.set_ylabel(r"Temperature [$^\circ$C]")
-            ax1.set_ylabel(r"Power [kW]")
+            ax1.set_ylabel(r"Power [W]")
             
             axes.append(ax)
             axes.append(ax1)
@@ -577,5 +589,4 @@ class Boptest(RestApi):
             axes.append(ax3)
         
         fig.tight_layout()
-        
         return fig, axes, dt_index

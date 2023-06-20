@@ -1,7 +1,7 @@
 {
     "model": {
         "ode": {
-            "dTi": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
+            "Ti": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
         },
         "p": [
             "Ria",
@@ -23,9 +23,10 @@
             "ubu": [5000]
         }
     },
-    "N": 3,
+    "objective": "dot(phi_h, phi_h)",
+    "N": 6,
     "dt": 3600,
-    "method": "collocation",
+    "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",
@@ -35,15 +36,11 @@
         "quadrature": "TODO" 
         }
     ,
-    "solver": "gauss-newton",
+    "solver": "",
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma27",
-        "ipopt.ma57_pre_alloc": 3,
-        "bound_consistency": true,
-        "clip_inactive_lam": true,
-        "calc_lam_x": false,
-        "calc_lam_p": false
+        "ipopt.ma57_pre_alloc": 3
     },
     "codegen": false
 }

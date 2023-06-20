@@ -1,12 +1,12 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05)  + Ai*(phi_s/Ci)",
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*UA_nom*regNonZeroPower((Tsup - Ti), 1.24, 0.05)  + Ai*(phi_s/Ci)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "w": {
             "v1": "Ti - y1", 
-            "v2": "regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05) - y2"
+            "v2": "UA_nom*regNonZeroPower((Tsup - Ti), 1.24, 0.05) - y2"
         },
         "p": [
             "Rie",

@@ -32,17 +32,20 @@
     "N": 24,
     "dt": 3600,
     "method": "multiple_shooting",
+    "map_eval": false,
     "integrator": 
         {
         "name": "idas",
-        "map_eval": false
+        "abstol": 1E-6,
+        "linear_solver": "csparse"
         }
     ,
     "solver": "",
     "opt": {
         "verbose": false,
-        "ipopt.linear_solver": "ma27",
-        "ipopt.ma57_pre_alloc": 3
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.hessian_approximation": "limited-memory"
     },
     "codegen": false
 }

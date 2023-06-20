@@ -40,8 +40,8 @@
     "ZEBLL":
     {
       "misc": {
-        "h": 3600,
-        "N": 25,
+        "h": 900,
+        "N": 24,
         "start_time": 0,
         "warmup_period": 604800
       },
@@ -59,8 +59,8 @@
     "testcase1_wea":
     {
       "misc": {
-        "h": 3600,
-        "N": 25,
+        "h": 900,
+        "N": 97,
         "start_time": 0,
         "warmup_period": 604800
       },
@@ -78,7 +78,7 @@
     "bestest_hydronic":
     {
       "misc": {
-        "h": 3600,
+        "h": 900,
         "N": 25,
         "start_time": 0,
         "warmup_period": 604800
@@ -86,8 +86,27 @@
       "maps" : {
         "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
         "u" : {"Tsup": "oveTSetSup"},
-        "y": {"Ti": "reaTRoo_y"},
-        "boptest_to_ocp": {"Ph": "reaQHea_y", "Tsup": "oveTSetSup_u", "Ti": "reaTRoo_y"},
+        "y": {"Ti": "reaTRoo_y", "Ph": "reaQHea_y"},
+        "boptest_to_ocp": {"Ti": "reaTRoo_y", "Ph": "reaQHea_y", "Tsup": "oveTSetSup_u"},
+        "sampling": {
+                     "integrate": ["Ph"],
+                     "point": ["Ta", "phi_s", "Ti", "Tsup"]
+                    }
+      }
+    },
+    "bestest_hydronic_linear":
+    {
+      "misc": {
+        "h": 900,
+        "N": 25,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "u" : {"Tsup": "oveTSetSup"},
+        "y": {"Ti": "reaTRoo_y", "Ph": "reaQHea_y"},
+        "boptest_to_ocp": {"Ti": "reaTRoo_y", "Ph": "reaQHea_y", "Tsup": "oveTSetSup_u"},
         "sampling": {
                      "integrate": ["Ph"],
                      "point": ["Ta", "phi_s", "Ti", "Tsup"]

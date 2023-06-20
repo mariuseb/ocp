@@ -34,7 +34,7 @@ if __name__ == "__main__":
     #cfg_path = os.path.join(opt_config_base, "3R3C_bestest_Tsup_linear.json")
     #cfg_path = os.path.join(opt_config_base, "2R3C_bestest_Tsup_DAE.json")
     #cfg_path = os.path.join(opt_config_base, "2R2C_bestest_Tsup_linear_UAnom_1meas.json")
-    cfg_path = os.path.join(opt_config_base, "2R2C_func.json")
+    cfg_path = os.path.join(opt_config_base, "2R2C_func_DAE.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
     GENERATE_DATA = False
@@ -126,15 +126,20 @@ if __name__ == "__main__":
     #param_guess = ca.DM([0.01,0.1,1E6,5E6,1E5,5,39.1])
     #param_guess = ca.DM([0.01,0.1,0.01,0.01,1E6,5E6,1E5,5])
     #param_guess = ca.DM([0.01,0.01,1E6,1E6,1E4,5,0.01])
-    param_guess = ca.DM([0.01,0.01,1E6,1E7,5,39.1])
+    #param_guess = ca.DM([0.01,0.01,1E6,1E7,5,1.24,39.1,0.86])
+    param_guess = ca.DM([0.01,0.01,1E6,1E7,5,1.05,39.10,0.90])
     #param_guess = ca.DM([0.1,0.1,0.1,1E6,1E7,1E5,5,39.1])
     #lbp = ca.DM([0.001,0.01,1E5,1E6,1])
     #ubp = ca.DM([0.1,0.1,1E7,1E8,50])
     lbp = param_guess*0.01
     ubp = param_guess*100
     len_p = param_guess.shape[0]
-    lbp[len_p-1] = 0.99*param_guess[len_p-1]
-    ubp[len_p-1] = 1.01*param_guess[len_p-1]
+    #lbp[len_p-2] = 0.99*param_guess[len_p-2]
+    #ubp[len_p-2] = 1.01*param_guess[len_p-2]
+    lbp[len_p-1] = 0.87
+    ubp[len_p-1] = 1
+    lbp[len_p-3] = 1
+    ubp[len_p-3] = 2
     #lbp[len_p-2] = 0.99*param_guess[len_p-2]
     #ubp[len_p-2] = 1.01*param_guess[len_p-2]
     
@@ -290,6 +295,14 @@ if __name__ == "__main__":
         R = ca.DM.eye(1)
         # provide Q, R in solve here:
         # provide lb, ub for p here:
+        v_inds = param_est.nlp_parser["v"]["range"]
+        v1 = param_est.nlp["x"][v_inds["a"]:v_inds["b"]:param_est.dae.n_y]
+        v2 = param_est.nlp["x"][(v_inds["a"]+1):v_inds["b"]:param_est.dae.n_y]
+        # what to do with this? 
+        eta = param_est.dae.dae.var("eta")
+        v2 = v2/eta
+        param_est.nlp["f"] = 0.5*ca.dot(v1, v1) + 1E-4*ca.dot(v2, v2)
+        
         sol, params = param_est.solve(
                                       y_data,
                                       param_guess,
@@ -297,6 +310,15 @@ if __name__ == "__main__":
                                       ubp=ubp,
                                       covar=ca.veccat(Q, R)
                                       )
+        
+        # test eval of H mapped
+        h_func = param_est.strategy.h_map
+        # extract data for eval:
+        y = sol[["y1", "y2"]]
+        x = sol[["Ti", "Te"]]
+        u = sol[["Tsup"]]
+        p = sol[param_est.dae.p]
+        
         
         ax = sol["Ti"].plot(color="r")
         sol["y1"].plot(color="k", ax=ax)
@@ -307,9 +329,10 @@ if __name__ == "__main__":
     
     # compare inferred heat with measured:  
     UA_nom = params["UA_nom"]
-    ax = (UA_nom*(y_data.Tsup-y_data.Ti)**1.24).plot(color="k", drawstyle="steps-post")
+    n = params["n"]
+    ax = (UA_nom*((y_data.Tsup-y_data.Ti)**n)).plot(color="k", drawstyle="steps-post")
     #ax1 = ax.twinx()
-    y_data.Ph.plot(color="r", drawstyle="steps-post", linestyle="dashed", ax=ax)
+    (y_data.Ph*params["eta"]).plot(color="r", drawstyle="steps-post", linestyle="dashed", ax=ax)
     #ax.legend(["deltaT"])
     ax.legend(["Ph_inf", "Ph"], loc="upper left")
     #ax1.legend(["Ph"])

@@ -26,7 +26,7 @@
             ["y1", "Ti"]
         ]
     },
-    "dt": 3600,
+    "dt": 900,
     "integrator": 
         {
         "name": "IRK",

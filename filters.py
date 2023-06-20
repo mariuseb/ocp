@@ -348,7 +348,7 @@ Kalman-Bucy filter:
     
 class KalmanBucy(Filter):
     ''' . '''
-    def __init__(self, cfg):
+    def __init__(self, cfg, **kwds):
         
         if isinstance(cfg, str) or isinstance(cfg, os.PathLike):
             with open(cfg, "r") as f:
@@ -358,6 +358,10 @@ class KalmanBucy(Filter):
         self.R = ca.DM(np.diag(cfg["R"]))
         
         self.dt = cfg["dt"]
+        
+        # algorithmic functions:
+        functions = kwds.pop("functions", None) 
+        cfg["model"]["functions"] = functions
         self.dae = dae = DAE(cfg["model"])
         
         # easy access for y:
@@ -395,7 +399,7 @@ class KalmanBucy(Filter):
         
 
     def init_identity(self):
-        self.I = ca.DM.eye(self.x_symbolic.shape[0])
+        self.I = ca.DM.eye(self.x_symbolic.shape[0] + self.z_symbolic.shape[0])
 
     def init_covars(self, **kwargs):
         self.Q = kwargs.pop("Q", self.I)
@@ -411,14 +415,31 @@ class KalmanBucy(Filter):
         self.f = self.integrator.f 
     
     def init_h(self):
-        self.h = self.integrator.h
+        """
+        self.h = ca.Function(
+                            'h',
+                            self.integrator.all_vars,
+                            [self.h_expr],
+                            self.order,
+                            ['h']
+                            ) 
+        """
+        self.h = ca.Function(
+                            'h',
+                            [self.x_symbolic, self.z_symbolic],
+                            [self.h_expr],
+                            ["x", "z"],
+                            ['h']
+                            ) 
 
     # for differentiation:
     def init_f_expr(self):
         self.f_expr = ca.vertcat(self.integrator.ode)
     
     def init_h_expr(self):
-        self.h_expr = ca.vertcat(self.integrator.h_expr)
+        #self.h_expr = ca.vertcat(self.integrator.h_expr)
+        # CORRECTION:
+        self.h_expr = ca.vertcat(*self.dae.dae.ydef())
 
     def set_params(self, p):
         self.p = p
@@ -431,11 +452,16 @@ class KalmanBucy(Filter):
 
     @property
     def y(self):
-        return list(map(lambda x: x.name(), self.dae.y.values()))
+        #return list(map(lambda x: x.name(), self.dae.y.values()))
+        return [y.name() for y in self.dae.y.values() if not isinstance(y, (float, int))]
 
     @property
     def x_symbolic(self):
         return self.integrator.x
+    
+    @property
+    def z_symbolic(self):
+        return self.integrator.z
 
     @property
     def jac_f_x(self):
@@ -443,7 +469,9 @@ class KalmanBucy(Filter):
 
     @property
     def jac_h_x(self):
-        return ca.jacobian(self.h_expr, self.x_symbolic)      
+        #return ca.jacobian(self.h_expr, self.x_symbolic)      
+        # CORRRECTION:
+        return ca.jacobian(self.h_expr, ca.vertcat(self.x_symbolic, self.z_symbolic))
     
     def init_jac_f_x(self):
         self.jac_f = ca.Function('jac_f',
@@ -464,7 +492,8 @@ class KalmanBucy(Filter):
     def init_P(self):
         
         # linearized dynamics at t = t_k:
-        n_x = self.dae.n_x
+        n_x = self.dae.n_x + self.dae.n_z
+        #n_x = self.dae.n_x
         
         A = ca.SX.sym("A", n_x, n_x)
         # covariance scaling matrix, linearized at current timestep t = t_k:
@@ -525,13 +554,13 @@ class KalmanBucy(Filter):
     def estimate(
                  self,
                  x_pred,
-                 u=ca.DM(0),
-                 r=ca.DM(0),
-                 y=ca.DM(0), 
+                 u=ca.DM(),
+                 r=ca.DM(),
+                 y=ca.DM(), 
                  p=None,
-                 z=ca.DM(0),
-                 v=ca.DM(0),
-                 w=ca.DM(0)
+                 z=ca.DM(),
+                 v=ca.DM(),
+                 w=ca.DM()
                  ):
         ''' 
         Assume general non-linear structure.
@@ -541,10 +570,31 @@ class KalmanBucy(Filter):
         NOTE: x_pred from mpc.
          '''
          
-        A = self.jac_f(x_pred, z, u, self.p if p is None else p, w, v, y, r)
+        ##### pad 'y' with zeros #####
+        y_pad = np.array([])
+        i = 0
+        for k, var in self.dae.y.items():
+            if hasattr(var, "name"):
+                y_pad = np.append(y_pad, [y[i]])
+                i += 1
+            else: # non-measured
+                y_pad = np.append(y_pad, 0)
+         
+        A = self.jac_f(x_pred, z, u, self.p if p is None else p, w, v, y_pad, r)
+        
+        # pad A, if z
+        dim = self.dae.n_z + self.dae.n_x
+        if self.dae.n_z > 0:
+            _A = A
+            #dim = self.dae.n_z + self.dae.n_x
+            A = ca.DM.zeros((dim, dim))
+            A[0:self.dae.n_x, 0:self.dae.n_x] = _A
+            
+        
         Ad = expm(A*self.dt)
-        C = self.jac_h(x_pred, z, u, self.p if p is None else p, w, v, y, r)
-        h_x = self.h(y, x_pred, z, u, self.p if p is None else p, v, r)
+        C = self.jac_h(x_pred, z, u, self.p if p is None else p, w, v, y_pad, r)
+        #h_x = self.h(y, x_pred, z, u, self.p if p is None else p, v, r)
+        h_x = self.h(x_pred, z)
         try:
             # discrete-time:
             #P_apriori = ca.mtimes([A, self.P_prev, ca.transpose(A)]) + self.Q
@@ -612,7 +662,7 @@ class KalmanBucy(Filter):
             #P0 = integrate(quadr, (dt, 0, self.dt))
             """
             
-            self.P_prev = self.one_sample_P(ca.DM.eye(self.dae.n_x), A, self.Q)
+            self.P_prev = self.one_sample_P(ca.DM.eye(dim), A, self.Q)
             
             #P_apriori = ca.mtimes([Ad, self.P_prev, ca.transpose(Ad)]) + self.Q
             
@@ -685,12 +735,12 @@ class KalmanBucy(Filter):
             
 
         K = ca.mtimes(ca.mtimes(P_apriori, ca.transpose(C)), ca.inv(ca.mtimes([C, P_apriori, ca.transpose(C)]) + self.R))
-
-        x_post = x_pred + ca.mtimes(K, (y - h_x))
-
+        #x_post = x_pred + ca.mtimes(K, (y - h_x))  
+        x_pred = np.append(x_pred, z)
+        x_post = x_pred + ca.mtimes(K, (y_pad - h_x))
         x_post = np.array(x_post).reshape(-1)
         # store estimation result. TODO: check ordering of states.
-        self.df.loc[self.k*self.dt, self.dae.x] = x_post
+        self.df.loc[self.k*self.dt, self.dae.x + self.dae.z] = x_post
         self.P_prev = ca.mtimes((self.I - ca.mtimes(K, C)), P_apriori)
         self.k += 1
         
@@ -698,7 +748,7 @@ class KalmanBucy(Filter):
         #self.P[self.k] = deepcopy(self.P_prev)
         self.P[self.k] = ca.mtimes((self.I - ca.mtimes(K, C)), P_apriori)
 
-        return x_post
+        return x_post[0:self.dae.n_x]
 
     def plot_results(self, boptest_df, \
                      boptest_map: dict, \

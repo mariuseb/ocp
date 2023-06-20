@@ -12,6 +12,9 @@ import numpy as np
 from pprint import pprint
 #from sysid.shooting import MultipleShooting, SingleShooting
 #import copy
+import subprocess
+from copy import deepcopy
+import re
 
 #from tables import Col
 #from integrators import RungeKutta4, Cvodes, IRK
@@ -24,6 +27,7 @@ from pprint import pprint
 #from sysid.ocp import OCP
 #import typing
 from ocp.ocp import OCP
+import os
 from ocp.shooting import MultipleShooting, SingleShooting, Collocation
 
 
@@ -60,23 +64,22 @@ class MPC(OCP):
         
         super().__init__(**kwargs) # does all the work.
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)
-        
-        
-        # TODO: with single shooting, form slack on N instead x.shape
+         
+        # TODO: with single shooting, form slack on N instead of x.shape
         if slack:
             #self.s = s = ca.MX.sym("s",
             #                        self.nlp_parser["x"]["dim"])
             #self.s = s = ca.MX.sym("s",
             #                        (self.N-1)*self.n_x)
-            self.s = s = ca.MX.sym("s",
+            self.sl = sl = ca.MX.sym("s",
                                     self.N*self.n_x)
             
             self.nlp["x"] = ca.vertcat(self.nlp["x"],
-                                       s)
+                                       sl)
             
-            dim = s.shape[0]*s.shape[1]
+            dim = sl.shape[0]*sl.shape[1]
             # modify nlp parser:
-            self.nlp_parser.vars["s"] = {
+            self.nlp_parser.vars["sl"] = {
                                         "range":
                                                 {
                                                  "a":
@@ -87,10 +90,11 @@ class MPC(OCP):
                                                 },
                                         "dim": dim
                                         }
-            self.n_s = self.n_x
-            self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_s)))
+            self.n_sl = self.n_x
+            self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_sl)))
             
-        self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_z, ref=ref, slack=slack)
+        #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_z, ref=ref, slack=slack)
+        self.set_nlp_obj()
         
         #self.add_pseudo_params()
         
@@ -101,6 +105,62 @@ class MPC(OCP):
         #                u=self.U)
         #self.set_bounds()
         #self._init_solver()
+      
+    def set_nlp_obj(self):
+        """
+        Parse MHE objective as passed in from config file.
+        """
+        
+        # initialize the parameters needed for the objective:
+        """
+        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
+        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
+        """
+        
+        symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
+        vals = dict()
+        for symbol in symbols:
+            vals[symbol] = self.get(symbol)
+        obj_string = self.obj_string.replace("dot", "ca.dot")
+        obj_string = obj_string.replace("sqrt", "ca.sqrt")
+        vals["ca"] = ca
+        try:
+            vals["sl"] = self.sl
+        except AttributeError:
+            pass
+        #vals["R"] = self.R
+        #vals["Q"] = self.Q
+        c1 = ca.MX.sym("c1")
+        c2 = ca.MX.sym("c2")
+        vals["c1"] = c1
+        vals["c2"] = c2
+        self.nlp["p"] = ca.vertcat(c1, c2)
+    
+        Ti = self.get("Ti")
+        phi_h = self.get("phi_h")
+        #wf = ca.MX.sym("wf", self.dae.n_x, self.N)
+        #wf = ca.MX.sym("wf", self.N, self.dae.n_x)
+        #vals["wf"] = wf
+        exec(f'obj_expr =' + obj_string, vals)
+        
+        #theta = ca.MX.sym("theta", x1.shape[0], x1.shape[1])
+        #wf = ca.MX.sym("wf", x1.shape[0], x1.shape[1])
+        
+        # TODO: avoid hard-coding of objective here:
+        obj_expr = vals["obj_expr"]
+        for n in range(self.N-1):
+            #obj_expr += (Ti[n] - 0.5)*c1
+            obj_expr += Ti[n]*c1
+            obj_expr += phi_h[n]*c2
+        
+        self.nlp["f"] = obj_expr
+        #self.nlp["f"] = vals["obj_expr"]
+        #self.nlp["f"] = vals["obj_expr"] + theta.T@(x1 - 4/12)
+        #self.nlp["p"] = theta
+        #self.nlp["p"] = wf
+        #self.nlp["p"] = ca.veccat(self.R, self.Q)
       
       
     def add_pseudo_params(self):
@@ -227,9 +287,11 @@ class MPC(OCP):
                 x = x_info["boundary_vars"]
                 
                 # set bounds on x0: (to be set as parameter in parametric NLP !!)
-                self.lbx[0:self.n_x] = x0
-                self.ubx[0:self.n_x] = x0
+                #self.lbx[0:self.n_x] = x0
+                #self.ubx[0:self.n_x] = x0
                 self.x0[0:self.n_x] = x0
+                lbx = np.append(x0, lbx)
+                ubx = np.append(x0, ubx)
                 
             #x = self.nlp["x"][(x_info["range"]["a"] + self.n_x):x_info["range"]["b"]]
             
@@ -246,17 +308,32 @@ class MPC(OCP):
             #self.nlp["x"] = ca.vertcat(self.nlp["x"], slack)
             
             # path constraint:
+            #h_x = x[self.dae.n_x:]
             h_x = x
             # add bounds, -inf and inf in dim(s) and 0 for x0
             if self.slack:
                 
-                assert self.n_x == self.n_s
-
-                self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.nlp_parser.vars["s"]["dim"]))
-                self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["s"]["dim"]))
-                self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["s"]["dim"]))
+                assert self.n_x == self.n_sl
+   
+                #self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.nlp_parser.vars["sl"]["dim"]))
+                self.lbx = np.append(self.lbx, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
+                self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["sl"]["dim"]))
+                self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
                 
-                h_x += self.s[self.n_s:]
+                #h_x += self.sl[self.n_sl:]
+                
+                # introduce extra params here:
+                #h_x += self.sl
+                #b_up = ca.MX.sym("b_up", self.sl.shape[1])
+                #b_down = ca.MX.sym("b_down", self.sl.shape[1])
+                b = ca.MX.sym("b", self.sl.shape[1])
+                for n in range(self.N):
+                    #h_x[n:n+1] += (self.sl[n:n+1] + b_up - b_down)
+                    h_x[n:n+1] += (self.sl[n:n+1] + b)
+                
+                # keep b as parameter:
+                self.nlp["p"] = ca.vertcat(self.nlp["p"], b)
+                #self.nlp["p"] = ca.vertcat(b_up, b_down)
                 
             # modify x0 with feasible value for sqp:
             #self.x0[x_info["range"]["a"]:x_info["range"]["b"]] = lbx
@@ -280,6 +357,7 @@ class MPC(OCP):
             
             #self.nlp["g"] = ca.vertcat(self.nlp["orig_g"], path_constr)
             #self.nlp["g"] = ca.vertcat(self.nlp_parser.g, path_constr)
+            
             self.nlp["g"] = ca.vertcat(self.nlp_parser.g, h_x)
             
         #elif isinstance(self.strategy, SingleShooting):
@@ -427,6 +505,191 @@ class MPC(OCP):
                          )
         sol["p"] = self.p_val
         
+        
+        """
+        sqp_sol = self.sqp_solver(
+                               #x0=sol["x"],
+                               x0=self.x0,
+                               lbg=self.lbg,
+                               ubg=self.ubg,
+                               lbx=self.lbx,
+                               ubx=self.ubx
+                               #p=self.p_val
+                               )
+        self.sqp_sol = sqp_sol
+        """
+        
+        ########################## parse solution ######################################
+        
+        sol_df, params = self.parse_solution(sol)
+        
+        #################################################################################
+        if not return_raw_sol:
+            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values
+        else:
+            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values, sol
+    
+    def solve(
+              self,
+              data,
+              x0=None,
+              lbx=None,
+              ubx=None,
+              params=None,
+              return_raw_sol=False,
+              codegen=False,
+              p_val=None
+              ):
+        self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
+        return self._solve(return_raw_sol=return_raw_sol, codegen=codegen, p_val=p_val)
+    
+    def add_h(self):
+        """
+        Inequality constraints independent of external data.
+        """
+        expr_dict = {}
+        for i, elem in self.h_exprs.items():
+            expr_string = elem["body"]
+            vals = {}
+            for symbol in elem["symbols"]:
+                vals[symbol] = self.get(symbol)
+            vals["expr_dict"] = expr_dict
+            exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
+            #exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
+            #print(expr_dict)
+            
+            """
+            Now, add this constraint to nlp.g
+            add also corresponding entries for lbg and ubg
+            """
+            
+            expr = expr_dict[i]
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], expr)
+            self.lbg = np.append(self.lbg, np.array([elem["lhs"]]*expr.shape[0]))
+            self.ubg = np.append(self.ubg, np.array([elem["rhs"]]*expr.shape[0]))
+            
+        
+        """
+        expr_string = self.h_exprs["body"][0]
+        vals = {}
+        for symbol in self.h_exprs["symbols"]:
+            vals[symbol] = self.get(symbol)
+            
+        vals["expr_dict"] = expr_dict
+            
+        exec(f'expr_dict["0"] =' + expr_string, vals)
+        
+        print(expr_dict)
+        """    
+        
+    
+    def prepare_solve(self,
+                    data,
+                    x0=None,
+                    lbx=None,
+                    ubx=None,
+                    params=None,
+                    ):
+        
+        self.data = data
+        
+        self.separate_data(
+                          data,
+                          lbp=params,
+                          ubp=params,
+                          p_guess=params
+                          #x0=x0
+                          )  
+        
+        self.set_bounds()
+        
+        
+        # for parametric sensitivities:
+        #self.add_pseudo_params()
+        
+        # add lbx and ubx as path constraints on g:
+        # ADD: option for slack:
+        #self.add_path_constraints(x0=x0, lbx=lbx, ubx=ubx)
+        
+        # TODO: only do this once (symbolically):: 
+        self.add_path_constraints(
+                                  x0=(x0 - self.x_nom_b)/self.x_nom,
+                                  lbx=(lbx - self.x_nom_b)/self.x_nom,
+                                  ubx=(ubx - self.x_nom_b)/self.x_nom,
+                                  )
+                                  #slack=slack)
+        
+        
+        """
+        Try to add parameter here:
+        """
+        
+        #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, slack)
+        #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref, slack=slack)
+        
+        #slack_lb = ca.DM(self.lbx)[0:50] - self.nlp["x"][-50:]
+        #slack_ub = ca.DM(self.ubx)[0:50] + self.nlp["x"][-50:]
+        #lbx = ca.vertcat(slack_lb, self.lbx[50:])
+        #ubx = ca.vertcat(slack_ub, self.ubx[50:])
+             
+        # get value of p (of nlp): 
+        #self.p_val = np.append(self.x0[self.x0_start:self.x0_stop],
+        #                 self.x0[self.p_start:self.p_stop])
+        
+        # large number -> inf/-inf
+        self.lbx = np.array([val if abs(val) < 1e8 else -np.inf for val in self.lbx])
+        self.ubx = np.array([val if val < 1e8 else np.inf for val in self.ubx])
+          
+        self.p_val = np.append((x0 - self.x_nom_b)/self.x_nom, params/self.scale)
+        # add data-independent constraints:    
+        self.add_h() 
+
+        # add c1, c2 to constraints:
+        """
+        self.nlp["g"] = ca.vertcat(self.nlp["g"], self.nlp["p"][0])
+        self.nlp["g"] = ca.vertcat(self.nlp["g"], self.nlp["p"][1])
+        self.lbg = np.append(self.lbg, [0, 0])
+        self.ubg = np.append(self.ubg, [np.inf, np.inf])
+        """
+              
+    def _solve(
+               self,
+               return_raw_sol=False,
+               codegen=False,
+               p_val=None
+              ):
+        
+        # TODO: parameter re-init solver
+        if not hasattr(self, "solver"):      
+            self._init_solver()
+
+        gen_code_filename = self.get_c_code_name()
+        if codegen and not os.path.exists(gen_code_filename):
+            self.pregenerate_c_code(gen_code_filename)
+            
+        #if self.slack:
+        #    self.x0 = np.append(self.x0, np.repeat([0], self.s.shape[0]))
+        
+        # code-generate this function-object:
+        if p_val is None:
+            sol = self.solver(
+                                x0=self.x0,
+                                lbg=self.lbg,
+                                ubg=self.ubg,
+                                lbx=self.lbx,
+                                ubx=self.ubx,
+                            )
+        else:
+            sol = self.solver(
+                                x0=self.x0,
+                                lbg=self.lbg,
+                                ubg=self.ubg,
+                                lbx=self.lbx,
+                                ubx=self.ubx,
+                                #p=params*self.scale
+                                p=p_val
+                            )
+        sol["p"] = self.p_val
         
         """
         sqp_sol = self.sqp_solver(

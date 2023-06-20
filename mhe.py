@@ -10,6 +10,9 @@ import numpy as np
 #import sys
 #import pdb
 from pprint import pprint
+import subprocess
+import os
+import re
 #from sysid.shooting import MultipleShooting, SingleShooting
 #import copy
 
@@ -33,11 +36,12 @@ class MHE(OCP):
         though we drop statistics for now.
         """
         super(MHE, self).__init__(**kwargs)
-        self.df = pd.DataFrame(columns=self.dae.p)
+        self.df = pd.DataFrame(columns=self.dae.p + self.dae.x)
         # covariance matrices:
         #self.R = ca.MX.sym("R", ca.Sparsity.diag(self.n_y))
         #self.Q = ca.MX.sym("Q", ca.Sparsity.diag(self.n_x))
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        #self.R = ca.MX.sym("R", 1, 1)
         self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
         #self.set_hess_obj()
         
@@ -614,6 +618,132 @@ class MHE(OCP):
                 ca.veccat(self.Q, self.R)
         """
         
+    def get_nlp_obj(self, w, v, P0, x_N, p0, arrival_cost=False):
+        """
+        TODO: make sure this is not called every iteration.
+        
+        Modified.
+        """
+        
+        # covariance matrices:
+        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        
+        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
+        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
+        
+        y_inds = self.nlp_parser["y"]["range"]
+        x_inds = self.nlp_parser["x"]["range"]
+        v_inds = self.nlp_parser["v"]["range"]
+        s_inds = self.nlp_parser["s"]["range"]
+        
+        #x1 = self.nlp["x"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
+        #y_Ti = self.nlp["x"][y_inds["a"]:y_inds["b"]:self.dae.n_y]
+        v1 = self.nlp["x"][v_inds["a"]:v_inds["b"]:self.dae.n_y]
+        v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
+        #v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
+        #w1 = self.nlp["x"][s_inds["a"]:s_inds["b"]:self.dae.n_x]
+        #w2 = self.nlp["x"][(s_inds["a"]+1):s_inds["b"]:self.dae.n_x]
+        
+        eta = self.dae.dae.var("eta")
+        v2 /= eta
+        #nlp_obj = 0.5*ca.dot(v1, v1) + 1E-6*ca.dot(v2, v2)
+        #nlp_obj = 0.5*ca.dot(v1, v1)
+        nlp_obj = ca.mtimes(ca.dot(v1, v1), self.R[0,0]) + \
+                  ca.mtimes(ca.dot(v2, v2), self.R[1,1])
+        #          ca.mtimes(ca.dot(w1, w1), self.Q[0,0]) + \
+        #          ca.mtimes(ca.dot(w2, w2), self.Q[1,1])        
+                  
+        if arrival_cost:
+            
+            #last_x = self.nlp_x[0:self.n_x]*self.x_nom
+            #p = ca.vertcat(*self.dae.dae.p)*self.p_nom
+            last_x = self.nlp_x[0:self.n_x]
+            #p = ca.vertcat(*self.dae.F.p)
+            p = self.strategy.F.p
+            costate = ca.vertcat(p, last_x)
+            
+            # define this as parameter:
+            #costate_prior = ca.vertcat(p0, x_N)
+            #self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
+
+
+            # TODO: take steps directly on P0, not sqrt(P0)    
+            """
+            arrival_cost = ca.dot(
+                                ca.mtimes(
+                                    self.P0,
+                                    #P0_sqrt,
+                                    (costate - self.costate_prior)
+                            ),
+                                ca.mtimes(
+                                    (costate - self.costate_prior).T,
+                                    self.P0).T
+                                    #P0_sqrt).T
+                            )
+            """
+            arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
+            #arrival_cost = (self.P0@(costate - self.costate_prior).T)@(self.P0@(costate - self.costate_prior))
+            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
+            #P0 = (ca.MX.eye(self.n_x + self.n_p) - ca.expm(-self.P0))
+            #P0 = ca.expm(self.P0)
+            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
+            #arrival_cost = ((P0@(costate - self.costate_prior)).T)@(P0@(costate - self.costate_prior))
+            nlp_obj += arrival_cost
+            
+            return nlp_obj, ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
+        
+        #self.res = y_Ti - x1
+        #return 0.5*ca.dot(v1, v1) + 0.01*ca.dot(v2, v2), 0
+        #return nlp_obj, ca.veccat(self.P0, self.Q, self.R, self.costate_prior)
+        return nlp_obj, ca.veccat(self.Q, self.R)
+    
+    
+    def set_nlp_obj(self, arrival_cost=False):
+        """
+        Parse MHE objective as passed in from config file.
+        
+        Modularize this method as we go. 
+        """
+        
+        # initialize the parameters needed for the objective:
+        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
+        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
+        
+        symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
+        vals = dict()
+        for symbol in symbols:
+            vals[symbol] = self.get(symbol)
+        obj_string = self.obj_string.replace("dot", "ca.dot")
+        vals["ca"] = ca
+        vals["R"] = self.R
+        vals["Q"] = self.Q
+    
+        exec(f'obj_expr =' + obj_string, vals)
+        
+        self.nlp["f"] = vals["obj_expr"]
+        self.nlp["p"] = ca.veccat(self.R, self.Q)
+        
+        # TODO: reshuffle ordering of MHE parameters ...
+        if arrival_cost:
+            last_x = self.nlp_x[0:self.n_x]
+            p = self.strategy.F.p
+            costate = ca.vertcat(p, last_x)
+            arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
+            self.nlp["f"] += arrival_cost
+            self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
+        else:
+            self.nlp["p"] = ca.veccat(self.Q, self.R)    
+   
+    """
+    def __del__(self):
+        for file in self.c_files:
+            print("Deleting %s..." % file)
+            os.remove(file)
+    """      
+        
     def solve(
               self,
               data,
@@ -624,7 +754,8 @@ class MHE(OCP):
               P0=None,
               x_N=None,
               arrival_cost=False,
-              return_raw_sol=False
+              return_raw_sol=False,
+              codegen=False
               ):
         """
         Set initials for v, w to 0
@@ -637,6 +768,7 @@ class MHE(OCP):
         #ubp /= self.scale
         
         # TODO: should be set by default in __init__        
+        """
         self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(
                                                         self.nlp_v,
                                                         self.nlp_w, 
@@ -645,7 +777,29 @@ class MHE(OCP):
                                                         param_guess,
                                                         arrival_cost=arrival_cost
                                                         ) 
-        
+        self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(
+                                                        0,
+                                                        0, 
+                                                        P0,
+                                                        x_N,
+                                                        param_guess,
+                                                        arrival_cost=arrival_cost
+                                                        ) 
+        """
+
+        if "f" not in self.nlp:
+            """
+            self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(
+                                                            0,
+                                                            0,
+                                                            P0,
+                                                            x_N,
+                                                            param_guess,
+                                                            arrival_cost=arrival_cost
+                                                            ) 
+            """
+            self.set_nlp_obj(arrival_cost=arrival_cost)
+        ##################################################
         y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
         y = self.data[y_x_overlap].values.flatten()
         #x_guess = y         
@@ -681,24 +835,7 @@ class MHE(OCP):
                           )
         
         self.set_bounds()
-        self._init_solver()
-        
-        # with p=covar
-        """
-        solution = self.solver(
-                               x0=self.x0,
-                               lbg=0, # option for path-constraints?
-                               ubg=0, # --"--
-                               lbx=self.lbx,
-                               ubx=self.ubx,
-                               p=covar
-                               )
-        """
-        # with p=P0       
-        # NB: _P0 = sqrt(inv(P0))              
-        #_P0 = ca.sqrt(ca.inv(P0))
-        
-        # TODO: branching on arrival cost:
+        #self._init_solver()
         if arrival_cost:        
             p0 = param_guess/self.p_nom
             x_N = (x_N - self.x_nom_b)/self.x_nom
@@ -709,7 +846,17 @@ class MHE(OCP):
         else:
             p = ca.veccat(covar)
         self.p_val = p # store
-             
+        
+        if not hasattr(self, "solver"):      
+            self._init_solver()
+        # with p=covar
+        
+        # TODO: branching on arrival cost:
+        
+        gen_code_filename = self.get_c_code_name()
+        if codegen and not os.path.exists(gen_code_filename):
+            self.pregenerate_c_code(gen_code_filename)
+                
         solution = self.solver(
                             x0=self.x0,
                             lbg=0, # option for path-constraints?
@@ -718,13 +865,14 @@ class MHE(OCP):
                             ubx=self.ubx,
                             #p=ca.veccat(_P0, covar, ca.vertcat(param_guess, x_N))
                             p=p
+                            #p=0
                             )
         
         self.sol_df, params = self.parse_solution(solution)
         
-        k = len(self.df)
-        self.df.loc[k*self.dt, :] = params.values
-        
+        k = len(self.df) + self.N - 1
+        self.df.loc[k*self.dt, :] = np.append(params.values, self.sol_df[self.x_names].iloc[-1])
+                
         if not return_raw_sol:
             return self.sol_df, params
         else:

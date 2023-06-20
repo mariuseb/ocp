@@ -29,8 +29,9 @@
             "ubu": [5000]
         }
     },
-    "N": 24,
-    "dt": 3600,
+    "objective": "dot(phi_h, phi_h)",
+    "N": 2,
+    "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
         {
@@ -43,8 +44,9 @@
     "solver": "",
     "opt": {
         "verbose": false,
-        "ipopt.linear_solver": "ma27",
-        "ipopt.ma57_pre_alloc": 3
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "yes"
     },
     "codegen": false
 }

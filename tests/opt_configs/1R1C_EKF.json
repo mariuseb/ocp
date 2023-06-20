@@ -1,10 +1,7 @@
 {
     "model": {
         "ode": {
-            "dTi": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
-        },
-        "alg": {
-            "h": "Ti"
+            "Ti": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
         },
         "p": [
             "Ria",
@@ -24,7 +21,7 @@
             ["y1", "Ti"]
         ]
     },
-    "dt": 3600,
+    "dt": 900,
     "integrator": 
         {
         "name": "IRK",
@@ -33,5 +30,5 @@
         "n_steps": 1
         },
     "Q": [1],
-    "R": [1]
+    "R": [0.01]
 }

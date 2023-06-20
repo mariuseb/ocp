@@ -1,8 +1,8 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci)",
-            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + s1",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + s2"
         },
         "w": {
             "v1": "Ti - y1"
@@ -23,20 +23,25 @@
             "Ti",
             "Te"
         ],
+        "s": [
+            "s1",
+            "s2"
+        ],
         "y": [
             ["y1", "Ti"]
         ]
     },
+    "objective": "dot(v1, v1)@R[0,0] + dot(s1, s1)@Q[0,0] + (dot(s2, s2))@Q[1,1]",
     "method": "multiple_shooting",
     "integrator": 
         {
-        "name": "RK4",
-        "method": "radau",
+        "name": "IRK",
+        "method": "legendre",
         "degree": 3,
-        "n_steps": 1
+        "n_steps": 3
         }
     ,
-    "solver": "gauss-newton",
+    "solver": "",
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma57",

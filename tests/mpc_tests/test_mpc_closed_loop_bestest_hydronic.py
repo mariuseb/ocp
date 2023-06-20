@@ -34,19 +34,23 @@ if __name__ == "__main__":
 
     # pass in config?
     """
-    Rie       6.987636e-04
-    Rea       3.184517e-03
-    Ci        5.407161e+06
-    Ce        4.533857e+07
-    Ai        2.767623e+01
-    UA_nom    3.915722e+01
+    Rie       1.922773e-03
+    Rea       8.390597e-03
+    Ci        1.781685e+06
+    Ce        2.050836e+07
+    Ai        6.062751e+00
+    n         1.156362e+00
+    UA_nom    5.387476e+01
+    eta       8.700000e-01
     """
-    params = ca.DM([6.987636e-04,
-                    3.184517e-03,
-                    5.407161e+06,
-                    4.533857e+07,
-                    2.767623e+01,
-                    3.915722e+01])
+    params = ca.DM([1.922773e-03,
+                    8.390597e-03,
+                    1.781685e+06, 
+                    2.050836e+07,
+                    6.062751e+00,
+                    1.156362e+00,
+                    5.387476e+01,
+                    8.700000e-01])
     
     
     kwargs = {
@@ -67,14 +71,24 @@ if __name__ == "__main__":
         #"slack": Trues
         "slack": True
     }
+    kwargs = {
+        "x_nom": 1,
+        "u_nom": 1,
+        "r_nom": 1,
+        "y_nom": 1,
+        #"slack": Trues
+        "slack": False
+    }
     
     mpc = MPC(config=mpc_cfg,
-              functions=functions,
+              functions=deepcopy(functions),
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
     
     
-    ekf = KalmanBucy(ekf_cfg)
+    ekf = KalmanBucy(ekf_cfg,
+                     functions=deepcopy(functions)
+                     )
     # set params:
     ekf.set_params(params)
     
@@ -106,32 +120,39 @@ if __name__ == "__main__":
     x0 = np.array([294.05, 293.15])
     
     # sim horizon: 2 days
-    days = 7
+    days = 2
     K = days*24*bounds.t_h
+    time = pd.DataFrame(columns=["time"])
 
     for k in range(K):
         
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
         
-        sol, u, x0 = mpc.solve(
+        sol, u, x0  = mpc.solve(
                                data[0:mpc.N],
                                x0=x0,
                                lbx=lbx,
                                ubx=ubx,
-                               params=params
+                               params=params,
+                               codegen=True
                                )
-
+        time.loc[k] = mpc.solver.stats()["t_wall_total"]
         data, y_meas, u_meas = boptest.evolve(u=u)
         
+        # input z as from model prediction:
+        z_model = sol[ekf.dae.z].iloc[1].values
+        r_pred = data[ekf.dae.r_names].iloc[0].values
         x0 = ekf.estimate(
                           x0, 
+                          z=z_model,
                           y=y_meas, 
                           u=u_meas, 
-                          r=data.iloc[0].values
+                          r=r_pred
                           )
+        
 
     plt.rcParams.update({'font.size': 12})
-    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds, heat_key="Ph")
     fig.tight_layout()
     plt.show()    
 

@@ -27,7 +27,9 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_idas.json")
+    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC.json")
+    #mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_idas.json")
+    #mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_map_test.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
 
@@ -58,7 +60,6 @@ if __name__ == "__main__":
         #"slack": True
         "slack": True
     }
-    """
     kwargs = {
         "x_nom": 1,
         "u_nom": 1,
@@ -67,6 +68,16 @@ if __name__ == "__main__":
         #"slack": True
         "slack": False
     }
+    """
+    kwargs = {
+        "x_nom": 300,
+        "u_nom": 5000,
+        "r_nom": 300,
+        "y_nom": 300,
+        #"slack": True
+        "slack": False
+    }
+    
     
     ekf = KalmanBucy(ekf_cfg)
     # set params:
@@ -106,7 +117,7 @@ if __name__ == "__main__":
     x0 = np.array([294.05, 293.15])
     
     # sim horizon: 2 days
-    days = 7
+    days = 2
     K = days*24*bounds.t_h
 
     for k in range(K):

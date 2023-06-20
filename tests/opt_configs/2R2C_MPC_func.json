@@ -1,11 +1,11 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05)  + Ai*(phi_s/Ci)",
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*UA_nom*regNonZeroPower((Tsup - Ti), n, 0.05)  + Ai*(phi_s/Ci)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "alg": {
-            "Ph": "regNonZeroPower(UA_nom*(Tsup - Ti), 1.24, 0.05) - Ph"
+            "Ph": "UA_nom*regNonZeroPower((Tsup - Ti), n, 0.05) - Ph*eta"
         },
         "p": [
             "Rie",
@@ -13,13 +13,17 @@
             "Ci",
             "Ce",
             "Ai",
-            "UA_nom"
+            "n",
+            "UA_nom",
+            "eta"
+        ],
+        "u": [
+            "Tsup"
         ],
         "z": [
             "Ph"
         ],
         "r": [
-            "Tsup",
             "Ta",
             "phi_s"
         ],
@@ -28,19 +32,37 @@
             "Te"
         ]
     },
+    "bounds": {
+        "u": {
+            "lbu": [289.15],
+            "ubu": [359.15]
+        }
+    },
+    "objective": "dot(Ph, Ph)",
+    "ocp": {
+        "h": 
+        [
+            "0 <= Tsup - Ti"        
+        ]
+    },
     "N": 24,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
         {
-        "name": "idas"
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
         }
     ,
-    "solver": "gauss-newton",
+    "solver": "",
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma27",
-        "ipopt.ma57_pre_alloc": 3
+        "ipopt.ma57_pre_alloc": 3, 
+        "ipopt.max_cpu_time": 3,
+        "ipopt.hessian_approximation": "exact"
     },
     "codegen": false
 }

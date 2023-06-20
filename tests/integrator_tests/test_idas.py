@@ -57,6 +57,7 @@ if __name__ == "__main__":
   res = np.array([])
   for n in range(N):
     X = IDA.one_sample(x0=X, z0=0, u=u_data[n], p=param_truth)["xf"]
+    #X = IDA.one_sample(X, 0, u_data[n], param_truth, 0, 0)["xf"]
     #xf = Coll.one_sample(X, u_data[n], param_truth[0], param_truth[1], param_truth[2], param_truth[3])
     #X = xf[0]
     res = np.append(res, X[0])
