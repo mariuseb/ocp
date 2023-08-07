@@ -11,7 +11,7 @@ delete_c_so_files() {
     fi
 
     # Recursively find .c and .so files and delete them
-    find "$dir" -type f \( -name "*.c" -o -name "*.so" -o -name "*.o" \) -exec rm -f {} +
+    find "$dir" -type f \( [-name "*.c" -o -name "*.so" -o -name "*.o"] && [-name "^MPC" -o -name "^MHE" -o -name "^jit"] \) -exec rm -f {} +
 }
 
 # Check if the user provided a directory path
