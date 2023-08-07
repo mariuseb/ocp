@@ -17,6 +17,7 @@
             ["y1", "Ph"]
         ]
     },
+    "objective": "dot(v1, v1)@R[0,0]",
     "method": "multiple_shooting",
     "integrator": 
         {
@@ -31,6 +32,7 @@
         "verbose": false,
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_cpu_time": 10,
         "ipopt.ma57_automatic_scaling" : "yes"
     },
     "codegen": true

@@ -35,6 +35,7 @@
             ["y2", "Ph"]
         ]
     },
+    "objective": "dot(v1, v1)@R[0,0]",
     "method": "multiple_shooting",
     "integrator": 
         {

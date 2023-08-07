@@ -30,7 +30,7 @@
         }
     },
     "objective": "dot(phi_h, phi_h)",
-    "N": 2,
+    "N": 24,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 

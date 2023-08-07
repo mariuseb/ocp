@@ -52,7 +52,7 @@ class ParameterEstimation(OCP):
         super().__init__(**kwargs) # does all the work.
         #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
         #                                                self.nlp_s) 
-        if "f" not in self.nlp:
+        if "f" not in self.nlp: #and isinstance(self.obj_string, str):
             """
             self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(
                                                             0,
@@ -790,7 +790,8 @@ class ParameterEstimation(OCP):
               lbp=None,
               ubp=None,
               lbx=None,
-              ubx=None
+              ubx=None,
+              x_guess=None
               ):
         """
         Set initials for v, w to 0
@@ -839,7 +840,7 @@ class ParameterEstimation(OCP):
         #y = self.data[self.y_names].values.flatten()
         
         # check overlap:
-        
+        """
         try:
             y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
             y = self.data[y_x_overlap].values.flatten()
@@ -861,7 +862,11 @@ class ParameterEstimation(OCP):
                     x_guess = ca.horzcat(x_guess, y)
         except ZeroDivisionError:
             x_guess = None
-
+        """
+        # TODO: fix extending x_guess for the case of collocation
+        if x_guess is None:        
+            x_guess = self.generate_x_guess()
+        
         ##########################################################
         
         self.separate_data(
@@ -873,7 +878,7 @@ class ParameterEstimation(OCP):
                           )
         
         self.set_bounds()
-        self.set_hess_obj()
+        #self.set_hess_obj()
         #self.nlp["f"] = self.alt_obj
         
         #x_ = ca.veccat(self.nlp["x"], self.nlp["p"])
@@ -884,7 +889,12 @@ class ParameterEstimation(OCP):
         #self.lbx = np.append(self.lbx, np.repeat([0], 5))
         #self.ubx = np.append(self.ubx, np.repeat([np.inf], 5))
         if lbx is not None and ubx is not None:
-            self.add_path_constraints(lbx=lbx, ubx=ubx)
+            # TODO: modularize 'add_path_constraints', 
+            # all subclasses are using it.
+            self.add_path_constraints(
+                                      lbx=(lbx - self.x_nom_b)/self.x_nom,
+                                      ubx=(ubx - self.x_nom_b)/self.x_nom
+                                      )
         else:
             self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
             self.ubg = np.array([0]*self.nlp_parser.g.shape[0])

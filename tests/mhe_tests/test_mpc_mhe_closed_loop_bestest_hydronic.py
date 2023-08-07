@@ -71,16 +71,6 @@ if __name__ == "__main__":
     
     
     kwargs = {
-        "x_nom": 12,
-        "x_nom_b": 289.15,
-        "u_nom": 5000,
-        "r_nom": 300,
-        "y_nom": 12,
-        "y_nom_b": 289.15,
-        #"slack": True
-        "slack": True
-    }
-    kwargs = {
         "x_nom": 300,
         "u_nom": 300,
         "r_nom": 300,
@@ -97,11 +87,35 @@ if __name__ == "__main__":
         #"slack": Trues
         "slack": False
     }
+    kwargs = {
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 12,
+        "z_nom": 5000,
+        "u_nom_b": 289.15,
+        "r_nom": [12, 300],
+        "r_nom_b": [289.15, 0],
+        #"slack": True
+        "slack": True
+    }
     
     mpc = MPC(config=mpc_cfg,
               functions=deepcopy(functions),
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
+    
+    kwargs = {
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 12,
+        "u_nom_b": 289.15,
+        "r_nom": [12, 300, 5000],
+        "r_nom_b": [289.15, 0, 0],
+        "y_nom": [12, 5000],
+        "y_nom_b": [289.15, 0],
+        #"slack": True
+        "slack": False
+    }
     
     mhe = MHE(config=mhe_cfg,
               functions=deepcopy(functions),

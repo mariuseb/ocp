@@ -167,7 +167,8 @@ if __name__ == "__main__":
         #sol = param_est.integrator.G(x0=z, p=ca.vertcat(x, u, param_guess))
         
         
-        Q = ca.DM.eye(2)
+        #Q = ca.DM.eye(2)
+        Q = ca.DM.eye(0)
         #R = ca.DM.eye(2)
         R = ca.DM.eye(1)
         # provide Q, R in solve here:

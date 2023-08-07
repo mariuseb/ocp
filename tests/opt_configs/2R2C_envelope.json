@@ -28,6 +28,7 @@
         ]
     },
     "method": "multiple_shooting",
+    "objective": "dot(v1, v1)@R[0,0]",
     "integrator": 
         {
         "name": "RK4",

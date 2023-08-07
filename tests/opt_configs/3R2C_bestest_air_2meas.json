@@ -1,0 +1,56 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (u_fan*UA_is/Ci)*(Tsup - Ti) + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v2": "u_fan*UA_is*(Tsup - Ti) - Ph"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "UA_is",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n"
+        ],
+        "u": [
+            "Tsup",
+            "u_fan"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "Ph"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Ph"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

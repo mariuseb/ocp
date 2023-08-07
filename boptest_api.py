@@ -57,39 +57,46 @@ class RestApi(object):
     def __init__(self):
         self.url = 'http://bacssaas_boptest:5000'
         self.name = self.get_name()['name']
+        self.forecast_points = list(requests.get('{0}/forecast_points'.format(self.url)).json()["payload"].keys())
 
     def initialize(self):
         return requests.put('{0}/initialize'.format(self.url), data={'start_time': self.start_time, 'warmup_period': self.warmup_period})
         
     def get_name(self) -> dict:
-        return requests.get('{0}/name'.format(self.url)).json()
+        return requests.get('{0}/name'.format(self.url)).json()["payload"]
     
-    def get_forecast(self) -> dict:
-        return requests.get('{0}/forecast'.format(self.url)).json()
+    def get_forecast(self, N: int, dt: int) -> dict:
+        #return requests.get('{0}/forecast'.format(self.url)).json()["payload"]
+        #return requests.get('{0}/forecast_points'.format(self.url)).json()
+        return requests.put('{0}/forecast'.format(self.url), 
+                            data={'point_names': self.forecast_points,
+                                  'horizon': dt*(N-1),
+                                  'interval': dt}
+                            ).json()["payload"]
     
     def set_forecast_params(self, u={}):
         return requests.put('{0}/forecast_parameters'.format(self.url), data=u)
     
     def get_measurement_info(self):
-        return requests.get('{0}/measurements'.format(self.url)).json()
+        return requests.get('{0}/measurements'.format(self.url)).json()["payload"]
 
     def get_forecast_info(self):
-        return requests.get('{0}/forecast_info'.format(self.url)).json()
+        return requests.get('{0}/forecast_info'.format(self.url)).json()["payload"]
     
     def get_input_info(self):
-        return requests.get('{0}/inputs'.format(self.url)).json()
+        return requests.get('{0}/inputs'.format(self.url)).json()["payload"]
          
     def set_step(self, step):
         return requests.put('{0}/step'.format(self.url), data={'step':step})
         
     def get_step(self, step):
-        return requests.get('{0}/step'.format(self.url)).json()
+        return requests.get('{0}/step'.format(self.url)).json()["payload"]
     
     def get_kpis(self) -> dict:
-        return requests.get('{0}/kpi'.format(self.url)).json()
+        return requests.get('{0}/kpi'.format(self.url)).json()["payload"]
    
     def advance(self, u={}) -> dict:
-        return requests.post('{0}/advance'.format(self.url), data=u).json()
+        return requests.post('{0}/advance'.format(self.url), json=u).json()["payload"]
     
 
 class Boptest(RestApi):
@@ -192,16 +199,9 @@ class Boptest(RestApi):
         y = self.advance(u=self.get_control(u))
         #self.forecast_df.loc[y["time"]] = forecast.iloc[0]
         self.forecast_df.loc[int(y["time"] - self.h)] = forecast.iloc[0]
-        
-        # set u:
-        #self.result
-        
         self.result_df.loc[y["time"] - self.h, self.u_names] = [y[k] for k in self.result_df.columns if k not in self.y_names]
         self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.result_df if k in self.y_names]
         
-        #self
-
-
         if y_as_array:
             y_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["y"])
         else:
@@ -220,7 +220,10 @@ class Boptest(RestApi):
 
     def forecast(self):
         #return self.to_np_array(self.get_forecast(), self.r, self.var["r"])
-        vals = self.to_np_array(self.get_forecast(), self.r, self.var["r"])
+        _forecast = self.get_forecast(self.N, self.h)
+        vals = self.to_np_array(_forecast,
+                                self.r,
+                                self.var["r"])
         
         return pd.DataFrame(index=np.arange(0, self.h*(self.N), self.h),
                             data=vals,
@@ -253,11 +256,22 @@ class Boptest(RestApi):
 
         u_map = self.maps["u"]
         
+        """
         u_values = {v + "_u": u_0.loc[k] \
                     for k, v in u_map.items()}           
         u_active = {v + "_activate": 1 \
                     for k, v in u_map.items()}     
-            
+        """
+        u_values = {}
+        u_active = {}
+        for k, v in u_map.items():
+            if k in u_0:
+                u_values[v +  "_u"] = u_0.loc[k]
+                u_values[v +  "_activate"] = 1
+            #else:
+            #    u_values[v +  "_u"] = 0
+            #    u_values[v +  "_activate"] = 0
+                
         return {**u_values, **u_active}
     
     def construct_y0(self, y): 
@@ -278,12 +292,14 @@ class Boptest(RestApi):
         #forecasts = self.maps["r"].values()
 
         points = list(measurements.keys()) + list(inputs.keys())
-        df_res = pd.DataFrame()
         
-        for point in points:
-            res = requests.put('{0}/results'.format(self.url), data={'point_name':point,'start_time':ts, 'final_time':tf}).json()
-            df_res = pd.concat((df_res,pd.DataFrame(data=res[point], index=res['time'],columns=[point])), axis=1)
-     
+        #for point in points:
+        res = requests.put('{0}/results'.format(self.url),
+                              json={
+                                  'point_names': points,'start_time': ts, 'final_time': tf
+                                  }).json()["payload"]
+        df_res = pd.DataFrame().from_dict(res)
+        #df_res = pd.concat((df_res,pd.DataFrame(data=res[point], index=res['time'],columns=[point])), axis=1)
         # pdb.set_trace()    
         df_res.index.name = 'time'
         # df_res.index = df_res.index.values/3600 # convert s --> hr

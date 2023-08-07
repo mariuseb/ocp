@@ -23,7 +23,7 @@
             "ubu": [5000]
         }
     },
-    "objective": "0.01*dot(phi_h, phi_h) + dot(Ti - 1/2, Ti - 1/2) + 1E3*dot(sl, sl)",
+    "objective": "a*dot(phi_h, phi_h) + d*dot(Ti - 1/2, Ti - 1/2) + 1E3*dot(sl, sl)",
     "N": 12,
     "dt": 900,
     "method": "collocation",

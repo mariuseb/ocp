@@ -38,7 +38,7 @@
             "ubu": [359.15]
         }
     },
-    "objective": "dot(Ph, Ph)",
+    "objective": "dot(Ph, Ph) + 1E3*dot(sl, sl)",
     "ocp": {
         "h": 
         [

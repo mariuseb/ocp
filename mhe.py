@@ -800,10 +800,26 @@ class MHE(OCP):
             """
             self.set_nlp_obj(arrival_cost=arrival_cost)
         ##################################################
+        
+        """
         y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
         y = self.data[y_x_overlap].values.flatten()
+        
+        # Assume order of y and x correspond
+        # TODO: fix for arbitrary order:
+        # TODO: do only once:
+        if isinstance(self.y_nom, list):
+            # get offset from 
+            stop = len(y_x_overlap)
+            y_nom = self.y_nom[0:stop]
+            y_nom_b = self.y_nom_b[0:stop]
+            
+        else: 
+            y_nom = self.y_nom
+            y_nom_b = self.y_nom_b
+        
         #x_guess = y         
-        x_guess = (y-self.y_nom_b)/self.y_nom
+        x_guess = (y-y_nom_b)/y_nom
         
         #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
         #for n in range(diff):
@@ -821,9 +837,11 @@ class MHE(OCP):
         else:     
             diff = int(self.integrator.dae.n_x/len(y_x_overlap)) - 1
             for n in range(diff):
-                x_guess = ca.horzcat(x_guess, (y-self.y_nom_b)/self.y_nom)
+                x_guess = ca.horzcat(x_guess, (y-y_nom_b)/y_nom)
                 #x_guess = ca.horzcat(x_guess, _x_guess)
-        
+        """
+              
+        x_guess = self.generate_x_guess()
         self.separate_data(
                           data,
                           lbp=lbp,

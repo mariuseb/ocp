@@ -152,17 +152,15 @@ if __name__ == "__main__":
         "slack": False
     }
     kwargs = {
-        "x_nom": 50,
-        "x_nom_b": 273.15,
-        "u_nom": 50,
-        "u_nom_b": 273.15,
-        "r_nom": [50, 100],
-        "r_nom_b": [273.15, 0],
-        "y_nom": 50,
-        "y_nom_b": 273.15,
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 12,
         "z_nom": 5000,
-        #"slack": Trues
-        "slack": False
+        "u_nom_b": 289.15,
+        "r_nom": [12, 300],
+        "r_nom_b": [289.15, 0],
+        #"slack": True
+        "slack": True
     }
     
     mpc = MPC(config=mpc_cfg,
@@ -171,31 +169,23 @@ if __name__ == "__main__":
               **deepcopy(kwargs))  # to remove, replace with N
     
     kwargs = {
-        "x_nom": 1,
-        "u_nom": 1,
-        "r_nom": 1,
-        "y_nom": 1,
-        #"slack": Trues
-        "slack": False
-    }
-    kwargs = {
-        "x_nom": 50,
-        "x_nom_b": 273.15,
-        "u_nom": 50,
-        "u_nom_b": 273.15,
-        "r_nom": [50,100,5000],
-        "r_nom_b": [273.15,0,0],
-        "y_nom": 50,
-        "y_nom_b": 273.15,
-        #"slack": Trues
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 12,
+        "u_nom_b": 289.15,
+        "r_nom": [12, 300, 5000],
+        "r_nom_b": [289.15, 0, 0],
+        "y_nom": [12, 5000],
+        "y_nom_b": [289.15, 0],
+        #"slack": True
         "slack": False
     }
     
     mhe = MHE(config=mhe_cfg,
               functions=deepcopy(functions),
-              #param_guess=params[:-2], 
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
+    
     """
     mhe_no_eta = MHE(config=mhe_cfg_no_eta,
                     functions=deepcopy(functions),

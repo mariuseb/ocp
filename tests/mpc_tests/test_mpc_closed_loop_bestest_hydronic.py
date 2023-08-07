@@ -54,30 +54,34 @@ if __name__ == "__main__":
     
     
     kwargs = {
-        "x_nom": 12,
-        "x_nom_b": 289.15,
-        "u_nom": 5000,
-        "r_nom": 300,
-        "y_nom": 12,
-        "y_nom_b": 289.15,
-        #"slack": True
-        "slack": True
-    }
-    kwargs = {
-        "x_nom": 300,
-        "u_nom": 5000,
-        "r_nom": 300,
-        "y_nom": 300,
-        #"slack": Trues
-        "slack": True
-    }
-    kwargs = {
         "x_nom": 1,
         "u_nom": 1,
         "r_nom": 1,
         "y_nom": 1,
         #"slack": Trues
         "slack": False
+    }
+    kwargs = {
+        "x_nom": 300,
+        "z_nom": 5000,
+        "u_nom": 300,
+        "r_nom": 300,
+        "y_nom": 300,
+        #"slack": Trues
+        "slack": True
+    }
+    kwargs = {
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 12,
+        "z_nom": 5000,
+        "u_nom_b": 289.15,
+        "r_nom": [12, 300],
+        "r_nom_b": [289.15, 0],
+        "y_nom": 12,
+        "y_nom_b": 289.15,
+        #"slack": True
+        "slack": True
     }
     
     mpc = MPC(config=mpc_cfg,

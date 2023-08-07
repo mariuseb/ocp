@@ -93,6 +93,7 @@ class OCP(metaclass=ABCMeta):
         #if config["solver"] == "gauss_newton":
         #    self.gauss_newton = True
         #data = kwargs.pop("data")
+        self.slack = slack = kwargs.pop("slack", False)
         N = kwargs.pop("N", None)
         dt = kwargs.pop("dt", None)
         # new:
@@ -118,6 +119,8 @@ class OCP(metaclass=ABCMeta):
         self.s_nom = kwargs.pop("s_nom", 1)
         self.v_nom = kwargs.pop("v_nom", 1)
         self.v_nom_b = kwargs.pop("v_nom_b", 0)
+        self.use_objective_from_cfg = kwargs.pop("use_objective_from_cfg", True)
+        self.gamma = kwargs.pop("gamma", 1)
        
             
         
@@ -138,6 +141,8 @@ class OCP(metaclass=ABCMeta):
         config["model"]["functions"] = functions
         ## objective:
         self.obj_string = config.pop("objective", None)
+        
+        assert self.gamma <= 1 and self.gamma > 0
         ##
         self.dae = dae = DAE(config["model"])
         # mainly on 
@@ -194,8 +199,9 @@ class OCP(metaclass=ABCMeta):
                                     "of inequality constraints")
                 """                
                 elems = list(map(lambda x: x.strip(), elems))
-                
-                symbols = re.findall("|".join(self.dae.all_names), elems[1])
+                matchers = self.dae.all_names
+                symbols = set([s for s in matchers if s in elems[1]])
+                #symbols = re.findall("|".join(self.dae.all_names), elems[1])
                 
                 self.h_exprs[i]["lhs"] = float(elems[0]) # needs to be a number ??
                 self.h_exprs[i]["body"] = elems[1]
@@ -326,7 +332,58 @@ class OCP(metaclass=ABCMeta):
         self.opt = config["opt"]
         # get duals:
         #self.opt["calc_multipliers"] = True
-  
+    
+    def generate_x_guess(self):
+        """
+        'Abstract' method
+        for MHE and SID.
+        (Possibly also MPC?)
+        
+        TODO: fix for single shooting.
+        
+        """
+        if self.integrator.dae.n_x > 0:
+            y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
+            y = self.data[y_x_overlap].values.flatten()
+            
+            # Assume order of y and x correspond
+            # TODO: fix for arbitrary order:
+            # TODO: do only once:
+            if isinstance(self.y_nom, list):
+                # get offset from 
+                stop = len(y_x_overlap)
+                y_nom = self.y_nom[0:stop]
+                y_nom_b = self.y_nom_b[0:stop]
+                
+            else: 
+                y_nom = self.y_nom
+                y_nom_b = self.y_nom_b
+            
+            #x_guess = y         
+            x_guess = (y-y_nom_b)/y_nom
+            
+            #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
+            #for n in range(diff):
+            #    x_guess = ca.horzcat(x_guess, y)
+            
+            # TODO: fix for multi-dimensional:
+            if self.strategy.name == "Collocation":
+                _x_guess = np.ones((self.n_x, ((self.N-1)*(self.strategy.d+1)+1)))     
+                # if direct collocation, fill between
+                for n in range(self.N-1):
+                    _x_guess[:, n:(n + self.strategy.d+1)] = x_guess[n]
+                last = (self.N-1)*(self.strategy.d+1)
+                _x_guess[:,last:last+1] = x_guess[-1]
+                x_guess = _x_guess
+            else:     
+                diff = int(self.integrator.dae.n_x/len(y_x_overlap)) - 1
+                for n in range(diff):
+                    x_guess = ca.horzcat(x_guess, (y-y_nom_b)/y_nom)
+                    #x_guess = ca.horzcat(x_guess, _x_guess)
+            return x_guess 
+        else:
+            return np.array([])
+    
     
     def get_hess_lag(self, residual, nlp_x):
       # objective only indirectly affected by collocation points...
@@ -469,6 +526,13 @@ class OCP(metaclass=ABCMeta):
         self.lbx = lbx       
         self.ubx = ubx       
         self.x0 = x0
+        
+        # slack: 
+        if self.slack:
+            #self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.nlp_parser.vars["sl"]["dim"]))
+            self.lbx = np.append(self.lbx, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
+            self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["sl"]["dim"]))
+            self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
         
     #def set_x_guess(self, )
             
@@ -886,8 +950,8 @@ class OCP(metaclass=ABCMeta):
                         #dim = self.nlp_parser[varname]["dim"]
                         dim = int(self.nlp_parser[varname]["dim"]/len(getattr(self.dae, varname)))
                         
-                        scale = self.u_nom
-                        bias = self.u_nom_b
+                        scale = np.tile(self.u_nom, dim)
+                        bias = np.tile(self.u_nom_b, dim)
                         
                         lb_vals = np.array(bounds_cfg[varname]["lb" + varname]*dim) - bias
                         #lb_vals /= scale

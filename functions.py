@@ -26,12 +26,22 @@ y_else = a5 + x2*(a3 + x2*a1)
 # output
 y = ca.if_else(ca.fabs(x) > delta, y_if, y_else)
 regNonZeroPower = ca.Function(
-                                "regNonZeroPower", 
-                                [x, n, delta],
-                                [y],
-                                ["x", "n", "delta"],
-                                ["y"]
+                              "regNonZeroPower", 
+                              [x, n, delta],
+                              [y],
+                              ["x", "n", "delta"],
+                              ["y"]
                               )
+
+q = ca.MX.sym("q")
+y = ca.if_else(x > 0, q, 0)
+oneWayHeating = ca.Function(
+                            "oneWayHeating", 
+                            [x, q],
+                            [y],
+                            ["x", "q"],
+                            ["y"]
+                            )
 
 """
 # test it with one input:
@@ -58,4 +68,5 @@ pass it as a separate object, which must be part of
 namespace when init'ing DAE object.
 """
 
-functions = {"regNonZeroPower": regNonZeroPower}
+functions = {"regNonZeroPower": regNonZeroPower,
+             "oneWayHeating": oneWayHeating}

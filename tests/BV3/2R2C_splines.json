@@ -1,0 +1,58 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*alpha*phi_h + (Gbs1*Aw1 + Gbs2*Aw2 + Gbs3*Aw3 + Gbs4*Aw4 + Gbs5*Aw5)*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "alpha",
+            "Aw1",
+            "Aw2",
+            "Aw3",
+            "Aw4",
+            "Aw5"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s",
+            "Ta",
+            "Gbs1",
+            "Gbs2",
+            "Gbs3",
+            "Gbs4",
+            "Gbs5"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 3
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

@@ -1,0 +1,61 @@
+{
+    "model": {
+        "ode": {
+            "Ti1": "(Te1 - Ti1)/(Rie1*Ci1) + alpha1*phi_h1*(1/Ci1) + Ai1*(phi_s/Ci1)",
+            "Te1": "(Ti1 - Te1)/(Rie1*Ce1) + (Ta - Te1)/(Rea1*Ce1)",
+            "Ti2": "(Te2 - Ti2)/(Rie2*Ci2) + alpha2*phi_h2*(1/Ci2) + Ai2*(phi_s/Ci2)",
+            "Te2": "(Ti2 - Te2)/(Rie2*Ce2) + (Ta - Te2)/(Rea2*Ce2)"
+        },
+        "w": {
+            "v1": "Ti1 - y1",
+            "v2": "Ti2 - y2"
+        },
+        "p": [
+            "Rie1",
+            "Rea1",
+            "Ci1",
+            "Ce1",
+            "Ai1",
+            "Rie2",
+            "Rea2",
+            "Ci2",
+            "Ce2",
+            "Ai2",
+            "alpha1",
+            "alpha2"
+        ],
+        "u": [
+            "phi_h1",
+            "phi_h2",
+            "Ta", 
+            "phi_s"
+        ],
+        "x": [
+            "Ti1",
+            "Te1",
+            "Ti2",
+            "Te2"
+        ],
+        "y": [
+            ["y1", "Ti1"],
+            ["y2", "Ti2"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma27",
+        "ipopt.ma57_pre_alloc": 3
+    },
+    "codegen": true
+}
