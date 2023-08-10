@@ -116,7 +116,8 @@ class Cvodes(Integrator):
             "abstol"  : 1E-8,
                 }
 
-        tgrid = kwds.pop("tgrid", [1])
+        tgrid = kwds.pop("dt", [1])
+        #tgrid = [tgrid*0.2*(i+1) for i in range(5)]
         self.set_ode_func()
         #self.set_alg_func()
         # u->z in integrator call (algebraic var, constant on between phase boundaries (check term. in Betts ch. 4))

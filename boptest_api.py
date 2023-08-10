@@ -501,7 +501,10 @@ class Boptest(RestApi):
             ax1 = ax.twinx()
             #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
             #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
+            #try:
             l2 = ax1.plot(res.index, res[[heat_key]], color="k", linestyle="dashed", label="$\phi_h$")
+            #except KeyError:
+            #    pass
             #l2 = ax1.plot(res.index, res.Ph, color="k", linestyle="dashed", label="$\phi_h$")
             #l2 = ax1.plot(res.index, res.Ph, color="k", linestyle="dashed", label="$\phi_h$")
             #l2 = ax1.plot(res.index, res.Ph, color=next(colors), linestyle="dashed", label="$\phi_h$")
@@ -545,6 +548,8 @@ class Boptest(RestApi):
             
             # lines
             lns = l1+l2
+            #except:
+            #    lns = [l1]
                 
             for i, df in enumerate((post, pre)):
                 

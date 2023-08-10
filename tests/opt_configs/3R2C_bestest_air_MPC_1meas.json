@@ -31,7 +31,7 @@
             "ubu": [313.15,1]
         }
     },
-    "objective": "dot(u_fan*(Tsup-Ti), u_fan*(Tsup-Ti))",
+    "objective": "dot(u_fan*Tsup, u_fan*Tsup) + 1E6*dot(sl, sl)",
     "N": 24,
     "dt": 900,
     "method": "multiple_shooting",
@@ -50,5 +50,5 @@
         "ipopt.ma57_pre_alloc": 3,
         "ipopt.ma57_automatic_scaling": "yes"
     },
-    "codegen": true
+    "codegen": false
 }

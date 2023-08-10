@@ -56,7 +56,7 @@
                     }
       }
     },
-    "testcase1_wea":
+    "testcase1":
     {
       "misc": {
         "h": 900,
@@ -72,6 +72,44 @@
         "sampling": {
                      "integrate": ["phi_h"],
                      "point": ["Ta", "phi_s", "Ti"]
+                    }
+        }
+      },
+    "testcase1_wea":
+    {
+      "misc": {
+        "h": 900,
+        "N": 97,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s": "HGloHor"},
+        "u" : {"Tset": "oveTset"},
+        "y": {"Ti": "TRooAir_y"},
+        "boptest_to_ocp": {"phi_h": "PHea_y", "Tset": "oveTset_u", "Ti": "TRooAir_y"},
+        "sampling": {
+                     "integrate": ["phi_h"],
+                     "point": ["Ta", "Ti", "phi_s"]
+                    }
+      }
+    },
+    "testcase1_wea_1meas":
+    {
+      "misc": {
+        "h": 900,
+        "N": 97,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s": "HGloHor"},
+        "u" : {"Tset": "oveTset"},
+        "y": {"Ti": "TRooAir_y"},
+        "boptest_to_ocp": {"phi_h": "PHea_y", "Tset": "oveTset_u", "Ti": "TRooAir_y"},
+        "sampling": {
+                     "integrate": ["phi_h"],
+                     "point": ["Ta", "Ti", "phi_s"]
                     }
       }
     },
@@ -98,14 +136,14 @@
     {
       "misc": {
         "h": 900,
-        "N": 25,
-        "start_time": 0,
+        "N": 96,
+        "start_time": 604800,
         "warmup_period": 604800
       },
       "maps" : {
         "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
         "u" : {"Tsup": "fcu_oveTSup", "u_fan": "fcu_oveFan"},
-        "y": {"Ti": "zon_reaTRooAir_y", "Ph": "fcu_reaPHea_y"},
+        "y": {"Ti": "zon_reaTRooAir_y"},
         "boptest_to_ocp": {"Ti": "zon_reaTRooAir_y", "Tset": "con_oveTSetHea_u", "Ph": "fcu_reaPHea_y", "Tsup": "fcu_oveTSup_u", "u_fan": "fcu_oveFan_u"},
         "sampling": {
                      "integrate": ["Ph"],

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Function to recursively delete .c and .so files
-delete_c_so_files() {
+# Function to recursively delete files starting with "MPC" or "MHE" or "jit" and ending with ".c", ".so", or ".o"
+delete_files() {
     local dir="$1"
 
     # Check if the directory exists
@@ -10,8 +10,8 @@ delete_c_so_files() {
         exit 1
     fi
 
-    # Recursively find .c and .so files and delete them
-    find "$dir" -type f \( [-name "*.c" -o -name "*.so" -o -name "*.o"] && [-name "^MPC" -o -name "^MHE" -o -name "^jit"] \) -exec rm -f {} +
+    # Recursively find files and delete them
+    find "$dir" -type f \( -name "MPC*.c" -o -name "MPC*.so" -o -name "MPC*.o" -o -name "MHE*.c" -o -name "MHE*.so" -o -name "MHE*.o" -o -name "jit*.c" -o -name "jit*.so" -o -name "jit*.o" -o -name "tmp*.so" -o -name "tmp*.o" \) -exec rm -f {} +
 }
 
 # Check if the user provided a directory path
@@ -20,5 +20,5 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# Call the function to delete .c and .so files
-delete_c_so_files "$1"
+# Call the function to delete files starting with "MPC" or "MHE" or "jit" and ending with ".c", ".so", or ".o"
+delete_files "$1"

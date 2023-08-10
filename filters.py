@@ -573,12 +573,14 @@ class KalmanBucy(Filter):
         ##### pad 'y' with zeros #####
         y_pad = np.array([])
         i = 0
+        
+        # TODO: fix this to handle both ODE- and DAE-systems
         for k, var in self.dae.y.items():
             if hasattr(var, "name"):
                 y_pad = np.append(y_pad, [y[i]])
                 i += 1
-            else: # non-measured
-                y_pad = np.append(y_pad, 0)
+            #else: # non-measured
+            #    y_pad = np.append(y_pad, 0)
          
         A = self.jac_f(x_pred, z, u, self.p if p is None else p, w, v, y_pad, r)
         

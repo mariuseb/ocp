@@ -76,15 +76,6 @@ if __name__ == "__main__":
         #"slack": True
         "slack": False
     }
-    kwargs = {
-        "x_nom": 1,
-        "u_nom": [1,1],
-        "u_nom_b": [0,0],
-        "r_nom": 1,
-        "y_nom": 1,
-        #"slack": True
-        "slack": False
-    }
     """
     kwargs = {
         "x_nom": 12,
@@ -93,9 +84,17 @@ if __name__ == "__main__":
         "u_nom_b": [289.15, 0],
         "r_nom": [12, 300],
         "r_nom_b": [289.15, 0],
-        "z_nom": 5000,
         #"slack": True
-        "slack": False
+        "slack": True
+    }
+    kwargs = {
+        "x_nom": 1,
+        "u_nom": [1,1],
+        "u_nom_b": [0,0],
+        "r_nom": 1,
+        "y_nom": 1,
+        #"slack": True
+        "slack": True
     }
     
     
@@ -135,7 +134,7 @@ if __name__ == "__main__":
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
     #x0 = np.array([294.05, 293.15, 300.15])
-    x0 = np.array([294.05, 293.15])
+    x0 = np.array([293.15, 293.15])
     
     # sim horizon: 2 days
     days = 7
@@ -150,7 +149,8 @@ if __name__ == "__main__":
                                x0=x0,
                                lbx=lbx,
                                ubx=ubx,
-                               params=params
+                               params=params,
+                               codegen=True
                                )
         #u["fan"] = 1
         data, y_meas, u_meas = boptest.evolve(u=u)

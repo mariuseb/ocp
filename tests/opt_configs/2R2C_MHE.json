@@ -34,8 +34,8 @@
             ["y1", "Ti"]
         ]
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(s1, s1)@Q[0,0] + (dot(s2, s2))@Q[1,1]",
-    "N": 24,
+    "objective": "dot(v1, v1)@R[0,0] + dot(s1, s1)@Q[0,0] + dot(s2, s2)@Q[1,1]",
+    "N": 2,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 

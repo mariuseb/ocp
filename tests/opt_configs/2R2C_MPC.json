@@ -48,5 +48,5 @@
         "ipopt.ma57_pre_alloc": 3,
         "ipopt.ma57_automatic_scaling": "yes"
     },
-    "codegen": false
+    "codegen": true
 }

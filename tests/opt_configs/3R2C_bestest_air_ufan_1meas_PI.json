@@ -1,0 +1,65 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + u_fan*UA_is*(Tsup - Ti)/Ci + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "E": "Tset - Ti"
+
+        },
+        "w": {
+            "v1": "y1 - Ti",
+            "v2": "y2 - (kP*(Tset - Ti) + kI*E)",
+            "v3": "y3 - (kP*(Tset - Ti) + kI*E)*19 + 294.15"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_is",
+            "kP",
+            "kI"
+        ],
+        "u": [
+            "Tsup",
+            "u_fan",
+            "u_turnon",
+            "Tset"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "Ph"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "u_fan"],
+            ["y3", "Tsup"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_cpu_time": 200,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

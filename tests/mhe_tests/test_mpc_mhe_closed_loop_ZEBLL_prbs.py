@@ -55,16 +55,18 @@ if __name__ == "__main__":
         "x_nom": 12,
         "x_nom_b": 289.15,
         "u_nom": 5000,
-        "r_nom": 300,
+        "r_nom": [12, 300],
+        "r_nom_b": [289.15, 0],
         "y_nom": 12,
         "y_nom_b": 289.15,
         #"slack": True
-        "slack": True
+        "slack": False
     }
     
     
     mpc = MPC(config=mpc_cfg, param_guess=params, **deepcopy(kwargs)) # to remove, replace with N
     #mhe = MHE(config=mhe_cfg, param_guess=params)
+    #kwargs["slack"] = False
     mhe = MHE(config=mhe_cfg, param_guess=params, **kwargs)
     
     # for first N iterations:
@@ -97,10 +99,10 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0 = np.array([294.05, 293.15])
+    x0 = x_N = np.array([294.05, 293.15])
     
     # sim horizon: 2 days
-    days = 7
+    days = 2
     K = days*24*bounds.t_h
     
     # mhe settings:
@@ -118,8 +120,10 @@ if __name__ == "__main__":
     
     #params_lb = ca.DM([0.001,0.01,1E5,1E6,1])
     #params_ub = ca.DM([0.1,0.1,1E7,1E8,50])
-    params_lb = params*0.7
-    params_ub = params*1.3
+    #params_lb = params*0.7
+    #params_ub = params*1.3
+    params_lb = params
+    params_ub = params
     Q = ca.DM.eye(2)
     R = ca.DM.eye(1)
 
@@ -146,11 +150,15 @@ if __name__ == "__main__":
             # get labelled data:
             stop_time = (k+1)*boptest.h 
             start_time = stop_time - (mhe.N - 1)*boptest.h
+            #start_time = stop_time - mhe.N*boptest.h
             y_data = boptest.get_data(ts=start_time, tf=stop_time)
             y_data["y1"] = y_data.Ti
             
             if k == (mhe.N - 1):
-                x_N = ekf.df.iloc[-mhe.N+1].values
+                try:
+                    x_N = ekf.df.iloc[-mhe.N+1].values
+                except IndexError:
+                    pass
             else:
                 x_N = sol_mhe.iloc[1][mhe.x_names].values
                 
@@ -165,10 +173,10 @@ if __name__ == "__main__":
                                     arrival_cost=True
                                     )
             
-            params = params.values
-            
-            params_lb = params*0.7
-            params_ub = params*1.3
+            #params = params.values
+            #params_lb = params*0.7
+            #params_ub = params*1.3
+
             
             x0 = sol_mhe.iloc[-1][mhe.x_names].values
             

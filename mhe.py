@@ -640,19 +640,19 @@ class MHE(OCP):
         #x1 = self.nlp["x"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
         #y_Ti = self.nlp["x"][y_inds["a"]:y_inds["b"]:self.dae.n_y]
         v1 = self.nlp["x"][v_inds["a"]:v_inds["b"]:self.dae.n_y]
-        v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
         #v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
-        #w1 = self.nlp["x"][s_inds["a"]:s_inds["b"]:self.dae.n_x]
-        #w2 = self.nlp["x"][(s_inds["a"]+1):s_inds["b"]:self.dae.n_x]
+        #v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
+        w1 = self.nlp["x"][s_inds["a"]:s_inds["b"]:self.dae.n_x]
+        w2 = self.nlp["x"][(s_inds["a"]+1):s_inds["b"]:self.dae.n_x]
         
-        eta = self.dae.dae.var("eta")
-        v2 /= eta
+        #eta = self.dae.dae.var("eta")
+        #v2 /= eta
         #nlp_obj = 0.5*ca.dot(v1, v1) + 1E-6*ca.dot(v2, v2)
         #nlp_obj = 0.5*ca.dot(v1, v1)
         nlp_obj = ca.mtimes(ca.dot(v1, v1), self.R[0,0]) + \
-                  ca.mtimes(ca.dot(v2, v2), self.R[1,1])
-        #          ca.mtimes(ca.dot(w1, w1), self.Q[0,0]) + \
-        #          ca.mtimes(ca.dot(w2, w2), self.Q[1,1])        
+                  ca.mtimes(ca.dot(w1, w1), self.Q[0,0]) + \
+                  ca.mtimes(ca.dot(w2, w2), self.Q[1,1])        
+        #          ca.mtimes(ca.dot(v2, v2), self.R[1,1])
                   
         if arrival_cost:
             

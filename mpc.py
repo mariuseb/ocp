@@ -230,7 +230,10 @@ class MPC(OCP):
             try:
                 vals["sl"] = self.sl
             except AttributeError:
-                pass
+                assert self.slack is False
+            
+            if self.slack:
+                assert "sl" in obj_string
             #vals["R"] = self.R
             #vals["Q"] = self.Q
             #vals["a"] = a

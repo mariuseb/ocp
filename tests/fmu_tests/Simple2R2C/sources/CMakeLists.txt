@@ -1,0 +1,186 @@
+
+cmake_minimum_required(VERSION 3.5)
+
+set(FMU_NAME Simple2R2CFMU)
+
+project(${FMU_NAME})
+
+# Specifies if CVODE is needed
+set(NEED_CVODE TRUE)
+set(CVODE_DIRECTORY "/home/marius/Documents/OpenModelica/build/install_cmake/bin/../lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc")
+
+# Test if RUNTIME_DEPENDENCIES is needed and available
+set(RUNTIME_DEPENDENCIES_LEVEL modelica)
+if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none")
+  message(FATAL_ERROR
+          "--fmuRuntimeDepends=${RUNTIME_DEPENDENCIES_LEVEL} requiers CMake version 3.21 or higher.\n"
+          "You are running version ${CMAKE_VERSION}.\n"
+          "Use OpenModelica compiler flag '--fmuRuntimeDepends=none' to disable including runtime dependencies into FMU.")
+endif()
+
+# FMI header files
+if(NOT FMI_INTERFACE_HEADER_FILES_DIRECTORY)
+  message(FATAL_ERROR "No FMI export headers provided. Set -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/path/to/fmi/headers")
+endif()
+find_file(FMI2_FUNCTIONS_H "fmi2Functions.h"
+          PATHS ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
+          NO_DEFAULT_PATH,
+          NO_CMAKE_FIND_ROOT_PATH)
+if(NOT FMI2_FUNCTIONS_H)
+  message(FATAL_ERROR "Could not find fmi2Functions.h in FMI_INTERFACE_HEADER_FILES_DIRECTORY=${FMI_INTERFACE_HEADER_FILES_DIRECTORY}")
+endif()
+message(STATUS "FMI2 include directory: ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}")
+
+# POSIX Threads
+set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+# Source files
+file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
+if (NOT ${NEED_CVODE})
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
+                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
+endif()
+file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
+
+# Set install prefix to FMU target system short and architecture
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+  set(FMU_TARGET_SYSTEM_NAME "win")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set(FMU_TARGET_SYSTEM_NAME "linux")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  set(FMU_TARGET_SYSTEM_NAME "darwin")
+else()
+  message(FATAL_ERROR "Unknown target system: ${CMAKE_SYSTEM_NAME}")
+endif()
+
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}64")
+else()
+  set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}32")
+endif()
+
+message(STATUS "Building for FMI platform ${FMU_TARGET_PLATFORM}")
+
+set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/../binaries/${FMU_TARGET_PLATFORM})
+set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX})
+set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX})
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
+
+# Set RPATH
+if(APPLE)
+  set(CMAKE_INSTALL_RPATH "@loader_path")
+else()
+  if(${NEED_CVODE} AND RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH True)
+  endif()
+  set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
+
+# Target library
+add_library(${FMU_NAME} SHARED
+            ${FMU_RUNTIME_SOURCES}
+            ${FMU_GENERATED_MODEL_SOURCES})
+
+# Linker options
+if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")  # Using Clang
+    target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:-undefined,error")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")  # Using GCC
+    target_link_options(${FMU_NAME} PRIVATE "LINKER:SHELL:--no-undefined")
+  endif()
+endif()
+
+# Link additional libraries
+target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
+set(EXTERNAL_LIBDIRECTORIES "${DOCKER_VOL_DIR}/home/marius/Documents/OpenModelica/build/install_cmake/bin/../bin"
+                            "${DOCKER_VOL_DIR}/home/marius/Documents/OpenModelica/build/install_cmake/bin/../lib/x86_64-linux-gnu/omc"
+                            "${DOCKER_VOL_DIR}/home/marius/Documents/OpenModelica/build/install_cmake/bin/../lib/"
+                            "${DOCKER_VOL_DIR}/home/marius/.openmodelica/binaries/Modelica"
+                            "${DOCKER_VOL_DIR}/home/marius/.openmodelica/libraries/Modelica 3.2.3+maint.om/Resources/Library/x86_64-linux"
+                            "${DOCKER_VOL_DIR}/home/marius/.openmodelica/libraries/Modelica 3.2.3+maint.om/Resources/Library/linux64"
+                            "${DOCKER_VOL_DIR}/home/marius/.openmodelica/libraries/Modelica 3.2.3+maint.om/Resources/Library")
+find_library(ModelicaStandardTables
+             NAMES ModelicaStandardTables
+             PATHS ${EXTERNAL_LIBDIRECTORIES})
+message(STATUS "Linking ${ModelicaStandardTables}")
+target_link_libraries(${FMU_NAME} PRIVATE ${ModelicaStandardTables})
+find_library(ModelicaIO
+             NAMES ModelicaIO
+             PATHS ${EXTERNAL_LIBDIRECTORIES})
+message(STATUS "Linking ${ModelicaIO}")
+target_link_libraries(${FMU_NAME} PRIVATE ${ModelicaIO})
+find_library(ModelicaMatIO
+             NAMES ModelicaMatIO
+             PATHS ${EXTERNAL_LIBDIRECTORIES})
+message(STATUS "Linking ${ModelicaMatIO}")
+target_link_libraries(${FMU_NAME} PRIVATE ${ModelicaMatIO})
+find_library(zlib
+             NAMES zlib
+             PATHS ${EXTERNAL_LIBDIRECTORIES})
+message(STATUS "Linking ${zlib}")
+target_link_libraries(${FMU_NAME} PRIVATE ${zlib})
+
+if(${NEED_CVODE})
+  find_library(SUNDIALS_CVODE_LIBRARY sundials_cvode
+               PATHS ${CVODE_DIRECTORY}
+               NO_DEFAULT_PATH)
+  find_library(SUNDIALS_NVSERIAL_LIBRARY sundials_nvecserial
+               PATHS ${CVODE_DIRECTORY}
+               NO_DEFAULT_PATH)
+  target_link_libraries(${FMU_NAME} PRIVATE ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY})
+  target_include_directories(${FMU_NAME} PRIVATE sundials)
+  set(WITH_SUNDIALS ";WITH_SUNDIALS")
+  message(STATUS "CVODE: ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_NVSERIAL_LIBRARY}")
+else()
+  message(STATUS "CVODE: Not linked")
+endif()
+
+# Add include directories
+target_include_directories(${FMU_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${FMU_NAME} PRIVATE ${FMI_INTERFACE_HEADER_FILES_DIRECTORY}
+                                               sundials)
+
+# Set compiler definitions
+target_compile_definitions(${FMU_NAME} PRIVATE OMC_MINIMAL_RUNTIME=1;OMC_FMI_RUNTIME=1;CMINPACK_NO_DLL${WITH_SUNDIALS})
+
+# Install target
+if(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "all")
+  install(TARGETS ${FMU_NAME}
+    RUNTIME_DEPENDENCIES
+      DIRECTORIES ${EXTERNAL_LIBDIRECTORIES}
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+elseif(RUNTIME_DEPENDENCIES_LEVEL STREQUAL "modelica")
+  install(TARGETS ${FMU_NAME}
+    RUNTIME_DEPENDENCIES
+      DIRECTORIES ${EXTERNAL_LIBDIRECTORIES}
+      PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+      POST_EXCLUDE_REGEXES "^\\/lib.*" "^\\/usr\\/lib.*" "^\\/usr\\/local\\/lib.*" ".*system32/.*\\.dll"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+else()
+  install(TARGETS ${FMU_NAME}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
+
+# Zip target creating modelname.fmu
+add_custom_target(create_zip COMMAND
+    ${CMAKE_COMMAND} -E tar "cfv" "../${CMAKE_PROJECT_NAME}.fmu" --format=zip
+    "binaries/"
+    "resources/"
+    "sources/"
+    "modelDescription.xml"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../")

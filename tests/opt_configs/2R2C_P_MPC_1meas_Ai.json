@@ -1,12 +1,8 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + u_fan*UA_is*(Tsup - Ti)/Ci + Ai*(phi_s/Ci)",
+            "Ti": "(Te - Ti)/(Rie*Ci) + kp*(Tset - Ti)/Ci + (Ai/Ci)*phi_s",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
-        },
-        "w": {
-            "v1": "y1 - Ti", 
-            "v2": "UA_is*u_fan*(Tsup - Ti) - y2*eta"
         },
         "p": [
             "Rie",
@@ -14,30 +10,34 @@
             "Ci",
             "Ce",
             "Ai",
-            "UA_is",
-            "b",
-            "eta"
+            "kp"
         ],
         "u": [
-            "Tsup",
-            "u_fan"
+            "Tset"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
         ],
         "x": [
             "Ti",
             "Te"
-        ],
-        "r": [
-            "Ta",
-            "phi_s",
-            "Ph"
-        ],
-        "y": [
-            ["y1", "Ti"],
-            ["y2", "Ph"]
         ]
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(v2/eta, v2/eta)@R[1,1]",
-    "N": 48,
+    "bounds": {
+        "u": {
+            "lbu": [288.15],
+            "ubu": [313.15]
+        }
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 <= kp*(Tset - Ti)"        
+        ]
+    },
+    "objective": "dot(kp*(Tset - Ti), kp*(Tset - Ti)) + 1E8*dot(sl, sl)",
+    "N": 24,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
@@ -51,9 +51,9 @@
     "solver": "",
     "opt": {
         "verbose": false,
-        "ipopt.linear_solver": "ma27",
+        "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 3,
-        "ipopt.max_cpu_time": 10
+        "ipopt.ma57_automatic_scaling": "yes"
     },
     "codegen": false
 }

@@ -1,0 +1,202 @@
+<OpenModelicaModelDescription xmlns:exp="https://github.com/JModelica/JModelica/tree/master/XML/daeExpressions.xsd" xmlns:equ="https://github.com/JModelica/JModelica/tree/master/XML/daeEquations.xsd" xmlns:fun="https://github.com/JModelica/JModelica/tree/master/XML/daeFunctions.xsd" xmlns:opt="https://github.com/JModelica/JModelica/tree/master/XML/daeOptimization.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" fmiVersion="1.0" modelName="PI_Controller" modelIdentifier="PI_Controller" guid="{8fbad563-22ae-4228-ad83-08a8fa711499}" generationDateAndTime="2023-08-08T14:09:28" variableNamingConvention="structured" numberOfContinuousStates="1" numberOfEventIndicators="0">
+  <VendorAnnotations>
+    <Tool name="OpenModelica Compiler v1.21.0-2-g0bc3d29bd9-cmake"> </Tool>
+  </VendorAnnotations>
+  <ModelVariables>
+    <ScalarVariable name="PI.x" description="State of block" valueReference="0" variability="continuous" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="true"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="x"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>state</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="der(PI.x)" description="der(State of block)" valueReference="1" variability="continuous" causality="internal" alias="noAlias">
+      <Real/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="x"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>derivative</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="u" valueReference="2" variability="continuous" causality="input" alias="noAlias">
+      <Real/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="u"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="y" valueReference="3" variability="continuous" causality="internal" alias="noAlias">
+      <Real/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="y"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>algebraic</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="PI.T" description="Time Constant (T&gt;0 required)" valueReference="7" variability="parameter" causality="internal" alias="noAlias">
+      <Real start="900.0" fixed="true" min="1e-60" unit="s"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="T"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="PI.k" description="Gain" valueReference="8" variability="parameter" causality="internal" alias="noAlias">
+      <Real start="1.0" fixed="true" unit="1"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="k"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="PI.x_start" description="Initial or guess value of state" valueReference="9" variability="parameter" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="true"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="x_start"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="PI.y_start" description="Initial value of output" valueReference="10" variability="parameter" causality="internal" alias="noAlias">
+      <Real start="0.0" fixed="true"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="y_start"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+    <ScalarVariable name="PI.initType" description="Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)" valueReference="11" variability="parameter" causality="internal" alias="noAlias">
+      <Real start="1" fixed="true"/>
+      <QualifiedName>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="initType"/>
+      </QualifiedName>
+      <isLinearTimedVariables>
+        <TimePoint index="0" isLinear="true"/>
+      </isLinearTimedVariables>
+      <VariableCategory>independentParameter</VariableCategory>
+    </ScalarVariable>
+  </ModelVariables>
+  <equ:BindingEquations>
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="T"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>900.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="k"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>1.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="x_start"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="y_start"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </equ:BindingExp>
+    </equ:BindingEquation>
+    <equ:BindingEquation>
+      <equ:Parameter>
+        <exp:QualifiedNamePart name="PI"/>
+        <exp:QualifiedNamePart name="initType"/>
+      </equ:Parameter>
+      <equ:BindingExp>
+        1
+      </equ:BindingExp>
+    </equ:BindingEquation>
+  </equ:BindingEquations>
+  <equ:DynamicEquations>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Der>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="PI"/>
+            <exp:QualifiedNamePart name="x"/>
+          </exp:Identifier>
+        </exp:Der>
+        <exp:Mul>
+          <exp:RealLiteral>0.001111111111111111</exp:RealLiteral>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="u"/>
+          </exp:Identifier>
+        </exp:Mul>
+      </exp:Sub>
+    </equ:Equation>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="y"/>
+        </exp:Identifier>
+        <exp:Add>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="PI"/>
+            <exp:QualifiedNamePart name="x"/>
+          </exp:Identifier>
+          <exp:Identifier>
+            <exp:QualifiedNamePart name="u"/>
+          </exp:Identifier>
+        </exp:Add>
+      </exp:Sub>
+    </equ:Equation>
+  </equ:DynamicEquations>
+  <equ:InitialEquations>
+    <equ:Equation>
+      <exp:Sub>
+        <exp:Identifier>
+          <exp:QualifiedNamePart name="PI"/>
+          <exp:QualifiedNamePart name="x"/>
+        </exp:Identifier>
+        <exp:RealLiteral>0.0</exp:RealLiteral>
+      </exp:Sub>
+    </equ:Equation>
+  </equ:InitialEquations>
+  <fun:Algorithm>
+  </fun:Algorithm>
+  <fun:RecordsList>
+  </fun:RecordsList>
+  <fun:FunctionsList>
+  </fun:FunctionsList>
+</OpenModelicaModelDescription>
