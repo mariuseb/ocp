@@ -2,14 +2,14 @@
 <fmiModelDescription
   fmiVersion="2.0"
   modelName="Simple2R2C_SimplePI"
-  guid="{7515a2b4-c4d2-4a3a-b311-87f957fc9d01}"
+  guid="{e1f963ef-be97-482a-a98b-3e87f4c2ab10}"
   description=""
-  generationTool="OpenModelica Compiler OpenModelica 1.21.0"
-  generationDateAndTime="2023-08-16T11:12:49Z"
+  generationTool="OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"
+  generationDateAndTime="2023-08-17T15:26:08Z"
   variableNamingConvention="structured"
   numberOfEventIndicators="0">
   <ModelExchange
-    modelIdentifier="Simple2R2C_SimplePI">
+    modelIdentifier="Simple2R2C_SimplePI" providesDirectionalDerivative="true">
     <SourceFiles>
       <File name="Simple2R2C_SimplePI.c" />
       <File name="Simple2R2C_SimplePI_functions.c" />
@@ -44,6 +44,7 @@
       <File name="./util/generic_array.c" />
       <File name="./util/index_spec.c" />
       <File name="./util/integer_array.c" />
+      <File name="./util/jacobian_util.c" />
       <File name="./util/list.c" />
       <File name="./util/modelica_string_lit.c" />
       <File name="./util/modelica_string.c" />
@@ -63,7 +64,6 @@
       <File name="./util/utility.c" />
       <File name="./util/varinfo.c" />
       <File name="./math-support/pivot.c" />
-      <File name="./simulation/jacobian_util.c" />
       <File name="./simulation/omc_simulation_util.c" />
       <File name="./simulation/options.c" />
       <File name="./simulation/simulation_info_json.c" />
@@ -154,8 +154,8 @@
     name="PI.x"
     valueReference="2"
     description="State of block"
-    >
-    <Real/>
+    initial="exact">
+    <Real start="0.0"/>
   </ScalarVariable>
   <!-- Index of variable = "4" -->
   <ScalarVariable
@@ -186,8 +186,8 @@
     name="Aw.y"
     valueReference="6"
     description="Output signal connector"
-    >
-    <Real/>
+    initial="exact">
+    <Real start="0.0"/>
   </ScalarVariable>
   <!-- Index of variable = "8" -->
   <ScalarVariable
@@ -223,47 +223,47 @@
   </ScalarVariable>
   <!-- Index of variable = "12" -->
   <ScalarVariable
-    name="PI.y"
+    name="Rea.Q_flow"
     valueReference="11"
-    description="Connector of Real output signal"
+    description="Heat flow rate from port_a -&gt; port_b"
     >
-    <Real/>
+    <Real unit="W"/>
   </ScalarVariable>
   <!-- Index of variable = "13" -->
   <ScalarVariable
-    name="Rea.Q_flow"
+    name="Rea.dT"
     valueReference="12"
-    description="Heat flow rate from port_a -&gt; port_b"
+    description="port_a.T - port_b.T"
     >
-    <Real unit="W"/>
+    <Real unit="K"/>
   </ScalarVariable>
   <!-- Index of variable = "14" -->
   <ScalarVariable
-    name="Rea.dT"
-    valueReference="13"
-    description="port_a.T - port_b.T"
-    >
-    <Real unit="K"/>
-  </ScalarVariable>
-  <!-- Index of variable = "15" -->
-  <ScalarVariable
     name="Ria.Q_flow"
-    valueReference="14"
+    valueReference="13"
     description="Heat flow rate from port_a -&gt; port_b"
     >
     <Real unit="W"/>
   </ScalarVariable>
-  <!-- Index of variable = "16" -->
+  <!-- Index of variable = "15" -->
   <ScalarVariable
     name="Ria.dT"
-    valueReference="15"
+    valueReference="14"
     description="port_a.T - port_b.T"
     >
     <Real unit="K"/>
   </ScalarVariable>
-  <!-- Index of variable = "17" -->
+  <!-- Index of variable = "16" -->
   <ScalarVariable
     name="Ta"
+    valueReference="15"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="Tset"
     valueReference="16"
     causality="input"
     >
@@ -271,260 +271,251 @@
   </ScalarVariable>
   <!-- Index of variable = "18" -->
   <ScalarVariable
-    name="Tset"
-    valueReference="17"
-    causality="input"
-    >
-    <Real start="0.0"/>
-  </ScalarVariable>
-  <!-- Index of variable = "19" -->
-  <ScalarVariable
     name="feedback.y"
-    valueReference="18"
+    valueReference="17"
     >
     <Real/>
   </ScalarVariable>
-  <!-- Index of variable = "20" -->
+  <!-- Index of variable = "19" -->
   <ScalarVariable
     name="phi_s"
-    valueReference="19"
+    valueReference="18"
     causality="input"
     >
     <Real start="0.0"/>
   </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="preHeat.Q_flow"
+    valueReference="19"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
   <!-- Index of variable = "21" -->
   <ScalarVariable
-    name="preHeat.port.Q_flow"
-    valueReference="20"
-    description="Heat flow rate (positive if flowing from outside into the component)"
-    >
-    <Real unit="W"/>
-  </ScalarVariable>
-  <!-- Index of variable = "22" -->
-  <ScalarVariable
     name="preSol.port.Q_flow"
-    valueReference="21"
-    description="Heat flow rate (positive if flowing from outside into the component)"
-    >
-    <Real unit="W"/>
-  </ScalarVariable>
-  <!-- Index of variable = "23" -->
-  <ScalarVariable
-    name="senTZone.port.Q_flow"
-    valueReference="22"
+    valueReference="20"
     description="Heat flow rate (positive if flowing from outside into the component)"
     initial="exact">
     <Real start="0.0" unit="W"/>
   </ScalarVariable>
-  <!-- Index of variable = "24" -->
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="senTZone.port.Q_flow"
+    valueReference="21"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
   <ScalarVariable
     name="Aw.k"
-    valueReference="23"
+    valueReference="22"
     description="Gain value multiplied with input signal"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="0.0" unit="1"/>
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="Ce.C"
+    valueReference="23"
+    description="Heat capacity of element (= cp*m)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/K"/>
   </ScalarVariable>
   <!-- Index of variable = "25" -->
   <ScalarVariable
-    name="Ce.C"
+    name="Ci.C"
     valueReference="24"
     description="Heat capacity of element (= cp*m)"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="5000000.0" unit="J/K"/>
+    <Real unit="J/K"/>
   </ScalarVariable>
   <!-- Index of variable = "26" -->
   <ScalarVariable
-    name="Ci.C"
+    name="PI.T"
     valueReference="25"
-    description="Heat capacity of element (= cp*m)"
+    description="Time Constant (T&gt;0 required)"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="1000000.0" unit="J/K"/>
+    <Real min="1e-60" unit="s"/>
   </ScalarVariable>
   <!-- Index of variable = "27" -->
   <ScalarVariable
-    name="PI.T"
+    name="PI.k"
     valueReference="26"
-    description="Time Constant (T&gt;0 required)"
+    description="Gain"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="300.0" min="1e-60" unit="s"/>
+    <Real unit="1"/>
   </ScalarVariable>
   <!-- Index of variable = "28" -->
   <ScalarVariable
-    name="PI.k"
+    name="PI.x_start"
     valueReference="27"
-    description="Gain"
+    description="Initial or guess value of state"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="100.0" unit="1"/>
+    <Real/>
   </ScalarVariable>
   <!-- Index of variable = "29" -->
   <ScalarVariable
-    name="PI.x_start"
+    name="PI.y_start"
     valueReference="28"
-    description="Initial or guess value of state"
+    description="Initial value of output"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="0.0"/>
+    <Real/>
   </ScalarVariable>
   <!-- Index of variable = "30" -->
   <ScalarVariable
-    name="PI.y_start"
+    name="Rea.R"
     valueReference="29"
-    description="Initial value of output"
+    description="Constant thermal resistance of material"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="0.0"/>
+    <Real unit="K/W"/>
   </ScalarVariable>
   <!-- Index of variable = "31" -->
   <ScalarVariable
-    name="Rea.R"
+    name="Ria.R"
     valueReference="30"
     description="Constant thermal resistance of material"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="0.01" unit="K/W"/>
+    <Real unit="K/W"/>
   </ScalarVariable>
   <!-- Index of variable = "32" -->
   <ScalarVariable
-    name="Ria.R"
+    name="TSetCooOcc"
     valueReference="31"
-    description="Constant thermal resistance of material"
+    description="Occupied cooling setpoint"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="0.01" unit="K/W"/>
+    <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
   <!-- Index of variable = "33" -->
   <ScalarVariable
-    name="TSetCooOcc"
+    name="TSetCooUno"
     valueReference="32"
-    description="Occupied cooling setpoint"
+    description="Unoccupied cooling setpoint"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="297.15" min="0.0" nominal="300.0" unit="K"/>
+    <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
   <!-- Index of variable = "34" -->
   <ScalarVariable
-    name="TSetCooUno"
+    name="TSetHeaOcc"
     valueReference="33"
-    description="Unoccupied cooling setpoint"
+    description="Occupied heating setpoint"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="303.15" min="0.0" nominal="300.0" unit="K"/>
+    <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
   <!-- Index of variable = "35" -->
   <ScalarVariable
-    name="TSetHeaOcc"
+    name="TSetHeaUno"
     valueReference="34"
-    description="Occupied heating setpoint"
+    description="Unoccupied heating setpoint"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="294.15" min="0.0" nominal="300.0" unit="K"/>
+    <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
   <!-- Index of variable = "36" -->
   <ScalarVariable
-    name="TSetHeaUno"
+    name="minSpe"
     valueReference="35"
-    description="Unoccupied heating setpoint"
+    description="Minimum fan speed"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="288.15" min="0.0" nominal="300.0" unit="K"/>
+    <Real unit="1"/>
   </ScalarVariable>
   <!-- Index of variable = "37" -->
   <ScalarVariable
-    name="minSpe"
+    name="occEnd"
     valueReference="36"
-    description="Minimum fan speed"
+    description="Occupancy end time"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="0.2" unit="1"/>
+    <Real unit="s"/>
   </ScalarVariable>
   <!-- Index of variable = "38" -->
   <ScalarVariable
-    name="occEnd"
+    name="occSta"
     valueReference="37"
-    description="Occupancy end time"
+    description="Occupancy start time"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="64800.0" unit="s"/>
+    <Real unit="s"/>
   </ScalarVariable>
   <!-- Index of variable = "39" -->
   <ScalarVariable
-    name="occSta"
+    name="preHeat.T_ref"
     valueReference="38"
-    description="Occupancy start time"
+    description="Reference temperature"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="28800.0" unit="s"/>
+    <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
   <!-- Index of variable = "40" -->
   <ScalarVariable
-    name="preHeat.T_ref"
+    name="preHeat.alpha"
     valueReference="39"
-    description="Reference temperature"
+    description="Temperature coefficient of heat flow rate"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+    <Real unit="1/K"/>
   </ScalarVariable>
   <!-- Index of variable = "41" -->
   <ScalarVariable
-    name="preHeat.alpha"
+    name="preSol.T_ref"
     valueReference="40"
-    description="Temperature coefficient of heat flow rate"
+    description="Reference temperature"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="0.0" unit="1/K"/>
+    <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
   <!-- Index of variable = "42" -->
   <ScalarVariable
-    name="preSol.T_ref"
+    name="preSol.alpha"
     valueReference="41"
-    description="Reference temperature"
+    description="Temperature coefficient of heat flow rate"
     variability="fixed"
-    causality="parameter"
+    causality="calculatedParameter"
     >
-    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+    <Real unit="1/K"/>
   </ScalarVariable>
   <!-- Index of variable = "43" -->
   <ScalarVariable
-    name="preSol.alpha"
-    valueReference="42"
-    description="Temperature coefficient of heat flow rate"
-    variability="fixed"
-    causality="parameter"
-    >
-    <Real start="0.0" unit="1/K"/>
-  </ScalarVariable>
-  <!-- Index of variable = "44" -->
-  <ScalarVariable
     name="Aw.u"
-    valueReference="19"
+    valueReference="18"
     description="Input signal connector"
     >
     <Real/>
   </ScalarVariable>
-  <!-- Index of variable = "45" -->
+  <!-- Index of variable = "44" -->
   <ScalarVariable
     name="Ce.port.T"
     valueReference="0"
@@ -532,7 +523,7 @@
     >
     <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
-  <!-- Index of variable = "46" -->
+  <!-- Index of variable = "45" -->
   <ScalarVariable
     name="Ci.port.T"
     valueReference="1"
@@ -540,18 +531,26 @@
     >
     <Real min="0.0" nominal="300.0" unit="K"/>
   </ScalarVariable>
-  <!-- Index of variable = "47" -->
+  <!-- Index of variable = "46" -->
   <ScalarVariable
     name="PI.u"
-    valueReference="18"
+    valueReference="17"
     description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "47" -->
+  <ScalarVariable
+    name="PI.y"
+    valueReference="19"
+    description="Connector of Real output signal"
     >
     <Real/>
   </ScalarVariable>
   <!-- Index of variable = "48" -->
   <ScalarVariable
     name="Rea.port_a.Q_flow"
-    valueReference="12"
+    valueReference="11"
     description="Heat flow rate (positive if flowing from outside into the component)"
     >
     <Real unit="W"/>
@@ -559,7 +558,7 @@
   <!-- Index of variable = "49" -->
   <ScalarVariable
     name="Rea.port_a.T"
-    valueReference="16"
+    valueReference="15"
     description="Port temperature"
     >
     <Real min="0.0" nominal="300.0" unit="K"/>
@@ -583,7 +582,7 @@
   <!-- Index of variable = "52" -->
   <ScalarVariable
     name="Ria.port_a.Q_flow"
-    valueReference="14"
+    valueReference="13"
     description="Heat flow rate (positive if flowing from outside into the component)"
     >
     <Real unit="W"/>
@@ -615,7 +614,7 @@
   <!-- Index of variable = "56" -->
   <ScalarVariable
     name="feedback.u1"
-    valueReference="17"
+    valueReference="16"
     description="Commanded input"
     >
     <Real/>
@@ -630,8 +629,9 @@
   </ScalarVariable>
   <!-- Index of variable = "58" -->
   <ScalarVariable
-    name="preHeat.Q_flow"
-    valueReference="11"
+    name="preHeat.port.Q_flow"
+    valueReference="57"
+    description="Heat flow rate (positive if flowing from outside into the component)"
     >
     <Real unit="W"/>
   </ScalarVariable>
@@ -661,7 +661,7 @@
   <!-- Index of variable = "62" -->
   <ScalarVariable
     name="preTOut.T"
-    valueReference="16"
+    valueReference="15"
     >
     <Real unit="K"/>
   </ScalarVariable>
@@ -676,7 +676,7 @@
   <!-- Index of variable = "64" -->
   <ScalarVariable
     name="preTOut.port.T"
-    valueReference="16"
+    valueReference="15"
     description="Port temperature"
     >
     <Real min="0.0" nominal="300.0" unit="K"/>
@@ -710,16 +710,35 @@
   </ModelVariables>
   <ModelStructure>
     <Derivatives>
-      <Unknown index="4" dependencies="1 2 17" dependenciesKind="dependent dependent dependent" />
-      <Unknown index="5" dependencies="1 2 3 18 20" dependenciesKind="dependent dependent dependent dependent dependent" />
-      <Unknown index="6" dependencies="2 18" dependenciesKind="dependent dependent" />
+      <Unknown index="4" dependencies="1 2 16" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="5" dependencies="1 2 3 17" dependenciesKind="dependent dependent dependent dependent" />
+      <Unknown index="6" dependencies="2 17" dependenciesKind="dependent dependent" />
     </Derivatives>
     <InitialUnknowns>
-      <Unknown index="2" dependencies="18 27" dependenciesKind="dependent dependent" />
-      <Unknown index="3" dependencies="" dependenciesKind="" />
-      <Unknown index="4" dependencies="1 17 18 25 27 31 32" dependenciesKind="dependent dependent dependent dependent dependent dependent dependent" />
-      <Unknown index="5" dependencies="1 18 20 24 26 27 28 32 40 41 42 43" dependenciesKind="dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="2" dependencies="17" dependenciesKind="dependent" />
+      <Unknown index="4" dependencies="1 16 17" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="5" dependencies="1 3 17" dependenciesKind="dependent dependent dependent" />
       <Unknown index="6" dependencies="" dependenciesKind="" />
+      <Unknown index="23" dependencies="" dependenciesKind="" />
+      <Unknown index="24" dependencies="" dependenciesKind="" />
+      <Unknown index="25" dependencies="" dependenciesKind="" />
+      <Unknown index="26" dependencies="" dependenciesKind="" />
+      <Unknown index="27" dependencies="" dependenciesKind="" />
+      <Unknown index="28" dependencies="" dependenciesKind="" />
+      <Unknown index="29" dependencies="" dependenciesKind="" />
+      <Unknown index="30" dependencies="" dependenciesKind="" />
+      <Unknown index="31" dependencies="" dependenciesKind="" />
+      <Unknown index="32" dependencies="" dependenciesKind="" />
+      <Unknown index="33" dependencies="" dependenciesKind="" />
+      <Unknown index="34" dependencies="" dependenciesKind="" />
+      <Unknown index="35" dependencies="" dependenciesKind="" />
+      <Unknown index="36" dependencies="" dependenciesKind="" />
+      <Unknown index="37" dependencies="" dependenciesKind="" />
+      <Unknown index="38" dependencies="" dependenciesKind="" />
+      <Unknown index="39" dependencies="" dependenciesKind="" />
+      <Unknown index="40" dependencies="" dependenciesKind="" />
+      <Unknown index="41" dependencies="" dependenciesKind="" />
+      <Unknown index="42" dependencies="" dependenciesKind="" />
       <Unknown index="67" dependencies="" dependenciesKind="" />
     </InitialUnknowns>
   </ModelStructure>

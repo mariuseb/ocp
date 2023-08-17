@@ -1,0 +1,52 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (pi_y(E,Tset - Ti))/Ci + (Ai/Ci)*phi_s",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "E": "pi_ode(E,Tset - Ti)"
+
+        },
+        "w": {
+            "v1": "y1 - Ti"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai"
+        ],
+        "u": [
+            "Tset"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+    {
+        "name": "Cvodes"
+    }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 1,
+        "ipopt.max_cpu_time": 200,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false,
+    "map_eval": false
+}

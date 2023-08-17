@@ -76,9 +76,6 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 if(APPLE)
   set(CMAKE_INSTALL_RPATH "@loader_path")
 else()
-  if(${NEED_CVODE} AND RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH True)
-  endif()
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
 endif()
 
@@ -98,7 +95,7 @@ endif()
 
 # Link additional libraries
 target_link_libraries(${FMU_NAME} PRIVATE m Threads::Threads)
-set(EXTERNAL_LIBDIRECTORIES "${DOCKER_VOL_DIR}/usr/bin/../bin")
+set(EXTERNAL_LIBDIRECTORIES "/usr/bin/../bin")
 
 if(${NEED_CVODE})
   find_library(SUNDIALS_CVODE_LIBRARY sundials_cvode

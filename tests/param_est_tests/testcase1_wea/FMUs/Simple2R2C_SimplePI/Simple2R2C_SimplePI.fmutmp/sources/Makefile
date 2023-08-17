@@ -50,7 +50,7 @@ ifneq ($(NEED_CMINPACK),)
 CMINPACK_OBJS=
 endif
 ifneq ($(NEED_RUNTIME),)
-RUNTIMEFILES=./gc/memory_pool.o ./gc/omc_gc.o ./util/base_array.o ./util/boolean_array.o ./util/context.o ./util/division.o ./util/doubleEndedList.o ./util/generic_array.o ./util/index_spec.o ./util/integer_array.o ./util/list.o ./util/modelica_string_lit.o ./util/modelica_string.o ./util/ModelicaUtilities.o ./util/omc_error.o ./util/omc_file.o ./util/omc_init.o ./util/omc_mmap.o ./util/omc_msvc.o ./util/omc_numbers.o ./util/parallel_helper.o ./util/rational.o ./util/real_array.o ./util/ringbuffer.o ./util/simulation_options.o ./util/string_array.o ./util/utility.o ./util/varinfo.o ./math-support/pivot.o ./simulation/jacobian_util.o ./simulation/omc_simulation_util.o ./simulation/options.o ./simulation/simulation_info_json.o ./simulation/simulation_omc_assert.o ./simulation/solver/delay.o ./simulation/solver/fmi_events.o ./simulation/solver/model_help.o ./simulation/solver/omc_math.o ./simulation/solver/spatialDistribution.o ./simulation/solver/stateset.o ./simulation/solver/synchronous.o ./simulation/solver/initialization/initialization.o ./meta/meta_modelica_catch.o $(DGESV_OBJS) $(CMINPACK_OBJS)
+RUNTIMEFILES=./gc/memory_pool.o ./gc/omc_gc.o ./util/base_array.o ./util/boolean_array.o ./util/context.o ./util/division.o ./util/doubleEndedList.o ./util/generic_array.o ./util/index_spec.o ./util/integer_array.o ./util/jacobian_util.o ./util/list.o ./util/modelica_string_lit.o ./util/modelica_string.o ./util/ModelicaUtilities.o ./util/omc_error.o ./util/omc_file.o ./util/omc_init.o ./util/omc_mmap.o ./util/omc_msvc.o ./util/omc_numbers.o ./util/parallel_helper.o ./util/rational.o ./util/real_array.o ./util/ringbuffer.o ./util/simulation_options.o ./util/string_array.o ./util/utility.o ./util/varinfo.o ./math-support/pivot.o ./simulation/omc_simulation_util.o ./simulation/options.o ./simulation/simulation_info_json.o ./simulation/simulation_omc_assert.o ./simulation/solver/delay.o ./simulation/solver/fmi_events.o ./simulation/solver/model_help.o ./simulation/solver/omc_math.o ./simulation/solver/spatialDistribution.o ./simulation/solver/stateset.o ./simulation/solver/synchronous.o ./simulation/solver/initialization/initialization.o ./meta/meta_modelica_catch.o $(DGESV_OBJS) $(CMINPACK_OBJS)
 endif
 ifneq ($(NEED_SUNDIALS),)
 FMISUNDIALSFILES=
@@ -63,7 +63,7 @@ Simple2R2C_SimplePI_FMU: nozip
 nozip: Simple2R2C_SimplePI_functions.h Simple2R2C_SimplePI_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
 	mkdir -p ../binaries/$(FMIPLATFORM)
 ifeq (1,1)
-	$(LD) -o Simple2R2C_SimplePI$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES) -L"/home/marius/python/ocp/tests/param_est_tests"   -Wl,-Bdynamic $(LDFLAGS)
+	$(LD) -o Simple2R2C_SimplePI$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES) -L"/home/marius/fmu_test/buildopt/test"   -Wl,-Bdynamic $(LDFLAGS)
 	cp Simple2R2C_SimplePI$(DLLEXT) Simple2R2C_SimplePI_FMU.libs ../binaries/$(FMIPLATFORM)/
 endif
 	head -n20 Makefile > ../resources/$(FMIPLATFORM).summary

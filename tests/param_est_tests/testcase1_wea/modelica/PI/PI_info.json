@@ -1,0 +1,29 @@
+{"format":"Transformational debugger info","version":1,
+"info":{"name":"PI","description":""},
+"variables":{
+"pi.x":{"comment":"State of block","kind":"state","type":"Real","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":524,"lineEnd":524,"colStart":5,"colEnd":50}}},
+"der(pi.x)":{"comment":"der(State of block)","kind":"derivative","type":"Real","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":524,"lineEnd":524,"colStart":5,"colEnd":50}}},
+"u":{"comment":"","kind":"variable","type":"Real","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/python/ocp/tests/param_est_tests/testcase1_wea/modelica/PI.mo","lineStart":4,"lineEnd":5,"colStart":3,"colEnd":200}}},
+"y":{"comment":"","kind":"variable","type":"Real","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/python/ocp/tests/param_est_tests/testcase1_wea/modelica/PI.mo","lineStart":6,"lineEnd":7,"colStart":3,"colEnd":199}}},
+"u":{"comment":"","kind":"variable","type":"Real","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/python/ocp/tests/param_est_tests/testcase1_wea/modelica/PI.mo","lineStart":4,"lineEnd":5,"colStart":3,"colEnd":200}}},
+"pi.T":{"comment":"Time Constant (T>0 required)","kind":"parameter","type":"Real","unit":"s","displayUnit":"","source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":511,"lineEnd":512,"colStart":5,"colEnd":37}}},
+"pi.k":{"comment":"Gain","kind":"parameter","type":"Real","unit":"1","displayUnit":"","source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":510,"lineEnd":510,"colStart":5,"colEnd":40}}},
+"pi.x_start":{"comment":"Initial or guess value of state","kind":"parameter","type":"Real","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":517,"lineEnd":518,"colStart":5,"colEnd":50}}},
+"pi.y_start":{"comment":"Initial value of output","kind":"parameter","type":"Real","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":519,"lineEnd":521,"colStart":5,"colEnd":31}}},
+"pi.initType":{"comment":"Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)","kind":"parameter","type":"Enumeration","unit":"","displayUnit":"","source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":513,"lineEnd":516,"colStart":5,"colEnd":40}}}
+},
+"equations":[{"eqIndex":0,"tag":"dummy"},
+{"eqIndex":1,"section":"initial","tag":"assign","defines":["pi.x"],"uses":["$START.pi.x"],"equation":["$START.pi.x"],"source":{"info":{"file":"","lineStart":0,"lineEnd":0,"colStart":0,"colEnd":0}}},
+{"eqIndex":2,"tag":"alias","equation":[6],"section":"initial"},
+{"eqIndex":3,"tag":"alias","equation":[5],"section":"initial"},
+{"eqIndex":4,"section":"removed-initial","tag":"residual","uses":["der(pi.x)"],"equation":["$DER.pi.x"],"source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":528,"lineEnd":528,"colStart":7,"colEnd":17}}},
+{"eqIndex":5,"section":"regular","tag":"assign","defines":["der(pi.x)"],"uses":["pi.T","u"],"equation":["u / pi.T"],"source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":535,"lineEnd":535,"colStart":5,"colEnd":17}}},
+{"eqIndex":6,"section":"regular","tag":"assign","defines":["y"],"uses":["u","pi.x","pi.k"],"equation":["pi.k * (pi.x + u)"],"source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":536,"lineEnd":536,"colStart":5,"colEnd":18}}},
+{"eqIndex":7,"section":"start","tag":"assign","defines":["$START.pi.x"],"uses":["pi.x_start"],"equation":["pi.x_start"],"source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":524,"lineEnd":524,"colStart":5,"colEnd":50}}},
+{"eqIndex":8,"section":"parameter","tag":"assign","defines":["pi.initType"],"uses":[],"equation":["Modelica.Blocks.Types.Init.SteadyState"],"source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":513,"lineEnd":516,"colStart":5,"colEnd":40}}},
+{"eqIndex":9,"section":"parameter","tag":"algorithm","equation":["assert(pi.initType >= Modelica.Blocks.Types.Init.NoInit and pi.initType <= Modelica.Blocks.Types.Init.InitialOutput, \"Variable violating min/max constraint: Modelica.Blocks.Types.Init.NoInit <= pi.initType <= Modelica.Blocks.Types.Init.InitialOutput, has value: \" + String(pi.initType, \"d\"));"],"source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":513,"lineEnd":516,"colStart":5,"colEnd":40}}},
+{"eqIndex":10,"section":"parameter","tag":"algorithm","equation":["assert(pi.T >= 1e-60, \"Variable violating min constraint: 1e-60 <= pi.T, has value: \" + String(pi.T, \"g\"));"],"source":{"info":{"file":"/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Continuous.mo","lineStart":511,"lineEnd":512,"colStart":5,"colEnd":37}}}
+],
+"functions":[
+]
+}
