@@ -1,0 +1,726 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="Simple2R2C_SimplePI"
+  guid="{7515a2b4-c4d2-4a3a-b311-87f957fc9d01}"
+  description=""
+  generationTool="OpenModelica Compiler OpenModelica 1.21.0"
+  generationDateAndTime="2023-08-16T11:12:49Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="0">
+  <ModelExchange
+    modelIdentifier="Simple2R2C_SimplePI">
+    <SourceFiles>
+      <File name="Simple2R2C_SimplePI.c" />
+      <File name="Simple2R2C_SimplePI_functions.c" />
+      <File name="Simple2R2C_SimplePI_records.c" />
+      <File name="Simple2R2C_SimplePI_01exo.c" />
+      <File name="Simple2R2C_SimplePI_02nls.c" />
+      <File name="Simple2R2C_SimplePI_03lsy.c" />
+      <File name="Simple2R2C_SimplePI_04set.c" />
+      <File name="Simple2R2C_SimplePI_05evt.c" />
+      <File name="Simple2R2C_SimplePI_06inz.c" />
+      <File name="Simple2R2C_SimplePI_07dly.c" />
+      <File name="Simple2R2C_SimplePI_08bnd.c" />
+      <File name="Simple2R2C_SimplePI_09alg.c" />
+      <File name="Simple2R2C_SimplePI_10asr.c" />
+      <File name="Simple2R2C_SimplePI_11mix.c" />
+      <File name="Simple2R2C_SimplePI_12jac.c" />
+      <File name="Simple2R2C_SimplePI_13opt.c" />
+      <File name="Simple2R2C_SimplePI_14lnz.c" />
+      <File name="Simple2R2C_SimplePI_15syn.c" />
+      <File name="Simple2R2C_SimplePI_16dae.c" />
+      <File name="Simple2R2C_SimplePI_17inl.c" />
+      <File name="Simple2R2C_SimplePI_18spd.c" />
+      <File name="Simple2R2C_SimplePI_init_fmu.c" />
+      <File name="Simple2R2C_SimplePI_FMU.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/jacobian_util.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+    </SourceFiles>
+  </ModelExchange>
+  <UnitDefinitions>
+    <Unit name="1/K">
+      <BaseUnit K="-1" />
+    </Unit>
+    <Unit name="K/W">
+      <BaseUnit m="-2" s="3" K="1" kg="-1" />
+    </Unit>
+    <Unit name="s">
+      <BaseUnit s="1" />
+    </Unit>
+    <Unit name="J/K">
+      <BaseUnit m="2" s="-2" K="-1" kg="1" />
+    </Unit>
+    <Unit name="1">
+      <BaseUnit />
+    </Unit>
+    <Unit name="W">
+      <BaseUnit m="2" s="-3" kg="1" />
+    </Unit>
+    <Unit name="K/s">
+      <BaseUnit s="-1" K="1" />
+    </Unit>
+    <Unit name="s-1.K">
+      <BaseUnit s="-1" K="1" />
+    </Unit>
+    <Unit name="K">
+      <BaseUnit K="1" />
+    </Unit>
+  </UnitDefinitions>
+  <TypeDefinitions>
+    <SimpleType name="Modelica.Blocks.Types.Init">
+      <Enumeration>
+        <Item name="NoInit" value="1"/>
+        <Item name="SteadyState" value="2"/>
+        <Item name="InitialState" value="3"/>
+        <Item name="InitialOutput" value="4"/>
+      </Enumeration>
+    </SimpleType>
+  </TypeDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="1.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="Ce.T"
+    valueReference="0"
+    description="Temperature of element"
+    initial="exact">
+    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="Ci.T"
+    valueReference="1"
+    description="Temperature of element"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="PI.x"
+    valueReference="2"
+    description="State of block"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="der(Ce.T)"
+    valueReference="3"
+    description="der(Temperature of element)"
+    >
+    <Real derivative="1" unit="s-1.K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="der(Ci.T)"
+    valueReference="4"
+    description="der(Temperature of element)"
+    >
+    <Real derivative="2" unit="s-1.K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="der(PI.x)"
+    valueReference="5"
+    description="der(State of block)"
+    >
+    <Real derivative="3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="Aw.y"
+    valueReference="6"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="Ce.der_T"
+    valueReference="7"
+    description="Time derivative of temperature (= der(T))"
+    >
+    <Real unit="K/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="Ce.port.Q_flow"
+    valueReference="8"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="Ci.der_T"
+    valueReference="9"
+    description="Time derivative of temperature (= der(T))"
+    >
+    <Real unit="K/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="Ci.port.Q_flow"
+    valueReference="10"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="PI.y"
+    valueReference="11"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="Rea.Q_flow"
+    valueReference="12"
+    description="Heat flow rate from port_a -&gt; port_b"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="Rea.dT"
+    valueReference="13"
+    description="port_a.T - port_b.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="Ria.Q_flow"
+    valueReference="14"
+    description="Heat flow rate from port_a -&gt; port_b"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="Ria.dT"
+    valueReference="15"
+    description="port_a.T - port_b.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="Ta"
+    valueReference="16"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="Tset"
+    valueReference="17"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="feedback.y"
+    valueReference="18"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="phi_s"
+    valueReference="19"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="preHeat.port.Q_flow"
+    valueReference="20"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="preSol.port.Q_flow"
+    valueReference="21"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="senTZone.port.Q_flow"
+    valueReference="22"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="Aw.k"
+    valueReference="23"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="Ce.C"
+    valueReference="24"
+    description="Heat capacity of element (= cp*m)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="5000000.0" unit="J/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="Ci.C"
+    valueReference="25"
+    description="Heat capacity of element (= cp*m)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1000000.0" unit="J/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="PI.T"
+    valueReference="26"
+    description="Time Constant (T&gt;0 required)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="300.0" min="1e-60" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "28" -->
+  <ScalarVariable
+    name="PI.k"
+    valueReference="27"
+    description="Gain"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="100.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "29" -->
+  <ScalarVariable
+    name="PI.x_start"
+    valueReference="28"
+    description="Initial or guess value of state"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "30" -->
+  <ScalarVariable
+    name="PI.y_start"
+    valueReference="29"
+    description="Initial value of output"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "31" -->
+  <ScalarVariable
+    name="Rea.R"
+    valueReference="30"
+    description="Constant thermal resistance of material"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.01" unit="K/W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "32" -->
+  <ScalarVariable
+    name="Ria.R"
+    valueReference="31"
+    description="Constant thermal resistance of material"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.01" unit="K/W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "33" -->
+  <ScalarVariable
+    name="TSetCooOcc"
+    valueReference="32"
+    description="Occupied cooling setpoint"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="297.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "34" -->
+  <ScalarVariable
+    name="TSetCooUno"
+    valueReference="33"
+    description="Unoccupied cooling setpoint"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="303.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "35" -->
+  <ScalarVariable
+    name="TSetHeaOcc"
+    valueReference="34"
+    description="Occupied heating setpoint"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="294.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "36" -->
+  <ScalarVariable
+    name="TSetHeaUno"
+    valueReference="35"
+    description="Unoccupied heating setpoint"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="288.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "37" -->
+  <ScalarVariable
+    name="minSpe"
+    valueReference="36"
+    description="Minimum fan speed"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.2" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "38" -->
+  <ScalarVariable
+    name="occEnd"
+    valueReference="37"
+    description="Occupancy end time"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="64800.0" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "39" -->
+  <ScalarVariable
+    name="occSta"
+    valueReference="38"
+    description="Occupancy start time"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="28800.0" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "40" -->
+  <ScalarVariable
+    name="preHeat.T_ref"
+    valueReference="39"
+    description="Reference temperature"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "41" -->
+  <ScalarVariable
+    name="preHeat.alpha"
+    valueReference="40"
+    description="Temperature coefficient of heat flow rate"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "42" -->
+  <ScalarVariable
+    name="preSol.T_ref"
+    valueReference="41"
+    description="Reference temperature"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "43" -->
+  <ScalarVariable
+    name="preSol.alpha"
+    valueReference="42"
+    description="Temperature coefficient of heat flow rate"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="1/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "44" -->
+  <ScalarVariable
+    name="Aw.u"
+    valueReference="19"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "45" -->
+  <ScalarVariable
+    name="Ce.port.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "46" -->
+  <ScalarVariable
+    name="Ci.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "47" -->
+  <ScalarVariable
+    name="PI.u"
+    valueReference="18"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "48" -->
+  <ScalarVariable
+    name="Rea.port_a.Q_flow"
+    valueReference="12"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "49" -->
+  <ScalarVariable
+    name="Rea.port_a.T"
+    valueReference="16"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "50" -->
+  <ScalarVariable
+    name="Rea.port_b.Q_flow"
+    valueReference="49"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "51" -->
+  <ScalarVariable
+    name="Rea.port_b.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "52" -->
+  <ScalarVariable
+    name="Ria.port_a.Q_flow"
+    valueReference="14"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "53" -->
+  <ScalarVariable
+    name="Ria.port_a.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "54" -->
+  <ScalarVariable
+    name="Ria.port_b.Q_flow"
+    valueReference="53"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "55" -->
+  <ScalarVariable
+    name="Ria.port_b.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "56" -->
+  <ScalarVariable
+    name="feedback.u1"
+    valueReference="17"
+    description="Commanded input"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "57" -->
+  <ScalarVariable
+    name="feedback.u2"
+    valueReference="1"
+    description="Feedback input"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "58" -->
+  <ScalarVariable
+    name="preHeat.Q_flow"
+    valueReference="11"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "59" -->
+  <ScalarVariable
+    name="preHeat.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "60" -->
+  <ScalarVariable
+    name="preSol.Q_flow"
+    valueReference="6"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "61" -->
+  <ScalarVariable
+    name="preSol.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "62" -->
+  <ScalarVariable
+    name="preTOut.T"
+    valueReference="16"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "63" -->
+  <ScalarVariable
+    name="preTOut.port.Q_flow"
+    valueReference="62"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "64" -->
+  <ScalarVariable
+    name="preTOut.port.T"
+    valueReference="16"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "65" -->
+  <ScalarVariable
+    name="senTZone.T"
+    valueReference="1"
+    description="Absolute temperature as output signal"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "66" -->
+  <ScalarVariable
+    name="senTZone.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "67" -->
+  <ScalarVariable
+    name="PI.initType"
+    valueReference="0"
+    description="Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Derivatives>
+      <Unknown index="4" dependencies="1 2 17" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="5" dependencies="1 2 3 18 20" dependenciesKind="dependent dependent dependent dependent dependent" />
+      <Unknown index="6" dependencies="2 18" dependenciesKind="dependent dependent" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown index="2" dependencies="18 27" dependenciesKind="dependent dependent" />
+      <Unknown index="3" dependencies="" dependenciesKind="" />
+      <Unknown index="4" dependencies="1 17 18 25 27 31 32" dependenciesKind="dependent dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="5" dependencies="1 18 20 24 26 27 28 32 40 41 42 43" dependenciesKind="dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="6" dependencies="" dependenciesKind="" />
+      <Unknown index="67" dependencies="" dependenciesKind="" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

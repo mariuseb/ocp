@@ -242,7 +242,13 @@ class MPC(OCP):
             #vals["c2"] = c2
             #vals["V0"] = V0
             # exec objective:
-            exec(f'obj_expr =' + obj_string, vals)
+            try:
+                exec(f'obj_expr =' + obj_string, vals)
+            except: # temp fix
+                # TODO: more solid logic here 
+                vals["Ti"] = vals["Ti"][0:-1:(self.integrator.d+1)].T
+                vals["E"] = vals["E"][0:-1:(self.integrator.d+1)].T
+                exec(f'obj_expr =' + obj_string, vals)
             obj_expr = vals["obj_expr"]
         # TODO: extra parameter for last state:
         else: # build objective 'by hand':

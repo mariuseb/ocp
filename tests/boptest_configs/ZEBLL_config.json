@@ -85,7 +85,7 @@
       },
       "maps" : {
         "r" : {"Ta": "TDryBul", "phi_s": "HGloHor"},
-        "u" : {"Tset": "oveTset"},
+        "u" : {"Tset": "oveTset", "phi_h": "oveAct"},
         "y": {"Ti": "TRooAir_y"},
         "boptest_to_ocp": {"phi_h": "PHea_y", "Tset": "oveTset_u", "Ti": "TRooAir_y"},
         "sampling": {

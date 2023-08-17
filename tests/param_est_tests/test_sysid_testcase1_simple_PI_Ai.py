@@ -1,7 +1,7 @@
 #from ast import Param
 from ocp.param_est import ParameterEstimation
 from ocp.mpc import MPC
-
+import re
 import numpy as np
 import json
 import casadi as ca
@@ -39,6 +39,7 @@ if __name__ == "__main__":
 
     GENERATE_DATA = False
     PLOT_DATA = False
+    sampling_freq = "900s"
     data_path = os.path.join(get_data_path(), "data_testcase1_wea_P.csv")
     repeats = 1
     N = 6*24*4*repeats - 24*repeats
@@ -65,8 +66,8 @@ if __name__ == "__main__":
         # baseline control for sysid:
         for n in range(N):
             u = _u.iloc[n]
-            data, y_meas, u_meas = boptest.evolve(u=u)
-            #data, y_meas, u_meas = boptest.evolve()
+            #data, y_meas, u_meas = boptest.evolve(u=u)
+            data, y_meas, u_meas = boptest.evolve()
         
         #y_data = boptest.get_data(tf=N*boptest.h, downsample=False)
         #raw_data = boptest.get_results(tf=N*boptest.h, ts=0)
@@ -124,12 +125,14 @@ if __name__ == "__main__":
     
     y_data.index = pd.TimedeltaIndex(y_data.index, unit="s")
     rest_cols = [col for col in y_data.columns if col != "phi_h"]
-    phi_h = y_data["phi_h"].resample(rule="5min").mean()
-    rest = y_data[rest_cols].resample(rule="5min").asfreq()
+    phi_h = y_data["phi_h"].resample(rule=sampling_freq).mean()
+    rest = y_data[rest_cols].resample(rule=sampling_freq).asfreq()
     #y_data = y_data.resample(rule="1min").asfreq()
     y_data = pd.merge(phi_h, rest, left_index=True, right_index=True)
     y_data.index = range(len(y_data.index))
-    y_data.index *= 300
+    sampling_freq_num = re.findall(r'\d+', sampling_freq)
+    assert len(sampling_freq_num) == 1
+    y_data.index *= int(sampling_freq_num[0])
     
     N = len(y_data)
     dt = y_data.index[1] - y_data.index[0]  
@@ -190,7 +193,7 @@ if __name__ == "__main__":
         r = y_data[I.dae.r_names].iloc[n].values
         x0 = I.one_sample(x0,0,u,p,0,r)
         #x0 = I.one_sample(x0,0,ca.vertcat(p, r),u,0,0,0)[0]
-    res = pd.DataFrame(data=xs.reshape(N, 2), columns=["Ti", "Te"])
+    res = pd.DataFrame(data=xs.reshape(N, 3), columns=["Ti", "Te", "E"])
     res.index = y_data.index
     ax = res.Ti.plot(color="r")
     y_data.Ti.plot(color="k", linestyle="dashed", ax=ax)

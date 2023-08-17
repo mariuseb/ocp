@@ -113,11 +113,18 @@ class Cvodes(Integrator):
             #"step0":    kwds["dt"],
             #"min_step_size": dt,
             #"max_step_size": dt,
-            "abstol"  : 1E-8,
+            "abstol": 1E-8,
+            "reltol"  : 1E-8,
+            "max_order": 5,
+            "linear_multistep_method": "bdf",
+            "nonlinear_solver_iteration": "newton",
+            "verbose": False
+            
                 }
 
         tgrid = kwds.pop("dt", [1])
-        #tgrid = [tgrid*0.2*(i+1) for i in range(5)]
+        N = 1
+        tgrid = [tgrid*1/N*(i+1) for i in range(N)]
         self.set_ode_func()
         #self.set_alg_func()
         # u->z in integrator call (algebraic var, constant on between phase boundaries (check term. in Betts ch. 4))

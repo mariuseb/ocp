@@ -1,0 +1,2809 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="Simple2R2C_PI_OM"
+  guid="{156b4a53-5bd6-4959-a6e5-41eaa0108d67}"
+  description=""
+  generationTool="OpenModelica Compiler v1.21.0-2-g0bc3d29bd9-cmake"
+  generationDateAndTime="2023-08-11T15:23:21Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="3">
+  <ModelExchange
+    modelIdentifier="Simple2R2C_PI_OM">
+    <SourceFiles>
+      <File name="Simple2R2C_PI_OM.c" />
+      <File name="Simple2R2C_PI_OM_functions.c" />
+      <File name="Simple2R2C_PI_OM_records.c" />
+      <File name="Simple2R2C_PI_OM_01exo.c" />
+      <File name="Simple2R2C_PI_OM_02nls.c" />
+      <File name="Simple2R2C_PI_OM_03lsy.c" />
+      <File name="Simple2R2C_PI_OM_04set.c" />
+      <File name="Simple2R2C_PI_OM_05evt.c" />
+      <File name="Simple2R2C_PI_OM_06inz.c" />
+      <File name="Simple2R2C_PI_OM_07dly.c" />
+      <File name="Simple2R2C_PI_OM_08bnd.c" />
+      <File name="Simple2R2C_PI_OM_09alg.c" />
+      <File name="Simple2R2C_PI_OM_10asr.c" />
+      <File name="Simple2R2C_PI_OM_11mix.c" />
+      <File name="Simple2R2C_PI_OM_12jac.c" />
+      <File name="Simple2R2C_PI_OM_13opt.c" />
+      <File name="Simple2R2C_PI_OM_14lnz.c" />
+      <File name="Simple2R2C_PI_OM_15syn.c" />
+      <File name="Simple2R2C_PI_OM_16dae.c" />
+      <File name="Simple2R2C_PI_OM_17inl.c" />
+      <File name="Simple2R2C_PI_OM_18spd.c" />
+      <File name="Simple2R2C_PI_OM_init_fmu.c" />
+      <File name="Simple2R2C_PI_OM_FMU.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/jacobian_util.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+    </SourceFiles>
+  </ModelExchange>
+  <UnitDefinitions>
+    <Unit name="m/s">
+      <BaseUnit m="1" s="-1" />
+    </Unit>
+    <Unit name="Pa">
+      <BaseUnit m="-1" s="-2" kg="1" />
+    </Unit>
+    <Unit name="rad">
+      <BaseUnit />
+    </Unit>
+    <Unit name="m">
+      <BaseUnit m="1" />
+    </Unit>
+    <Unit name="W/m2">
+      <BaseUnit s="-3" kg="1" />
+    </Unit>
+    <Unit name="1/K">
+      <BaseUnit K="-1" />
+    </Unit>
+    <Unit name="s">
+      <BaseUnit s="1" />
+    </Unit>
+    <Unit name="K/W">
+      <BaseUnit m="-2" s="3" K="1" kg="-1" />
+    </Unit>
+    <Unit name="J/K">
+      <BaseUnit m="2" s="-2" K="-1" kg="1" />
+    </Unit>
+    <Unit name="1">
+      <BaseUnit />
+    </Unit>
+    <Unit name="W">
+      <BaseUnit m="2" s="-3" kg="1" />
+    </Unit>
+    <Unit name="K/s">
+      <BaseUnit s="-1" K="1" />
+    </Unit>
+    <Unit name="s-1.K">
+      <BaseUnit s="-1" K="1" />
+    </Unit>
+    <Unit name="K">
+      <BaseUnit K="1" />
+    </Unit>
+  </UnitDefinitions>
+  <TypeDefinitions>
+    <SimpleType name="Buildings.Utilities.IO.SignalExchange.SignalTypes.SignalsForKPIs">
+      <Enumeration>
+        <Item name="None" value="1"/>
+        <Item name="AirZoneTemperature" value="2"/>
+        <Item name="RadiativeZoneTemperature" value="3"/>
+        <Item name="OperativeZoneTemperature" value="4"/>
+        <Item name="RelativeHumidity" value="5"/>
+        <Item name="CO2Concentration" value="6"/>
+        <Item name="ElectricPower" value="7"/>
+        <Item name="DistrictHeatingPower" value="8"/>
+        <Item name="GasPower" value="9"/>
+        <Item name="BiomassPower" value="10"/>
+        <Item name="SolarThermalPower" value="11"/>
+        <Item name="FreshWaterFlowRate" value="12"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.Extrapolation">
+      <Enumeration>
+        <Item name="HoldLastPoint" value="1"/>
+        <Item name="LastTwoPoints" value="2"/>
+        <Item name="Periodic" value="3"/>
+        <Item name="NoExtrapolation" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.Smoothness">
+      <Enumeration>
+        <Item name="LinearSegments" value="1"/>
+        <Item name="ContinuousDerivative" value="2"/>
+        <Item name="ConstantSegments" value="3"/>
+        <Item name="MonotoneContinuousDerivative1" value="4"/>
+        <Item name="MonotoneContinuousDerivative2" value="5"/>
+        <Item name="ModifiedContinuousDerivative" value="6"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.TimeEvents">
+      <Enumeration>
+        <Item name="Always" value="1"/>
+        <Item name="AtDiscontinuities" value="2"/>
+        <Item name="NoTimeEvents" value="3"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.Init">
+      <Enumeration>
+        <Item name="NoInit" value="1"/>
+        <Item name="SteadyState" value="2"/>
+        <Item name="InitialState" value="3"/>
+        <Item name="InitialOutput" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.SimpleController">
+      <Enumeration>
+        <Item name="P" value="1"/>
+        <Item name="PI" value="2"/>
+        <Item name="PD" value="3"/>
+        <Item name="PID" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.LimiterHomotopy">
+      <Enumeration>
+        <Item name="NoHomotopy" value="1"/>
+        <Item name="Linear" value="2"/>
+        <Item name="UpperLimit" value="3"/>
+        <Item name="LowerLimit" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Buildings.BoundaryConditions.Types.DataSource">
+      <Enumeration>
+        <Item name="File" value="1"/>
+        <Item name="Parameter" value="2"/>
+        <Item name="Input" value="3"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Buildings.BoundaryConditions.Types.RadiationDataSource">
+      <Enumeration>
+        <Item name="File" value="1"/>
+        <Item name="Input_HGloHor_HDifHor" value="2"/>
+        <Item name="Input_HDirNor_HDifHor" value="3"/>
+        <Item name="Input_HDirNor_HGloHor" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Buildings.BoundaryConditions.Types.SkyTemperatureCalculation">
+      <Enumeration>
+        <Item name="HorizontalRadiation" value="1"/>
+        <Item name="TemperaturesAndSkyCover" value="2"/>
+      </Enumeration>
+    </SimpleType>
+  </TypeDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="1.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="Ce.T"
+    valueReference="0"
+    description="Temperature of element"
+    initial="exact">
+    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="Ci.T"
+    valueReference="1"
+    description="Temperature of element"
+    initial="exact">
+    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="con.I.y"
+    valueReference="2"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="der(Ce.T)"
+    valueReference="3"
+    description="der(Temperature of element)"
+    >
+    <Real derivative="1" unit="s-1.K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="der(Ci.T)"
+    valueReference="4"
+    description="der(Temperature of element)"
+    >
+    <Real derivative="2" unit="s-1.K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="der(con.I.y)"
+    valueReference="5"
+    description="der(Connector of Real output signal)"
+    >
+    <Real derivative="3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="Ce.der_T"
+    valueReference="17"
+    description="Time derivative of temperature (= der(T))"
+    >
+    <Real unit="K/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="Ce.port.Q_flow"
+    valueReference="18"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="Ci.der_T"
+    valueReference="19"
+    description="Time derivative of temperature (= der(T))"
+    >
+    <Real unit="K/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="Ci.port.Q_flow"
+    valueReference="20"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="PHea.y"
+    valueReference="21"
+    description="Connector of Real output signal"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="Rea.Q_flow"
+    valueReference="22"
+    description="Heat flow rate from port_a -&gt; port_b"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="Rea.dT"
+    valueReference="23"
+    description="port_a.T - port_b.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="Ria.Q_flow"
+    valueReference="24"
+    description="Heat flow rate from port_a -&gt; port_b"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="Ria.dT"
+    valueReference="25"
+    description="port_a.T - port_b.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="TSetHea.y[1]"
+    valueReference="27"
+    description="Connector of Real output signals"
+    >
+    <Real min="288.15" max="313.15"/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="con.Dzero.y"
+    valueReference="28"
+    description="Connector of Real output signal"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="con.FFzero.y"
+    valueReference="29"
+    description="Connector of Real output signal"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="con.P.y"
+    valueReference="31"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="con.addI.y"
+    valueReference="32"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="con.addPID.y"
+    valueReference="33"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="con.addSat.y"
+    valueReference="34"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="con.controlError"
+    valueReference="35"
+    description="Control error (set point - measurement)"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="con.gainTrack.y"
+    valueReference="36"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="con.limiter.u"
+    valueReference="37"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="eff.y"
+    valueReference="38"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="oveAct.uExt.y"
+    valueReference="39"
+    description="Value of Real output"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "28" -->
+  <ScalarVariable
+    name="oveTset.uExt.y"
+    valueReference="40"
+    description="Value of Real output"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "29" -->
+  <ScalarVariable
+    name="preHeat.Q_flow"
+    valueReference="41"
+    >
+    <Real min="-10000.0" max="10000.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "30" -->
+  <ScalarVariable
+    name="preSol.Q_flow"
+    valueReference="42"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "31" -->
+  <ScalarVariable
+    name="senTZone.port.Q_flow"
+    valueReference="43"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "32" -->
+  <ScalarVariable
+    name="weaBus.HDifHor"
+    valueReference="44"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "33" -->
+  <ScalarVariable
+    name="weaBus.HDirNor"
+    valueReference="45"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "34" -->
+  <ScalarVariable
+    name="weaBus.HGloHor"
+    valueReference="46"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "35" -->
+  <ScalarVariable
+    name="weaBus.HHorIR"
+    valueReference="47"
+    description="virtual variable in expandable connector"
+    >
+    <Real min="0.0" nominal="100.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "36" -->
+  <ScalarVariable
+    name="weaBus.TBlaSky"
+    valueReference="48"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "37" -->
+  <ScalarVariable
+    name="weaBus.TDewPoi"
+    valueReference="49"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "38" -->
+  <ScalarVariable
+    name="weaBus.TDryBul"
+    valueReference="50"
+    description="virtual variable in expandable connector"
+    >
+    <Real min="0.0" nominal="300.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "39" -->
+  <ScalarVariable
+    name="weaBus.ceiHei"
+    valueReference="51"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "40" -->
+  <ScalarVariable
+    name="weaBus.cloTim"
+    valueReference="52"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "41" -->
+  <ScalarVariable
+    name="weaBus.nOpa"
+    valueReference="53"
+    description="virtual variable in expandable connector"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "42" -->
+  <ScalarVariable
+    name="weaBus.nTot"
+    valueReference="54"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "43" -->
+  <ScalarVariable
+    name="weaBus.relHum"
+    valueReference="55"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "44" -->
+  <ScalarVariable
+    name="weaBus.solAlt"
+    valueReference="56"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "45" -->
+  <ScalarVariable
+    name="weaBus.solDec"
+    valueReference="57"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "46" -->
+  <ScalarVariable
+    name="weaBus.solHouAng"
+    valueReference="58"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "47" -->
+  <ScalarVariable
+    name="weaBus.solTim"
+    valueReference="59"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "48" -->
+  <ScalarVariable
+    name="weaBus.solZen"
+    valueReference="60"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "49" -->
+  <ScalarVariable
+    name="weaBus.winDir"
+    valueReference="61"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "50" -->
+  <ScalarVariable
+    name="weaBus.winSpe"
+    valueReference="62"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "51" -->
+  <ScalarVariable
+    name="Aw.k"
+    valueReference="113"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "52" -->
+  <ScalarVariable
+    name="Ce.C"
+    valueReference="114"
+    description="Heat capacity of element (= cp*m)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "53" -->
+  <ScalarVariable
+    name="Ci.C"
+    valueReference="115"
+    description="Heat capacity of element (= cp*m)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "54" -->
+  <ScalarVariable
+    name="Rea.R"
+    valueReference="116"
+    description="Constant thermal resistance of material"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="K/W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "55" -->
+  <ScalarVariable
+    name="Ria.R"
+    valueReference="117"
+    description="Constant thermal resistance of material"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="K/W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "56" -->
+  <ScalarVariable
+    name="TSetCooOcc"
+    valueReference="118"
+    description="Occupied cooling setpoint"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "57" -->
+  <ScalarVariable
+    name="TSetCooUno"
+    valueReference="119"
+    description="Unoccupied cooling setpoint"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "58" -->
+  <ScalarVariable
+    name="TSetHea.offset[1]"
+    valueReference="120"
+    description="Offsets of output signals"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "59" -->
+  <ScalarVariable
+    name="TSetHea.shiftTime"
+    valueReference="122"
+    description="Shift time of first table column"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "60" -->
+  <ScalarVariable
+    name="TSetHea.startTime"
+    valueReference="123"
+    description="Output = offset for time &lt; startTime"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "61" -->
+  <ScalarVariable
+    name="TSetHea.t_max"
+    valueReference="124"
+    description="Maximum abscissa value defined in table"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "62" -->
+  <ScalarVariable
+    name="TSetHea.t_maxScaled"
+    valueReference="125"
+    description="Maximum (scaled) abscissa value defined in table"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "63" -->
+  <ScalarVariable
+    name="TSetHea.t_min"
+    valueReference="126"
+    description="Minimum abscissa value defined in table"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "64" -->
+  <ScalarVariable
+    name="TSetHea.t_minScaled"
+    valueReference="127"
+    description="Minimum (scaled) abscissa value defined in table"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "65" -->
+  <ScalarVariable
+    name="TSetHea.table[1,1]"
+    valueReference="128"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "66" -->
+  <ScalarVariable
+    name="TSetHea.table[1,2]"
+    valueReference="129"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "67" -->
+  <ScalarVariable
+    name="TSetHea.table[2,1]"
+    valueReference="130"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "68" -->
+  <ScalarVariable
+    name="TSetHea.table[2,2]"
+    valueReference="131"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "69" -->
+  <ScalarVariable
+    name="TSetHea.table[3,1]"
+    valueReference="132"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "70" -->
+  <ScalarVariable
+    name="TSetHea.table[3,2]"
+    valueReference="133"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "71" -->
+  <ScalarVariable
+    name="TSetHea.table[4,1]"
+    valueReference="134"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "72" -->
+  <ScalarVariable
+    name="TSetHea.table[4,2]"
+    valueReference="135"
+    description="Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "73" -->
+  <ScalarVariable
+    name="TSetHea.timeScale"
+    valueReference="136"
+    description="Time scale of first table column"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-15" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "74" -->
+  <ScalarVariable
+    name="TSetHeaOcc"
+    valueReference="137"
+    description="Occupied heating setpoint"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "75" -->
+  <ScalarVariable
+    name="TSetHeaUno"
+    valueReference="138"
+    description="Unoccupied heating setpoint"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "76" -->
+  <ScalarVariable
+    name="con.Dzero.k"
+    valueReference="139"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "77" -->
+  <ScalarVariable
+    name="con.FFzero.k"
+    valueReference="140"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "78" -->
+  <ScalarVariable
+    name="con.I.k"
+    valueReference="141"
+    description="Integrator gain"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "79" -->
+  <ScalarVariable
+    name="con.I.y_start"
+    valueReference="142"
+    description="Initial or guess value of output (= state)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "80" -->
+  <ScalarVariable
+    name="con.Nd"
+    valueReference="143"
+    description="The higher Nd, the more ideal the derivative block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-13"/>
+  </ScalarVariable>
+  <!-- Index of variable = "81" -->
+  <ScalarVariable
+    name="con.Ni"
+    valueReference="144"
+    description="Ni*Ti is time constant of anti-windup compensation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-13"/>
+  </ScalarVariable>
+  <!-- Index of variable = "82" -->
+  <ScalarVariable
+    name="con.P.k"
+    valueReference="145"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "83" -->
+  <ScalarVariable
+    name="con.Td"
+    valueReference="146"
+    description="Time constant of Derivative block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "84" -->
+  <ScalarVariable
+    name="con.Ti"
+    valueReference="147"
+    description="Time constant of Integrator block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-60" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "85" -->
+  <ScalarVariable
+    name="con.addFF.k1"
+    valueReference="148"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "86" -->
+  <ScalarVariable
+    name="con.addFF.k2"
+    valueReference="149"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "87" -->
+  <ScalarVariable
+    name="con.addI.k1"
+    valueReference="150"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "88" -->
+  <ScalarVariable
+    name="con.addI.k2"
+    valueReference="151"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "89" -->
+  <ScalarVariable
+    name="con.addI.k3"
+    valueReference="152"
+    description="Gain of input signal 3"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "90" -->
+  <ScalarVariable
+    name="con.addP.k1"
+    valueReference="153"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "91" -->
+  <ScalarVariable
+    name="con.addP.k2"
+    valueReference="154"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "92" -->
+  <ScalarVariable
+    name="con.addPID.k1"
+    valueReference="155"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "93" -->
+  <ScalarVariable
+    name="con.addPID.k2"
+    valueReference="156"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "94" -->
+  <ScalarVariable
+    name="con.addPID.k3"
+    valueReference="157"
+    description="Gain of input signal 3"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "95" -->
+  <ScalarVariable
+    name="con.addSat.k1"
+    valueReference="158"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "96" -->
+  <ScalarVariable
+    name="con.addSat.k2"
+    valueReference="159"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "97" -->
+  <ScalarVariable
+    name="con.gainPID.k"
+    valueReference="160"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "98" -->
+  <ScalarVariable
+    name="con.gainTrack.k"
+    valueReference="161"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "99" -->
+  <ScalarVariable
+    name="con.k"
+    valueReference="162"
+    description="Gain of controller"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "100" -->
+  <ScalarVariable
+    name="con.kFF"
+    valueReference="163"
+    description="Gain of feed-forward input"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "101" -->
+  <ScalarVariable
+    name="con.limiter.uMax"
+    valueReference="164"
+    description="Upper limits of input signals"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "102" -->
+  <ScalarVariable
+    name="con.limiter.uMin"
+    valueReference="165"
+    description="Lower limits of input signals"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "103" -->
+  <ScalarVariable
+    name="con.wd"
+    valueReference="166"
+    description="Set-point weight for Derivative block (0..1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "104" -->
+  <ScalarVariable
+    name="con.wp"
+    valueReference="167"
+    description="Set-point weight for Proportional block (0..1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "105" -->
+  <ScalarVariable
+    name="con.xd_start"
+    valueReference="168"
+    description="Initial or guess value for state of derivative block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "106" -->
+  <ScalarVariable
+    name="con.xi_start"
+    valueReference="169"
+    description="Initial or guess value for integrator output (= integrator state)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "107" -->
+  <ScalarVariable
+    name="con.yMax"
+    valueReference="170"
+    description="Upper limit of output"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "108" -->
+  <ScalarVariable
+    name="con.yMin"
+    valueReference="171"
+    description="Lower limit of output"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "109" -->
+  <ScalarVariable
+    name="con.y_start"
+    valueReference="172"
+    description="Initial value of output"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "110" -->
+  <ScalarVariable
+    name="eff.k"
+    valueReference="173"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "111" -->
+  <ScalarVariable
+    name="minSpe"
+    valueReference="174"
+    description="Minimum fan speed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "112" -->
+  <ScalarVariable
+    name="occEnd"
+    valueReference="175"
+    description="Occupancy end time"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "113" -->
+  <ScalarVariable
+    name="occSta"
+    valueReference="176"
+    description="Occupancy start time"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "114" -->
+  <ScalarVariable
+    name="preHeat.T_ref"
+    valueReference="177"
+    description="Reference temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "115" -->
+  <ScalarVariable
+    name="preHeat.alpha"
+    valueReference="178"
+    description="Temperature coefficient of heat flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "116" -->
+  <ScalarVariable
+    name="preSol.T_ref"
+    valueReference="179"
+    description="Reference temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "117" -->
+  <ScalarVariable
+    name="preSol.alpha"
+    valueReference="180"
+    description="Temperature coefficient of heat flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "118" -->
+  <ScalarVariable
+    name="weaBus.alt"
+    valueReference="181"
+    description="virtual variable in expandable connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "119" -->
+  <ScalarVariable
+    name="weaBus.lat"
+    valueReference="182"
+    description="virtual variable in expandable connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "120" -->
+  <ScalarVariable
+    name="weaBus.lon"
+    valueReference="183"
+    description="virtual variable in expandable connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "121" -->
+  <ScalarVariable
+    name="weaDat.HInfHor"
+    valueReference="184"
+    description="Infrared horizontal radiation (used if HInfHorSou=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "122" -->
+  <ScalarVariable
+    name="weaDat.TBlaSky"
+    valueReference="185"
+    description="Black-body sky temperature (used if TBlaSkySou=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "123" -->
+  <ScalarVariable
+    name="weaDat.TDewPoi"
+    valueReference="187"
+    description="Dew point temperature (used if TDewPoi=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "124" -->
+  <ScalarVariable
+    name="weaDat.TDryBul"
+    valueReference="189"
+    description="Dry bulb temperature (used if TDryBul=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "125" -->
+  <ScalarVariable
+    name="weaDat.alt"
+    valueReference="193"
+    description="Location altitude above sea level"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "126" -->
+  <ScalarVariable
+    name="weaDat.ceiHei"
+    valueReference="196"
+    description="Ceiling height (used if ceiHei=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m"/>
+  </ScalarVariable>
+  <!-- Index of variable = "127" -->
+  <ScalarVariable
+    name="weaDat.lat"
+    valueReference="219"
+    description="Latitude"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "128" -->
+  <ScalarVariable
+    name="weaDat.lon"
+    valueReference="225"
+    description="Longitude"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "129" -->
+  <ScalarVariable
+    name="weaDat.opaSkyCov"
+    valueReference="228"
+    description="Opaque sky cover (used if opaSkyCov=Parameter). Use 0 &lt;= opaSkyCov &lt;= 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "130" -->
+  <ScalarVariable
+    name="weaDat.pAtm"
+    valueReference="230"
+    description="Atmospheric pressure (used if pAtmSou=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "131" -->
+  <ScalarVariable
+    name="weaDat.relHum"
+    valueReference="232"
+    description="Relative humidity (used if relHum=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "132" -->
+  <ScalarVariable
+    name="weaDat.timZon"
+    valueReference="234"
+    description="Time zone"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "133" -->
+  <ScalarVariable
+    name="weaDat.totSkyCov"
+    valueReference="237"
+    description="Total sky cover (used if totSkyCov=Parameter). Use 0 &lt;= totSkyCov &lt;= 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "134" -->
+  <ScalarVariable
+    name="weaDat.weaBus.alt"
+    valueReference="239"
+    description="virtual variable in expandable connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "135" -->
+  <ScalarVariable
+    name="weaDat.weaBus.lat"
+    valueReference="240"
+    description="virtual variable in expandable connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "136" -->
+  <ScalarVariable
+    name="weaDat.weaBus.lon"
+    valueReference="241"
+    description="virtual variable in expandable connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "137" -->
+  <ScalarVariable
+    name="weaDat.winDir"
+    valueReference="242"
+    description="Wind direction (used if winDir=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rad"/>
+  </ScalarVariable>
+  <!-- Index of variable = "138" -->
+  <ScalarVariable
+    name="weaDat.winSpe"
+    valueReference="244"
+    description="Wind speed (used if winSpe=Parameter)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="m/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "139" -->
+  <ScalarVariable
+    name="Aw.u"
+    valueReference="46"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "140" -->
+  <ScalarVariable
+    name="Aw.y"
+    valueReference="42"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "141" -->
+  <ScalarVariable
+    name="Ce.port.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "142" -->
+  <ScalarVariable
+    name="Ci.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "143" -->
+  <ScalarVariable
+    name="PHea.u"
+    valueReference="21"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "144" -->
+  <ScalarVariable
+    name="Rea.port_a.Q_flow"
+    valueReference="22"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "145" -->
+  <ScalarVariable
+    name="Rea.port_a.T"
+    valueReference="50"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "146" -->
+  <ScalarVariable
+    name="Rea.port_b.Q_flow"
+    valueReference="254"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "147" -->
+  <ScalarVariable
+    name="Rea.port_b.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "148" -->
+  <ScalarVariable
+    name="Ria.port_a.Q_flow"
+    valueReference="24"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "149" -->
+  <ScalarVariable
+    name="Ria.port_a.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "150" -->
+  <ScalarVariable
+    name="Ria.port_b.Q_flow"
+    valueReference="258"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "151" -->
+  <ScalarVariable
+    name="Ria.port_b.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "152" -->
+  <ScalarVariable
+    name="TRooAir.u"
+    valueReference="1"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "153" -->
+  <ScalarVariable
+    name="TRooAir.y"
+    valueReference="1"
+    description="Connector of Real output signal"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "154" -->
+  <ScalarVariable
+    name="abs.u"
+    valueReference="38"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "155" -->
+  <ScalarVariable
+    name="abs.y"
+    valueReference="21"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "156" -->
+  <ScalarVariable
+    name="con.I.u"
+    valueReference="32"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "157" -->
+  <ScalarVariable
+    name="con.P.u"
+    valueReference="35"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "158" -->
+  <ScalarVariable
+    name="con.addFF.u1"
+    valueReference="37"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "159" -->
+  <ScalarVariable
+    name="con.addFF.u2"
+    valueReference="29"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "160" -->
+  <ScalarVariable
+    name="con.addFF.y"
+    valueReference="37"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "161" -->
+  <ScalarVariable
+    name="con.addI.u1"
+    valueReference="27"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "162" -->
+  <ScalarVariable
+    name="con.addI.u2"
+    valueReference="1"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "163" -->
+  <ScalarVariable
+    name="con.addI.u3"
+    valueReference="36"
+    description="Connector of Real input signal 3"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "164" -->
+  <ScalarVariable
+    name="con.addP.u1"
+    valueReference="27"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "165" -->
+  <ScalarVariable
+    name="con.addP.u2"
+    valueReference="1"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "166" -->
+  <ScalarVariable
+    name="con.addP.y"
+    valueReference="35"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "167" -->
+  <ScalarVariable
+    name="con.addPID.u1"
+    valueReference="35"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "168" -->
+  <ScalarVariable
+    name="con.addPID.u2"
+    valueReference="28"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "169" -->
+  <ScalarVariable
+    name="con.addPID.u3"
+    valueReference="2"
+    description="Connector of Real input signal 3"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "170" -->
+  <ScalarVariable
+    name="con.addSat.u1"
+    valueReference="41"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "171" -->
+  <ScalarVariable
+    name="con.addSat.u2"
+    valueReference="37"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "172" -->
+  <ScalarVariable
+    name="con.gainPID.u"
+    valueReference="33"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "173" -->
+  <ScalarVariable
+    name="con.gainPID.y"
+    valueReference="37"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "174" -->
+  <ScalarVariable
+    name="con.gainTrack.u"
+    valueReference="34"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "175" -->
+  <ScalarVariable
+    name="con.limiter.y"
+    valueReference="41"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "176" -->
+  <ScalarVariable
+    name="con.u_m"
+    valueReference="1"
+    description="Connector of measurement input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "177" -->
+  <ScalarVariable
+    name="con.u_s"
+    valueReference="27"
+    description="Connector of setpoint input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "178" -->
+  <ScalarVariable
+    name="con.y"
+    valueReference="41"
+    description="Connector of actuator output signal"
+    >
+    <Real min="-10000.0" max="10000.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "179" -->
+  <ScalarVariable
+    name="eff.u"
+    valueReference="41"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "180" -->
+  <ScalarVariable
+    name="oveAct.swi.u1"
+    valueReference="39"
+    description="Connector of first Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "181" -->
+  <ScalarVariable
+    name="oveAct.swi.u3"
+    valueReference="41"
+    description="Connector of second Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "182" -->
+  <ScalarVariable
+    name="oveAct.swi.y"
+    valueReference="41"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "183" -->
+  <ScalarVariable
+    name="oveAct.u"
+    valueReference="41"
+    description="Connector of Real input signal"
+    >
+    <Real min="-10000.0" max="10000.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "184" -->
+  <ScalarVariable
+    name="oveAct.y"
+    valueReference="41"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "185" -->
+  <ScalarVariable
+    name="oveTset.swi.u1"
+    valueReference="40"
+    description="Connector of first Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "186" -->
+  <ScalarVariable
+    name="oveTset.swi.u3"
+    valueReference="27"
+    description="Connector of second Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "187" -->
+  <ScalarVariable
+    name="oveTset.swi.y"
+    valueReference="27"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "188" -->
+  <ScalarVariable
+    name="oveTset.u"
+    valueReference="27"
+    description="Connector of Real input signal"
+    >
+    <Real min="288.15" max="313.15" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "189" -->
+  <ScalarVariable
+    name="oveTset.y"
+    valueReference="27"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "190" -->
+  <ScalarVariable
+    name="preHeat.port.Q_flow"
+    valueReference="299"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "191" -->
+  <ScalarVariable
+    name="preHeat.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "192" -->
+  <ScalarVariable
+    name="preSol.port.Q_flow"
+    valueReference="301"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "193" -->
+  <ScalarVariable
+    name="preSol.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "194" -->
+  <ScalarVariable
+    name="preTOut.T"
+    valueReference="50"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "195" -->
+  <ScalarVariable
+    name="preTOut.port.Q_flow"
+    valueReference="304"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "196" -->
+  <ScalarVariable
+    name="preTOut.port.T"
+    valueReference="50"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "197" -->
+  <ScalarVariable
+    name="senTZone.T"
+    valueReference="1"
+    description="Absolute temperature as output signal"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "198" -->
+  <ScalarVariable
+    name="senTZone.port.T"
+    valueReference="1"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "199" -->
+  <ScalarVariable
+    name="weaBus.pAtm"
+    valueReference="104"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "200" -->
+  <ScalarVariable
+    name="weaDat.weaBus.HDifHor"
+    valueReference="44"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "201" -->
+  <ScalarVariable
+    name="weaDat.weaBus.HDirNor"
+    valueReference="45"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "202" -->
+  <ScalarVariable
+    name="weaDat.weaBus.HGloHor"
+    valueReference="46"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "203" -->
+  <ScalarVariable
+    name="weaDat.weaBus.HHorIR"
+    valueReference="47"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "204" -->
+  <ScalarVariable
+    name="weaDat.weaBus.TBlaSky"
+    valueReference="48"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "205" -->
+  <ScalarVariable
+    name="weaDat.weaBus.TDewPoi"
+    valueReference="49"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "206" -->
+  <ScalarVariable
+    name="weaDat.weaBus.TDryBul"
+    valueReference="50"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "207" -->
+  <ScalarVariable
+    name="weaDat.weaBus.ceiHei"
+    valueReference="51"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "208" -->
+  <ScalarVariable
+    name="weaDat.weaBus.cloTim"
+    valueReference="52"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "209" -->
+  <ScalarVariable
+    name="weaDat.weaBus.nOpa"
+    valueReference="53"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "210" -->
+  <ScalarVariable
+    name="weaDat.weaBus.nTot"
+    valueReference="54"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "211" -->
+  <ScalarVariable
+    name="weaDat.weaBus.pAtm"
+    valueReference="104"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "212" -->
+  <ScalarVariable
+    name="weaDat.weaBus.relHum"
+    valueReference="55"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "213" -->
+  <ScalarVariable
+    name="weaDat.weaBus.solAlt"
+    valueReference="56"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "214" -->
+  <ScalarVariable
+    name="weaDat.weaBus.solDec"
+    valueReference="57"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "215" -->
+  <ScalarVariable
+    name="weaDat.weaBus.solHouAng"
+    valueReference="58"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "216" -->
+  <ScalarVariable
+    name="weaDat.weaBus.solTim"
+    valueReference="59"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "217" -->
+  <ScalarVariable
+    name="weaDat.weaBus.solZen"
+    valueReference="60"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "218" -->
+  <ScalarVariable
+    name="weaDat.weaBus.winDir"
+    valueReference="61"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "219" -->
+  <ScalarVariable
+    name="weaDat.weaBus.winSpe"
+    valueReference="62"
+    description="virtual variable in expandable connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "220" -->
+  <ScalarVariable
+    name="PHea.KPIs"
+    valueReference="0"
+    description="Tag with the type of signal for the calculation of the KPIs"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.Utilities.IO.SignalExchange.SignalTypes.SignalsForKPIs"/>
+  </ScalarVariable>
+  <!-- Index of variable = "221" -->
+  <ScalarVariable
+    name="TRooAir.KPIs"
+    valueReference="1"
+    description="Tag with the type of signal for the calculation of the KPIs"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.Utilities.IO.SignalExchange.SignalTypes.SignalsForKPIs"/>
+  </ScalarVariable>
+  <!-- Index of variable = "222" -->
+  <ScalarVariable
+    name="TSetHea.columns[1]"
+    valueReference="2"
+    description="Columns of table to be interpolated"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "223" -->
+  <ScalarVariable
+    name="TSetHea.extrapolation"
+    valueReference="3"
+    description="Extrapolation of data outside the definition range"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Extrapolation"/>
+  </ScalarVariable>
+  <!-- Index of variable = "224" -->
+  <ScalarVariable
+    name="TSetHea.nout"
+    valueReference="4"
+    description="Number of outputs"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "225" -->
+  <ScalarVariable
+    name="TSetHea.smoothness"
+    valueReference="5"
+    description="Smoothness of table interpolation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Smoothness"/>
+  </ScalarVariable>
+  <!-- Index of variable = "226" -->
+  <ScalarVariable
+    name="TSetHea.timeEvents"
+    valueReference="6"
+    description="Time event handling of table interpolation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.TimeEvents"/>
+  </ScalarVariable>
+  <!-- Index of variable = "227" -->
+  <ScalarVariable
+    name="con.I.initType"
+    valueReference="7"
+    description="Type of initialization (1: no init, 2: steady state, 3,4: initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "228" -->
+  <ScalarVariable
+    name="con.controllerType"
+    valueReference="8"
+    description="Type of controller"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.SimpleController"/>
+  </ScalarVariable>
+  <!-- Index of variable = "229" -->
+  <ScalarVariable
+    name="con.homotopyType"
+    valueReference="9"
+    description="Simplified model for homotopy-based initialization"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.LimiterHomotopy"/>
+  </ScalarVariable>
+  <!-- Index of variable = "230" -->
+  <ScalarVariable
+    name="con.initType"
+    valueReference="10"
+    description="Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "231" -->
+  <ScalarVariable
+    name="con.limiter.homotopyType"
+    valueReference="11"
+    description="Simplified model for homotopy-based initialization"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.LimiterHomotopy"/>
+  </ScalarVariable>
+  <!-- Index of variable = "232" -->
+  <ScalarVariable
+    name="weaDat.HInfHorSou"
+    valueReference="12"
+    description="Infrared horizontal radiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "233" -->
+  <ScalarVariable
+    name="weaDat.HSou"
+    valueReference="13"
+    description="Global, diffuse, and direct normal radiation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.RadiationDataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "234" -->
+  <ScalarVariable
+    name="weaDat.TBlaSkySou"
+    valueReference="16"
+    description="Black-body sky temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "235" -->
+  <ScalarVariable
+    name="weaDat.TDewPoiSou"
+    valueReference="18"
+    description="Dew point temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "236" -->
+  <ScalarVariable
+    name="weaDat.TDryBulSou"
+    valueReference="20"
+    description="Dry bulb temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "237" -->
+  <ScalarVariable
+    name="weaDat.calTSky"
+    valueReference="21"
+    description="Model choice for black-body sky temperature calculation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.SkyTemperatureCalculation"/>
+  </ScalarVariable>
+  <!-- Index of variable = "238" -->
+  <ScalarVariable
+    name="weaDat.ceiHeiSou"
+    valueReference="23"
+    description="Ceiling height"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "239" -->
+  <ScalarVariable
+    name="weaDat.opaSkyCovSou"
+    valueReference="61"
+    description="Opaque sky cover"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "240" -->
+  <ScalarVariable
+    name="weaDat.pAtmSou"
+    valueReference="63"
+    description="Atmospheric pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "241" -->
+  <ScalarVariable
+    name="weaDat.relHumSou"
+    valueReference="65"
+    description="Relative humidity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "242" -->
+  <ScalarVariable
+    name="weaDat.totSkyCovSou"
+    valueReference="68"
+    description="Total sky cover"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "243" -->
+  <ScalarVariable
+    name="weaDat.winDirSou"
+    valueReference="70"
+    description="Wind direction"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "244" -->
+  <ScalarVariable
+    name="weaDat.winSpeSou"
+    valueReference="72"
+    description="Wind speed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.BoundaryConditions.Types.DataSource"/>
+  </ScalarVariable>
+  <!-- Index of variable = "245" -->
+  <ScalarVariable
+    name="oveAct.activate.y"
+    valueReference="4"
+    description="Value of Boolean output"
+    variability="discrete"
+    initial="exact">
+    <Boolean start="false"/>
+  </ScalarVariable>
+  <!-- Index of variable = "246" -->
+  <ScalarVariable
+    name="oveTset.activate.y"
+    valueReference="5"
+    description="Value of Boolean output"
+    variability="discrete"
+    initial="exact">
+    <Boolean start="false"/>
+  </ScalarVariable>
+  <!-- Index of variable = "247" -->
+  <ScalarVariable
+    name="PHea.boptestRead"
+    valueReference="6"
+    description="Parameter that is used by tools to search for read block in models"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "248" -->
+  <ScalarVariable
+    name="TRooAir.boptestRead"
+    valueReference="7"
+    description="Parameter that is used by tools to search for read block in models"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "249" -->
+  <ScalarVariable
+    name="TSetHea.tableOnFile"
+    valueReference="8"
+    description="= true, if table is defined on file or in function usertab"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "250" -->
+  <ScalarVariable
+    name="TSetHea.verboseExtrapolation"
+    valueReference="9"
+    description="= true, if warning messages are to be printed if time is outside the table definition range"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "251" -->
+  <ScalarVariable
+    name="TSetHea.verboseRead"
+    valueReference="10"
+    description="= true, if info message that file is loading is to be printed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "252" -->
+  <ScalarVariable
+    name="abs.generateEvent"
+    valueReference="11"
+    description="Choose whether events shall be generated"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "253" -->
+  <ScalarVariable
+    name="con.I.use_reset"
+    valueReference="12"
+    description="= true, if reset port enabled"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "254" -->
+  <ScalarVariable
+    name="con.I.use_set"
+    valueReference="13"
+    description="= true, if set port enabled and used as reinitialization value when reset"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "255" -->
+  <ScalarVariable
+    name="con.limiter.strict"
+    valueReference="14"
+    description="= true, if strict limits with noEvent(..)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "256" -->
+  <ScalarVariable
+    name="con.strict"
+    valueReference="15"
+    description="= true, if strict limits with noEvent(..)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "257" -->
+  <ScalarVariable
+    name="con.withFeedForward"
+    valueReference="16"
+    description="Use feed-forward input?"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "258" -->
+  <ScalarVariable
+    name="oveAct.boptestOverwrite"
+    valueReference="19"
+    description="Parameter that is used by tools to search for overwrite block in models"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "259" -->
+  <ScalarVariable
+    name="oveTset.boptestOverwrite"
+    valueReference="20"
+    description="Parameter that is used by tools to search for overwrite block in models"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "260" -->
+  <ScalarVariable
+    name="weaDat.computeWetBulbTemperature"
+    valueReference="21"
+    description="If true, then this model computes the wet bulb temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "261" -->
+  <ScalarVariable
+    name="oveAct.swi.u2"
+    valueReference="4"
+    description="Connector of Boolean input signal"
+    variability="discrete"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "262" -->
+  <ScalarVariable
+    name="oveTset.swi.u2"
+    valueReference="5"
+    description="Connector of Boolean input signal"
+    variability="discrete"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "263" -->
+  <ScalarVariable
+    name="PHea.description"
+    valueReference="0"
+    description="Description of the signal being read"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  <!-- Index of variable = "264" -->
+  <ScalarVariable
+    name="TRooAir.description"
+    valueReference="1"
+    description="Description of the signal being read"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  <!-- Index of variable = "265" -->
+  <ScalarVariable
+    name="TRooAir.zone"
+    valueReference="2"
+    description="Zone designation, required if KPIs is AirZoneTemperature, &#10;    RadiativeZoneTemperature, OperativeZoneTemperature, RelativeHumidity, &#10;    or CO2Concentration"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  <!-- Index of variable = "266" -->
+  <ScalarVariable
+    name="TSetHea.fileName"
+    valueReference="3"
+    description="File where matrix is stored"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  <!-- Index of variable = "267" -->
+  <ScalarVariable
+    name="TSetHea.tableName"
+    valueReference="4"
+    description="Table name on file or in function usertab (see docu)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  <!-- Index of variable = "268" -->
+  <ScalarVariable
+    name="oveAct.description"
+    valueReference="5"
+    description="Description of the signal being overwritten"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  <!-- Index of variable = "269" -->
+  <ScalarVariable
+    name="oveTset.description"
+    valueReference="6"
+    description="Description of the signal being overwritten"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  <!-- Index of variable = "270" -->
+  <ScalarVariable
+    name="weaDat.filNam"
+    valueReference="11"
+    description="Name of weather data file"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <String/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Derivatives>
+      <Unknown index="4" dependencies="1 2" dependenciesKind="dependent dependent" />
+      <Unknown index="5" dependencies="1 2 3" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="6" dependencies="2 3" dependenciesKind="dependent dependent" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown index="3" dependencies="" dependenciesKind="" />
+      <Unknown index="4" dependencies="1 2" dependenciesKind="dependent dependent" />
+      <Unknown index="5" dependencies="1 2" dependenciesKind="dependent dependent" />
+      <Unknown index="6" dependencies="2" dependenciesKind="dependent" />
+      <Unknown index="51" dependencies="" dependenciesKind="" />
+      <Unknown index="52" dependencies="" dependenciesKind="" />
+      <Unknown index="53" dependencies="" dependenciesKind="" />
+      <Unknown index="54" dependencies="" dependenciesKind="" />
+      <Unknown index="55" dependencies="" dependenciesKind="" />
+      <Unknown index="56" dependencies="" dependenciesKind="" />
+      <Unknown index="57" dependencies="" dependenciesKind="" />
+      <Unknown index="58" dependencies="" dependenciesKind="" />
+      <Unknown index="59" dependencies="" dependenciesKind="" />
+      <Unknown index="60" dependencies="" dependenciesKind="" />
+      <Unknown index="61" dependencies="" dependenciesKind="" />
+      <Unknown index="62" dependencies="" dependenciesKind="" />
+      <Unknown index="63" dependencies="" dependenciesKind="" />
+      <Unknown index="64" dependencies="" dependenciesKind="" />
+      <Unknown index="65" dependencies="" dependenciesKind="" />
+      <Unknown index="66" dependencies="" dependenciesKind="" />
+      <Unknown index="67" dependencies="" dependenciesKind="" />
+      <Unknown index="68" dependencies="" dependenciesKind="" />
+      <Unknown index="69" dependencies="" dependenciesKind="" />
+      <Unknown index="70" dependencies="" dependenciesKind="" />
+      <Unknown index="71" dependencies="" dependenciesKind="" />
+      <Unknown index="72" dependencies="" dependenciesKind="" />
+      <Unknown index="73" dependencies="" dependenciesKind="" />
+      <Unknown index="74" dependencies="" dependenciesKind="" />
+      <Unknown index="75" dependencies="" dependenciesKind="" />
+      <Unknown index="76" dependencies="" dependenciesKind="" />
+      <Unknown index="77" dependencies="" dependenciesKind="" />
+      <Unknown index="78" dependencies="" dependenciesKind="" />
+      <Unknown index="79" dependencies="" dependenciesKind="" />
+      <Unknown index="80" dependencies="" dependenciesKind="" />
+      <Unknown index="81" dependencies="" dependenciesKind="" />
+      <Unknown index="82" dependencies="" dependenciesKind="" />
+      <Unknown index="83" dependencies="" dependenciesKind="" />
+      <Unknown index="84" dependencies="" dependenciesKind="" />
+      <Unknown index="85" dependencies="" dependenciesKind="" />
+      <Unknown index="86" dependencies="" dependenciesKind="" />
+      <Unknown index="87" dependencies="" dependenciesKind="" />
+      <Unknown index="88" dependencies="" dependenciesKind="" />
+      <Unknown index="89" dependencies="" dependenciesKind="" />
+      <Unknown index="90" dependencies="" dependenciesKind="" />
+      <Unknown index="91" dependencies="" dependenciesKind="" />
+      <Unknown index="92" dependencies="" dependenciesKind="" />
+      <Unknown index="93" dependencies="" dependenciesKind="" />
+      <Unknown index="94" dependencies="" dependenciesKind="" />
+      <Unknown index="95" dependencies="" dependenciesKind="" />
+      <Unknown index="96" dependencies="" dependenciesKind="" />
+      <Unknown index="97" dependencies="" dependenciesKind="" />
+      <Unknown index="98" dependencies="" dependenciesKind="" />
+      <Unknown index="99" dependencies="" dependenciesKind="" />
+      <Unknown index="100" dependencies="" dependenciesKind="" />
+      <Unknown index="101" dependencies="" dependenciesKind="" />
+      <Unknown index="102" dependencies="" dependenciesKind="" />
+      <Unknown index="103" dependencies="" dependenciesKind="" />
+      <Unknown index="104" dependencies="" dependenciesKind="" />
+      <Unknown index="105" dependencies="" dependenciesKind="" />
+      <Unknown index="106" dependencies="" dependenciesKind="" />
+      <Unknown index="107" dependencies="" dependenciesKind="" />
+      <Unknown index="108" dependencies="" dependenciesKind="" />
+      <Unknown index="109" dependencies="" dependenciesKind="" />
+      <Unknown index="110" dependencies="" dependenciesKind="" />
+      <Unknown index="111" dependencies="" dependenciesKind="" />
+      <Unknown index="112" dependencies="" dependenciesKind="" />
+      <Unknown index="113" dependencies="" dependenciesKind="" />
+      <Unknown index="114" dependencies="" dependenciesKind="" />
+      <Unknown index="115" dependencies="" dependenciesKind="" />
+      <Unknown index="116" dependencies="" dependenciesKind="" />
+      <Unknown index="117" dependencies="" dependenciesKind="" />
+      <Unknown index="118" dependencies="" dependenciesKind="" />
+      <Unknown index="119" dependencies="" dependenciesKind="" />
+      <Unknown index="120" dependencies="" dependenciesKind="" />
+      <Unknown index="121" dependencies="" dependenciesKind="" />
+      <Unknown index="122" dependencies="" dependenciesKind="" />
+      <Unknown index="123" dependencies="" dependenciesKind="" />
+      <Unknown index="124" dependencies="" dependenciesKind="" />
+      <Unknown index="125" dependencies="" dependenciesKind="" />
+      <Unknown index="126" dependencies="" dependenciesKind="" />
+      <Unknown index="127" dependencies="" dependenciesKind="" />
+      <Unknown index="128" dependencies="" dependenciesKind="" />
+      <Unknown index="129" dependencies="" dependenciesKind="" />
+      <Unknown index="130" dependencies="" dependenciesKind="" />
+      <Unknown index="131" dependencies="" dependenciesKind="" />
+      <Unknown index="132" dependencies="" dependenciesKind="" />
+      <Unknown index="133" dependencies="" dependenciesKind="" />
+      <Unknown index="134" dependencies="" dependenciesKind="" />
+      <Unknown index="135" dependencies="" dependenciesKind="" />
+      <Unknown index="136" dependencies="" dependenciesKind="" />
+      <Unknown index="137" dependencies="" dependenciesKind="" />
+      <Unknown index="138" dependencies="" dependenciesKind="" />
+      <Unknown index="220" dependencies="" dependenciesKind="" />
+      <Unknown index="221" dependencies="" dependenciesKind="" />
+      <Unknown index="222" dependencies="" dependenciesKind="" />
+      <Unknown index="223" dependencies="" dependenciesKind="" />
+      <Unknown index="224" dependencies="" dependenciesKind="" />
+      <Unknown index="225" dependencies="" dependenciesKind="" />
+      <Unknown index="226" dependencies="" dependenciesKind="" />
+      <Unknown index="227" dependencies="" dependenciesKind="" />
+      <Unknown index="228" dependencies="" dependenciesKind="" />
+      <Unknown index="229" dependencies="" dependenciesKind="" />
+      <Unknown index="230" dependencies="" dependenciesKind="" />
+      <Unknown index="231" dependencies="" dependenciesKind="" />
+      <Unknown index="232" dependencies="" dependenciesKind="" />
+      <Unknown index="233" dependencies="" dependenciesKind="" />
+      <Unknown index="234" dependencies="" dependenciesKind="" />
+      <Unknown index="235" dependencies="" dependenciesKind="" />
+      <Unknown index="236" dependencies="" dependenciesKind="" />
+      <Unknown index="237" dependencies="" dependenciesKind="" />
+      <Unknown index="238" dependencies="" dependenciesKind="" />
+      <Unknown index="239" dependencies="" dependenciesKind="" />
+      <Unknown index="240" dependencies="" dependenciesKind="" />
+      <Unknown index="241" dependencies="" dependenciesKind="" />
+      <Unknown index="242" dependencies="" dependenciesKind="" />
+      <Unknown index="243" dependencies="" dependenciesKind="" />
+      <Unknown index="244" dependencies="" dependenciesKind="" />
+      <Unknown index="247" dependencies="" dependenciesKind="" />
+      <Unknown index="248" dependencies="" dependenciesKind="" />
+      <Unknown index="249" dependencies="" dependenciesKind="" />
+      <Unknown index="250" dependencies="" dependenciesKind="" />
+      <Unknown index="251" dependencies="" dependenciesKind="" />
+      <Unknown index="252" dependencies="" dependenciesKind="" />
+      <Unknown index="253" dependencies="" dependenciesKind="" />
+      <Unknown index="254" dependencies="" dependenciesKind="" />
+      <Unknown index="255" dependencies="" dependenciesKind="" />
+      <Unknown index="256" dependencies="" dependenciesKind="" />
+      <Unknown index="257" dependencies="" dependenciesKind="" />
+      <Unknown index="258" dependencies="" dependenciesKind="" />
+      <Unknown index="259" dependencies="" dependenciesKind="" />
+      <Unknown index="260" dependencies="" dependenciesKind="" />
+      <Unknown index="263" dependencies="" dependenciesKind="" />
+      <Unknown index="264" dependencies="" dependenciesKind="" />
+      <Unknown index="265" dependencies="" dependenciesKind="" />
+      <Unknown index="266" dependencies="" dependenciesKind="" />
+      <Unknown index="267" dependencies="" dependenciesKind="" />
+      <Unknown index="268" dependencies="" dependenciesKind="" />
+      <Unknown index="269" dependencies="" dependenciesKind="" />
+      <Unknown index="270" dependencies="" dependenciesKind="" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

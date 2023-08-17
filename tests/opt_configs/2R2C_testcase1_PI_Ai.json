@@ -19,7 +19,6 @@
             "ki"
         ],
         "u": [
-            "phi_h",
             "Tset"
         ],
         "x": [
@@ -39,7 +38,7 @@
     "method": "multiple_shooting",
     "integrator": 
     {
-        "name": "IRK",
+        "name": "RK4",
         "method": "legendre",
         "degree": 3,
         "n_steps": 1
