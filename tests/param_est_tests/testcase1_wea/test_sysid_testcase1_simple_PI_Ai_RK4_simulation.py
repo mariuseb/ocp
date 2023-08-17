@@ -25,13 +25,15 @@ from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 if __name__ == "__main__":
     
     bop_config_base = get_boptest_config_path()
-    opt_config_base = get_opt_config_path()
-    data_path = get_data_path()
+    #opt_config_base = get_opt_config_path()
+    opt_config_base = "configs"
+    prbs_path = get_data_path()
+    data_path = "data"
     
     cfg_path = os.path.join(opt_config_base, "2R2C_testcase1_PI_Ai_Cvodes.json")
     #cfg_path = os.path.join(opt_config_base, "2R2C_testcase1_PI_.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    prbs_path = os.path.join(data_path, "inputPRBS1.csv")
+    prbs_path = os.path.join(prbs_path, "inputPRBS1.csv")
 
     boptest = Boptest(
                       boptest_cfg,
@@ -41,7 +43,7 @@ if __name__ == "__main__":
     GENERATE_DATA = False
     PLOT_DATA = False
     sampling_freq = "900s"
-    data_path = os.path.join(get_data_path(), "data_testcase1_wea_P.csv")
+    data_path = os.path.join(data_path, "data_testcase1_wea_PI.csv")
     repeats = 1
     N = 6*24*4*repeats - 24*repeats
     
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     #param_guess = ca.DM([0.01,0.01,1E6,5E6,2000/4.66])
     #param_guess = ca.DM([0.01,0.01,1E6,5E6,5])
     #param_guess = ca.DM([0.01,0.01,1E6,5E6,0])
-    param_guess = ca.DM([0.01,0.01,1E6,5E6,0,100,(1/3)])
+    param_guess = ca.DM([0.01,0.01,1E6,5E6,5,100,(1/3)])
     lbp = param_guess*0.7
     ubp = param_guess*1.3
     #lbp = param_guess*0.99
@@ -193,7 +195,7 @@ if __name__ == "__main__":
     """
     #dae = ca.DaeBuilder('Simple2R2C', 'Simple2R2C_PI_OM_inputs/Simple2R2C_PI_OM_inputs.fmutmp')
     #dae = ca.DaeBuilder('Simple2R2C', 'Simple2R2C/Simple2R2C.fmutmp')
-    dae = ca.DaeBuilder('Simple2R2C_SimplePI', 'Simple2R2C_SimplePI/Simple2R2C_SimplePI.fmutmp')
+    dae = ca.DaeBuilder('Simple2R2C_SimplePI', 'FMUs/Simple2R2C_SimplePI/Simple2R2C_SimplePI.fmutmp')
     #dae = ca.DaeBuilder('Simple2R2C', 'Simple2R2C_PI')
     dae.disp(True)
     #ode = dae.create('f', ['x','u','p'], ['ode'], {"verbose": True})
@@ -370,83 +372,4 @@ if __name__ == "__main__":
     residuals = pd.DataFrame(data=[cross, FMU, Cvode, Cvode_FMU_res], index=["cross","FMU","Cvode","Cvode_FMU"]).T
     residuals.plot()
     plt.show()
-    
-    with ParameterEstimation(config=cfg_path,
-                             functions=functions,
-                             N=N,
-                             dt=dt,
-                             param_guess=param_guess, 
-                             **kwargs) as param_est:
-   
-        #Q = ca.DM.eye(3)
-        Q = ca.DM.eye(2)
-        #R = ca.DM.eye(2)
-        #R = ca.DM.eye(2)
-        #R = ca.DM.eye(2)
-        R = ca.DM.eye(1)
-        #R = ca.DM.eye(1)
-        #R[1,1] = 1E-5
-        #R[1,1] = 1E-12
-
-        v_inds = param_est.nlp_parser["v"]["range"]
-        v1 = param_est.nlp["x"][v_inds["a"]:v_inds["b"]:param_est.dae.n_y]
-        v2 = param_est.nlp["x"][(v_inds["a"]+1):v_inds["b"]:param_est.dae.n_y]
-        #v3 = param_est.nlp["x"][(v_inds["a"]+2):v_inds["b"]:param_est.dae.n_y]
-        # what to do with this? 
-        #eta = param_est.dae.dae.var("eta")
-        #v2 = v2/eta
-        #param_est.nlp["f"] = 0.5*ca.dot(v1, v1) + 1E-8*ca.dot(v2, v2)
-        #param_est.nlp["f"] = 0.5*ca.dot(v1, v1) + 1E-12*ca.dot(v2, v2)
-        #param_est.nlp["f"] = 0.5*ca.dot(v1, v1) + 1E-6*ca.dot(v2,v2)
-        #param_est.nlp["f"] = 0.5*ca.dot(v1, v1) + 1E-16*ca.dot(v2,v2)
-        #param_est.nlp["f"] = 0.5*ca.dot(v1, v1) + 1E-8*ca.dot(v2, v2)
-        #u_active = y_data["phi_h"].astype(bool).astype(int).values
-        #v2 = v2*u_active
-        param_est.nlp["f"] = 0.5*ca.dot(v1, v1) # + 1E-6*ca.dot(v2, v2) # + 1E-12*ca.dot(v3, v3)
-        #param_est.res = ca.vertcat(v1,v2)
-        
-        sol, params = param_est.solve(
-                                      y_data,
-                                      param_guess,
-                                      lbp=lbp,
-                                      ubp=ubp,
-                                      #x_guess=x_guess,
-                                      covar=ca.veccat(Q, R)
-                                      )
-        
-        # Temperature
-        
-        fig, axes = plt.subplots(3,2)
-        
-        sol["Ti"].plot(color="r", ax=axes[0,0])
-        sol["y1"].plot(color="k", linestyle="dashed", ax=axes[0,0])
-        axes[0,0].legend(["Ti", "y1"], loc="upper left")
-        #ax1 = ax.twinx()
-        
-        #sol["phi_h"].plot(color="y", ax=axes[0,1])
-        #(sol["y2"] - sol["v2"]).plot(color="b", linestyle="dashed", ax=axes[0,1])
-        #sol["Tset"].plot(color="y", linestyle="dashed", ax=ax)
-        axes[0,1].legend(["phi_h", "kp*(Tset - Ti)"], loc="upper right")
-        #plt.show()
-        
-        # plot residuals:
-        sol["v1"].plot(ax=axes[1,0])
-        #sol["v2"].plot(ax=axes[1,1])
-        (sol["Tset"] - sol["Ti"]).plot(ax=axes[2,1])
-        #(sol["phi_h"]).plot(ax=axes[2,0], drawstyle="steps-post")
-
-        plt.show()
-        
-        
-        # Fan regulation:
-        # Tsup regulation:
-        # Heat
-        """
-        ax = sol["Ph"].plot(color="r")
-        Ph_inf = sol["v2"] - sol["y2"]*sol["eta"]
-        (-Ph_inf).plot(color="k", linestyle="dashed", ax=ax)
-        ax.legend()
-        plt.show()
-        """
-        
-    print(params)
+    print(residuals)

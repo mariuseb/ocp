@@ -25,13 +25,15 @@ from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 if __name__ == "__main__":
     
     bop_config_base = get_boptest_config_path()
-    opt_config_base = get_opt_config_path()
-    data_path = get_data_path()
+    #opt_config_base = get_opt_config_path()
+    opt_config_base = "configs"
+    prbs_path = get_data_path()
+    data_path = "data"
     
     cfg_path = os.path.join(opt_config_base, "2R2C_testcase1_PI_Ai_Cvodes.json")
     #cfg_path = os.path.join(opt_config_base, "2R2C_testcase1_PI_.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    prbs_path = os.path.join(data_path, "inputPRBS1.csv")
+    prbs_path = os.path.join(prbs_path, "inputPRBS1.csv")
 
     boptest = Boptest(
                       boptest_cfg,
@@ -41,7 +43,7 @@ if __name__ == "__main__":
     GENERATE_DATA = False
     PLOT_DATA = False
     sampling_freq = "900s"
-    data_path = os.path.join(get_data_path(), "data_testcase1_wea_P.csv")
+    data_path = os.path.join(data_path, "data_testcase1_wea_PI.csv")
     repeats = 1
     N = 6*24*4*repeats - 24*repeats
     
@@ -147,8 +149,8 @@ if __name__ == "__main__":
     # control action is zero:
     #y_data["Tset"].loc[(y_data["Ti"] > y_data["Tset"])] = y_data["Ti"]
     
-    to_zero_indices = [ndx for ndx in y_data.index if not y_data.loc[ndx, "phi_h"]]
-    y_data["Tset"].loc[to_zero_indices] = y_data["Ti"].loc[to_zero_indices]
+    #to_zero_indices = [ndx for ndx in y_data.index if not y_data.loc[ndx, "phi_h"]]
+    #"y_data["Tset"].loc[to_zero_indices] = y_data["Ti"].loc[to_zero_indices]
     
     #param_guess = ca.DM([0.01,0.01,1E6,6E5,2000])
     #param_guess = ca.DM([0.01,0.01,1E6,5E6,5,2000])

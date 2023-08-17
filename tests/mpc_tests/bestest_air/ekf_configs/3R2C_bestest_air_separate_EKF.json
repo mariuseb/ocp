@@ -1,0 +1,51 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + UA_is*u_fan*regNonZeroPower((Tsup - Ti), n, 0.05) + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ph": "UA_is*u_fan*regNonZeroPower((Tsup - Ti), n, 0.05) - Ph*eta"
+        },
+        "z": [
+            "Ph"
+        ],
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n",
+            "UA_is",
+            "eta"
+        ],
+        "u": [
+            "Tsup",
+            "u_fan"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "0"],
+            ["y3", "Ph"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1,1],
+    "R": [1,0,1]
+}
