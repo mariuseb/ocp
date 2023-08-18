@@ -950,8 +950,10 @@ class OCP(metaclass=ABCMeta):
                         #dim = self.nlp_parser[varname]["dim"]
                         dim = int(self.nlp_parser[varname]["dim"]/len(getattr(self.dae, varname)))
                         
-                        scale = np.tile(self.u_nom, dim)
-                        bias = np.tile(self.u_nom_b, dim)
+                        nom_name = varname + "_nom"
+                        bias_name = varname + "_nom_b"
+                        scale = np.tile(getattr(self, nom_name), dim)
+                        bias = np.tile(getattr(self, bias_name), dim)
                         
                         lb_vals = np.array(bounds_cfg[varname]["lb" + varname]*dim) - bias
                         #lb_vals /= scale

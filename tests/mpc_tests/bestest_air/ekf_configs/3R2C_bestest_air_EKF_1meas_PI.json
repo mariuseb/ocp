@@ -1,0 +1,53 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + u_fan*UA_is*(Tsup - Ti)/Ci + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "E": "Tset - Ti"
+        },
+        "alg":
+            {
+            "Tsup": "(kp*(Tset - Ti) + ki*E)*(313.15 - 294.15) + 294.15",
+            "u_fan": "(kp*(Tset - Ti) + ki*E)"
+        },
+        "z": [
+            "u_fan", 
+            "Tsup"
+        ],
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_is",
+            "kp",
+            "ki"
+        ],
+        "u": [
+            "Tset"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1,1],
+    "R": [1]
+}

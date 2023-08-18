@@ -1,0 +1,49 @@
+{
+    "model": {
+        "ode": {
+            "E": "Tset - Ti"
+        },
+        "alg": {
+            "_y": "_y - (kp*(Tset - Ti) + ki*E)"
+        },
+        "w": {
+            "v1": "y1 - _y"
+        },
+        "p": [
+            "kp",
+            "ki"
+        ],
+        "u": [
+            "Tset",
+            "Ti"
+        ],
+        "z": [
+            "_y"
+        ],
+        "x": [
+            "E"
+        ],
+    "y": [
+        ["y1", "_y"]
+    ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false,
+    "map_eval": false
+}

@@ -29,7 +29,7 @@ if __name__ == "__main__":
     data_path = get_data_path()
     
     #cfg_path = os.path.join(opt_config_base, "3R3C_bestest_air_ufan_1meas.json")
-    cfg_path = os.path.join(opt_config_base, "3R2C_bestest_air_ufan_1meas_PI.json")
+    cfg_path = os.path.join(opt_config_base, "3R2C_bestest_air_simple_double_PI.json")
     #cfg_path = os.path.join(opt_config_base, "3R2C_bestest_air_ufan_HVAC_env.json")
     #cfg_path = os.path.join(opt_config_base, "2R2C_air.json")
     #cfg_path = os.path.join(opt_config_base, "2R2C_air.json")
@@ -44,9 +44,9 @@ if __name__ == "__main__":
                       name="bestest_air"
                       )
 
-    GENERATE_DATA = False
+    GENERATE_DATA = True
     PLOT_DATA = False
-    data_path = os.path.join(get_data_path(), "data_bestest_air_simple_normal_op.csv")
+    data_path = os.path.join("data", "data_bestest_air_simple_normal_op.csv")
     
     if GENERATE_DATA:
         prbs = pd.read_csv(prbs_path, sep=";")

@@ -29,12 +29,12 @@ if __name__ == "__main__":
     opt_config_base = get_opt_config_path()
     
     #mpc_cfg = os.path.join(opt_config_base, "3R3C_bestest_air_MPC.json")
-    mpc_cfg = os.path.join(opt_config_base, "3R2C_bestest_air_MPC_1meas.json")
+    mpc_cfg = os.path.join("mpc_configs", "3R2C_bestest_air_MPC_1meas.json")
     #mpc_cfg = os.path.join(opt_config_base, "3R2C_bestest_air_MPC_2meas.json")
     #mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_idas.json")
     #mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_map_test.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join(opt_config_base, "3R2C_bestest_air_EKF_1meas.json")
+    ekf_cfg = os.path.join("ekf_configs", "3R2C_bestest_air_EKF_1meas.json")
     #ekf_cfg = os.path.join(opt_config_base, "3R2C_bestest_air_EKF_2meas.json")
 
     # pass in config?

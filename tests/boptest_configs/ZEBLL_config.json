@@ -137,17 +137,30 @@
       "misc": {
         "h": 900,
         "N": 96,
-        "start_time": 604800,
+        "start_time": 0,
         "warmup_period": 604800
       },
       "maps" : {
-        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "r" : {
+               "Ta": "TDryBul",
+               "phi_s":"HGloHor",
+               "Ti_ub": "UpperSetp[1]",
+               "Ti_lb": "LowerSetp[1]"
+        },
         "u" : {"Tsup": "fcu_oveTSup", "u_fan": "fcu_oveFan"},
-        "y": {"Ti": "zon_reaTRooAir_y"},
-        "boptest_to_ocp": {"Ti": "zon_reaTRooAir_y", "Tset": "con_oveTSetHea_u", "Ph": "fcu_reaPHea_y", "Tsup": "fcu_oveTSup_u", "u_fan": "fcu_oveFan_u"},
+        "y": {"Ti": "zon_reaTRooAir_y",
+              "Te": "zon_reaTEnv_y",
+              "_y": "con_reaPIy_y"},
+        "boptest_to_ocp": {"Ti": "zon_reaTRooAir_y",
+                           "Te": "zon_reaTEnv_y",
+                           "Tset": "con_oveTSetHea_u",
+                           "Ph": "fcu_reaPHea_y",
+                           "Tsup": "fcu_oveTSup_u", 
+                           "u_fan": "fcu_oveFan_u",
+                           "_y": "con_reaPIy_y"},
         "sampling": {
                      "integrate": ["Ph"],
-                     "point": ["Ta", "phi_s", "Ti", "Tsup"]
+                     "point": ["Ta", "phi_s", "Ti", "Te", "Tsup"]
                     }
       }
     },
