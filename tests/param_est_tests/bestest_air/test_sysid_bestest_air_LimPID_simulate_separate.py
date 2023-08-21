@@ -271,7 +271,8 @@ if __name__ == "__main__":
     y_data = y_data[(4*24):]
     N = len(y_data) - 1
     x0 = y_data[["Ti","Te"]].iloc[0]
-    
+    T_high = 313.15
+    T_low = 294.15
     for n in range(N+1):
         xs = np.append(xs, np.array(x0))
         xs_ = np.append(xs_, np.array(_x0))
@@ -290,9 +291,11 @@ if __name__ == "__main__":
         elif y_PI > 1:
             y_PI = 1
         """
+        #T_low = y_data["Ti_lb"].iloc[0]
         _x0 = I_PI_ode.one_sample(_x0,0,u_,p_,0,r_)
         #y_PI = I_PI_ode.h(0,0,_x0,0,u_,p_,r_)
-        u0 = np.array([y_PI, y_PI])
+        u0 = np.array([y_PI*(T_high - T_low) + T_low, y_PI])
+        #u0 = np.array([y_PI*(T_high - T_low) + T_low, y_PI])
         us = np.append(us, np.array(u0))
     #res = pd.DataFrame(data=xs.reshape(N, 3), columns=["Ti", "Te", "E"])
     res = pd.DataFrame(data=xs.reshape(N+1, 2), columns=["Ti", "Te"])
@@ -306,7 +309,8 @@ if __name__ == "__main__":
     
     #res_ = pd.DataFrame(data=xs.reshape(N+1, 2), columns=["Tsup", "u_fan"])
     ax = res_.Tsup.plot()
-    y_data._y.plot(color="k", linestyle="dashed", ax=ax)
+    #y_data._y.plot(color="k", linestyle="dashed", ax=ax)
+    y_data.Tsup.plot(color="k", linestyle="dashed", ax=ax)
     plt.show()
     print(res_)
     

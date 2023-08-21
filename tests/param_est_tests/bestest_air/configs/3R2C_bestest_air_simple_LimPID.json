@@ -1,11 +1,15 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (u_fan*UA_is*(Tsup - Ti))/Ci + Ai*(phi_s/Ci)",
-            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+            "Ti": "(Te - Ti)/(Rie*Ci) + _y*UA_is*(_y*(313.15 - 294.15) + 294.15 - Ti)/Ci + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "E": "pi_ode(E, ca.vertcat(Ti, Tset))"
         },
         "w": {
-            "v1": "y1 - Ti"
+            "v1": "Ti - y1"
+        },
+        "alg": {
+            "_y": "_y + pi_y(E, ca.vertcat(Ti, Tset))"
         },
         "p": [
             "Rie",
@@ -16,29 +20,31 @@
             "UA_is"
         ],
         "u": [
-            "Tsup",
-            "u_fan"
+            "Tset"
         ],
-        "x": [
-            "Ti",
-            "Te"
+        "z": [
+            "_y"
         ],
         "r": [
             "Ta",
             "phi_s",
-            "Ph",
+            "Ti_ub",
             "Ti_lb"
         ],
-        "y": [
-             ["y1", "Ti"], 
-             ["y2", "Te"]
-        ]
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+        ],
+    "y": [
+        ["y1", "Ti"]
+    ]
     },
     "objective": "dot(v1, v1)@R[0,0]",
     "method": "multiple_shooting",
     "integrator": 
         {
-        "name": "RK4",
+        "name": "IRK",
         "method": "radau",
         "degree": 3,
         "n_steps": 1
@@ -49,7 +55,6 @@
         "verbose": false,
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10,
-        "ipopt.max_cpu_time": 200,
         "ipopt.ma57_automatic_scaling" : "yes"
     },
     "codegen": false,

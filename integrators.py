@@ -163,15 +163,15 @@ class idas(Integrator):
         
         dt = kwds.pop("dt", None)
         
-        """
+        
         opts = {
             #"step0":    kwds["dt"],
             #"min_step_size": dt,
             #"max_step_size": dt,
-            "abstol"  : 1E-4
+            "abstol"  : 1E-1
             #"linear_solver": "csparse"
             }
-        """
+        
         self.set_ode_func()
         self.set_alg_func()
         # u->z in integrator call (algebraic var, constant on between phase boundaries (check term. in Betts ch. 4))
@@ -189,7 +189,7 @@ class idas(Integrator):
             },
             0,
             [dt],
-            kwds)
+            opts)
         
         #self.one_sample.print_options()
         #self.one_sample.print_options()
@@ -572,13 +572,14 @@ class IRK(Integrator):
                         )
         """
         # Convert to SX to decrease overhead
-        vfcn_sx = vfcn.expand()
+        #vfcn_sx = vfcn.expand()
         #zfcn_sx = zfcn.expand()
 
         # Create a implicit function instance to solve the system of equations
         #v_ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
         #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
-        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
         
         V = ifcn(ca.MX(), X0, Z, U, P, S, R)
         #V = ifcn(ca.MX(), X0, U, P, S, R)
