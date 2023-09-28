@@ -1,7 +1,10 @@
 #from ast import Param
 
 import sys
-sys.path.append('/home/marius/Desktop/code')
+import os
+import pathlib
+ocp_path = str(pathlib.Path(os.getcwd()).parent.parent.parent.parent)
+sys.path.append(ocp_path)
 from ocp.param_est import ParameterEstimation
 #from ocp.covar_solve import CovarianceSolver
 import numpy as np
