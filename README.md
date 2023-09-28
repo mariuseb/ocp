@@ -3,7 +3,7 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
 
 **0. Requirements**
 
-      For a minimal setup (i.e. no BOPTEST interaction and no fast linear solvers), use conda or mamba to create an environment as follows in a terminal:
+      For a minimal setup (i.e. no BOPTEST interaction and no fast linear solvers), use conda or mamba (recommend mamba: https://mamba.readthedocs.io/en/latest/micromamba-installation.html#umamba-install, much faster) to create an environment as follows in a terminal:
             
       - conda env create -f ocp_minimal.yml
 
