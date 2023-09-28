@@ -13,6 +13,6 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
       
       See e.g. tests/param_est_tests/ZEBLL/test_param_est_2R2C.py on how to do parameter estimation on already existing data.
 
-**0. Full setup (TODO)**
+**1. Full setup (TODO)**
 
       For a full setup, README is TODO.
