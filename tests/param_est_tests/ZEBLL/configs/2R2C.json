@@ -44,7 +44,7 @@
     "solver": "",
     "opt": {
         "verbose": false,
-        "ipopt.linear_solver": "ma57",
+        "ipopt.linear_solver": "mumps",
         "ipopt.ma57_pre_alloc": 10,
         "ipopt.ma57_automatic_scaling" : "yes"
     },

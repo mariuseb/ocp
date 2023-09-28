@@ -1,13 +1,10 @@
 name: ocp
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - numpy
   - pandas
   - matplotlib
-  - netCDF4
-  - requests
-  - OMPython
-  - lxml
-  - scipy
-  - openpyxl 
+  - casadi==3.6.2
+  - spyder

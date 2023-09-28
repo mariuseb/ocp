@@ -1,4 +1,7 @@
 #from ast import Param
+
+import sys
+sys.path.append('/home/marius/Desktop/code')
 from ocp.param_est import ParameterEstimation
 #from ocp.covar_solve import CovarianceSolver
 import numpy as np
@@ -20,7 +23,7 @@ import matplotlib.dates as mdates
 
 if __name__ == "__main__":
     
-    cfg_path = os.path.join(get_opt_config_path(), "2R2C.json")
+    cfg_path = os.path.join("configs", "2R2C.json")
     data_path = os.path.join(get_data_path(), "data_ZEBLL_PRBS.csv")
     ekf_config = os.path.join(get_opt_config_path(), "2R2C_EKF.json")
     
