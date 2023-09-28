@@ -1,0 +1,62 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + pi_y(E, Tset - Ti)*UA_is*(pi_y(E, Tset - Ti)*(313.15 - 294.15) + 294.15 - Ti)/Ci + Ai*(phi_s/Ci) + s1",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + s2",
+            "E": "pi_ode(E, Tset - Ti) + s3"
+        },
+        "w": {
+            "v1": "y1 - Ti"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_is"
+        ],
+        "u": [
+            "Tset"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "s": [
+            "s1",
+            "s2",
+            "s3"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+            ],
+        "y": [
+            ["y1", "Ti"]    
+        ]
+    },
+    "objective": "dot(v1*gamma_s, v1*gamma_s)@R[0,0] + dot(s1*gamma_v, s1*gamma_v)@Q[0,0] + dot(gamma_v*s2, gamma_v*s2)@Q[1,1] + dot(gamma_v*s3, gamma_v*s3)@Q[2,2]",
+    "N": 12,
+    "dt": 900,
+    "method": "collocation",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "yes",
+        "ipopt.max_cpu_time": 20,
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

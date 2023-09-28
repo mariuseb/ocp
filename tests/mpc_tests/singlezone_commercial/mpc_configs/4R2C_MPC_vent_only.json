@@ -1,0 +1,95 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*ahu_reaFloSupAir*cp_air*(oveTSupSet - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "ahu_reaTRetAir": "ahu_pump_ret*(ahu_reaTRetAir - Ti)",
+            "Pvent": "Pvent*eta_hex1 - (oveValCoi*m_flow_water_nom*cp_water*(reaTCoiSup - ahu_reaTCoiRet))",
+            "ahu_reaTCoiRet": "oveValCoi*m_flow_water_nom*cp_water*(reaTCoiSup - ahu_reaTCoiRet)*eta_hex2 - (m_flow_air_nom*ahu_pump_sup*cp_air*(oveTSupSet-ahu_reaTHeaRec))",
+            "ahu_reaTHeaRec": "ahu_pump_ret*(Ta + (ahu_reaTRetAir - Ta)*eta_hex3 - ahu_reaTHeaRec)",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*ahu_pump_sup"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai",
+            "reaTCoiSup",
+            "m_flow_water_nom",
+            "m_flow_air_nom",
+            "cp_water",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2",
+            "eta_hex3"
+        ],
+        "z": [
+            "ahu_reaTRetAir",
+            "Pvent",
+            "ahu_reaTCoiRet",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "u": [
+             "ahu_pump_ret",
+             "oveValCoi",
+             "ahu_pump_sup",
+             "oveTSupSet"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0,0,0,288.15],
+            "ubu": [1,1,1,313.15]
+        },
+        "z": {
+            "lbz": [289.15,0,300,273.15,0],
+            "ubz": [310,1E6,338.15,338.15,40]
+        }
+    },
+    "objective": "dot(Pvent, Pvent)",
+    "ocp": {
+        "h": [
+            "0 <= ahu_reaTRetAir - Ti"
+        ]
+    },
+    "N": 2,
+    "dt": 900,
+    "method": "collocation",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.constr_viol_tol": 1E-4,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

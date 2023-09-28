@@ -70,7 +70,7 @@ class MPC(OCP):
             #                        self.nlp_parser["x"]["dim"])
             #self.s = s = ca.MX.sym("s",
             #                        (self.N-1)*self.n_x)
-            self.sl = sl = ca.MX.sym("s",
+            self.sl = sl = ca.MX.sym("sl",
                                     self.N*self.n_x)
             
             self.nlp["x"] = ca.vertcat(self.nlp["x"],
@@ -93,7 +93,8 @@ class MPC(OCP):
             self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_sl)))
             
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_z, ref=ref, slack=slack)
-        self.set_nlp_obj()
+        if "f" not in self.nlp:
+            self.set_nlp_obj()
         
         # set up lbg, ubg:
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
@@ -101,17 +102,24 @@ class MPC(OCP):
         
         self.add_h() 
         self.add_path_constraints_symbolically()
-        # add h:
         
-        #self.add_pseudo_params()
+        """
+        Prepare solver:
+        if not hasattr(self, "solver"):      
+            self._init_solver()
+
+        #gen_code_filename = self.get_c_code_name()
+
+        if self.codegen:
+            if os.path.exists(self.gen_code_filename):
+                self.pregenerate_c_code(self.gen_code_filename)
+                self.compile_code()
+            self.init_codegen_solver()
+        """
+        # TOOD: add settings:
+        self.prepare_solver()
+    
         
-        #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_u)
-        #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_lslack, self.nlp_uslack)
-        
-        #self.set_bounds(y=self.Y,
-        #                u=self.U)
-        #self.set_bounds()
-        #self._init_solver()
         
     def add_path_constraints_symbolically(self):
         """
@@ -246,8 +254,14 @@ class MPC(OCP):
                 exec(f'obj_expr =' + obj_string, vals)
             except: # temp fix
                 # TODO: more solid logic here 
-                vals["Ti"] = vals["Ti"][0:-1:(self.integrator.d+1)].T
-                vals["E"] = vals["E"][0:-1:(self.integrator.d+1)].T
+                if "Ti" in vals:
+                    vals["Ti"] = vals["Ti"][0:-1:(self.integrator.d+1)].T
+                if "E" in vals:
+                    vals["E"] = vals["E"][0:-1:(self.integrator.d+1)].T
+                #vals["E"] = vals["E"][0:-1:(self.integrator.d+1)].T
+                if self.functions is not None:
+                    for k, v in self.functions.items():
+                        vals[k] = v
                 exec(f'obj_expr =' + obj_string, vals)
             obj_expr = vals["obj_expr"]
         # TODO: extra parameter for last state:
@@ -511,11 +525,13 @@ class MPC(OCP):
             stop = start + self.n_x
             # set x0:
             #self.x0[0:self.n_x] = x0    
-            self.x0[start:stop] = x0    
             # set bounds for x0:
-            self.lbx[start:stop] = x0    
-            self.ubx[start:stop] = x0    
+            self.x0[start:stop] = x0  
             
+            if not self.slack:  
+                self.lbx[start:stop] = x0    
+                self.ubx[start:stop] = x0    
+                
             lbg = np.append(self.lbg, np.append(x0, lbx))
             ubg = np.append(self.ubg, np.append(x0, ubx))
             
@@ -631,10 +647,11 @@ class MPC(OCP):
               params=None,
               return_raw_sol=False,
               codegen=False,
-              p_val=None
+              p_val=None,
+              sqp=False
               ):
         lbg, ubg = self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
-        return self._solve(lbg=lbg, ubg=ubg, return_raw_sol=return_raw_sol, codegen=codegen, p_val=p_val)
+        return self._solve(lbg=lbg, ubg=ubg, return_raw_sol=return_raw_sol, p_val=p_val, sqp=sqp)
     
     def add_h(self):
         """
@@ -646,6 +663,32 @@ class MPC(OCP):
             vals = {}
             for symbol in elem["symbols"]:
                 vals[symbol] = self.get(symbol)
+            # TODO: collocation logic:
+            if self.method == "collocation":
+                # if mix of x and z, take x only at collocation points:
+                x_symbols = [symbol for symbol in elem["symbols"] if symbol in self.dae.x]
+                if (
+                    any(symbol in self.dae.z for symbol in elem["symbols"])
+                    and 
+                    any(symbol in self.dae.x for symbol in elem["symbols"])
+                    ):
+                    #z_symbols = [symbol for symbol in elem["symbols"] if symbol in self.dae.z]
+                    #vals["Ti"] = vals["Ti"][0::(self.integrator.d+1)]                     
+                    for x_ in x_symbols:
+                        slices = []
+                        for n in range(self.N-1):
+                            offset = n*(self.integrator.d+1) + 1
+                            _slice = ca.Slice(offset, offset + self.integrator.d)
+                            slices.append(vals[x_][_slice])
+                        vals[x_] = ca.vertcat(*slices)
+                        #vals[x_] = vals[x_][1::(self.integrator.d+1)]                     
+                    #for z_ in z_symbols:
+                    #    vals[z_] = vals[z_][0::(self.integrator.d+1)]                       
+                else: # take x-symbols at finite elements:
+                    for x_ in x_symbols:
+                        vals[x_] = vals[x_][0::(self.integrator.d+1)]
+                    
+                    
             vals["expr_dict"] = expr_dict
             exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
             #exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
@@ -654,10 +697,14 @@ class MPC(OCP):
             """
             Now, add this constraint to nlp.g
             add also corresponding entries for lbg and ubg
+            
+            TODO: more solid logic here!
             """
             
             expr = expr_dict[i]
-            self.nlp["g"] = ca.vertcat(self.nlp["g"], expr)
+            #if self.method == "collocation":
+                #expr = expr.T
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], expr) # TODO: .T?
             self.lbg = np.append(self.lbg, np.array([elem["lhs"]]*expr.shape[0]))
             self.ubg = np.append(self.ubg, np.array([elem["rhs"]]*expr.shape[0]))
             
@@ -735,59 +782,65 @@ class MPC(OCP):
         self.p_val = np.append((x0 - self.x_nom_b)/self.x_nom, params/self.scale)
         # add data-independent constraints:   
         # TODO: fix this: 
-        #self.add_h() 
-
+        #self.add_h()
         return lbg, ubg
-
-        # add c1, c2 to constraints:
-        """
-        self.nlp["g"] = ca.vertcat(self.nlp["g"], self.nlp["p"][0])
-        self.nlp["g"] = ca.vertcat(self.nlp["g"], self.nlp["p"][1])
-        self.lbg = np.append(self.lbg, [0, 0])
-        self.ubg = np.append(self.ubg, [np.inf, np.inf])
-        """
               
     def _solve(
                self,
                lbg=None,
                ubg=None,
                return_raw_sol=False,
-               codegen=False,
-               p_val=None
+               p_val=None,
+               sqp=False
               ):
         
         # TODO: parameter re-init solver
+        """
         if not hasattr(self, "solver"):      
             self._init_solver()
 
-        gen_code_filename = self.get_c_code_name()
-        if codegen and not os.path.exists(gen_code_filename):
-            self.pregenerate_c_code(gen_code_filename)
-            
+        #gen_code_filename = self.get_c_code_name()
+
+        if codegen and not os.path.exists(self.gen_code_filename):
+            self.pregenerate_c_code(self.gen_code_filename)
+        """
+        
         #if self.slack:
         #    self.x0 = np.append(self.x0, np.repeat([0], self.s.shape[0]))
         self.lbg_current = lbg
         self.ubg_current = ubg
         
         # code-generate this function-object:
-        if p_val is None:
-            sol = self.solver(
-                                x0=self.x0,
-                                lbg=lbg,
-                                ubg=ubg,
-                                lbx=self.lbx,
-                                ubx=self.ubx,
-                            )
+        if sqp is True:
+            solver = self.sqp_solver
         else:
-            sol = self.solver(
-                                x0=self.x0,
-                                lbg=lbg,
-                                ubg=ubg,
-                                lbx=self.lbx,
-                                ubx=self.ubx,
-                                #p=params*self.scale
-                                p=p_val
-                            )
+            solver = self.solver
+        
+        """
+        from pprint import pprint
+        for k, v in self.nlp_parser.vars.items():
+            pprint(k + ": ")
+            pprint(self.x0[v["range"]["a"]:v["range"]["b"]])
+        """
+        
+        if p_val is None:
+            sol = solver(
+                        x0=self.x0,
+                        lbg=lbg,
+                        ubg=ubg,
+                        lbx=self.lbx,
+                        ubx=self.ubx,
+                        )
+        else:
+            sol = solver(
+                        x0=self.x0,
+                        lbg=lbg,
+                        ubg=ubg,
+                        lbx=self.lbx,
+                        ubx=self.ubx,
+                        #p=params*self.scale
+                        p=p_val
+                        )
         sol["p"] = self.p_val
         
         """

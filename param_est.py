@@ -791,7 +791,8 @@ class ParameterEstimation(OCP):
               ubp=None,
               lbx=None,
               ubx=None,
-              x_guess=None
+              x_guess=None,
+              return_raw_sol=False
               ):
         """
         Set initials for v, w to 0
@@ -873,6 +874,8 @@ class ParameterEstimation(OCP):
                           data,
                           lbp=lbp,
                           ubp=ubp,
+                          lbx=lbx,
+                          ubx=ubx,
                           x_guess=x_guess,
                           param_guess=param_guess
                           )
@@ -900,7 +903,9 @@ class ParameterEstimation(OCP):
             self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
         #p = self.nlp.pop("p")
-        self._init_solver()
+        #self._init_solver()
+
+        self.prepare_solver()
         
         # check jac_g_x
         """
@@ -946,5 +951,7 @@ class ParameterEstimation(OCP):
         """
         
         self.sol_df, params = self.parse_solution(solution)
-        
-        return self.sol_df, params
+        if return_raw_sol:
+            return self.sol_df, params, solution
+        else:
+            return self.sol_df, params

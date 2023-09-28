@@ -1,0 +1,203 @@
+,id,res
+0,min(relative_humidity P1M),P1M
+1,min(relative_humidity P1M),P1M
+2,min(relative_humidity P1M),P1M
+3,min(relative_humidity P1M),P1M
+4,min(surface_air_pressure P1M),P1M
+5,min(air_temperature P3M),P3M
+6,min(relative_humidity P1D),P1D
+7,min(relative_humidity P1D),P1D
+8,min(relative_humidity P1D),P1D
+9,min(relative_humidity P1D),P1D
+10,min(air_temperature P6M),P6M
+11,max(wind_speed),PT6H
+12,mean(air_temperature_anomaly P1Y 1991_2020),P1Y
+13,sum(precipitation_amount P1D),P1D
+14,best_estimate_mean(air_temperature_anomaly P1Y 1961_1990),P1Y
+15,over_time(humidity_mixing_ratio P1D),P1D
+16,max(surface_air_pressure P1D),P1D
+17,mean(water_vapor_partial_pressure_in_air P1D),P1D
+18,air_pressure_at_sea_level,PT6H
+19,air_pressure_at_sea_level,PT1H
+20,air_pressure_at_sea_level,PT1H
+21,max(wind_speed_of_gust PT10M),PT10M
+22,max(wind_speed_of_gust PT10M),PT10M
+23,surface_air_pressure,PT6H
+24,surface_air_pressure,PT1H
+25,min(max(wind_speed PT1H) P1D),P1D
+26,over_time(sum(time_of_maximum_precipitation_amount P1D) P1M),P1M
+27,mean(specific_humidity P1M),P1M
+28,min(wind_speed_of_gust P1M),P1M
+29,wind_speed,PT10M
+30,wind_speed,PT1H
+31,wind_speed,PT6H
+32,mean(relative_humidity P1M),P1M
+33,mean(relative_humidity P1M),P1M
+34,mean(relative_humidity P1M),P1M
+35,mean(relative_humidity P1M),P1M
+36,mean(relative_humidity P1M),P1M
+37,integral_of_excess(mean(air_temperature P1D) P1D 0.0),P1D
+38,air_temperature,PT1H
+39,air_temperature,PT6H
+40,mean(wind_speed P1D),P1D
+41,max(air_pressure_at_sea_level P1M),P1M
+42,max(air_temperature P1Y),P1Y
+43,dew_point_temperature,PT6H
+44,dew_point_temperature,PT1H
+45,dew_point_temperature,PT1H
+46,dew_point_temperature,PT1H
+47,surface_snow_thickness,P1D
+48,mean(surface_air_pressure P1M),P1M
+49,max(wind_speed_of_gust PT1H),PT1H
+50,min(air_temperature P1M),P1M
+51,mean(air_temperature P1D),P1D
+52,mean(air_temperature P1D),P1D
+53,mean(air_temperature P1D),P1D
+54,mean(air_temperature P1D),P1D
+55,max(air_temperature P3M),P3M
+56,max(air_temperature P6M),P6M
+57,mean(air_pressure_at_sea_level P1M),P1M
+58,max(wind_speed_of_gust P1D),P1D
+59,max(sum(precipitation_amount P1D) P1M),P1M
+60,specific_humidity,P1D
+61,number_of_days_gte(sum(precipitation_amount P1D) P1M 1.0),P1M
+62,min(air_pressure_at_sea_level P1M),P1M
+63,mean(surface_air_pressure P1D),P1D
+64,max(wind_speed PT1H),PT1H
+65,over_time(tendency_of_surface_air_pressure PT3H),PT1H
+66,over_time(tendency_of_surface_air_pressure PT3H),PT1H
+67,over_time(tendency_of_surface_air_pressure PT3H),PT6H
+68,mean(water_vapor_partial_pressure_in_air P1M),P1M
+69,cloud_base_height,PT6H
+70,mean(air_pressure_at_sea_level P1D),P1D
+71,max(snow_coverage_type P1M),P1M
+72,mean(air_temperature_anomaly P1M 1991_2020),P1M
+73,max(air_temperature P1D),P1D
+74,max(air_temperature P1D),P1D
+75,best_estimate_mean(air_temperature P1M),P1M
+76,best_estimate_mean(air_temperature P1M),P1M
+77,over_time(weather_class1_primary_significance PT6H),PT6H
+78,sum(precipitation_amount PT12H),PT12H
+79,mean(wind_speed_of_gust P1M),P1M
+80,min(air_temperature PT1H),PT1H
+81,best_estimate_mean(air_temperature P1Y),P1Y
+82,best_estimate_mean(air_temperature P1Y),P1Y
+83,mean(air_temperature_anomaly P3M 1991_2020),P3M
+84,max(relative_humidity P1M),P1M
+85,max(relative_humidity P1M),P1M
+86,max(relative_humidity P1M),P1M
+87,max(relative_humidity P1M),P1M
+88,battery_voltage,PT1H
+89,mean(surface_snow_thickness P1M),P1M
+90,mean(relative_humidity P1D),P1D
+91,mean(relative_humidity P1D),P1D
+92,mean(relative_humidity P1D),P1D
+93,mean(relative_humidity P1D),P1D
+94,indicator_station_type_weather,PT6H
+95,integral_of_excess(mean(air_temperature P1D) P1D 5.0),P1D
+96,mean(max(wind_speed P1D) P1M),P1M
+97,mean(air_temperature P1Y),P1Y
+98,mean(air_temperature P1Y),P1Y
+99,mean(dew_point_temperature P1M),P1M
+100,max(air_temperature P1M),P1M
+101,integral_of_deficit(mean(air_temperature P1D) P1D 17.0),P1D
+102,max(max(wind_speed PT1H) P1D),P1D
+103,sum(precipitation_amount_anomaly P1M 1961_1990),P1M
+104,min(snow_coverage_type P1M),P1M
+105,over_time(time_of_maximum_wind_speed PT1H),PT1H
+106,mean_k(air_temperature P1M),P1M
+107,min(surface_air_pressure P1D),P1D
+108,mean(dew_point_temperature P1D),P1D
+109,sum(precipitation_amount P1M),P1M
+110,max(wind_speed P1M),P1M
+111,min(air_pressure_at_sea_level P1D),P1D
+112,mean(air_temperature PT1H),PT1H
+113,mean(snow_coverage_type P1M),P1M
+114,min(air_temperature P1Y),P1Y
+115,mean(humidity_mixing_ratio P1M),P1M
+116,over_time(weather_class1_primary_significance_intensity PT6H),PT6H
+117,wind_from_direction,PT6H
+118,wind_from_direction,PT1H
+119,wind_from_direction,PT10M
+120,mean(wind_speed_of_gust P1D),P1D
+121,mean(wind_speed PT1H),PT1H
+122,air_pressure_at_sea_level_qnh,PT1H
+123,max(wind_speed P1D),P1D
+124,tendency_of_surface_air_pressure_type,PT1H
+125,tendency_of_surface_air_pressure_type,PT1H
+126,tendency_of_surface_air_pressure_type,PT6H
+127,over_time(precipitation_type P1D),P1D
+128,min(air_temperature P1D),P1D
+129,min(air_temperature P1D),P1D
+130,over_time(time_of_maximum_wind_speed_of_gust PT1H),PT1H
+131,mean(relative_humidity PT1H),PT1H
+132,mean(relative_humidity PT1H),PT1H
+133,min(wind_speed P1M),P1M
+134,snow_coverage_type,P1D
+135,precipitation_group_indicator,PT6H
+136,max(max(wind_speed P1D) P1M),P1M
+137,mean(air_temperature P1M),P1M
+138,mean(air_temperature P1M),P1M
+139,mean(air_temperature P1M),P1M
+140,mean(air_temperature P1M),P1M
+141,best_estimate_mean(air_temperature P3M),P3M
+142,best_estimate_mean(air_temperature P3M),P3M
+143,integral_of_deficit(mean(air_temperature P1D) P6M 17.0),P6M
+144,min(max(wind_speed P1D) P1M),P1M
+145,integral_of_deficit(mean(air_temperature P1D) P1Y 17.0),P1Y
+146,max(wind_speed_of_gust P1M),P1M
+147,max(surface_air_pressure PT1H),PT1H
+148,over_time(time_of_maximum_wind_speed P1M),P1M
+149,over_time(weather_class1_secondary_significance_intensity PT6H),PT6H
+150,best_estimate_mean(air_temperature_anomaly P1M 1961_1990),P1M
+151,over_time(time_of_minimum_air_temperature P1M),P1M
+152,mean(air_temperature_anomaly P6M 1991_2020),P6M
+153,mean_k(air_temperature P1D),P1D
+154,integral_of_excess(mean(air_temperature P1D) P1M 0.0),P1M
+155,min(surface_air_pressure PT1H),PT1H
+156,max(air_pressure_at_sea_level P1D),P1D
+157,best_estimate_mean(air_temperature_anomaly P3M 1961_1990),P3M
+158,min(air_temperature PT12H),PT12H
+159,min(air_temperature PT12H),PT12H
+160,max_wind_speed(wind_from_direction PT1H),PT1H
+161,integral_of_excess(mean(air_temperature P1D) P1M 5.0),P1M
+162,mean(air_temperature_anomaly P1M 1961_1990),P1M
+163,mean(air_temperature P6M),P6M
+164,mean(air_temperature P6M),P6M
+165,over_time(precipitation_class1 P1D),P1D
+166,mean(air_temperature P3M),P3M
+167,mean(air_temperature P3M),P3M
+168,mean(max(air_temperature P1D) P1M),P1M
+169,mean(max(wind_speed PT1H) P1D),P1D
+170,mean(air_temperature_anomaly P3M 1961_1990),P3M
+171,min(surface_snow_thickness P1M),P1M
+172,over_time(weather_class1_tertiary_significance_intensity PT6H),PT6H
+173,max(surface_air_pressure P1M),P1M
+174,max(relative_humidity P1D),P1D
+175,max(relative_humidity P1D),P1D
+176,max(relative_humidity P1D),P1D
+177,max(relative_humidity P1D),P1D
+178,over_time(time_of_maximum_air_temperature P1M),P1M
+179,max(surface_snow_thickness P1M),P1M
+180,min(wind_speed P1D),P1D
+181,relative_humidity,PT6H
+182,relative_humidity,PT6H
+183,relative_humidity,PT1H
+184,relative_humidity,PT1H
+185,relative_humidity,PT1H
+186,relative_humidity,PT1H
+187,max(air_temperature PT12H),PT12H
+188,max(air_temperature PT12H),PT12H
+189,min(grass_temperature P1D),P1D
+190,mean(wind_from_direction PT1H),PT1H
+191,max(air_temperature PT1H),PT1H
+192,integral_of_deficit(mean(air_temperature P1D) P1M 17.0),P1M
+193,mean(air_temperature_anomaly P6M 1961_1990),P6M
+194,best_estimate_mean(air_temperature_anomaly P6M 1961_1990),P1Y
+195,integral_of_deficit(mean(air_temperature P1D) P3M 17.0),P3M
+196,mean(air_temperature_anomaly P1Y 1961_1990),P1Y
+197,mean(surface_air_pressure PT1H),PT1H
+198,min(wind_speed_of_gust P1D),P1D
+199,wind_speed_of_gust,PT6H
+200,mean(wind_speed P1M),P1M
+201,mean(min(air_temperature P1D) P1M),P1M

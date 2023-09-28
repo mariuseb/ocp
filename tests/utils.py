@@ -53,6 +53,8 @@ class Bounds(object):
                  ub_d
                 ):
         
+        day_begin = self.day_begin
+        day_end = self.day_end
         self.df = pd.DataFrame(
                         index=range(self.t_h*24),
                         columns=pd.MultiIndex.from_product(
@@ -111,14 +113,13 @@ class Bounds(object):
             ub_day = ub_day.reshape((1,1))
         if lb_day.shape == (1,):
             lb_day = lb_day.reshape((1,1))
-
         
-        self.df.loc[0:self.t_h*7, "lb"] = lb_night
-        self.df.loc[0:self.t_h*7, "ub"] = ub_night
-        self.df.loc[self.t_h*7:(self.t_h*22 + 1), "lb"] = lb_day
-        self.df.loc[self.t_h*7:(self.t_h*22 + 1), "ub"] = ub_day
-        self.df.loc[(self.t_h*22 + 1):, "lb"] = lb_night
-        self.df.loc[(self.t_h*22 + 1):, "ub"] = ub_night
+        self.df.loc[0:self.t_h*day_begin, "lb"] = lb_night
+        self.df.loc[0:self.t_h*day_begin, "ub"] = ub_night
+        self.df.loc[self.t_h*day_begin:(self.t_h*22 + 1), "lb"] = lb_day
+        self.df.loc[self.t_h*day_begin:(self.t_h*22 + 1), "ub"] = ub_day
+        self.df.loc[(self.t_h*day_end + 1):, "lb"] = lb_night
+        self.df.loc[(self.t_h*day_end + 1):, "ub"] = ub_night
     
     def get_bounds(self, k: int, N: int):
         """_summary_

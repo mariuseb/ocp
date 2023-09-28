@@ -59,13 +59,13 @@
     "testcase1":
     {
       "misc": {
-        "h": 900,
+        "h": 60,
         "N": 97,
         "start_time": 0,
         "warmup_period": 604800
       },
       "maps" : {
-        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "r" : {"Ta": "TDryBul"},
         "u" : {"phi_h": "oveAct"},
         "y": {"Ti": "TRooAir_y"},
         "boptest_to_ocp": {"phi_h": "PHea_y", "Ti": "TRooAir_y"},
@@ -94,6 +94,35 @@
                     }
       }
     },
+    "testcase1_wea_limpid":
+    {
+      "misc": {
+        "h": 900,
+        "N": 97,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s": "HGloHor"},
+        "u" : {"Tset": "oveTset", "phi_h": "oveAct"},
+        "y": {
+              "Ti": "TRooAir_y",
+              "Te": "TEnv_y",
+              "E": "con_reaE_y"
+            },
+        "boptest_to_ocp": {
+                           "phi_h": "PHea_y",
+                           "Tset": "oveTset_u",
+                            "Ti": "TRooAir_y",
+                            "E": "con_reaE_y",
+                            "Te": "TEnv_y"
+                          },
+        "sampling": {
+                     "integrate": ["phi_h"],
+                     "point": ["Ta", "Ti", "phi_s"]
+                    }
+      }
+    },
     "testcase1_wea_1meas":
     {
       "misc": {
@@ -104,7 +133,7 @@
       },
       "maps" : {
         "r" : {"Ta": "TDryBul", "phi_s": "HGloHor"},
-        "u" : {"Tset": "oveTset"},
+        "u" : {"phi_h": "oveAct"},
         "y": {"Ti": "TRooAir_y"},
         "boptest_to_ocp": {"phi_h": "PHea_y", "Tset": "oveTset_u", "Ti": "TRooAir_y"},
         "sampling": {
@@ -132,6 +161,139 @@
                     }
       }
     },
+    "adrenaline1":
+    {
+      "misc": {
+        "h": 900,
+        "N": 25,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "u" : {"dh_Tsup": "dh_oveTSupSetHea",
+               "TsetHea": "oveTZonSet",
+               "ahu_pump_sup": "ahu_oveFanSup",
+               "ahu_pump_ret": "ahu_oveFanRet",
+               "ahu_Tsup": "oveTSupSetAir",
+               "dh_pump": "oveValRad",
+               "oveCO2ZonSet": "oveCO2ZonSet"
+              },
+        "y": {"Ti": "reaTZon_y",
+              "Ph": "reaQHea_y",
+              "reaPFan_y": "reaPFan_y",
+              "reaPPum_y": "reaPPum_y",
+              "ahu_reaTCoiSup_y": "ahu_reaTCoiSup_y",
+              "ahu_reaTHeaRec_y": "ahu_reaTHeaRec_y",
+              "ahu_reaTRetAir_y": "ahu_reaTRetAir_y",
+              "ahu_reaTSupAir_y": "ahu_reaTSupAir_y",
+              "ahu_reaFloExtAir_y": "ahu_reaFloExtAir_y", 
+              "ahu_reaFloSupAir_y": "ahu_reaFloSupAir_y",
+              "reaCO2Zon_y": "reaCO2Zon_y"
+            },
+            "boptest_to_ocp": {
+                          "Ti": "reaTZon_y",
+                          "Ph": "reaQHea_y",
+                          "dh_Tsup": "dh_oveTSupSetHea_u",
+                          "ahu_reaTCoiSup_y": "ahu_reaTCoiSup_y",
+                          "ahu_reaTHeaRec_y": "ahu_reaTHeaRec_y",
+                          "ahu_reaTRetAir_y": "ahu_reaTRetAir_y",
+                          "ahu_reaTSupAir_y": "ahu_reaTSupAir_y",
+                          "ahu_reaFloExtAir_y": "ahu_reaFloExtAir_y", 
+                          "ahu_reaFloSupAir_y": "ahu_reaFloSupAir_y",
+                          "ahu_pump_sup": "ahu_oveFanSup_u",
+                          "ahu_pump_ret": "ahu_oveFanRet_u",
+                          "reaCO2Zon_y": "reaCO2Zon_y",
+                          "TsetHea": "oveTZonSet_u",
+                          "ahu_Tsup": "oveTSupSetAir_u",
+                          "dh_pump": "oveValRad_u",
+                          "oveCO2ZonSet": "oveCO2ZonSet_u"
+                          },
+        "sampling": {
+                     "integrate": ["Ph","reaPPum_y","reaPFan_y"],
+                     "point": ["Ta", "phi_s", "Ti", "Tsup"]
+                    }
+      }
+    },
+    "singlezone_commercial":
+    {
+      "misc": {
+        "h": 900,
+        "N": 25,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul",
+               "n_occ": "Occupancy[1]",
+               "phi_s":"HGloHor",
+               "int_con": "InternalGainsCon[1]",
+               "int_lat": "InternalGainsLat[1]",
+               "int_rad": "InternalGainsRad[1]"
+              },
+        "u" : {
+               "TsetHea": "oveTZonSet",
+               "ahu_pump_sup": "ahu_oveFanSup",
+               "ahu_pump_ret": "ahu_oveFanRet",
+               "oveTSupSet": "oveTSupSet",
+               "dh_pump": "ovePum",
+               "rad_val": "oveValRad",
+               "oveCO2ZonSet": "oveCO2ZonSet",
+               "oveValCoi": "oveValCoi"
+              },
+        "y": {"Ti": "reaTZon_y",
+              "Ptot": "reaQHea_y",
+              "Prad": "reaPRad_y",
+              "reaPFan_y": "reaPFan_y",
+              "reaPPum_y": "reaPPum_y",
+              "ahu_reaTCoiSup": "ahu_reaTCoiSup_y",
+              "ahu_reaTCoiRet": "reaTCoiRet_y",
+              "ahu_reaTHeaRec": "ahu_reaTHeaRec_y",
+              "ahu_reaTRetAir": "ahu_reaTRetAir_y",
+              "reaValRad_y": "reaValRad_y",
+              "ahu_reaTSupAir": "ahu_reaTSupAir_y",
+              "ahu_reaFloSupAir": "ahu_reaFloSupAir_y",
+              "CO2_in": "reaCO2Zon_y",
+              "n_occ": "reaOcc_y",
+              "reaFlo": "reaValFlo_y",
+              "Tret": "reaTRadOut_y",
+              "Tsup": "reaTRadIn_y",
+              "rad_flo": "reaRadFlo_y"
+            },
+            "boptest_to_ocp": {
+                          "Ti": "reaTZon_y",
+                          "reaPFan_y": "reaPFan_y",
+                          "reaPPum_y": "reaPPum_y",
+                          "ahu_reaTCoiSup": "ahu_reaTCoiSup_y",
+                          "ahu_reaTCoiRet": "reaTCoiRet_y",
+                          "ahu_reaTHeaRec": "ahu_reaTHeaRec_y",
+                          "ahu_reaTRetAir": "ahu_reaTRetAir_y",
+                          "ahu_reaTSupAir": "ahu_reaTSupAir_y",
+                          "ahu_reaFloSupAir": "ahu_reaFloSupAir_y",
+                          "ahu_pump_sup": "ahu_oveFanSup_u",
+                          "ahu_pump_ret": "ahu_oveFanRet_u",
+                          "CO2_in": "reaCO2Zon_y",
+                          "reaValRad_y": "reaValRad_y",
+                          "rad_val": "oveValRad_u",
+                          "TsetHea": "oveTZonSet_u",
+                          "oveTSupSet": "oveTSupSet_u",
+                          "dh_pump": "ovePum_u",
+                          "oveCO2ZonSet": "oveCO2ZonSet_u",
+                          "oveValCoi": "oveValCoi_u",
+                          "n_occ": "reaOcc_y",
+                          "Ptot": "reaQHea_y",
+                          "Prad": "reaPRad_y",
+                          "reaFlo": "reaValFlo_y",
+                          "Tret": "reaTRadOut_y",
+                          "Tsup": "reaTRadIn_y",
+                          "rad_flo": "reaRadFlo_y"
+                          },
+        "sampling": {
+                     "integrate": ["Ph","reaPPum_y","reaPFan_y"],
+                     "point": ["Ta", "phi_s", "Ti", "Tsup"]
+                    }
+      }
+    },
     "bestest_air":
     {
       "misc": {
@@ -147,17 +309,94 @@
                "Ti_ub": "UpperSetp[1]",
                "Ti_lb": "LowerSetp[1]"
         },
-        "u" : {"Tsup": "fcu_oveTSup", "u_fan": "fcu_oveFan"},
+        "u" : {
+               "Tsup": "fcu_oveTSup",
+               "u_fan": "fcu_oveFan",
+               "Tset": "con_oveTSetHea",
+               "Ph": "fcu_reaPHea"
+        },
+        "y": {"Ti": "zon_reaTRooAir_y",
+              "Te": "zon_reaTEnv_y"
+        },
+        "boptest_to_ocp": {"Ti": "zon_reaTRooAir_y",
+                           "Te": "zon_reaTEnv_y",
+                           "Tset": "con_oveTSetHea_u",
+                           "Ph": "fcu_reaPHea_y",
+                           "Tsup": "fcu_oveTSup_u", 
+                           "u_fan": "fcu_oveFan_u"},
+        "sampling": {
+                     "integrate": ["Ph"],
+                     "point": ["Ta", "phi_s", "Ti", "Te", "Tsup"]
+                    }
+      }
+    },
+    "bestest_air_simple":
+    {
+      "misc": {
+        "h": 900,
+        "N": 96,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {
+               "Ta": "TDryBul",
+               "phi_s":"HGloHor",
+               "Ti_ub": "UpperSetp[1]",
+               "Ti_lb": "LowerSetp[1]"
+        },
+        "u" : {
+               "Tsup": "fcu_oveTSup",
+               "u_fan": "fcu_oveFan",
+               "Tset": "con_oveTSetHea",
+               "Ph": "fcu_reaPHea"
+        },
         "y": {"Ti": "zon_reaTRooAir_y",
               "Te": "zon_reaTEnv_y",
-              "_y": "con_reaPIy_y"},
+              "E": "con_heaPI_reaE_y"
+        },
         "boptest_to_ocp": {"Ti": "zon_reaTRooAir_y",
                            "Te": "zon_reaTEnv_y",
                            "Tset": "con_oveTSetHea_u",
                            "Ph": "fcu_reaPHea_y",
                            "Tsup": "fcu_oveTSup_u", 
                            "u_fan": "fcu_oveFan_u",
-                           "_y": "con_reaPIy_y"},
+                           "E": "con_heaPI_reaE_y"},
+        "sampling": {
+                     "integrate": ["Ph"],
+                     "point": ["Ta", "phi_s", "Ti", "Te", "Tsup"]
+                    }
+      }
+    },
+    "bestest_air_simple_1meas":
+    {
+      "misc": {
+        "h": 900,
+        "N": 96,
+        "start_time": 2700,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {
+               "Ta": "TDryBul",
+               "phi_s":"HGloHor",
+               "Ti_ub": "UpperSetp[1]",
+               "Ti_lb": "LowerSetp[1]"
+        },
+        "u" : {
+               "Tsup": "fcu_oveTSup",
+               "u_fan": "fcu_oveFan",
+               "Tset": "con_oveTSetHea"
+        },
+        "y": {"Ti": "zon_reaTRooAir_y"
+        },
+        "boptest_to_ocp": {"Ti": "zon_reaTRooAir_y",
+                           "Te": "zon_reaTEnv_y",
+                           "Tset": "con_oveTSetHea_u",
+                           "Ph": "fcu_reaPHea_y",
+                           "Tsup": "fcu_oveTSup_u", 
+                           "u_fan": "fcu_oveFan_u",
+                           "E": "con_heaPI_reaE_y"},
         "sampling": {
                      "integrate": ["Ph"],
                      "point": ["Ta", "phi_s", "Ti", "Te", "Tsup"]

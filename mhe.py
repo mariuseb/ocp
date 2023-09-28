@@ -20,7 +20,7 @@ import re
 #from integrators import RungeKutta4, Cvodes, IRK
 #import sysid.integrators as integrators
 #from sysid.dae import DAE
-#from shooting import MultipleShooting
+from ocp.shooting import MultipleShooting, Collocation
 #from callback import ProcessIdCallback
 #import os
 #from shooting import Collocation
@@ -35,6 +35,8 @@ class MHE(OCP):
         Almost equal to regular sysid,
         though we drop statistics for now.
         """
+        #self.gamma = kwargs.pop("gamma", 1)
+        self.arrival_cost = kwargs.pop("arrival_cost", False)
         super(MHE, self).__init__(**kwargs)
         self.df = pd.DataFrame(columns=self.dae.p + self.dae.x)
         # covariance matrices:
@@ -44,6 +46,11 @@ class MHE(OCP):
         #self.R = ca.MX.sym("R", 1, 1)
         self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
         #self.set_hess_obj()
+        if "f" not in self.nlp:
+            self.set_nlp_obj(arrival_cost=self.arrival_cost)
+
+        self.prepare_solver()
+        
         
     # skip this:
     def set_hess_obj(self):
@@ -699,7 +706,7 @@ class MHE(OCP):
         return nlp_obj, ca.veccat(self.Q, self.R)
     
     
-    def set_nlp_obj(self, arrival_cost=False):
+    def set_nlp_obj(self, alg_in_Q=False, arrival_cost=False):
         """
         Parse MHE objective as passed in from config file.
         
@@ -707,7 +714,7 @@ class MHE(OCP):
         """
         
         # initialize the parameters needed for the objective:
-        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        self.Q = ca.MX.sym("Q", self.n_x + self.n_z, self.n_x + self.n_z)
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
         self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
         self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
@@ -716,10 +723,38 @@ class MHE(OCP):
         vals = dict()
         for symbol in symbols:
             vals[symbol] = self.get(symbol)
+            
+        # here, multiply gamma in:
+        #gamma = 0.99
+        gamma_vec = ca.DM.ones((self.N, 1))
+        for n in range(self.N):
+            gamma_vec[self.N-1-n] *= (self.gamma**n)
+        self.gamma_vec = gamma_vec
+            
         obj_string = self.obj_string.replace("dot", "ca.dot")
         vals["ca"] = ca
         vals["R"] = self.R
         vals["Q"] = self.Q
+        vals["gamma_v"] = np.sqrt(gamma_vec)
+        if self.strategy.name == "Collocation":
+            vals["gamma_s"] = np.sqrt(gamma_vec[0:(self.N-1)])
+        else: # if any y part of z, we have not measured last z:
+            #vals["gamma_s"] = vals["gamma_v"]
+            vals["gamma_s"] = np.sqrt(gamma_vec[0:(self.N-1)])
+            # TODO: modularize this!
+            #vals["v2"] = vals["v2"][:-1] 
+            #vals["v3"] = vals["v3"][:-1] 
+            #vals["v4"] = vals["v4"][:-1] 
+            # s's:
+            #vals["s1"] = vals["s1"][:-1] 
+            #vals["s2"] = vals["s2"][:-1] 
+            #vals["s3"] = vals["s3"][:-1] 
+            #vals["s4"] = vals["s4"][:-1] 
+            #vals["s5"] = vals["s5"][:-1] 
+            #vals["s6"] = vals["s6"][:-1] 
+            #vals["s3"] = vals["s3"][:-1] 
+            
+            
     
         exec(f'obj_expr =' + obj_string, vals)
         
@@ -751,8 +786,11 @@ class MHE(OCP):
               covar=None,
               lbp=None,
               ubp=None,
+              lbx=None,
+              ubx=None,
               P0=None,
               x_N=None,
+              x_guess=None,
               arrival_cost=False,
               return_raw_sol=False,
               codegen=False
@@ -761,93 +799,17 @@ class MHE(OCP):
         Set initials for v, w to 0
         """
         self.data = data   
-        
-        # scale:
-        #param_guess /= self.scale
-        #lbp /= self.scale
-        #ubp /= self.scale
-        
-        # TODO: should be set by default in __init__        
-        """
-        self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(
-                                                        self.nlp_v,
-                                                        self.nlp_w, 
-                                                        P0,
-                                                        x_N,
-                                                        param_guess,
-                                                        arrival_cost=arrival_cost
-                                                        ) 
-        self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(
-                                                        0,
-                                                        0, 
-                                                        P0,
-                                                        x_N,
-                                                        param_guess,
-                                                        arrival_cost=arrival_cost
-                                                        ) 
-        """
 
-        if "f" not in self.nlp:
-            """
-            self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(
-                                                            0,
-                                                            0,
-                                                            P0,
-                                                            x_N,
-                                                            param_guess,
-                                                            arrival_cost=arrival_cost
-                                                            ) 
-            """
-            self.set_nlp_obj(arrival_cost=arrival_cost)
-        ##################################################
-        
-        """
-        y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
-        y = self.data[y_x_overlap].values.flatten()
-        
-        # Assume order of y and x correspond
-        # TODO: fix for arbitrary order:
-        # TODO: do only once:
-        if isinstance(self.y_nom, list):
-            # get offset from 
-            stop = len(y_x_overlap)
-            y_nom = self.y_nom[0:stop]
-            y_nom_b = self.y_nom_b[0:stop]
-            
-        else: 
-            y_nom = self.y_nom
-            y_nom_b = self.y_nom_b
-        
-        #x_guess = y         
-        x_guess = (y-y_nom_b)/y_nom
-        
-        #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
-        #for n in range(diff):
-        #    x_guess = ca.horzcat(x_guess, y)
-         
-        # TODO: fix for multi-dimensional:
-        if self.strategy.name == "Collocation":
-            _x_guess = np.ones((self.n_x, ((self.N-1)*(self.strategy.d+1)+1)))     
-            # if direct collocation, fill between
-            for n in range(self.N-1):
-                _x_guess[:, n:(n + self.strategy.d+1)] = x_guess[n]
-            last = (self.N-1)*(self.strategy.d+1)
-            _x_guess[:,last:last+1] = x_guess[-1]
-            x_guess = _x_guess
-        else:     
-            diff = int(self.integrator.dae.n_x/len(y_x_overlap)) - 1
-            for n in range(diff):
-                x_guess = ca.horzcat(x_guess, (y-y_nom_b)/y_nom)
-                #x_guess = ca.horzcat(x_guess, _x_guess)
-        """
-              
-        x_guess = self.generate_x_guess()
+        if x_guess is None:  
+            x_guess = self.generate_x_guess()
         self.separate_data(
                           data,
                           lbp=lbp,
                           ubp=ubp,
                           #lbx=0.5*x_guess,
                           #ubx=1.5*x_guess,
+                          lbx=lbx,
+                          ubx=ubx,
                           x_guess=x_guess,
                           param_guess=param_guess
                           )
@@ -870,11 +832,22 @@ class MHE(OCP):
         # with p=covar
         
         # TODO: branching on arrival cost:
-        
+        """
         gen_code_filename = self.get_c_code_name()
         if codegen and not os.path.exists(gen_code_filename):
             self.pregenerate_c_code(gen_code_filename)
-                
+        """ 
+        # possibility to overwrite lbx, ubx?
+        # DEBUG:
+        """
+        from pprint import pprint
+        for k, v in self.nlp_parser.vars.items():
+            pprint(k + ": ")
+            pprint(self.x0[v["range"]["a"]:v["range"]["b"]])
+        """
+        # TODO:
+        self.lbx = self.lbx.round(8)
+        self.ubx = self.ubx.round(8)
         solution = self.solver(
                             x0=self.x0,
                             lbg=0, # option for path-constraints?

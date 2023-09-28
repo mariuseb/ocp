@@ -1,0 +1,59 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + pi_y(E, ca.vertcat(Ti, Tset))*UA_is*(pi_y(E, ca.vertcat(Ti, Tset))*(313.15 - 294.15) + 294.15 - Ti)/Ci + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "E": "pi_ode(E, ca.vertcat(Ti, Tset))"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v2": "Te - y2",
+            "v3": "pi_y(E, ca.vertcat(Ti, Tset)) - y3"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_is"
+        ],
+        "u": [
+            "Tset",
+            "_y"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+        ],
+    "y": [
+        ["y1", "Ti"]
+    ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "N": 6,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.max_cpu_time": 20,
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

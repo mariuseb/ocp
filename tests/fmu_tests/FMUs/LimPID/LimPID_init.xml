@@ -1,0 +1,1026 @@
+<?xml version = "1.0" encoding="UTF-8"?>
+
+<!-- description of the model interface using an extention of the FMI standard -->
+<fmiModelDescription
+  fmiVersion                          = "1.0"
+
+  modelName                           = "LimPID"
+  modelIdentifier                     = "LimPID"
+
+  OPENMODELICAHOME                    = "/usr/bin/.."
+
+  guid                                = "{d4e806da-1e15-4998-8e3f-460967d9a296}"
+
+  description                         = ""
+  generationTool                      = "OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"
+  generationDateAndTime               = "2023-08-24T19:29:28Z"
+
+  variableNamingConvention            = "structured"
+
+  numberOfEventIndicators             = "0"  cmt_numberOfEventIndicators             = "NG:       number of zero crossings,                           FMI"
+  numberOfTimeEvents                  = "0"  cmt_numberOfTimeEvents                  = "NG_SAM:   number of zero crossings that are samples,          OMC"
+
+  numberOfInputVariables              = "2"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
+  numberOfOutputVariables             = "1"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
+
+  numberOfExternalObjects             = "0"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
+  numberOfFunctions                   = "0"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
+
+  numberOfContinuousStates            = "1"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"
+  numberOfRealAlgebraicVariables      = "13"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
+  numberOfRealAlgebraicAliasVariables = "20"  cmt_numberOfRealAlgebraicAliasVariables = "NA:       number of alias variables,                          OMC"
+  numberOfRealParameters              = "33"  cmt_numberOfRealParameters              = "NP:       number of parameters,                               OMC"
+
+  numberOfIntegerAlgebraicVariables   = "0"  cmt_numberOfIntegerAlgebraicVariables   = "NYINT:    number of alg. int variables,                       OMC"
+  numberOfIntegerAliasVariables       = "0"  cmt_numberOfIntegerAliasVariables       = "NAINT:    number of alias int variables,                      OMC"
+  numberOfIntegerParameters           = "5"  cmt_numberOfIntegerParameters           = "NPINT:    number of int parameters,                           OMC"
+
+  numberOfStringAlgebraicVariables    = "0"  cmt_numberOfStringAlgebraicVariables    = "NYSTR:    number of alg. string variables,                    OMC"
+  numberOfStringAliasVariables        = "0"  cmt_numberOfStringAliasVariables        = "NASTR:    number of alias string variables,                   OMC"
+  numberOfStringParameters            = "0"  cmt_numberOfStringParameters            = "NPSTR:    number of string parameters,                        OMC"
+
+  numberOfBooleanAlgebraicVariables   = "1"  cmt_numberOfBooleanAlgebraicVariables   = "NYBOOL:   number of alg. bool variables,                      OMC"
+  numberOfBooleanAliasVariables       = "0"  cmt_numberOfBooleanAliasVariables       = "NABOOL:   number of alias bool variables,                     OMC"
+  numberOfBooleanParameters           = "6"  cmt_numberOfBooleanParameters           = "NPBOOL:   number of bool parameters,                          OMC" >
+
+
+  <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->
+  <DefaultExperiment
+    startTime      = "0"
+    stopTime       = "1"
+    stepSize       = "0.002"
+    tolerance      = "1e-06"
+    solver        = "dassl"
+    outputFormat      = "mat"
+    variableFilter      = ".*" />
+
+  <!-- variables in the model -->
+  <ModelVariables>
+
+  <ScalarVariable
+    name = "limpid.I.y"
+    valueReference = "1000"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "0" classType = "rSta"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "true">
+    <Real start="0.0" fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "der(limpid.I.y)"
+    valueReference = "1001"
+    description = "der(Connector of Real output signal)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rDer"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.Dzero.y"
+    valueReference = "1002"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "300" startColumn = "5" endLine = "301" endColumn = "56" fileWritable = "true">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.u"
+    valueReference = "1003"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.y_reset_internal"
+    valueReference = "1004"
+    description = "Internal connector for integrator reset"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Utilities/Math/IntegratorWithReset.mo" startLine = "42" startColumn = "3" endLine = "44" endColumn = "29" fileWritable = "true">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.P.y"
+    valueReference = "1005"
+    description = "Output signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "548" startColumn = "5" endLine = "549" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addPID.y"
+    valueReference = "1006"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "930" startColumn = "5" endLine = "931" endColumn = "64" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addSat.y"
+    valueReference = "1007"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "346" startColumn = "5" endLine = "347" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.controlError"
+    valueReference = "1008"
+    description = "Control error (set point - measurement)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "6" startColumn = "3" endLine = "7" endColumn = "46" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.gainPID.y"
+    valueReference = "1009"
+    description = "Output signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "7" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "548" startColumn = "5" endLine = "549" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.gainTrack.y"
+    valueReference = "1010"
+    description = "Output signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "8" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "548" startColumn = "5" endLine = "549" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.y_reset_internal"
+    valueReference = "1011"
+    description = "Internal connector for controller output reset"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "9" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "144" startColumn = "3" endLine = "146" endColumn = "29" fileWritable = "true">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "u_m"
+    valueReference = "1012"
+    variability = "continuous" isDiscrete = "false"
+    causality = "input" isValueChangeable = "true"
+    inputIndex = "0"
+    alias = "noAlias"
+    classIndex = "10" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/fmu_test/buildopt/test/LimPID.mo" startLine = "4" startColumn = "3" endLine = "5" endColumn = "203" fileWritable = "true">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "u_s"
+    valueReference = "1013"
+    variability = "continuous" isDiscrete = "false"
+    causality = "input" isValueChangeable = "true"
+    inputIndex = "1"
+    alias = "noAlias"
+    classIndex = "11" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/fmu_test/buildopt/test/LimPID.mo" startLine = "2" startColumn = "3" endLine = "3" endColumn = "200" fileWritable = "true">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "y"
+    valueReference = "1014"
+    variability = "continuous" isDiscrete = "false"
+    causality = "output" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "12" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/fmu_test/buildopt/test/LimPID.mo" startLine = "6" startColumn = "3" endLine = "7" endColumn = "211" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.Dzero.k"
+    valueReference = "1015"
+    description = "Constant output value"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rPar"
+    isProtected = "true" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Sources.mo" startLine = "165" startColumn = "5" endLine = "166" endColumn = "102" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.k"
+    valueReference = "1016"
+    description = "Integrator gain"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Utilities/Math/IntegratorWithReset.mo" startLine = "5" startColumn = "3" endLine = "5" endColumn = "49" fileWritable = "true">
+    <Real start="0.003333333333333334" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.y_reset"
+    valueReference = "1017"
+    description = "Value to which integrator is reset, used if reset = Buildings.Types.Reset.Parameter"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Utilities/Math/IntegratorWithReset.mo" startLine = "21" startColumn = "3" endLine = "26" endColumn = "44" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.y_start"
+    valueReference = "1018"
+    description = "Initial or guess value of output (= state)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Utilities/Math/IntegratorWithReset.mo" startLine = "15" startColumn = "3" endLine = "16" endColumn = "48" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.Nd"
+    valueReference = "1019"
+    description = "The higher Nd, the more ideal the derivative block"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "30" startColumn = "3" endLine = "33" endColumn = "94" fileWritable = "true">
+    <Real start="10.0" fixed="true" useNominal="false" min="1e-13" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.Ni"
+    valueReference = "1020"
+    description = "Ni*Ti is time constant of anti-windup compensation"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "26" startColumn = "3" endLine = "29" endColumn = "92" fileWritable = "true">
+    <Real start="0.9" fixed="true" useNominal="false" min="1e-13" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.P.k"
+    valueReference = "1021"
+    description = "Gain value multiplied with input signal"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "543" startColumn = "5" endLine = "544" endColumn = "48" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.Td"
+    valueReference = "1022"
+    description = "Time constant of Derivative block"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "7" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "16" startColumn = "3" endLine = "19" endColumn = "73" fileWritable = "true">
+    <Real start="0.1" fixed="true" useNominal="false" min="0.0" unit="s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.Ti"
+    valueReference = "1023"
+    description = "Time constant of Integrator block"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "8" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "12" startColumn = "3" endLine = "15" endColumn = "73" fileWritable = "true">
+    <Real start="300.0" fixed="true" useNominal="false" min="1e-60" unit="s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addI.k1"
+    valueReference = "1024"
+    description = "Gain of input signal 1"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "9" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "921" startColumn = "5" endLine = "921" endColumn = "50" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addI.k2"
+    valueReference = "1025"
+    description = "Gain of input signal 2"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "10" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "922" startColumn = "5" endLine = "922" endColumn = "50" fileWritable = "true">
+    <Real start="-1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addI.k3"
+    valueReference = "1026"
+    description = "Gain of input signal 3"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "11" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "923" startColumn = "5" endLine = "923" endColumn = "50" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addP.k1"
+    valueReference = "1027"
+    description = "Gain of input signal 1"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "12" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "876" startColumn = "5" endLine = "876" endColumn = "50" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addP.k2"
+    valueReference = "1028"
+    description = "Gain of input signal 2"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "13" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "877" startColumn = "5" endLine = "877" endColumn = "50" fileWritable = "true">
+    <Real start="-1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addPID.k1"
+    valueReference = "1029"
+    description = "Gain of input signal 1"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "14" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "921" startColumn = "5" endLine = "921" endColumn = "50" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addPID.k2"
+    valueReference = "1030"
+    description = "Gain of input signal 2"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "15" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "922" startColumn = "5" endLine = "922" endColumn = "50" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addPID.k3"
+    valueReference = "1031"
+    description = "Gain of input signal 3"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "16" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "923" startColumn = "5" endLine = "923" endColumn = "50" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addSat.k1"
+    valueReference = "1032"
+    description = "Gain of input signal 1"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "17" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "876" startColumn = "5" endLine = "876" endColumn = "50" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addSat.k2"
+    valueReference = "1033"
+    description = "Gain of input signal 2"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "18" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "877" startColumn = "5" endLine = "877" endColumn = "50" fileWritable = "true">
+    <Real start="-1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.gainPID.k"
+    valueReference = "1034"
+    description = "Gain value multiplied with input signal"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "19" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "543" startColumn = "5" endLine = "544" endColumn = "48" fileWritable = "true">
+    <Real start="100.0" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.gainTrack.k"
+    valueReference = "1035"
+    description = "Gain value multiplied with input signal"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "20" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "543" startColumn = "5" endLine = "544" endColumn = "48" fileWritable = "true">
+    <Real start="0.01111111111111111" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.k"
+    valueReference = "1036"
+    description = "Gain of controller"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "21" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "11" startColumn = "3" endLine = "11" endColumn = "51" fileWritable = "true">
+    <Real start="100.0" fixed="true" useNominal="false" min="0.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.limiter.uMax"
+    valueReference = "1037"
+    description = "Upper limits of input signals"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "22" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "191" startColumn = "3" endLine = "191" endColumn = "63" fileWritable = "true">
+    <Real start="10000.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.limiter.uMin"
+    valueReference = "1038"
+    description = "Lower limits of input signals"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "23" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "192" startColumn = "3" endLine = "192" endColumn = "61" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.revAct"
+    valueReference = "1039"
+    description = "Switch for sign for reverse or direct acting controller"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "24" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "122" startColumn = "3" endLine = "123" endColumn = "62" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.wd"
+    valueReference = "1040"
+    description = "Set-point weight for Derivative block (0..1)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "25" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "23" startColumn = "3" endLine = "25" endColumn = "94" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" min="0.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.wp"
+    valueReference = "1041"
+    description = "Set-point weight for Proportional block (0..1)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "26" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "22" startColumn = "3" endLine = "22" endColumn = "80" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" min="0.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.xd_start"
+    valueReference = "1042"
+    description = "Initial or guess value for state of derivative block"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "27" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "46" startColumn = "3" endLine = "50" endColumn = "94" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.xi_start"
+    valueReference = "1043"
+    description = "Initial or guess value value for integrator output (= integrator state)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "28" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "41" startColumn = "3" endLine = "45" endColumn = "85" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.yMax"
+    valueReference = "1044"
+    description = "Upper limit of output"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "29" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "20" startColumn = "3" endLine = "20" endColumn = "57" fileWritable = "true">
+    <Real start="10000.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.yMin"
+    valueReference = "1045"
+    description = "Lower limit of output"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "30" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "21" startColumn = "3" endLine = "21" endColumn = "48" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.y_reset"
+    valueReference = "1046"
+    description = "Value to which the controller output is reset if the boolean trigger has a rising edge, used if reset == Buildings.Types.Reset.Parameter"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "31" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "64" startColumn = "3" endLine = "67" endColumn = "49" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.y_start"
+    valueReference = "1047"
+    description = "Initial value of output"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "32" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "51" startColumn = "3" endLine = "53" endColumn = "29" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.P.u"
+    valueReference = "1048"
+    description = "Input signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.P.y" aliasVariableId="5"
+    classIndex = "0" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "546" startColumn = "5" endLine = "547" endColumn = "58" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addI.u1"
+    valueReference = "1049"
+    description = "Connector of Real input signal 1"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="u_s" aliasVariableId="13"
+    classIndex = "1" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "924" startColumn = "5" endLine = "925" endColumn = "66" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addI.u2"
+    valueReference = "1050"
+    description = "Connector of Real input signal 2"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="u_m" aliasVariableId="12"
+    classIndex = "2" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "926" startColumn = "5" endLine = "927" endColumn = "66" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addI.u3"
+    valueReference = "1051"
+    description = "Connector of Real input signal 3"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.gainTrack.y" aliasVariableId="10"
+    classIndex = "3" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "928" startColumn = "5" endLine = "929" endColumn = "68" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addI.y"
+    valueReference = "1052"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.I.u" aliasVariableId="3"
+    classIndex = "4" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "930" startColumn = "5" endLine = "931" endColumn = "64" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addP.u1"
+    valueReference = "1053"
+    description = "Connector of Real input signal 1"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="u_s" aliasVariableId="13"
+    classIndex = "5" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "342" startColumn = "5" endLine = "343" endColumn = "57" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addP.u2"
+    valueReference = "1054"
+    description = "Connector of Real input signal 2"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="u_m" aliasVariableId="12"
+    classIndex = "6" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "344" startColumn = "5" endLine = "345" endColumn = "59" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addP.y"
+    valueReference = "1055"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.P.y" aliasVariableId="5"
+    classIndex = "7" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "346" startColumn = "5" endLine = "347" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addPID.u1"
+    valueReference = "1056"
+    description = "Connector of Real input signal 1"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.P.y" aliasVariableId="5"
+    classIndex = "8" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "924" startColumn = "5" endLine = "925" endColumn = "66" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addPID.u2"
+    valueReference = "1057"
+    description = "Connector of Real input signal 2"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.Dzero.y" aliasVariableId="2"
+    classIndex = "9" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "926" startColumn = "5" endLine = "927" endColumn = "66" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addPID.u3"
+    valueReference = "1058"
+    description = "Connector of Real input signal 3"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.I.y" aliasVariableId="0"
+    classIndex = "10" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "928" startColumn = "5" endLine = "929" endColumn = "68" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addSat.u1"
+    valueReference = "1059"
+    description = "Connector of Real input signal 1"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="y" aliasVariableId="14"
+    classIndex = "11" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "342" startColumn = "5" endLine = "343" endColumn = "57" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.addSat.u2"
+    valueReference = "1060"
+    description = "Connector of Real input signal 2"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.gainPID.y" aliasVariableId="9"
+    classIndex = "12" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "344" startColumn = "5" endLine = "345" endColumn = "59" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.gainPID.u"
+    valueReference = "1061"
+    description = "Input signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.addPID.y" aliasVariableId="6"
+    classIndex = "13" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "546" startColumn = "5" endLine = "547" endColumn = "58" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.gainTrack.u"
+    valueReference = "1062"
+    description = "Input signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.addSat.y" aliasVariableId="7"
+    classIndex = "14" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Math.mo" startLine = "546" startColumn = "5" endLine = "547" endColumn = "58" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.limiter.u"
+    valueReference = "1063"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="limpid.gainPID.y" aliasVariableId="9"
+    classIndex = "15" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.limiter.y"
+    valueReference = "1064"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="y" aliasVariableId="14"
+    classIndex = "16" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.u_m"
+    valueReference = "1065"
+    description = "Connector of measurement input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="u_m" aliasVariableId="12"
+    classIndex = "17" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "496" startColumn = "5" endLine = "500" endColumn = "26" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.u_s"
+    valueReference = "1066"
+    description = "Connector of setpoint input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="u_s" aliasVariableId="13"
+    classIndex = "18" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "494" startColumn = "5" endLine = "495" endColumn = "58" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.y"
+    valueReference = "1067"
+    description = "Connector of actuator output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="y" aliasVariableId="14"
+    classIndex = "19" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "501" startColumn = "5" endLine = "502" endColumn = "56" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.initType"
+    valueReference = "1068"
+    description = "Type of initialization (1: no init, 2: steady state, 3,4: initial output)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Utilities/Math/IntegratorWithReset.mo" startLine = "10" startColumn = "3" endLine = "13" endColumn = "38" fileWritable = "true">
+    <Integer start="3" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.reset"
+    valueReference = "1069"
+    description = "Type of integrator reset"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Utilities/Math/IntegratorWithReset.mo" startLine = "18" startColumn = "3" endLine = "19" endColumn = "31" fileWritable = "true">
+    <Integer start="1" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.controllerType"
+    valueReference = "1070"
+    description = "Type of controller"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "9" startColumn = "3" endLine = "10" endColumn = "72" fileWritable = "true">
+    <Integer start="2" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.initType"
+    valueReference = "1071"
+    description = "Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "34" startColumn = "3" endLine = "36" endColumn = "63" fileWritable = "true">
+    <Integer start="3" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.reset"
+    valueReference = "1072"
+    description = "Type of controller output reset"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "60" startColumn = "3" endLine = "62" endColumn = "64" fileWritable = "true">
+    <Integer start="1" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.I.trigger_internal"
+    valueReference = "1073"
+    description = "Needed to use conditional connector trigger"
+    variability = "discrete" isDiscrete = "true"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "bAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Utilities/Math/IntegratorWithReset.mo" startLine = "46" startColumn = "3" endLine = "47" endColumn = "50" fileWritable = "true">
+    <Boolean fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.limiter.limitsAtInit"
+    valueReference = "1074"
+    description = "Has no longer an effect and is only kept for backwards compatibility (the implementation uses now the homotopy operator)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "bPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "195" startColumn = "3" endLine = "197" endColumn = "75" fileWritable = "true">
+    <Boolean start="true" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.limiter.strict"
+    valueReference = "1075"
+    description = "= true, if strict limits with noEvent(..)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "bPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "193" startColumn = "3" endLine = "194" endColumn = "79" fileWritable = "true">
+    <Boolean start="true" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.reverseActing"
+    valueReference = "1076"
+    description = "Set to true for reverse acting, or false for direct acting control action"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "57" startColumn = "3" endLine = "58" endColumn = "80" fileWritable = "true">
+    <Boolean start="true" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.strict"
+    valueReference = "1077"
+    description = "= true, if strict limits with noEvent(..)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "54" startColumn = "3" endLine = "55" endColumn = "79" fileWritable = "true">
+    <Boolean start="true" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.with_D"
+    valueReference = "1078"
+    description = "Boolean flag to enable derivative action"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "bPar"
+    isProtected = "true" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "129" startColumn = "3" endLine = "132" endColumn = "47" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "limpid.with_I"
+    valueReference = "1079"
+    description = "Boolean flag to enable integral action"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "bPar"
+    isProtected = "true" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/modelica-buildings/Buildings/Controls/Continuous/LimPID.mo" startLine = "125" startColumn = "3" endLine = "128" endColumn = "47" fileWritable = "true">
+    <Boolean start="true" fixed="true" />
+  </ScalarVariable>
+
+
+
+  </ModelVariables>
+
+
+</fmiModelDescription>
+

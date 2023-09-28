@@ -1,0 +1,63 @@
+{
+    "model": {
+        "ode": {
+            "dTi": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci) + w1 ",
+            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + w2",
+            "dTh": "(1/Ch)*UA_nom*(Tsup - Th) + (Ti - Th)/(Rih*Ch) + w3"
+        },
+        "alg": {
+            "h1": "y1 - Ti - v1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Ci",
+            "Ce",
+            "Ch",
+            "Ai",
+            "UA_nom"
+        ],
+        "u": [
+            "Tsup",
+            "Ta", 
+            "phi_s"
+        ],
+        "w": [
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "v": [
+            "v1"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "N": 24,
+    "dt": 3600,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.max_cpu_time": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

@@ -378,9 +378,9 @@ class IRK(Integrator):
         
     def set_g(self):
         self.g = ca.Function('g',
-                          [self.z, self.x, self.u, self.p, self.v, self.r],
+                          [self.z, self.x, self.u, self.p, self.v, self.s, self.r],
                           [self.g_expr],
-                          ["z", "x", "u", "p", "v", "r"],
+                          ["z", "x", "u", "p", "v", "s", "r"],
                           ["g"])
         
     def set_G(self):
@@ -579,6 +579,7 @@ class IRK(Integrator):
         #v_ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
         #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
         #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
         ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
         
         V = ifcn(ca.MX(), X0, Z, U, P, S, R)
@@ -745,9 +746,9 @@ class RK4(Integrator):
         
     def set_g(self):
         self.g = ca.Function('g',
-                          [self.x, self.z, self.u, self.p, self.r],
+                          [self.z, self.x, self.u, self.p, self.v, self.s, self.r],
                           [self.g_expr],
-                          ["x", "z", "u", "p", "r"],
+                          ["z", "x", "u", "p", "v", "s", "r"],
                           ["g"])
         
     def set_ode_func(self):

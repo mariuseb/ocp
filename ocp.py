@@ -21,9 +21,11 @@ from ocp.dae import DAE
 #from callback import ProcessIdCallback
 import os
 import subprocess
+from collections import OrderedDict
 #from shooting import Collocation
 #from sysid.ocp import OCP
 #import typing
+import hashlib
 
 
 class OCP(metaclass=ABCMeta):
@@ -88,7 +90,7 @@ class OCP(metaclass=ABCMeta):
                 **kwargs
                 ):
 
-        config = kwargs.pop("config")
+        config = kwargs.pop("config")        
         self.functions = functions = kwargs.pop("functions", None)
         #if config["solver"] == "gauss_newton":
         #    self.gauss_newton = True
@@ -106,6 +108,9 @@ class OCP(metaclass=ABCMeta):
             
         # TODO: include all entities
         #if scale_nlp:
+        
+        self.scale_dict = OrderedDict()
+        
         self.x_nom = kwargs.pop("x_nom", 1)
         self.x_nom_b = kwargs.pop("x_nom_b", 0)
         self.z_nom = kwargs.pop("z_nom", 1)
@@ -119,14 +124,47 @@ class OCP(metaclass=ABCMeta):
         self.s_nom = kwargs.pop("s_nom", 1)
         self.v_nom = kwargs.pop("v_nom", 1)
         self.v_nom_b = kwargs.pop("v_nom_b", 0)
+        self.p_nom = self.scale = kwargs.pop("p_nom", None)
+        self.p_nom_b = kwargs.pop("p_nom_b", 0)
+        # special:
+        #if param_guess is not None:
+        #if self.p_nom is None:
+        #    self.p_nom = self.scale = self.get_scale(param_guess)
+        if param_guess is not None and self.p_nom is None:
+            self.p_nom = self.scale = self.get_scale(param_guess)
+        elif param_guess is None:
+            self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
+        
+        self.scale_dict["x_nom"] = self.x_nom
+        self.scale_dict["x_nom_b"] = self.x_nom_b
+        self.scale_dict["z_nom"] = self.z_nom
+        self.scale_dict["z_nom_b"] = self.z_nom_b
+        self.scale_dict["y_nom"] = self.y_nom
+        self.scale_dict["y_nom_b"] = self.y_nom_b
+        self.scale_dict["r_nom"] = self.r_nom
+        self.scale_dict["r_nom_b"] = self.r_nom_b
+        self.scale_dict["u_nom"] = self.u_nom
+        self.scale_dict["u_nom_b"] = self.u_nom_b
+        self.scale_dict["s_nom"] = self.s_nom
+        self.scale_dict["u_nom"] = self.u_nom
+        self.scale_dict["u_nom_b"] = self.u_nom_b
+        self.scale_dict["v_nom"] = self.v_nom
+        self.scale_dict["v_nom_b"] = self.v_nom_b
+        self.scale_dict["p_nom"] = list(self.p_nom)
+        self.scale_dict["p_nom_b"] = self.p_nom_b
+        
+        
         self.use_objective_from_cfg = kwargs.pop("use_objective_from_cfg", True)
         self.gamma = kwargs.pop("gamma", 1)
        
-            
-        
         if isinstance(config, str) or isinstance(config, os.PathLike):
             with open(config, "r") as f:
-                config = json.load(f)
+                config = json.load(f, object_pairs_hook=OrderedDict)
+        """
+        Hash config to avoid re-generating, compiling c-code.
+        """
+        self.gen_code_filename = self.get_c_code_name(config)
+        self.so_filename = self.gen_code_filename.replace(".c", ".so")
 
         if N is None: # look in config
             self.N = N = config["N"]
@@ -155,11 +193,6 @@ class OCP(metaclass=ABCMeta):
             self.gauss_newton = False
             
 
-        # special:
-        if param_guess is not None:
-            self.p_nom = self.scale = self.get_scale(param_guess)
-        else:
-            self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
         
         #if isinstance(data, pd.DataFrame):
         #    self.dt = dt = data.index[1] - data.index[0]
@@ -187,13 +220,28 @@ class OCP(metaclass=ABCMeta):
             """
             for i, expr in enumerate(h):
                 self.h_exprs[i] = {}
-                elems = expr.split("<=")
-                if len(elems) < 2: # we picked up the the wrong sign 
-                    elems = expr.split(">=")
-                    elems = elems.reverse()
+                # find sign. only handle one:
+                if "==" in expr:
+                    sign = "=="
+                elif ">=" in expr:
+                    sign = ">="
+                elif "<=" in expr:
+                    sign = "<="
+                else:
+                    raise ValueError("Ill-defined constraint h(x). Missing sign.")
+                
+                #elems = expr.split("<=")
+                #if len(elems) < 2: # we picked up the the wrong sign 
+                #    elems = expr.split(">=")
+                #    elems = elems.reverse()
+                #elif elems is None: # == sign
+                #    elems = expr.split("==")
+                #elems = elems.reverse()
+                    
+                elems = expr.split(sign)
+                
                 #elif len(elems) == 2: # 'standard' case
-                """
-                elif len(elems) <      
+                """     
                 else:
                     raise ValueError("Improve handling " + \
                                     "of inequality constraints")
@@ -206,7 +254,17 @@ class OCP(metaclass=ABCMeta):
                 self.h_exprs[i]["lhs"] = float(elems[0]) # needs to be a number ??
                 self.h_exprs[i]["body"] = elems[1]
                 self.h_exprs[i]["symbols"] = symbols
-                self.h_exprs[i]["rhs"] = np.inf
+                if sign != "==":
+                    if len(elems) == 3:
+                        self.h_exprs[i]["rhs"] = float(elems[2])
+                    elif len(elems) == 2:
+                        self.h_exprs[i]["rhs"] = np.inf
+                    else:
+                        raise ValueError("OCP constraint error.")
+                else:
+                    assert len(elems) == 2
+                    self.h_exprs[i]["rhs"] = self.h_exprs[i]["lhs"]
+                    
             #########################################################    
 
         if self.method in (
@@ -270,6 +328,7 @@ class OCP(metaclass=ABCMeta):
                                                 "z_nom": self.z_nom,
                                                 "z_nom_b": self.z_nom_b,
                                                 "p_nom": self.p_nom,
+                                                "p_nom_b": self.p_nom_b,
                                                 "r_nom": self.r_nom,
                                                 "r_nom_b": self.r_nom_b,
                                                 "u_nom": self.u_nom,
@@ -308,21 +367,29 @@ class OCP(metaclass=ABCMeta):
                                             "y_nom": self.y_nom,
                                             "y_nom_b": self.y_nom_b,
                                             "p_nom": self.p_nom,
+                                            "p_nom_b": self.p_nom_b,
                                             #"p_nom": ca.repmat(ca.DM([1]), len(self.dae.p)),
                                             "r_nom": self.r_nom,
                                             "r_nom_b": self.r_nom_b,
+                                            "z_nom": self.z_nom,
+                                            "z_nom_b": self.z_nom_b,
                                             "u_nom": self.u_nom,
                                             "s_nom": self.s_nom,
                                             "v_nom": self.v_nom
                                             }
                                         )
 
-        if config["codegen"]:
-            self.with_jit = True
+        """
+        if config["codegen"]: # TODO: clear up difference between jit and codegen.
+            self.with_jit = self.codegen = True
             self.compiler = "shell"
         else:
-            self.with_jit = False
+            self.with_jit = self.codegen = False
             self.compiler = ""
+        """
+        self.with_jit = config.pop("with_jit", False)
+        self.codegen = config.pop("codegen", False)
+        self.compiler = config.pop("compiler", "shell")
         
         # NOTE: generalize:
         #self.separate_data(data)
@@ -353,7 +420,11 @@ class OCP(metaclass=ABCMeta):
                 # get offset from 
                 stop = len(y_x_overlap)
                 y_nom = self.y_nom[0:stop]
-                y_nom_b = self.y_nom_b[0:stop]
+                try:
+                    y_nom_b = self.y_nom_b[0:stop]
+                except:
+                    # scalar
+                    y_nom_b = self.y_nom_b
                 
             else: 
                 y_nom = self.y_nom
@@ -431,10 +502,10 @@ class OCP(metaclass=ABCMeta):
                         #min_step_size=1E-10
                         )
             
-            self.sqp_solver = ca.nlpsol('solver',
-                                       'sqpmethod',
-                                       self.nlp,
-                                       opts)
+        self.sqp_solver = ca.nlpsol('solver',
+                                    'sqpmethod',
+                                    self.nlp,
+                                    opts)
             
             #self.jsolver_sqp = self.sqp_solver.factory('h', self.sqp_solver.name_in(), ['jac:f:p'])
             #self.sqp_adj = self.sqp_solver.reverse(1)
@@ -568,15 +639,32 @@ class OCP(metaclass=ABCMeta):
         #return dec_scale
     
     def __del__(self):
+        pass
+        """
         for file in self.c_files:
             print("Deleting %s..." % file)
             os.remove(file)
-        #print("")
+        """
     
-    def get_c_code_name(self):
+    def get_c_code_name(self, config):
+        """
         return "%s_solver_id_" % type(self).__name__ + \
-                str(hash(self)) + \
+                str(abs(hash(json.dumps(config, sort_keys=True)))) + \
                 ".c"
+        NOTE: built-in hash() only consistent internal to a process
+        """
+        import hashlib
+        config["scale_dict"] = self.scale_dict
+        s = json.dumps(config, sort_keys=True)
+        return "%s_solver_id_" % type(self).__name__ + \
+                str(
+                    int(
+                        hashlib.sha256(s.encode('utf-8')).hexdigest(),
+                        16) %
+                    10**8
+                    ) \
+                + ".c"
+        
         
     def pregenerate_c_code(self, gen_code_filename, **kwargs):
         """
@@ -586,22 +674,25 @@ class OCP(metaclass=ABCMeta):
         
         TODO: test on another platform.
         """
-        so_filename = gen_code_filename.replace(".c", ".so")
+        #so_filename = gen_code_filename.replace(".c", ".so")
         # keep names for later:
+        so_filename = self.so_filename
         self.c_files.append(gen_code_filename)
         self.c_files.append(so_filename)
+        self.solver.generate_dependencies(gen_code_filename)
         
+    def compile_c_code(self, **kwargs):
+        # Create a new NLP solver instance from the compiled code
         compiler = kwargs.pop("compiler", "gcc")
         flags = kwargs.pop("flags", ["-O3"])
-        
-        self.solver.generate_dependencies(gen_code_filename)
         cmd_args = [compiler,"-fPIC","-shared"] + \
                     flags + \
-                    [gen_code_filename, "-o", so_filename]
+                    [self.gen_code_filename, "-o", self.so_filename]
         # compile:
         subprocess.run(cmd_args)
-        # Create a new NLP solver instance from the compiled code
-        self.opt.pop("verbose")
+    
+    def init_codegen_solver(self):
+        self.opt.pop("verbose", False)
         #self.opt.pop("ipopt.hessian_approximation")
         opts = dict()
         opts["ipopt"] = dict()
@@ -610,8 +701,24 @@ class OCP(metaclass=ABCMeta):
         # re-init solver object:
         self.solver = ca.nlpsol("solver", 
                                 "ipopt",
-                                so_filename,
+                                self.so_filename,
                                 opts)
+        
+    def prepare_solver(self):
+        """
+        Prepare solver.
+        """
+        if not hasattr(self, "solver"):      
+            self._init_solver()
+
+        #gen_code_filename = self.get_c_code_name()
+
+        if self.codegen:
+            if not os.path.exists(self.gen_code_filename):
+                self.pregenerate_c_code(self.gen_code_filename)
+            if not os.path.exists(self.so_filename):
+                self.compile_c_code()
+            self.init_codegen_solver()    
     
       
     def get_nlp_var(self, varname):
@@ -629,7 +736,9 @@ class OCP(metaclass=ABCMeta):
                 try:
                     sym_var = sym_var.reshape((dim_var, self.N))
                 except:
-                    if varname != "x":
+                    if varname == "z" and self.method == "collocation":
+                        sym_var = sym_var.reshape((dim_var, self.strategy.d*(self.N-1)))
+                    elif varname != "x":
                         sym_var = sym_var.reshape((dim_var, self.N-1))
                     else: # x, collocation, fix:
                         sym_var = sym_var.reshape((dim_var, (self.N-1)*(self.strategy.d+1)+1))
@@ -875,23 +984,80 @@ class OCP(metaclass=ABCMeta):
     
             # TODO: bounds on x here:
             
-            # None:
-            bounds["x"]["ub"] = ubx
-            bounds["x"]["lb"] = lbx
-            # not None:
+            # TODO: improve logic:
+            if isinstance(self.x_nom_b, list):
+                bias = self.x_nom_b = np.tile(self.x_nom_b, self.N)
+                scale = self.x_nom = np.tile(self.x_nom, self.N)
+            else:
+                bias = self.x_nom_b
+                scale = self.x_nom
+            
+            if ubx is not None:
+                #bounds["x"]["ub"] = (ubx - self.x_nom_b)/self.x_nom
+                bounds["x"]["ub"] = (ubx - bias)/scale
+            else:
+                bounds["x"]["ub"] = None
+            if lbx is not None:
+                #bounds["x"]["lb"] = (lbx - self.x_nom_b)/self.x_nom
+                bounds["x"]["lb"] = (lbx - bias)/scale
+            else:
+                bounds["x"]["lb"] = None
+                # not None:
             #bounds["x"]["x0"] = x_init/self.x_nom
-            bounds["x"]["x0"] = (x_init - self.x_nom_b)/self.x_nom
+            #bounds["x"]["x0"] = (x_init - self.x_nom_b)/self.x_nom
+            bounds["x"]["x0"] = (x_init - bias)/scale
+            
+            """
+            varname = "x"
+            names = getattr(self, varname + "_names")
+            dim = int(self.nlp_parser["x"]["dim"]/len(names))
+            try:
+                # these should be passed as python lists:
+                scale = getattr(self, varname + "_nom")
+                bias = getattr(self, varname + "_nom_b")
+                
+                if not isinstance(scale, list):
+                    scale = [scale]*len(names)
+                if not isinstance(bias, list):
+                    bias = [bias]*len(names)
+                    
+                bias = np.array(bias)
+                scale = np.array(scale)
+                bias = bias.reshape((1, bias.shape[0])).T
+                bias = np.vstack([bias for n in range(dim)])
+                scale = scale.reshape((1, scale.shape[0])).T
+                scale = np.vstack([scale for n in range(dim)])
+            except (AttributeError, IndexError) as e: # fallback:
+                scale = 1    
+                bias = 0 
+            if ubx is not None:
+                bounds["x"]["ub"] = (ubx - bias)/scale
+            else:
+                bounds["x"]["ub"] = None
+            if lbx is not None:
+                bounds["x"]["lb"] = (lbx - bias)/scale
+            else:
+                bounds["x"]["lb"] = None
+                # not None:
+            #bounds["x"]["x0"] = x_init/self.x_nom
+            bounds["x"]["x0"] = (x_init - bias)/scale
+            """
+            
+        # TODO: extend with lbz, ubz
                  
         for varname in varnames:
             
-            #if varname == "u":
+            #dim = int(self.nlp_parser[varname]["dim"]/(len(getattr(self.dae, varname + "_names"))))
+            
+            #if varname == "r":
             #    print(varname)
+            if varname == "z":
+                print(varname)
             
             bounds[varname] = {}
             names = getattr(self, varname + "_names")
-            
-            if len(names) == 0:
         
+            if len(names) == 0:
                 bounds[varname]["lb"] = \
                     bounds[varname]["ub"] =  \
                         bounds[varname]["x0"] = \
@@ -899,7 +1065,28 @@ class OCP(metaclass=ABCMeta):
                 #bounds[varname]["ub"] = None
                 
             else:
+                dim = int(self.nlp_parser[varname]["dim"]/len(names))
                 try:    
+                    try:
+                        # these should be passed as python lists:
+                        scale = getattr(self, varname + "_nom")
+                        bias = getattr(self, varname + "_nom_b")
+                        
+                        if not isinstance(scale, list):
+                            scale = [scale]*len(names)
+                        if not isinstance(bias, list):
+                            bias = [bias]*len(names)
+                            
+                        bias = np.array(bias)
+                        scale = np.array(scale)
+                        bias = bias.reshape((1, bias.shape[0])).T
+                        bias = np.vstack([bias for n in range(dim)])
+                        scale = scale.reshape((1, scale.shape[0])).T
+                        scale = np.vstack([scale for n in range(dim)])
+                    except (AttributeError, IndexError) as e: # fallback:
+                        scale = 1    
+                        bias = 0    
+                    
                     vals = data[names].values
                     """
                     try:
@@ -908,12 +1095,6 @@ class OCP(metaclass=ABCMeta):
                         vals = vals[:-1, :]
                         vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
                     """ 
-                    try:
-                        scale = getattr(self, varname + "_nom")
-                        bias = getattr(self, varname + "_nom_b")
-                    except AttributeError:
-                        scale = 1    
-                        bias = 0    
                     
                     # original:
                     """
@@ -921,8 +1102,6 @@ class OCP(metaclass=ABCMeta):
                         bounds[varname]["ub"] = \
                             bounds[varname]["x0"] = \
                                 (ca.DM(vals) - bias)/scale
-                    """
-                    
                     vals -= bias
                     vals /= scale
                     bounds[varname]["lb"] = \
@@ -930,11 +1109,43 @@ class OCP(metaclass=ABCMeta):
                             bounds[varname]["x0"] = \
                                 vals
                                 #ca.DM(vals)/scale
+                    """
+                    
                     try:
                         vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
                     except ValueError:
                         vals = vals[:-1, :]
-                        vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
+                        if varname == "z" and isinstance(self.strategy, Collocation):
+                            vals = np.tile(vals.flatten(), self.strategy.d)
+                        else:
+                            vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
+                    
+                    if varname == "r":
+                        print(varname) 
+                                
+                    vals -= bias
+                    vals /= scale
+                    
+                    # below leads to automatic broadcasting,
+                    # do not want that.
+                    #vals = vals - bias
+                    #vals = vals/scale
+                    """
+                    bounds[varname]["lb"] = \
+                        bounds[varname]["ub"] = \
+                            bounds[varname]["x0"] = \
+                                vals
+                    """
+                    bounds[varname]["x0"] = vals
+                    if varname != "z":
+                        bounds[varname]["lb"] = vals
+                        bounds[varname]["ub"] = vals
+                    else: # no bounds
+                        bounds[varname]["lb"] = None
+                        bounds[varname]["ub"] = None
+                        
+                        
+                        
                                 
                 except KeyError:
                     # not in data.
@@ -948,15 +1159,58 @@ class OCP(metaclass=ABCMeta):
                         #np.repeat([-np.inf], v["dim"]
                         
                         #dim = self.nlp_parser[varname]["dim"]
-                        dim = int(self.nlp_parser[varname]["dim"]/len(getattr(self.dae, varname)))
+                        n_var = getattr(self.dae, "n_" + varname)
+                        #dim = int(self.nlp_parser[varname]["dim"]/(len(getattr(self.dae, varname)*n_var)))
+                        #dim = int(self.nlp_parser[varname]["dim"]/(len(getattr(self.dae, varname))))
+                        
+                        #if varname == "z" and self.method == "collocation":
+                        #    dim = self.strategy.d*dim
                         
                         nom_name = varname + "_nom"
                         bias_name = varname + "_nom_b"
-                        scale = np.tile(getattr(self, nom_name), dim)
-                        bias = np.tile(getattr(self, bias_name), dim)
+                        # TODO: fix this for non-collocation:
+                        #bias = getattr(self, bias_name)
+                        #scale = getattr(self, nom_name)
+                        #if not isinstance(bias, list):
+                        #    bias = [bias]
                         
-                        lb_vals = np.array(bounds_cfg[varname]["lb" + varname]*dim) - bias
+                        """
+                        if varname == "z" and isinstance(self.strategy, Collocation):
+                            #dim *= self.strategy.d
+                            if not isinstance(bias, list):
+                                bias = [bias]*dim
+                            if not isinstance(scale, list):
+                                scale = [scale]*dim 
+                        """                          
+                        #if varname == "u":
+                        #    print(bias)
+                        
+                        """
+                        if scale != 1 or bias != 0: # must be passed as correct dimension:    
+                            scale = np.tile(scale, dim)
+                            bias = np.tile(bias, dim)
+                        """    
+                        #if isinstance(scale, np.ndarray):
+                        #    scale = np.tile(scale, dim)
+                        if varname == "u":
+                            print(varname)
+                        
+                        
+                        lb = np.array(bounds_cfg[varname]["lb" + varname]*dim)
+                        ub = np.array(bounds_cfg[varname]["ub" + varname]*dim)
+                        if isinstance(bias, np.ndarray):
+                            lb = lb.reshape(bias.shape)
+                            ub = ub.reshape(bias.shape)
+                        
+                        #lb_vals = np.array(bounds_cfg[varname]["lb" + varname]*dim) - bias
+                        #ub_vals = np.array(bounds_cfg[varname]["ub" + varname]*dim) - bias
+                        lb_vals = lb - bias
+                        ub_vals = ub - bias
                         #lb_vals /= scale
+                        #if varname == "z" and isinstance(self.strategy, Collocation):
+                        #        lb_vals = np.tile(lb_vals.flatten(), self.strategy.d)
+                        #        ub_vals = np.tile(ub_vals.flatten(), self.strategy.d)
+                            
                         lb_vals = lb_vals/scale
                         
                         #bounds[varname]["lb"] = \
@@ -970,7 +1224,6 @@ class OCP(metaclass=ABCMeta):
                         #np.tile(bounds_cfg[varname]["lb" + varname], dim)/scale
                         
                         # tile here:            
-                        ub_vals = np.array(bounds_cfg[varname]["ub" + varname]*dim) - bias
                         #ub_vals /= scale
                         ub_vals = ub_vals/scale
                         #bounds[varname]["ub"] = np.tile(dim, bounds_cfg[varname]["ub" + varname])/scale
@@ -1040,8 +1293,8 @@ class OCP(metaclass=ABCMeta):
         return self
     
     def __exit__(self, *a):
+        #self.clean_up_jit()
         pass
-        self.clean_up_jit()
         
     def parse_solution(self, solution):
         """ General. """  
@@ -1090,7 +1343,14 @@ class OCP(metaclass=ABCMeta):
                 
                 if name == "x":
                     if self.method == "multiple_shooting":
-                        _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name))) + self.x_nom_b
+                        
+                        if not isinstance(bias, (float, int)):
+                            bias = self.x_nom_b.reshape((self.N, getattr(self, attr_name)))
+                        _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name))) + \
+                            bias
+                        if not isinstance(scale, (float, int)):
+                            scale = self.x_nom.reshape((self.N, getattr(self, attr_name)))
+                            
                 #if self.method == "multiple_shooting" or name != "x":
                     elif self.method == "single_shooting":
                         _vals = np.array(sol_x[start:stop]*scale)
@@ -1110,9 +1370,56 @@ class OCP(metaclass=ABCMeta):
                     try:
                         _vals = _vals.reshape((self.N, getattr(self, attr_name)))
                     except ValueError:
+                        """
+                        Special handling of algebraic vars and collocation:
+                        TODO: cleanup
+                        """
+                        if name in ("z","y") and self.method == "collocation":
+                            # here, need to implement evaluation of polynomial for value
+                            # of algebraic variables at finite elements
+                            #scale = 1    
+                            #bias = 0
+                            
+                            n_var = getattr(self.dae, "n_" + name)
+                            nicp = 1 # TODO: generalize for more finite elements
+                            d = self.strategy.d
+                            #xA_opt = _vals.T.reshape(n_var, d*nicp*(self.N-1))
+                            xA_opt = _vals.T.reshape(d*nicp*(self.N-1), n_var)
+                            Da = self.strategy.Da
+                            xA_plt = np.resize(np.array([],dtype=ca.MX),(n_var,(d+1)*nicp*(self.N-1)))
+                            offset4=0
+                            offset5=0
+                            for k in range(self.N-1):
+                                for i in range(nicp):
+                                    for j in range(d+1):
+                                        if j!=0:
+                                            #xA_plt[:,offset5] = xA_opt[:,offset4]
+                                            xA_plt[:,offset5] = xA_opt[offset4,:]
+                                            offset4 += 1
+                                            offset5 += 1
+                                        else:
+                                            xa0 = 0
+                                            for j in range(d):
+                                                #xa0 += Da[j]*xA_opt[:,offset4+j]
+                                                xa0 += Da[j]*xA_opt[offset4+j,:]
+                                            xA_plt[:,offset5] = xa0
+                                            #xA_plt[:,offset5] = xA_opt[:,offset4]
+                                            offset5 += 1
+                            #print(xA_plt)
+                            #_vals = xA_plt.reshape(((self.N-1)*(d+1), n_var))
+                            _vals = xA_plt.T
+                            _vals = _vals[0:-1:(d+1)]
+                            
+                            # ?
+                            #scale = 1
+                            #bias = 0
+                        """
+                        Fill extra row with nan
+                        """
                         _vals = _vals.reshape((self.N-1, getattr(self, attr_name)))
                         newrow = np.repeat(np.nan, getattr(self, attr_name))
                         _vals = np.vstack([_vals, newrow])
+                    # Temporary fix:
                         
                     _vals *= scale
                     _vals += bias

@@ -1,0 +1,77 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + u_fan*UA_is*(Tsup - Ti)/Ci + Ai*(phi_s/Ci) + s1",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + s2",
+            "E": "(Tset - Ti)/ki + s3"
+        },
+        "alg": {
+            "u_fan": "u_fan - (kp*((Tset - Ti) + E))",
+            "Tsup": "Tsup - (u_fan*(313.15 - 294.15) + 294.15)"
+        },
+        "w": {
+            "v1": "y1 - Ti",
+            "v2": "y2 - u_fan",
+            "v3": "y3 - Tsup"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_is",
+            "kp",
+            "ki"
+        ],
+        "u": [
+            "Tset"
+        ],
+        "z": [
+            "u_fan",
+            "Tsup",
+            "Ph"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "s": [
+            "s1",
+            "s2",
+            "s3"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+            ],
+        "y": [
+            ["y1", "Ti"],   
+            ["y2", "u_fan"],    
+            ["y3", "Tsup"]
+        ]
+    },
+    "objective": "dot(v1*gamma_v, v1*gamma_v)@R[0,0] + dot(v2*gamma_s, v2*gamma_s)@R[1,1] + dot(v3*gamma_s, v3*gamma_s)@R[2,2] + dot(s1*gamma_s, s1*gamma_s)@Q[0,0] + dot(gamma_s*s2, gamma_s*s2)@Q[1,1] + dot(gamma_s*s3, gamma_s*s3)@Q[2,2]",
+    "N": 3,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "yes",
+        "ipopt.max_cpu_time": 20,
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

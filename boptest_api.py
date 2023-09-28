@@ -81,7 +81,7 @@ class RestApi(object):
         return requests.get('{0}/measurements'.format(self.url)).json()["payload"]
 
     def get_forecast_info(self):
-        return requests.get('{0}/forecast_info'.format(self.url)).json()["payload"]
+        return requests.get('{0}/forecast_points'.format(self.url)).json()["payload"]
     
     def get_input_info(self):
         return requests.get('{0}/inputs'.format(self.url)).json()["payload"]
@@ -128,6 +128,16 @@ class Boptest(RestApi):
         self.start_time = cfg["misc"].pop("start_time")
         self.warmup_period = cfg["misc"].pop("warmup_period")
         
+        # write info to text files in current dir
+        
+        if not os.path.exists(self.name + "_meas_info.txt"):
+            with open(self.name + "_meas_info.txt", "w+") as f:
+                pprint(self.get_measurement_info(), stream=f)
+            with open(self.name + "_forecast_info.txt", "w+") as f:
+                pprint(self.get_forecast_info(), stream=f)
+            with open(self.name + "_input_info.txt", "w+") as f:
+                pprint(self.get_input_info(), stream=f)
+        
         ''' 
         Takes config-file + desc. of ocp. 
         
@@ -142,6 +152,7 @@ class Boptest(RestApi):
         "oveAct", while the actual variable that is overwritten by this 
         block is named "preHea".
         '''
+        
         # ocp-names
         self.var = {}
         
@@ -150,6 +161,7 @@ class Boptest(RestApi):
             self.var[k] = list(v.keys())
             
         self.forecast_df = pd.DataFrame(columns=list(self.r.keys()))
+        
         
         #self.result_df = pd.DataFrame(columns = \
         #    list(set(list(map(lambda x: x + "_u", list(self.u.values()))) + \
@@ -169,7 +181,8 @@ class Boptest(RestApi):
         #                            [v for k, v in self.boptest_to_ocp.items() if v not in self.y_names]
         self.u_names = [col for col in self.result_df.columns if col not in self.y_names]
         
-        self.result_df.loc[int(res.index[0]), self.y_names] = res.loc[res.index[0], self.y_names]
+        #self.result_df.loc[int(res.index[0]), self.y_names] = res.loc[res.index[0], self.y_names]
+        self.result_df.loc[int(res.index[0])] = res.loc[res.index[0], self.y_names]
         
             #list(self.boptest_to_ocp[k] for k, v in self.u.items()))
         #self.forecast = pd.DataFrame(columns=list(self.r.values()))
@@ -197,15 +210,21 @@ class Boptest(RestApi):
         forecast = self.forecast()
         
         y = self.advance(u=self.get_control(u))
+        # set next column empty:
+        self.result_df.loc[y["time"], :] = np.nan
         #self.forecast_df.loc[y["time"]] = forecast.iloc[0]
         self.forecast_df.loc[int(y["time"] - self.h)] = forecast.iloc[0]
-        self.result_df.loc[y["time"] - self.h, self.u_names] = [y[k] for k in self.result_df.columns if k not in self.y_names]
-        self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.result_df if k in self.y_names]
+        #self.result_df.loc[y["time"] - self.h, self.u_names] = [y[k] for k in self.result_df.columns if k not in self.y_names]
+        #self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.result_df if k in self.y_names]
+        #self.result_df.loc[y["time"] - self.h, self.u_names] = [y[k] for k in self.u_names]
+        self.result_df.loc[y["time"], self.u_names] = [y[k] for k in self.u_names]
+        self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.y_names]
         
         if y_as_array:
             y_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["y"])
         else:
-            y_sorted = {k_bop: y[k_bop] for k_ocp, k_bop in self.y.items()}
+            # NOTE: changed this to return mapping of OCP-vars instead of BOPtest vars
+            y_sorted = {k_ocp: y[k_bop] for k_ocp, k_bop in self.y.items()}
         
         if self.noise: # add meas noise
             y_sorted += np.random.normal(scale=0.1, size=len(y_sorted))
@@ -271,8 +290,9 @@ class Boptest(RestApi):
             #else:
             #    u_values[v +  "_u"] = 0
             #    u_values[v +  "_activate"] = 0
-                
-        return {**u_values, **u_active}
+               
+        u_dict = {**u_values, **u_active}
+        return u_dict
     
     def construct_y0(self, y): 
         ''' 
@@ -296,7 +316,9 @@ class Boptest(RestApi):
         #for point in points:
         res = requests.put('{0}/results'.format(self.url),
                               json={
-                                  'point_names': points,'start_time': ts, 'final_time': tf
+                                  'point_names': points,
+                                  'start_time': ts,
+                                  'final_time': tf
                                   }).json()["payload"]
         df_res = pd.DataFrame().from_dict(res)
         #df_res = pd.concat((df_res,pd.DataFrame(data=res[point], index=res['time'],columns=[point])), axis=1)

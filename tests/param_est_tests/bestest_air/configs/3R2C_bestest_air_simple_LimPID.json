@@ -1,15 +1,12 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + _y*UA_is*(_y*(313.15 - 294.15) + 294.15 - Ti)/Ci + Ai*(phi_s/Ci)",
+            "Ti": "(Te - Ti)/(Rie*Ci) + pi_y(E, ca.vertcat(Ti, Tset))*UA_is*(pi_y(E, ca.vertcat(Ti, Tset))*(313.15 - 294.15) + 294.15 - Ti)/Ci + Ai*(phi_s/Ci)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
             "E": "pi_ode(E, ca.vertcat(Ti, Tset))"
         },
         "w": {
             "v1": "Ti - y1"
-        },
-        "alg": {
-            "_y": "_y + pi_y(E, ca.vertcat(Ti, Tset))"
         },
         "p": [
             "Rie",
@@ -21,9 +18,6 @@
         ],
         "u": [
             "Tset"
-        ],
-        "z": [
-            "_y"
         ],
         "r": [
             "Ta",

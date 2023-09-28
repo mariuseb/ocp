@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     GENERATE_DATA = False
     PLOT_DATA = False
-    sampling_freq = "30s"
+    sampling_freq = "900s"
     data_path = os.path.join("data", "data_bestest_air_simple_normal_op.csv")
     repeats = 1
     N = 6*24*4*repeats - 24*repeats
@@ -158,8 +158,8 @@ if __name__ == "__main__":
     # GIVES good fit:
     #param_guess = ca.DM([0.01,0.01,1,1E5,1E6,5,500])
     #param_guess = ca.DM([0.001,0.01,1E6,5E6,5,500,0.1,120])
-    param_guess = ca.DM([0.001,0.01,1E6,5E6,5,500])
     
+    param_guess = ca.DM([0.01,0.001,1E6,5E6,5,500])
     param_guess = ca.DM([
                         2.230834e-04,
                         2.253021e-03,
@@ -168,6 +168,7 @@ if __name__ == "__main__":
                         2.943147e-01,
                         2.479899e+03
                         ])
+    
     
     #lbp = param_guess*0.001
     #ubp = param_guess*1000
@@ -272,7 +273,8 @@ if __name__ == "__main__":
     p = param_guess
     _x0 = [0]
     
-    y_data = y_data[(4*24):]
+    #y_data = y_data[(4*24):]
+    #y_data = y_data[:120*24*2]
     N = len(y_data) - 1
     x0 = np.append(y_data[["Ti","Te"]].iloc[0].values, np.array([0]))
     z0 = [0]
@@ -281,15 +283,15 @@ if __name__ == "__main__":
     for n in range(N+1):
         xs = np.append(xs, np.array(x0))
         xs_ = np.append(xs_, np.array(_x0))
-        zs = np.append(zs, np.array(z0))
+        #zs = np.append(zs, np.array(z0))
         u = y_data[I.dae.u_names].iloc[n].values
         r = y_data[I.dae.r_names].iloc[n].values
         # inputs for PI control:
         u_ = y_data[I_PI_ode.dae.u_names].iloc[n].values
         r_ = y_data[I_PI_ode.dae.r_names].iloc[n].values
         #x0 = I.one_sample(x0,0,u,p,0,r) 
-        z0 = I.g(z0,x0,u,p,0,r)
-        x0 = I.one_sample(x0,z0,u,p,0,r) 
+        #z0 = I.g(z0,x0,u,p,0,r)
+        x0 = I.one_sample(x0,0,u,p,0,r) 
         #x0 = I.one_sample(x0,z0,ca.vertcat(p, r),u,0,0,0)[0]
         #_x0 = I_PI.one_sample(_x0,0,ca.vertcat(p_, r_),u_,0,0,0)[0]
         y_PI = float(I_PI_ode.g(_x0,0,u_,p_,r_))
@@ -318,7 +320,8 @@ if __name__ == "__main__":
     plt.show()
     
     #res_ = pd.DataFrame(data=xs.reshape(N+1, 2), columns=["Tsup", "u_fan"])
-    ax = res_.Tsup.plot()
+    ax = res_.Tsup.plot(color="b")
+    (res._y*19+294.15).plot(color="r", linestyle="dashed", ax=ax)
     #y_data._y.plot(color="k", linestyle="dashed", ax=ax)
     y_data.Tsup.plot(color="k", linestyle="dashed", ax=ax)
     plt.show()

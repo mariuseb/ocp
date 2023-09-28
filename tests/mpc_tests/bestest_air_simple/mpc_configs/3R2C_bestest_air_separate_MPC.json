@@ -1,0 +1,62 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + UA_is*u_fan*regNonZeroPower((Tsup - Ti), n, 0.05) + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ph": "UA_is*u_fan*regNonZeroPower((Tsup - Ti), n, 0.05) - Ph*eta"
+        },
+        "z": [
+            "Ph"
+        ],
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n",
+            "UA_is",
+            "eta"
+        ],
+        "u": [
+            "Tsup",
+            "u_fan"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [288.15,0],
+            "ubu": [313.15,1]
+        }
+    },
+    "objective": "dot(Ph/5000, Ph/5000)",
+    "N": 6,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "yes"
+    },
+    "codegen": true
+}

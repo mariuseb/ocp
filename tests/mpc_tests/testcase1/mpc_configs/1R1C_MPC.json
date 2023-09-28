@@ -19,13 +19,13 @@
     },
     "bounds": {
         "u": {
-            "lbu": [0],
+            "lbu": [-5000],
             "ubu": [5000]
         }
     },
     "objective": "dot(phi_h, phi_h)",
-    "N": 6,
-    "dt": 3600,
+    "N": 24,
+    "dt": 60,
     "method": "multiple_shooting",
     "integrator": 
         {

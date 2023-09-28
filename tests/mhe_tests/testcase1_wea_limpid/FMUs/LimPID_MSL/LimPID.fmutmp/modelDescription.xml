@@ -1,0 +1,925 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="LimPID"
+  guid="{2679e2d1-555b-47b1-9888-69ad6f32e25d}"
+  description=""
+  generationTool="OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"
+  generationDateAndTime="2023-08-24T14:14:07Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="0">
+  <ModelExchange
+    modelIdentifier="LimPID" providesDirectionalDerivative="true">
+    <SourceFiles>
+      <File name="LimPID.c" />
+      <File name="LimPID_functions.c" />
+      <File name="LimPID_records.c" />
+      <File name="LimPID_01exo.c" />
+      <File name="LimPID_02nls.c" />
+      <File name="LimPID_03lsy.c" />
+      <File name="LimPID_04set.c" />
+      <File name="LimPID_05evt.c" />
+      <File name="LimPID_06inz.c" />
+      <File name="LimPID_07dly.c" />
+      <File name="LimPID_08bnd.c" />
+      <File name="LimPID_09alg.c" />
+      <File name="LimPID_10asr.c" />
+      <File name="LimPID_11mix.c" />
+      <File name="LimPID_12jac.c" />
+      <File name="LimPID_13opt.c" />
+      <File name="LimPID_14lnz.c" />
+      <File name="LimPID_15syn.c" />
+      <File name="LimPID_16dae.c" />
+      <File name="LimPID_17inl.c" />
+      <File name="LimPID_18spd.c" />
+      <File name="LimPID_init_fmu.c" />
+      <File name="LimPID_FMU.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/jacobian_util.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+    </SourceFiles>
+  </ModelExchange>
+  <UnitDefinitions>
+    <Unit name="s">
+      <BaseUnit s="1" />
+    </Unit>
+    <Unit name="1">
+      <BaseUnit />
+    </Unit>
+  </UnitDefinitions>
+  <TypeDefinitions>
+    <SimpleType name="Modelica.Blocks.Types.Init">
+      <Enumeration>
+        <Item name="NoInit" value="1"/>
+        <Item name="SteadyState" value="2"/>
+        <Item name="InitialState" value="3"/>
+        <Item name="InitialOutput" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.SimpleController">
+      <Enumeration>
+        <Item name="P" value="1"/>
+        <Item name="PI" value="2"/>
+        <Item name="PD" value="3"/>
+        <Item name="PID" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.LimiterHomotopy">
+      <Enumeration>
+        <Item name="NoHomotopy" value="1"/>
+        <Item name="Linear" value="2"/>
+        <Item name="UpperLimit" value="3"/>
+        <Item name="LowerLimit" value="4"/>
+      </Enumeration>
+    </SimpleType>
+  </TypeDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="1.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="limpid.I.y"
+    valueReference="0"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="der(limpid.I.y)"
+    valueReference="1"
+    description="der(Connector of Real output signal)"
+    >
+    <Real derivative="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="limpid.Dzero.y"
+    valueReference="2"
+    description="Connector of Real output signal"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="limpid.FFzero.y"
+    valueReference="3"
+    description="Connector of Real output signal"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="limpid.P.y"
+    valueReference="5"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="limpid.addI.y"
+    valueReference="6"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="limpid.addPID.y"
+    valueReference="7"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="limpid.addSat.y"
+    valueReference="8"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="limpid.controlError"
+    valueReference="9"
+    description="Control error (set point - measurement)"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="limpid.gainTrack.y"
+    valueReference="10"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="limpid.limiter.u"
+    valueReference="11"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="u_m"
+    valueReference="12"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="u_s"
+    valueReference="13"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="y"
+    valueReference="14"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="limpid.Dzero.k"
+    valueReference="15"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="limpid.FFzero.k"
+    valueReference="16"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="limpid.I.k"
+    valueReference="17"
+    description="Integrator gain"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="limpid.I.y_start"
+    valueReference="18"
+    description="Initial or guess value of output (= state)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="limpid.Nd"
+    valueReference="19"
+    description="The higher Nd, the more ideal the derivative block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-13"/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="limpid.Ni"
+    valueReference="20"
+    description="Ni*Ti is time constant of anti-windup compensation"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-13"/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="limpid.P.k"
+    valueReference="21"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="limpid.Td"
+    valueReference="22"
+    description="Time constant of Derivative block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="limpid.Ti"
+    valueReference="23"
+    description="Time constant of Integrator block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-60" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="limpid.addFF.k1"
+    valueReference="24"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="limpid.addFF.k2"
+    valueReference="25"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="limpid.addI.k1"
+    valueReference="26"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="limpid.addI.k2"
+    valueReference="27"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "28" -->
+  <ScalarVariable
+    name="limpid.addI.k3"
+    valueReference="28"
+    description="Gain of input signal 3"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "29" -->
+  <ScalarVariable
+    name="limpid.addP.k1"
+    valueReference="29"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "30" -->
+  <ScalarVariable
+    name="limpid.addP.k2"
+    valueReference="30"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "31" -->
+  <ScalarVariable
+    name="limpid.addPID.k1"
+    valueReference="31"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "32" -->
+  <ScalarVariable
+    name="limpid.addPID.k2"
+    valueReference="32"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "33" -->
+  <ScalarVariable
+    name="limpid.addPID.k3"
+    valueReference="33"
+    description="Gain of input signal 3"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "34" -->
+  <ScalarVariable
+    name="limpid.addSat.k1"
+    valueReference="34"
+    description="Gain of input signal 1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "35" -->
+  <ScalarVariable
+    name="limpid.addSat.k2"
+    valueReference="35"
+    description="Gain of input signal 2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "36" -->
+  <ScalarVariable
+    name="limpid.gainPID.k"
+    valueReference="36"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "37" -->
+  <ScalarVariable
+    name="limpid.gainTrack.k"
+    valueReference="37"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "38" -->
+  <ScalarVariable
+    name="limpid.k"
+    valueReference="38"
+    description="Gain of controller"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "39" -->
+  <ScalarVariable
+    name="limpid.kFF"
+    valueReference="39"
+    description="Gain of feed-forward input"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "40" -->
+  <ScalarVariable
+    name="limpid.limiter.uMax"
+    valueReference="40"
+    description="Upper limits of input signals"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "41" -->
+  <ScalarVariable
+    name="limpid.limiter.uMin"
+    valueReference="41"
+    description="Lower limits of input signals"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "42" -->
+  <ScalarVariable
+    name="limpid.wd"
+    valueReference="42"
+    description="Set-point weight for Derivative block (0..1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "43" -->
+  <ScalarVariable
+    name="limpid.wp"
+    valueReference="43"
+    description="Set-point weight for Proportional block (0..1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "44" -->
+  <ScalarVariable
+    name="limpid.xd_start"
+    valueReference="44"
+    description="Initial or guess value for state of derivative block"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "45" -->
+  <ScalarVariable
+    name="limpid.xi_start"
+    valueReference="45"
+    description="Initial or guess value for integrator output (= integrator state)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "46" -->
+  <ScalarVariable
+    name="limpid.yMax"
+    valueReference="46"
+    description="Upper limit of output"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "47" -->
+  <ScalarVariable
+    name="limpid.yMin"
+    valueReference="47"
+    description="Lower limit of output"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "48" -->
+  <ScalarVariable
+    name="limpid.y_start"
+    valueReference="48"
+    description="Initial value of output"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "49" -->
+  <ScalarVariable
+    name="limpid.I.u"
+    valueReference="6"
+    description="Connector of Real input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "50" -->
+  <ScalarVariable
+    name="limpid.P.u"
+    valueReference="5"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "51" -->
+  <ScalarVariable
+    name="limpid.addFF.u1"
+    valueReference="11"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "52" -->
+  <ScalarVariable
+    name="limpid.addFF.u2"
+    valueReference="3"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "53" -->
+  <ScalarVariable
+    name="limpid.addFF.y"
+    valueReference="11"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "54" -->
+  <ScalarVariable
+    name="limpid.addI.u1"
+    valueReference="13"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "55" -->
+  <ScalarVariable
+    name="limpid.addI.u2"
+    valueReference="12"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "56" -->
+  <ScalarVariable
+    name="limpid.addI.u3"
+    valueReference="10"
+    description="Connector of Real input signal 3"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "57" -->
+  <ScalarVariable
+    name="limpid.addP.u1"
+    valueReference="13"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "58" -->
+  <ScalarVariable
+    name="limpid.addP.u2"
+    valueReference="12"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "59" -->
+  <ScalarVariable
+    name="limpid.addP.y"
+    valueReference="5"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "60" -->
+  <ScalarVariable
+    name="limpid.addPID.u1"
+    valueReference="5"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "61" -->
+  <ScalarVariable
+    name="limpid.addPID.u2"
+    valueReference="2"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "62" -->
+  <ScalarVariable
+    name="limpid.addPID.u3"
+    valueReference="0"
+    description="Connector of Real input signal 3"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "63" -->
+  <ScalarVariable
+    name="limpid.addSat.u1"
+    valueReference="14"
+    description="Connector of Real input signal 1"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "64" -->
+  <ScalarVariable
+    name="limpid.addSat.u2"
+    valueReference="11"
+    description="Connector of Real input signal 2"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "65" -->
+  <ScalarVariable
+    name="limpid.gainPID.u"
+    valueReference="7"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "66" -->
+  <ScalarVariable
+    name="limpid.gainPID.y"
+    valueReference="11"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "67" -->
+  <ScalarVariable
+    name="limpid.gainTrack.u"
+    valueReference="8"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "68" -->
+  <ScalarVariable
+    name="limpid.limiter.y"
+    valueReference="14"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "69" -->
+  <ScalarVariable
+    name="limpid.u_m"
+    valueReference="12"
+    description="Connector of measurement input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "70" -->
+  <ScalarVariable
+    name="limpid.u_s"
+    valueReference="13"
+    description="Connector of setpoint input signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "71" -->
+  <ScalarVariable
+    name="limpid.y"
+    valueReference="14"
+    description="Connector of actuator output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "72" -->
+  <ScalarVariable
+    name="limpid.I.initType"
+    valueReference="0"
+    description="Type of initialization (1: no init, 2: steady state, 3,4: initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "73" -->
+  <ScalarVariable
+    name="limpid.controllerType"
+    valueReference="1"
+    description="Type of controller"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.SimpleController"/>
+  </ScalarVariable>
+  <!-- Index of variable = "74" -->
+  <ScalarVariable
+    name="limpid.homotopyType"
+    valueReference="2"
+    description="Simplified model for homotopy-based initialization"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.LimiterHomotopy"/>
+  </ScalarVariable>
+  <!-- Index of variable = "75" -->
+  <ScalarVariable
+    name="limpid.initType"
+    valueReference="3"
+    description="Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "76" -->
+  <ScalarVariable
+    name="limpid.limiter.homotopyType"
+    valueReference="4"
+    description="Simplified model for homotopy-based initialization"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.LimiterHomotopy"/>
+  </ScalarVariable>
+  <!-- Index of variable = "77" -->
+  <ScalarVariable
+    name="limpid.I.use_reset"
+    valueReference="1"
+    description="= true, if reset port enabled"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "78" -->
+  <ScalarVariable
+    name="limpid.I.use_set"
+    valueReference="2"
+    description="= true, if set port enabled and used as reinitialization value when reset"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "79" -->
+  <ScalarVariable
+    name="limpid.limiter.strict"
+    valueReference="3"
+    description="= true, if strict limits with noEvent(..)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "80" -->
+  <ScalarVariable
+    name="limpid.strict"
+    valueReference="4"
+    description="= true, if strict limits with noEvent(..)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "81" -->
+  <ScalarVariable
+    name="limpid.withFeedForward"
+    valueReference="5"
+    description="Use feed-forward input?"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="14" dependencies="1 12 13" dependenciesKind="dependent dependent dependent" />
+    </Outputs>
+    <Derivatives>
+      <Unknown index="2" dependencies="1 12 13" dependenciesKind="dependent dependent dependent" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown index="1" dependencies="" dependenciesKind="" />
+      <Unknown index="2" dependencies="12 13" dependenciesKind="dependent dependent" />
+      <Unknown index="14" dependencies="12 13" dependenciesKind="dependent dependent" />
+      <Unknown index="15" dependencies="" dependenciesKind="" />
+      <Unknown index="16" dependencies="" dependenciesKind="" />
+      <Unknown index="17" dependencies="" dependenciesKind="" />
+      <Unknown index="18" dependencies="" dependenciesKind="" />
+      <Unknown index="19" dependencies="" dependenciesKind="" />
+      <Unknown index="20" dependencies="" dependenciesKind="" />
+      <Unknown index="21" dependencies="" dependenciesKind="" />
+      <Unknown index="22" dependencies="" dependenciesKind="" />
+      <Unknown index="23" dependencies="" dependenciesKind="" />
+      <Unknown index="24" dependencies="" dependenciesKind="" />
+      <Unknown index="25" dependencies="" dependenciesKind="" />
+      <Unknown index="26" dependencies="" dependenciesKind="" />
+      <Unknown index="27" dependencies="" dependenciesKind="" />
+      <Unknown index="28" dependencies="" dependenciesKind="" />
+      <Unknown index="29" dependencies="" dependenciesKind="" />
+      <Unknown index="30" dependencies="" dependenciesKind="" />
+      <Unknown index="31" dependencies="" dependenciesKind="" />
+      <Unknown index="32" dependencies="" dependenciesKind="" />
+      <Unknown index="33" dependencies="" dependenciesKind="" />
+      <Unknown index="34" dependencies="" dependenciesKind="" />
+      <Unknown index="35" dependencies="" dependenciesKind="" />
+      <Unknown index="36" dependencies="" dependenciesKind="" />
+      <Unknown index="37" dependencies="" dependenciesKind="" />
+      <Unknown index="38" dependencies="" dependenciesKind="" />
+      <Unknown index="39" dependencies="" dependenciesKind="" />
+      <Unknown index="40" dependencies="" dependenciesKind="" />
+      <Unknown index="41" dependencies="" dependenciesKind="" />
+      <Unknown index="42" dependencies="" dependenciesKind="" />
+      <Unknown index="43" dependencies="" dependenciesKind="" />
+      <Unknown index="44" dependencies="" dependenciesKind="" />
+      <Unknown index="45" dependencies="" dependenciesKind="" />
+      <Unknown index="46" dependencies="" dependenciesKind="" />
+      <Unknown index="47" dependencies="" dependenciesKind="" />
+      <Unknown index="48" dependencies="" dependenciesKind="" />
+      <Unknown index="72" dependencies="" dependenciesKind="" />
+      <Unknown index="73" dependencies="" dependenciesKind="" />
+      <Unknown index="74" dependencies="" dependenciesKind="" />
+      <Unknown index="75" dependencies="" dependenciesKind="" />
+      <Unknown index="76" dependencies="" dependenciesKind="" />
+      <Unknown index="77" dependencies="" dependenciesKind="" />
+      <Unknown index="78" dependencies="" dependenciesKind="" />
+      <Unknown index="79" dependencies="" dependenciesKind="" />
+      <Unknown index="80" dependencies="" dependenciesKind="" />
+      <Unknown index="81" dependencies="" dependenciesKind="" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

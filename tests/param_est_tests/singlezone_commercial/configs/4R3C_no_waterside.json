@@ -1,0 +1,60 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + (1/Ci)*ahu_reaFloSupAir*UA_nom_air*(ahu_reaTSupAir - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "ahu_reaTSupAir": "(Ti - ahu_reaTSupAir)*UA_nom_air*ahu_reaFloSupAir*(1/Csup) + (1/Csup)*Pvent*eta_hex" 
+        },
+        "w": {
+            "v1": "Ti - y1", 
+            "v2": "ahu_reaTSupAir - y2"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Ci",
+            "Ce",
+            "Csup",
+            "Ai",
+            "UA_nom_air",
+            "eta_hex"
+        ],
+        "u": [
+            "Pvent",
+            "ahu_reaFloSupAir",
+            "oveValCoi"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "ahu_reaTSupAir"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "ahu_reaTSupAir"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

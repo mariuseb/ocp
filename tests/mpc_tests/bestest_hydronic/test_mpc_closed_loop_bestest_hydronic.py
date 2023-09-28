@@ -42,15 +42,20 @@ if __name__ == "__main__":
     n         1.156362e+00
     UA_nom    5.387476e+01
     eta       8.700000e-01
+    
     """
-    params = ca.DM([1.922773e-03,
+    params = ca.DM(
+                   [
+                    1.922773e-03,
                     8.390597e-03,
                     1.781685e+06, 
                     2.050836e+07,
                     6.062751e+00,
                     1.156362e+00,
                     5.387476e+01,
-                    8.700000e-01])
+                    8.700000e-01
+                    ]
+                   )
     
     
     kwargs = {
@@ -62,26 +67,29 @@ if __name__ == "__main__":
         "slack": False
     }
     kwargs = {
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 12,
+        "u_nom_b": 289.15,
+        "z_nom": 5000,
+        "r_nom": [12, 300],
+        "r_nom_b": [289.15, 0],
+        "p_nom": [1E-3,1E-3,1E6,1E7,1,1,10,1,12],
+        #"p_nom_b": [0,0,0,0,0,0,0,0,289.15],
+        "y_nom": 12,
+        "y_nom_b": 289.15,
+        #"slack": True
+        "slack": False
+    }
+    kwargs = {
         "x_nom": 300,
         "z_nom": 5000,
         "u_nom": 300,
         "r_nom": 300,
+        #"p_nom": [1E-3,1E-3,1E6,1E7,1,1,10,1,300],
         "y_nom": 300,
         #"slack": Trues
-        "slack": True
-    }
-    kwargs = {
-        "x_nom": 12,
-        "x_nom_b": 289.15,
-        "u_nom": 12,
-        "z_nom": 5000,
-        "u_nom_b": 289.15,
-        "r_nom": [12, 300],
-        "r_nom_b": [289.15, 0],
-        "y_nom": 12,
-        "y_nom_b": 289.15,
-        #"slack": True
-        "slack": True
+        "slack": False
     }
     
     mpc = MPC(config=mpc_cfg,
@@ -140,11 +148,21 @@ if __name__ == "__main__":
                                params=params,
                                codegen=True
                                )
+        
+        if k == 14:
+            print(sol)
+            
+        if k == 25:
+            print(sol)
+        
+        if mpc.solver.stats()["return_status"] != "Solve_Succeeded":
+            print(sol)
+        
         time.loc[k] = mpc.solver.stats()["t_wall_total"]
         data, y_meas, u_meas = boptest.evolve(u=u)
         
         # input z as from model prediction:
-        z_model = sol[ekf.dae.z].iloc[1].values
+        z_model = sol[ekf.dae.z].iloc[0].values
         r_pred = data[ekf.dae.r_names].iloc[0].values
         x0 = ekf.estimate(
                           x0, 

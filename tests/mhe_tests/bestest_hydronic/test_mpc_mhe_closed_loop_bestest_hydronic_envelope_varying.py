@@ -50,15 +50,15 @@ if __name__ == "__main__":
     
     #mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_func_no_eta.json")
     #mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_func_no_eta.json")
-    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_func.json")
+    mpc_cfg = os.path.join("mpc_configs", "2R2C_MPC_func.json")
     #mhe_cfg = os.path.join(opt_config_base, "2R2C_MHE_hydronic.json")
     #mhe_cfg = os.path.join(opt_config_base, "2R2C_MHE_func_no_eta.json")
-    mhe_cfg = os.path.join(opt_config_base, "2R2C_MHE_func.json")
+    mhe_cfg = os.path.join("mhe_configs", "2R2C_MHE_func.json")
     #mhe_cfg_no_eta = os.path.join(opt_config_base, "2R2C_MHE_func_no_eta.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     #ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF_func_no_eta.json")
     #ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF_func_no_eta.json")
-    ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF_func.json")
+    ekf_cfg = os.path.join("ekf_configs", "2R2C_EKF_func.json")
 
     # pass in config?
     """

@@ -35,9 +35,9 @@
         ]
     },
     "objective": "dot(v1, v1)@R[0,0] + dot(s1, s1)@Q[0,0] + dot(s2, s2)@Q[1,1]",
-    "N": 2,
+    "N": 12,
     "dt": 900,
-    "method": "multiple_shooting",
+    "method": "collocation",
     "integrator": 
         {
         "name": "IRK",

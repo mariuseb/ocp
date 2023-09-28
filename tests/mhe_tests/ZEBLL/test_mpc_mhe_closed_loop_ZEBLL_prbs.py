@@ -30,10 +30,10 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC.json")
-    mhe_cfg = os.path.join(opt_config_base, "2R2C_MHE.json")
+    mpc_cfg = os.path.join("mpc_configs", "2R2C_MPC.json")
+    mhe_cfg = os.path.join("mhe_configs", "2R2C_MHE.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF.json")
+    ekf_cfg = os.path.join("ekf_configs", "2R2C_EKF.json")
 
     # pass in config?
     params = params_init = ca.DM([0.0015,

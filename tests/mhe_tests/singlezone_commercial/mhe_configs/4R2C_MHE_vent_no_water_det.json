@@ -1,0 +1,83 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*ahu_reaFloSupAir*cp_air*(oveTSupSet - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "ahu_reaTRetAir": "ahu_pump_ret*(ahu_reaTRetAir - Ti)",
+            "Pvent": "Pvent*eta_hex1 - (m_flow_air_nom*ahu_pump_sup*cp_air*(oveTSupSet-ahu_reaTHeaRec))",
+            "ahu_reaTHeaRec": "ahu_pump_ret*(Ta + (ahu_reaTRetAir - Ta)*eta_hex2 - ahu_reaTHeaRec)",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*ahu_pump_sup"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v2": "Pvent*eta_hex1 - (m_flow_air_nom*ahu_pump_sup*cp_air*(oveTSupSet-ahu_reaTHeaRec))",
+            "v3": "ahu_pump_ret*(Ta + (ahu_reaTRetAir - Ta)*eta_hex2 - ahu_reaTHeaRec)",
+            "v4": "ahu_reaFloSupAir - m_flow_air_nom*ahu_pump_sup",
+            "v5": "ahu_pump_ret*(y5 - ahu_reaTRetAir)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai",
+            "m_flow_air_nom",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2"
+        ],
+        "u": [
+            "ahu_pump_ret",
+            "ahu_pump_sup",
+            "oveTSupSet"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "ahu_reaTRetAir",
+            "Pvent",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Pvent"],
+            ["y3", "ahu_reaTHeaRec"],
+            ["y4", "ahu_reaFloSupAir"],
+            ["y5", "ahu_reaTRetAir"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "N": 96,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.max_cpu_time": 10
+    },
+    "codegen": false
+}

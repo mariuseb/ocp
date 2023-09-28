@@ -40,6 +40,7 @@ class Shooting(metaclass=ABCMeta):
         self.y_nom = kwargs.pop("y_nom", 1)
         self.y_nom_b = kwargs.pop("y_nom_b", 0)
         self.p_nom = kwargs.pop("p_nom", 1)
+        self.p_nom_b = kwargs.pop("p_nom_b", 0)
         #self.w_nom = kwargs.pop("w_nom", 1)
         self.s_nom = kwargs.pop("s_nom", 1)
         self.v_nom = kwargs.pop("v_nom", 1)
@@ -80,7 +81,7 @@ class Shooting(metaclass=ABCMeta):
 
     @property
     def n_w(self):
-        return self.F.dae.n_w
+        return self.F.dae.n_w - self.F.dae.n_v
     
     @property
     def n_s(self):
@@ -201,14 +202,14 @@ class MultipleShooting(Shooting):
                     X = x[:,n+1]
                     Z = z[:,n+1]
                     # TODO: this must conform for all integrators
-                    Fk = self.F.one_sample(x0=x[:,n]*self.x_nom,
-                                           z0=z[:,n]*self.z_nom, 
-                                           u=u[:,n]*self.u_nom,
-                                           p=ca.vertcat(self.p_nom*p, self.r_nom*r[:,n])
+                    Fk = self.F.one_sample(x0=x[:,n]*self.x_nom + self.x_nom_b,
+                                           z0=z[:,n]*self.z_nom + self.z_nom_b, 
+                                           u=u[:,n]*self.u_nom + self.u_nom_b,
+                                           p=ca.vertcat(self.p_nom*p, self.r_nom*r[:,n] + self.r_nom_b)
                                            )
-                    Xk = Fk["xf"]/self.x_nom
-                    Zk = Fk["zf"]/self.z_nom
-                    x_gaps.append(Xk - X)
+                    Xk = Fk["xf"]
+                    #Zk = Fk["zf"]/self.z_nom
+                    x_gaps.append(Xk - (X*self.x_nom + self.x_nom_b))
             else:
                 for n in range(self.N-1):
                     X = x[:,n+1]
@@ -219,9 +220,11 @@ class MultipleShooting(Shooting):
                                             p=self.p_nom*p,
                                             s=s[:,n]*self.s_nom,
                                             r=r[:,n]*self.r_nom)
-                    Xk = Fk["xf"]/self.x_nom
+                    Xk = Fk["xf"]
+                    #Xk = Fk["xf"]/self.x_nom
                     #Zk = Fk["zf"]
-                    x_gaps.append(Xk - X)
+                    #x_gaps.append(Xk - X)
+                    x_gaps.append(Xk - (X*self.x_nom + self.x_nom_b))
                 
                     #g_gaps.append(Fk["zf"] - Z)
             #xn = res["xf"]
@@ -241,7 +244,7 @@ class MultipleShooting(Shooting):
                             #z=z*self.z_nom,
                             u=u[:,:-1]*self.u_nom + self.u_nom_b,
                             #u=u[:,:-1]*self.u_nom,
-                            p=self.p_nom*ca.repmat(p, 1, self.N-1),
+                            p=self.p_nom*ca.repmat(p, 1, self.N-1) + self.p_nom_b,
                             #p=self.p_nom*ca.repmat(p, 1, self.N),
                             #p=ca.repmat(p, 1, self.N),
                             # w same unit as dT/dt -> factor: 1/300/900
@@ -335,6 +338,7 @@ class MultipleShooting(Shooting):
                                 p=self.p_nom*ca.repmat(p, 1, self.N),
                                 #p=self.p_nom*ca.repmat(p, 1, self.N),
                                 #v=v*self.v_nom,
+                                s=s*self.s_nom,
                                 #r=r[:,:-1]*self.r_nom
                                 r=r*self.r_nom + self.r_nom_b
                                 #r=0
@@ -807,7 +811,8 @@ class Collocation(Shooting):
         #self.p_nom = self.scale
         d = self.d = self.F.d
         h = self.h = self.F.dt
-        B, C, D = self.get_coll_coeffs(d, self.method)
+        # need to keep Da for calculation of z at finite elems:
+        B, C, D, self.Da = self.get_coll_coeffs(d, self.method)
         
         x = []
         z = []
@@ -826,8 +831,11 @@ class Collocation(Shooting):
         u_nom = self.u_nom 
         u_nom_b = self.u_nom_b
         p_nom = self.p_nom 
+        p_nom_b = self.p_nom_b 
         r_nom = self.r_nom 
         r_nom_b = self.r_nom_b 
+        z_nom = self.z_nom 
+        z_nom_b = self.z_nom_b 
         s_nom = self.s_nom 
         y_nom = self.y_nom 
         y_nom_b = self.y_nom_b
@@ -859,42 +867,19 @@ class Collocation(Shooting):
         # Perturb with P, parameters
         #P = ca.MX.sym('P', n_p)
         P = self.F.p
-        #p = p + P
 
-        #p_val = 1
-
-        #x_nom = np.array([300])
-        #u_nom = np.array([5000, 300])
-        #p_nom = np.array([1e6, 1e-2])
-        #phi_h_nom = u_nom[1]
-
-
-        #lb_phi_h = np.zeros((24,1))
-        #ub_phi_h = np.ones((24,1))*5000
-
-
-        #lbu = np.hstack((lb_phi_h, u_vals))/u_nom
-        #ubu = np.hstack((ub_phi_h, u_vals))/u_nom
-        #lbu = np.hstack((lb_phi_h, u_vals))
-        #ubu = np.hstack((ub_phi_h, u_vals))
-
-        #lbx = lbx/x_nom
-        #ubx = ubx/x_nom
-        #lbx = lbx
-        #ubx = ubx
 
         # "Lift" initial conditions
         X0 = Xk = ca.MX.sym('X0', n_x)
+        #Z0 = Zk = ca.MX.sym('Z0', n_z)
         # X0 as parameter:
         x.append(Xk)
         xb.append(Xk)
-        #lbw.append([0, 1])
-        #ubw.append([0, 1])
-        #w0.append([0, 1])
-        #lbw.append([lbx[0]])
-        #ubw.append([ubx[0]])
-        #w0.append([lbx[0]])
-        #x_plot.append(Xk)
+
+        """
+        TODO: new strategy for discretization,
+        y defined identically as z.
+        """
 
         # Formulate the NLP
         for k in range(self.N-1):
@@ -903,19 +888,15 @@ class Collocation(Shooting):
             Uk = ca.MX.sym('U_' + str(k), n_u)
             Rk = ca.MX.sym('R_' + str(k), n_r)
             Wk = ca.MX.sym('W_' + str(k), n_w)
+            Vk = ca.MX.sym('V_' + str(k), n_v)
+            #Yk = ca.MX.sym('Y_' + str(k), n_y)
+            #Zk = ca.MX.sym('Z_' + str(k), n_z)
+            v.append(Vk)
+            #y.append(Yk)
             u.append(Uk)
             r.append(Rk)
             w.append(Wk)
-            #lbw.append([-1])
-            #ubw.append([.85])
-            #w0.append(s[0])
-            #lbw.append([0, float(u_vals[k])])
-            #ubw.append([5000, float(u_vals[k])])
-            #w0.append([0, float(u_vals[k])])
-            #lbw.append(lbu[k])
-            #ubw.append(ubu[k])
-            #w0.append(lbu[k])
-            #u_plot.append(Uk)
+            #z.append(Zk)
 
             # State at collocation points
             Xc = []
@@ -923,12 +904,6 @@ class Collocation(Shooting):
                 Xkj = ca.MX.sym('X_'+str(k)+'_'+str(j), n_x)
                 Xc.append(Xkj)
                 x.append(Xkj)
-                #lbw.append([-0.25, -np.inf])
-                #ubw.append([np.inf,  np.inf])
-                #w0.append([0, 0])
-                #lbw.append([lbx[k+1]])
-                #ubw.append([ubx[k+1]])
-                #w0.append([lbx[k+1]])
 
             # Loop over collocation points
             Xk_end = D[0]*Xk
@@ -937,33 +912,104 @@ class Collocation(Shooting):
                 xp = C[0,j]*Xk
                 for i in range(d): xp = xp + C[i+1,j]*Xc[i]
 
+                # Algebraic states from second collocation point onwards:
+                Zkj = ca.MX.sym('Z_'+str(k)+'_'+str(j), n_z)
+                z.append(Zkj)
+                Ykj = ca.MX.sym('Y_'+str(k)+'_'+str(j), n_y)
+                y.append(Ykj)
+                
                 # Append collocation equations
                 #fj, qj = f(Xc[j-1]*x_nom, P*p_nom, Uk*u_nom)
-                fj = self.f(Xc[j-1]*x_nom + x_nom_b, 0, Uk*u_nom, P*p_nom, Wk*s_nom, Rk*r_nom + r_nom_b)
-                #fj = self.f(Xc[j-1]*x_nom, 0, Uk*u_nom, P*p_nom, Wk, Rk*r_nom)
+                fj = self.f(Xc[j-1]*x_nom + x_nom_b, 
+                            Zkj*z_nom + z_nom_b, 
+                            Uk*u_nom + u_nom_b,
+                            P*p_nom + p_nom_b,
+                            Wk*s_nom,
+                            Rk*r_nom + r_nom_b)
                 g.append(h*fj - xp*x_nom)
-                #lbg.append([0, 0])
-                #ubg.append([0, 0])
-                #lbg.append([0])
-                #ubg.append([0])
+                #g.append(h*fj - (xp*x_nom + x_nom_b))
 
                 # Add contribution to the end state
                 Xk_end = Xk_end + D[j]*Xc[j-1];
-
+                
+                # append algebraic equation as constraint:
+                g.append(self.F.g(
+                        Zkj*z_nom + z_nom_b,
+                        Xc[j-1]*x_nom + x_nom_b, 
+                        Uk*u_nom + u_nom_b,
+                        P*p_nom + p_nom_b,
+                        Vk*v_nom,
+                        Wk*s_nom,
+                        Rk*r_nom + r_nom_b)
+                         )
+                g.append(self.F.h(
+                        Ykj*y_nom + y_nom_b,
+                        Xc[j-1]*x_nom + x_nom_b, 
+                        Zkj*z_nom + z_nom_b,
+                        Uk*u_nom + u_nom_b,
+                        P*p_nom + p_nom_b,
+                        Vk*v_nom,
+                        Rk*r_nom + r_nom_b)
+                         )
+                """
+                g.append(self.F.g(
+                        Zkj,
+                        Xc[j-1], 
+                        Uk,
+                        P*p_nom + p_nom_b,
+                        Vk,
+                        Rk)
+                         )
+                g.append(self.F.g(Zkj*z_nom + z_nom_b,
+                    Xc[j-1]*x_nom + x_nom_b, 
+                    Uk*u_nom + u_nom_b,
+                    P*p_nom,
+                    Vk*v_nom,
+                    Rk*r_nom + r_nom_b))
+                g.append(self.F.g(
+                              Zkj,
+                              Xkj, 
+                              Uk,
+                              P,
+                              Vk,
+                              Rk)
+                     )
+                """
                 # Add contribution to quadrature function
                 # TODO: modularize
+                qj = ca.dot(Zkj, Zkj)
+                J = J + B[j]*qj*h
                 #J = J + B[j]*qj*h/(u_nom[0]**3)
                 #J = J + B[j]*qj*h
             # can take simple quadrature?
             #J = J + Uk[0]**2
-
-            # measurement equation, if exists
-            Vk = ca.MX.sym('V_' + str(k), n_v)
-            Yk = ca.MX.sym('Y_' + str(k), n_y)
-            v.append(Vk)
-            y.append(Yk)
             
-            g.append(self.F.h(Yk*y_nom + y_nom_b, Xk*x_nom + x_nom_b, 0, 0, 0, Vk*v_nom, 0))
+            # measurement equation, if exists
+            
+            # algebraic:
+            """
+            g.append(self.F.h(Yk*y_nom + y_nom_b, 
+                              Xk*x_nom + x_nom_b, 
+                              0,
+                              0,
+                              0,
+                              Vk*v_nom,
+                              0))
+            g.append(self.F.g(Zk*z_nom + z_nom_b,
+                              Xk*x_nom + x_nom_b, 
+                              Uk*u_nom + u_nom_b,
+                              P*p_nom,
+                              Vk*v_nom,
+                              Rk*r_nom + r_nom_b))
+            g.append(self.F.g(
+                              Zk,
+                              Xk, 
+                              Uk,
+                              P,
+                              Vk,
+                              Rk)
+                     )
+            """
             #g.append(self.F.h(Yk*y_nom, Xk*x_nom, 0, 0, 0, Vk, 0))
             h_gaps.append(g[-1])
             
@@ -973,28 +1019,47 @@ class Collocation(Shooting):
             Xk = ca.MX.sym('X_' + str(k+1), n_x)
             x.append(Xk)
             xb.append(Xk)
-            #lbw.append([lbx[k+1]])
-            #ubw.append([ubx[k+1]])
-            #w0.append([lbx[k+1]])
-            #x_plot.append(Xk)
-
             # Add equality constraint
             g.append(Xk_end - Xk)
             #g.append(x_nom*Xk_end - x_nom*Xk)
             x_gaps.append(g[-1])
-            #lbg.append([0, 0])
-            #ubg.append([0, 0])
-            #lbg.append([0])
-            #ubg.append([0])
 
-        Yk = ca.MX.sym('Y_' + str(k+1), n_y)
+        #Yk = ca.MX.sym('Y_' + str(k+1), n_y)
         Vk = ca.MX.sym('V_' + str(k+1), n_v)
         Rk = ca.MX.sym('R_' + str(k+1), n_r)
+        Uk = ca.MX.sym('R_' + str(k+1), n_u)
+        #Zk = ca.MX.sym('Z_' + str(k+1), n_z)
         v.append(Vk)
-        y.append(Yk)
+        #y.append(Yk)
         r.append(Rk)
+        u.append(Uk)
+        #z.append(Zk)
         # add last measurement equation
-        g.append(self.F.h(Yk*y_nom + y_nom_b, Xk*x_nom + x_nom_b, 0, 0, 0, Vk*v_nom, 0))
+        
+        
+        """
+        g.append(self.F.h(Yk*y_nom + y_nom_b, 
+                          Xk*x_nom + x_nom_b, 
+                          0,
+                          0,
+                          0,
+                          Vk*v_nom,
+                          0))
+        g.append(self.F.g(Zk*z_nom + z_nom_b,
+                        Xk*x_nom + x_nom_b, 
+                        Uk*u_nom + u_nom_b,
+                        P*p_nom,
+                        Vk*v_nom,
+                        Rk*r_nom + r_nom_b))
+        g.append(self.F.g(
+                        Zk,
+                        Xk, 
+                        Uk,
+                        P,
+                        Vk,
+                        Rk)
+                 )
+        """
         #g.append(self.F.h(Yk*y_nom, Xk*x_nom, 0, 0, 0, Vk, 0))
         h_gaps.append(g[-1])
 
@@ -1131,6 +1196,8 @@ class Collocation(Shooting):
         C = np.zeros((d+1,d+1))
         # Coefficients of the continuity equation
         D = np.zeros(d+1)
+        # for algebraic vars:
+        Da = np.zeros(d)
         # Coefficients of the quadrature function
         B = np.zeros(d+1)
         # Construct polynomial basis
@@ -1150,7 +1217,19 @@ class Collocation(Shooting):
             pint = np.polyint(p)
             B[j] = pint(1.0)
             
-        return B, C, D
+        # for algvars:
+        tau = ca.SX.sym("tau")
+        Da = np.zeros(d)
+        for j in range(1,d+1):
+            # Lagrange polynomials for the algebraic states: exclude the first point
+            La = 1
+            for j2 in range(1,d+1):
+                if j2 != j:
+                    La *= (tau-tau_root[j2])/(tau_root[j]-tau_root[j2])
+            lafcn = ca.Function('lafcn', [tau], [La])
+            Da[j-1] = lafcn(tau_root[0])
+            
+        return B, C, D, Da
 
            
     """

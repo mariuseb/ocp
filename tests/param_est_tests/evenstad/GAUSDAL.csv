@@ -1,0 +1,135 @@
+,id,res
+0,min(relative_humidity P1M),P1M
+1,integral_of_deficit(mean(air_temperature P1D) P1D 17.0),P1D
+2,dew_point_temperature,PT1H
+3,sum(precipitation_amount_anomaly P6M 1991_2020),P6M
+4,mean(air_temperature_anomaly P1Y 1961_1990),P1Y
+5,mean(wind_speed P1D),P1D
+6,mean(wind_speed P1D),P1D
+7,integral_of_deficit(mean(air_temperature P1D) P3M 17.0),P3M
+8,max(wind_speed P1D),P1D
+9,max(wind_speed P1D),P1D
+10,mean(wind_speed PT1H),PT1H
+11,mean(air_temperature P6M),P6M
+12,mean(air_temperature P6M),P6M
+13,mean(air_temperature P1Y),P1Y
+14,mean(air_temperature P1Y),P1Y
+15,best_estimate_sum(precipitation_amount_anomaly P3M 1961_1990),P3M
+16,mean(air_temperature_anomaly P6M 1961_1990),P6M
+17,integral_of_excess(mean(air_temperature P1D) P1M 5.0),P1M
+18,best_estimate_mean(air_temperature_anomaly P1M 1961_1990),P1M
+19,sum(precipitation_amount_anomaly P1Y 1961_1990),P1Y
+20,sum(precipitation_amount_anomaly P6M 1961_1990),P6M
+21,min(air_temperature P1D),P1D
+22,min(air_temperature P1D),P1D
+23,min(air_temperature P1M),P1M
+24,integral_of_deficit_interpolated(mean(air_temperature P1D) P1M 17.0),P1M
+25,integral_of_deficit_interpolated(mean(air_temperature P1D) P1M 17.0),P1M
+26,battery_voltage,PT1H
+27,max(sum(precipitation_amount P1D) P1M),P1M
+28,best_estimate_mean(air_temperature_anomaly P1Y 1961_1990),P1Y
+29,mean(water_vapor_partial_pressure_in_air P1M),P1M
+30,max(wind_speed P1M),P1M
+31,best_estimate_sum(precipitation_amount P6M),P1Y
+32,sum(precipitation_amount P30D),P1D
+33,min(air_temperature PT12H),PT12H
+34,integral_of_deficit(mean(air_temperature P1D) P1Y 17.0),P1Y
+35,min(air_temperature PT1H),PT1H
+36,sum(precipitation_amount PT12H),PT12H
+37,wind_speed,PT1H
+38,wind_speed,PT1H
+39,mean(air_temperature P1D),P1D
+40,mean(air_temperature P1D),P1D
+41,mean(air_temperature P1D),P1D
+42,mean(air_temperature P1D),P1D
+43,sum(precipitation_amount P1M),P1M
+44,sum(precipitation_amount P1M),P1M
+45,mean(soil_temperature PT1H),PT1H
+46,mean(soil_temperature PT1H),PT1H
+47,mean(soil_temperature PT1H),PT1H
+48,mean(soil_temperature PT1H),PT1H
+49,max(air_temperature P6M),P6M
+50,max_wind_speed(wind_from_direction_of_gust PT1H),PT1H
+51,integral_of_excess(mean(air_temperature P1D) P1M 0.0),P1M
+52,mean(water_vapor_partial_pressure_in_air P1D),P1D
+53,sum(precipitation_amount P6M),P6M
+54,max(air_temperature P1M),P1M
+55,min(air_temperature P6M),P6M
+56,over_time(time_of_maximum_air_temperature P1M),P1M
+57,mean(dew_point_temperature P1M),P1M
+58,best_estimate_sum(precipitation_amount P3M),P3M
+59,max(wind_speed PT1H),PT1H
+60,mean(air_temperature_anomaly P1M 1961_1990),P1M
+61,max(air_temperature PT12H),PT12H
+62,mean(air_temperature PT1H),PT1H
+63,max(air_temperature P1D),P1D
+64,max(air_temperature P1D),P1D
+65,over_time(sum(time_of_maximum_precipitation_amount P1D) P1M),P1M
+66,mean(wind_speed P1M),P1M
+67,over_time(time_of_minimum_air_temperature P1M),P1M
+68,best_estimate_mean(air_temperature P1M),P1M
+69,max(relative_humidity PT1H),PT1H
+70,mean(relative_humidity P1D),P1D
+71,min(wind_speed P1M),P1M
+72,sum(precipitation_amount P3M),P3M
+73,volume_fraction_of_water_in_soil,PT1H
+74,volume_fraction_of_water_in_soil,PT1H
+75,volume_fraction_of_water_in_soil,PT1H
+76,best_estimate_mean(air_temperature P1Y),P1Y
+77,mean(relative_humidity P1M),P1M
+78,mean(relative_humidity P1M),P1M
+79,mean(dew_point_temperature P1D),P1D
+80,min(air_temperature P3M),P3M
+81,sum(precipitation_amount P1Y),P1Y
+82,number_of_days_gte(sum(precipitation_amount P1D) P1M 1.0),P1M
+83,max(air_temperature P1Y),P1Y
+84,mean(wind_from_direction PT1H),PT1H
+85,sum(precipitation_amount_anomaly P3M 1991_2020),P3M
+86,min(air_temperature P1Y),P1Y
+87,mean(max(air_temperature P1D) P1M),P1M
+88,mean(air_temperature P1M),P1M
+89,mean(air_temperature P1M),P1M
+90,mean(air_temperature P1M),P1M
+91,mean(air_temperature P1M),P1M
+92,best_estimate_sum(precipitation_amount P1Y),P1Y
+93,mean(min(air_temperature P1D) P1M),P1M
+94,mean(air_temperature_anomaly P1Y 1991_2020),P1Y
+95,best_estimate_sum(precipitation_amount P1M),P1M
+96,sum(duration_of_leaf_wetness PT1H),PT1H
+97,best_estimate_sum(precipitation_amount_anomaly P1Y 1961_1990),P1Y
+98,sum(precipitation_amount P1D),P1D
+99,sum(precipitation_amount P1D),P1D
+100,max(relative_humidity P1M),P1M
+101,max(relative_humidity P1M),P1M
+102,mean(air_temperature P3M),P3M
+103,mean(air_temperature P3M),P3M
+104,sum(precipitation_amount PT1H),PT1H
+105,integral_of_excess(mean(air_temperature P1D) P1D 5.0),P1D
+106,mean(air_temperature_anomaly P6M 1991_2020),P6M
+107,best_estimate_mean(air_temperature_anomaly P3M 1961_1990),P3M
+108,max(relative_humidity P1D),P1D
+109,max(relative_humidity P1D),P1D
+110,min(relative_humidity P1D),P1D
+111,air_temperature,PT1H
+112,sum(precipitation_amount_anomaly P1Y 1991_2020),P1Y
+113,mean(relative_humidity PT1H),PT1H
+114,mean(surface_downwelling_shortwave_flux_in_air PT1H),PT1H
+115,mean(air_temperature_anomaly P3M 1961_1990),P3M
+116,best_estimate_sum(precipitation_amount_anomaly P6M 1961_1990),P1Y
+117,integral_of_deficit(mean(air_temperature P1D) P6M 17.0),P6M
+118,max(air_temperature PT1H),PT1H
+119,integral_of_excess(mean(air_temperature P1D) P1D 0.0),P1D
+120,mean(air_temperature_anomaly P1M 1991_2020),P1M
+121,relative_humidity,PT1H
+122,mean(air_temperature_anomaly P3M 1991_2020),P3M
+123,sum(precipitation_amount_anomaly P1M 1961_1990),P1M
+124,sum(precipitation_amount_anomaly P3M 1961_1990),P3M
+125,best_estimate_mean(air_temperature_anomaly P6M 1961_1990),P1Y
+126,best_estimate_mean(air_temperature P3M),P3M
+127,best_estimate_sum(precipitation_amount_anomaly P1M 1961_1990),P1M
+128,min(wind_speed P1D),P1D
+129,min(wind_speed P1D),P1D
+130,max(air_temperature P3M),P3M
+131,integral_of_deficit(mean(air_temperature P1D) P1M 17.0),P1M
+132,max(wind_speed_of_gust PT1H),PT1H
+133,max(wind_speed_of_gust PT1H),PT1H
