@@ -96,8 +96,8 @@ class OCP(metaclass=ABCMeta):
         #    self.gauss_newton = True
         #data = kwargs.pop("data")
         self.slack = slack = kwargs.pop("slack", False)
-        N = kwargs.pop("N", None)
-        dt = kwargs.pop("dt", None)
+        self.N = N = kwargs.pop("N", None)
+        self.dt = dt = kwargs.pop("dt", None)
         # new:
         self.slack_names = []
         self.c_files = []
@@ -654,6 +654,8 @@ class OCP(metaclass=ABCMeta):
         NOTE: built-in hash() only consistent internal to a process
         """
         import hashlib
+        config["N"] = self.N
+        config["dt"] = self.dt
         config["scale_dict"] = self.scale_dict
         s = json.dumps(config, sort_keys=True)
         return "%s_solver_id_" % type(self).__name__ + \
