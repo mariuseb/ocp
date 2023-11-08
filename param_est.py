@@ -70,6 +70,7 @@ class ParameterEstimation(OCP):
         #self.separate_data(data)
         #self.set_bounds()
         #self._init_solver()
+        #self.set_hess_obj()
         
     def get_nlp_obj(self, v, w):
         """ 
@@ -791,6 +792,10 @@ class ParameterEstimation(OCP):
               ubp=None,
               lbx=None,
               ubx=None,
+              Ti_gt_Te=False,
+              Th_gt_Ti=False,
+              Ci_gt_Ch=False,
+              Ce_gt_Ch=False,
               x_guess=None,
               return_raw_sol=False
               ):
@@ -884,13 +889,16 @@ class ParameterEstimation(OCP):
         #self.set_hess_obj()
         #self.nlp["f"] = self.alt_obj
         
-        #x_ = ca.veccat(self.nlp["x"], self.nlp["p"])
+        """
+        For parameter estimation problems,
+        we require all u and r to be given.
+        """
         
-        #grad_f = ca.gradient(self.nlp["f"], x_)
-        #grad_f_f = ca.Function("grad_f", [x_], [grad_f])
-        #self.x0 = np.append(self.x0, covar)
-        #self.lbx = np.append(self.lbx, np.repeat([0], 5))
-        #self.ubx = np.append(self.ubx, np.repeat([np.inf], 5))
+        in_data = set(data.columns[data.columns.isin(self.u_names)])
+        diff = list(set(self.u_names).difference(in_data))
+        if diff != list():
+            raise ValueError("Missing entries for: {}".format(diff))
+                
         if lbx is not None and ubx is not None:
             # TODO: modularize 'add_path_constraints', 
             # all subclasses are using it.
@@ -902,8 +910,56 @@ class ParameterEstimation(OCP):
             self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
             self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
-        #p = self.nlp.pop("p")
-        #self._init_solver()
+        if Ti_gt_Te:
+            """
+            Follows a generalizable pattern: 
+                x_n > x_m 
+            """
+            Ti = self.get("Ti")
+            Te = self.get("Te")
+            constr = Ti - Te
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
+            self.lbg = np.concatenate([self.lbg,
+                                       np.array([0]*constr.shape[0])])
+            self.ubg = np.concatenate([self.ubg,
+                                       np.array([np.inf]*constr.shape[0])])
+        if Th_gt_Ti:
+            """
+            Follows a generalizable pattern: 
+                x_n > x_m 
+            """
+            Ti = self.get("Ti")
+            Th = self.get("Th")
+            constr = Th - Ti
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
+            self.lbg = np.concatenate([self.lbg,
+                                       np.array([0]*constr.shape[0])])
+            self.ubg = np.concatenate([self.ubg,
+                                       np.array([np.inf]*constr.shape[0])])
+        if Ci_gt_Ch:
+            """
+            Assuming Ci is TVP.
+            """
+            Ci = self.get("Ci")
+            Ch = self.get("Ch")
+            constr = Ci - Ch
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
+            self.lbg = np.concatenate([self.lbg,
+                                       np.array([0]*constr.shape[0])])
+            self.ubg = np.concatenate([self.ubg,
+                                       np.array([np.inf]*constr.shape[0])])
+        if Ce_gt_Ch:
+            """
+            Assuming Ci is TVP.
+            """
+            Ce = self.get("Ce")
+            Ch = self.get("Ch")
+            constr = Ce - Ch
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
+            self.lbg = np.concatenate([self.lbg,
+                                       np.array([0]*constr.shape[0])])
+            self.ubg = np.concatenate([self.ubg,
+                                       np.array([np.inf]*constr.shape[0])])
 
         self.prepare_solver()
         

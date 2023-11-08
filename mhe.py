@@ -759,7 +759,10 @@ class MHE(OCP):
         exec(f'obj_expr =' + obj_string, vals)
         
         self.nlp["f"] = vals["obj_expr"]
-        self.nlp["p"] = ca.veccat(self.R, self.Q)
+        #self.nlp["p"] = ca.veccat(self.R, self.Q)
+        #if self.arrival_cost:
+        #    self.nlp["p"] = ca.veccat(self.nlp["p"], self.P0)
+            
         
         # TODO: reshuffle ordering of MHE parameters ...
         if arrival_cost:

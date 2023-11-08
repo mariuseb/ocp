@@ -1,0 +1,59 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)", 
+            "Th": "(Ti - Th)/(Rih*Ch) + (1/Ch)*UA_nom*regNonZeroPower((Tsup - Ti), n, 0.05)"
+        },
+        "w": {
+            "v1": "Ti - y1", 
+            "v2": "UA_nom*regNonZeroPower((Tsup - Ti), n, 0.05) - y2"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Ci",
+            "Ce",
+            "Ch",
+            "Ai",
+            "UA_nom",
+            "n"
+        ],
+        "u": [
+            "phi_h",
+            "Tsup"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "phi_h"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

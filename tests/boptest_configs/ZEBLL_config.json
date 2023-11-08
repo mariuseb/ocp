@@ -75,6 +75,33 @@
                     }
         }
       },
+    "testcase3":
+    {
+      "misc": {
+        "h": 3600,
+        "N": 97,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul"},
+        "u" : {
+               "phi_h_sou": "oveActSou",
+               "phi_h_nor": "oveActNor"
+              },
+        "y": {"Ti_sou": "TRooAirSou_y",
+              "Ti_nor": "TRooAirNor_y"},
+        "boptest_to_ocp": {"phi_h_sou": "PHeaSou_y",
+                           "phi_h_nor": "PHeaNor_y",
+                           "Ti_sou": "TRooAirSou_y",
+                           "Ti_nor": "TRooAirNor_y"
+                          },
+        "sampling": {
+                     "integrate": ["phi_h_sou", "phi_h_nor"],
+                     "point": ["Ta", "Ti_sou", "Ti_nor"]
+                    }
+        }
+      },
     "testcase1_wea":
     {
       "misc": {
@@ -416,6 +443,25 @@
         "u" : {"Tsup": "oveTSetSup"},
         "y": {"Ti": "reaTRoo_y", "Ph": "reaQHea_y"},
         "boptest_to_ocp": {"Ti": "reaTRoo_y", "Ph": "reaQHea_y", "Tsup": "oveTSetSup_u"},
+        "sampling": {
+                     "integrate": ["Ph"],
+                     "point": ["Ta", "phi_s", "Ti", "Tsup"]
+                    }
+      }
+    },
+        "bestest_heat_pump":
+    {
+      "misc": {
+        "h": 900,
+        "N": 25,
+        "start_time": 0,
+        "warmup_period": 604800
+      },
+      "maps" : {
+        "r" : {"Ta": "TDryBul", "phi_s":"HGloHor"},
+        "u" : {"ove_hp": "oveHeaPumY", "pum": "ovePum", "fan": "oveFan", "Tset": "oveTSet"},
+        "y": {"Ti": "reaTZon_y", "Ph": "reaQFloHea_y", "reaQHeaPumCon_y": "reaQHeaPumCon_y", "reaQHeaPumEva_y": "reaQHeaPumEva_y", "reaCOP_y": "reaCOP_y"},
+        "boptest_to_ocp": {"Ti": "reaTZon_y", "Ph": "reaQFloHea_y", "ove_hp": "oveHeaPumY_u", "fan": "oveFan_u", "Tset": "oveTSet_u", "reaQHeaPumCon_y": "reaQHeaPumCon_y", "reaQHeaPumEva_y": "reaQHeaPumEva_y", "reaCOP_y": "reaCOP_y", "pum": "ovePum_u"},
         "sampling": {
                      "integrate": ["Ph"],
                      "point": ["Ta", "phi_s", "Ti", "Tsup"]

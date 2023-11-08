@@ -26,7 +26,24 @@ from collections import OrderedDict
 #from sysid.ocp import OCP
 #import typing
 import hashlib
+import scipy
+import typing
+import copy
 
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, ca.DM):
+            assert (obj.shape[0] in (1, None)) \
+                    or \
+                   (obj.shape[1] in (1, None))
+            return list(np.array(obj).flatten())
+        return super(NumpyEncoder, self).default(obj)
 
 class OCP(metaclass=ABCMeta):
     """
@@ -90,6 +107,7 @@ class OCP(metaclass=ABCMeta):
                 **kwargs
                 ):
 
+        self.kwargs = copy.deepcopy(kwargs)
         config = kwargs.pop("config")        
         self.functions = functions = kwargs.pop("functions", None)
         #if config["solver"] == "gauss_newton":
@@ -133,7 +151,8 @@ class OCP(metaclass=ABCMeta):
         if param_guess is not None and self.p_nom is None:
             self.p_nom = self.scale = self.get_scale(param_guess)
         elif param_guess is None:
-            self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
+            #self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
+            self.p_nom = self.scale = [1]
         
         self.scale_dict["x_nom"] = self.x_nom
         self.scale_dict["x_nom_b"] = self.x_nom_b
@@ -397,6 +416,11 @@ class OCP(metaclass=ABCMeta):
         # transcribe:
         self.nlp, self.nlp_parser = self.strategy.transcribe_nlp()
         self.opt = config["opt"]
+        try:
+            self.set_A()
+        except RuntimeError:
+            print("Fix setting df/dx for DAE-models.")
+            pass
         # get duals:
         #self.opt["calc_multipliers"] = True
     
@@ -625,7 +649,8 @@ class OCP(metaclass=ABCMeta):
                                 lambda x: 10**x,
                                         np.floor(
                                                 np.log10(
-                                                        np.abs(param_guess)
+                                                        param_guess
+                                                        #np.abs(param_guess)
                                                         )
                                                 )
                                     )
@@ -640,7 +665,7 @@ class OCP(metaclass=ABCMeta):
     
     def __del__(self):
         pass
-        """
+        """W
         for file in self.c_files:
             print("Deleting %s..." % file)
             os.remove(file)
@@ -654,10 +679,17 @@ class OCP(metaclass=ABCMeta):
         NOTE: built-in hash() only consistent internal to a process
         """
         import hashlib
-        config["N"] = self.N
-        config["dt"] = self.dt
+        if "N" not in config:
+            config["N"] = self.N
+        if "dt" not in config:
+            config["dt"] = self.dt
+        
+        # not Json-serializable:
+        _  = self.kwargs.pop("functions", None)
+        # but the rest of kwargs is:
+        config["kwargs"] = self.kwargs
         config["scale_dict"] = self.scale_dict
-        s = json.dumps(config, sort_keys=True)
+        s = json.dumps(config, sort_keys=True, cls=NumpyEncoder)
         return "%s_solver_id_" % type(self).__name__ + \
                 str(
                     int(
@@ -888,7 +920,7 @@ class OCP(metaclass=ABCMeta):
         
     @property
     def p(self):
-        return ca.vertcat(*self.dae.dae.p)
+        return ca.vertcat(*self.dae.dae.p())
     
     @property
     def x(self):
@@ -934,6 +966,54 @@ class OCP(metaclass=ABCMeta):
     @property
     def r_names(self):
         return self.dae.r_names
+    
+    def set_A(self):
+        """
+        Set casadi-Function that retrieves A.
+        """
+        self._A = _A = ca.jacobian(self.integrator.ode, self.integrator.x)
+        #x =  ca.vertsplit(self.integrator.x)
+        # should be state independant:
+    
+        self.A = ca.Function("A",
+                             [self.integrator.x, self.integrator.p],
+                             [_A],
+                             ["x", "p"], 
+                             ["A"]
+                             )
+        
+    def get_Ad(self,
+               dt: typing.Union[int, None] = None,
+               **kwargs
+               ):
+        """
+        Get discrete-time Ad.
+        """
+        x = kwargs.pop("x", np.ones(self.dae.dae.nx())*293.15) 
+        p = kwargs.pop("p", None) 
+        
+        A = self.A(x=x,
+                   p=p)["A"]
+        if dt is None:
+            dt = self.dt
+        return scipy.linalg.expm(A*dt)
+          
+    def get_taus(self, 
+                 **kwargs
+                 ):
+        """
+        Get time constants of ODE-system.
+        """
+        
+        x = kwargs.pop("x", np.ones(self.dae.dae.nx())*293.15) 
+        p = kwargs.pop("p", None) 
+        
+        A = self.A(x=x,
+                   p=p)["A"]
+        Ad = self.get_Ad(A)
+        eig_A = np.linalg.eig(Ad)
+        return 1/eig_A.eigenvalues
+        
     
     # TODO: generalize:
     def separate_data(
@@ -994,8 +1074,15 @@ class OCP(metaclass=ABCMeta):
                 bias = self.x_nom_b
                 scale = self.x_nom
             
+    
             if ubx is not None:
                 #bounds["x"]["ub"] = (ubx - self.x_nom_b)/self.x_nom
+                # TODO: improve:
+                """
+                if ubx.shape != scale.shape:
+                    scale = self.x_nom = scale.reshape(ubx.shape)
+                    bias = self.x_nom_b = bias.reshape(ubx.shape)
+                """
                 bounds["x"]["ub"] = (ubx - bias)/scale
             else:
                 bounds["x"]["ub"] = None
@@ -1048,14 +1135,7 @@ class OCP(metaclass=ABCMeta):
         # TODO: extend with lbz, ubz
                  
         for varname in varnames:
-            
-            #dim = int(self.nlp_parser[varname]["dim"]/(len(getattr(self.dae, varname + "_names"))))
-            
-            #if varname == "r":
-            #    print(varname)
-            if varname == "z":
-                print(varname)
-            
+                
             bounds[varname] = {}
             names = getattr(self, varname + "_names")
         
@@ -1465,7 +1545,6 @@ class OCP(metaclass=ABCMeta):
                                          )
         # return time-series, params  
         sol_df.index = self.data.index 
-        
         """
         params = {
                   name: val
@@ -1473,7 +1552,6 @@ class OCP(metaclass=ABCMeta):
                   in zip(self.dae.p, params)
                   }
         """
-        
         return sol_df, pd.Series(data=np.array(params).flatten(), index=self.dae.p)
         
 

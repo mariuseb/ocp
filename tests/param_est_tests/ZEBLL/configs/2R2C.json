@@ -1,8 +1,8 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + s1",
-            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + s2"
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "w": {
             "v1": "Ti - y1"
@@ -23,15 +23,11 @@
             "Ti",
             "Te"
         ],
-        "s": [
-            "s1",
-            "s2"
-        ],
         "y": [
             ["y1", "Ti"]
         ]
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(s1, s1)@Q[0,0] + (dot(s2, s2))@Q[1,1]",
+    "objective": "dot(v1, v1)@R[0,0]",
     "method": "multiple_shooting",
     "integrator": 
         {

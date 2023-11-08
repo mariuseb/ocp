@@ -1,0 +1,39 @@
+{
+    "model": {
+        "ode": {
+            "Ti_sou": "(Ta - Ti_sou)/(Rsou*Csou) + phi_h_sou*(1/Csou)",
+            "Ti_nor": "(Ta - Ti_nor)/(Rnor*Cnor) + phi_h_nor*(1/Cnor)"
+        },
+        "p": [
+            "Rsou",
+            "Csou",
+            "Rnor",
+            "Cnor"
+        ],
+        "u": [
+            "phi_h_sou",
+            "phi_h_nor"
+        ],
+        "r": [
+            "Ta"
+        ],
+        "x": [
+            "Ti_sou",
+            "Ti_nor"
+        ],
+        "y": [
+            ["y1", "Ti_sou"],
+            ["y2", "Ti_nor"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1],
+    "R": [1,1]
+}

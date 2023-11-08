@@ -290,7 +290,7 @@ class Boptest(RestApi):
             #else:
             #    u_values[v +  "_u"] = 0
             #    u_values[v +  "_activate"] = 0
-               
+        
         u_dict = {**u_values, **u_active}
         return u_dict
     

@@ -1,0 +1,76 @@
+/* Jacobians */
+static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+/* Jacobian Variables */
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_LSJac6 0
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacLSJac6_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianLSJac6(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_LSJac7 1
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacLSJac7_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianLSJac7(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_LSJac8 2
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacLSJac8_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianLSJac8(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_LSJac9 4
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacLSJac9_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianLSJac9(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_LSJac10 4
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacLSJac10_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianLSJac10(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_FMIDERINIT 3
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacFMIDERINIT_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianFMIDERINIT(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_FMIDER 3
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacFMIDER_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianFMIDER(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_H 5
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacH_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianH(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_F 6
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacF_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianF(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_D 7
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacD_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianD(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_C 8
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacC_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianC(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_B 9
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacB_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianB(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+
+#define Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_INDEX_JAC_A 10
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_functionJacA_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+int Buildings_Fluid_FMI_ExportContainers_Examples_FMUs_HVACZone_initialAnalyticJacobianA(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+
+#if defined(__cplusplus)
+}
+#endif
+

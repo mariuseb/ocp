@@ -1,0 +1,5474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="HVACZoneRad"
+  guid="{94649188-7566-429d-90fb-022117de9576}"
+  description="Declaration of an FMU that exports a simple convective only HVAC system"
+  generationTool="OpenModelica Compiler v1.21.0-2-g0bc3d29bd9-cmake"
+  generationDateAndTime="2023-10-16T10:34:53Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="4">
+  <ModelExchange
+    modelIdentifier="HVACZoneRad" providesDirectionalDerivative="true">
+    <SourceFiles>
+      <File name="HVACZoneRad.c" />
+      <File name="HVACZoneRad_functions.c" />
+      <File name="HVACZoneRad_records.c" />
+      <File name="HVACZoneRad_01exo.c" />
+      <File name="HVACZoneRad_02nls.c" />
+      <File name="HVACZoneRad_03lsy.c" />
+      <File name="HVACZoneRad_04set.c" />
+      <File name="HVACZoneRad_05evt.c" />
+      <File name="HVACZoneRad_06inz.c" />
+      <File name="HVACZoneRad_07dly.c" />
+      <File name="HVACZoneRad_08bnd.c" />
+      <File name="HVACZoneRad_09alg.c" />
+      <File name="HVACZoneRad_10asr.c" />
+      <File name="HVACZoneRad_11mix.c" />
+      <File name="HVACZoneRad_12jac.c" />
+      <File name="HVACZoneRad_13opt.c" />
+      <File name="HVACZoneRad_14lnz.c" />
+      <File name="HVACZoneRad_15syn.c" />
+      <File name="HVACZoneRad_16dae.c" />
+      <File name="HVACZoneRad_17inl.c" />
+      <File name="HVACZoneRad_18spd.c" />
+      <File name="HVACZoneRad_init_fmu.c" />
+      <File name="HVACZoneRad_FMU.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/jacobian_util.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+      <File name="simulation/solver/linearSystem.c" />
+      <File name="simulation/solver/linearSolverLapack.c" />
+      <File name="simulation/solver/linearSolverTotalPivot.c" />
+      <File name="simulation/solver/nonlinearSolverHomotopy.c" />
+      <File name="simulation/solver/nonlinearSolverHybrd.c" />
+      <File name="simulation/solver/nonlinearValuesList.c" />
+      <File name="simulation/solver/nonlinearSystem.c" />
+    </SourceFiles>
+  </ModelExchange>
+  <UnitDefinitions>
+    <Unit name="kg/m3">
+      <BaseUnit m="-3" kg="1" />
+    </Unit>
+    <Unit name="m2">
+      <BaseUnit m="2" />
+    </Unit>
+    <Unit name="m3">
+      <BaseUnit m="3" />
+    </Unit>
+    <Unit name="rev/min">
+    </Unit>
+    <Unit name="s">
+      <BaseUnit s="1" />
+    </Unit>
+    <Unit name="kg/kg">
+      <BaseUnit />
+    </Unit>
+    <Unit name="W/K">
+      <BaseUnit m="2" s="-3" K="-1" kg="1" />
+    </Unit>
+    <Unit name="m3/s">
+      <BaseUnit m="3" s="-1" />
+    </Unit>
+    <Unit name="Pa">
+      <BaseUnit m="-1" s="-2" kg="1" />
+    </Unit>
+    <Unit name="kg/s">
+      <BaseUnit s="-1" kg="1" />
+    </Unit>
+    <Unit name="J/kg">
+      <BaseUnit m="2" s="-2" />
+    </Unit>
+    <Unit name="K">
+      <BaseUnit K="1" />
+    </Unit>
+    <Unit name="Hz">
+      <BaseUnit s="-1" />
+    </Unit>
+    <Unit name="ks-1.g">
+      <BaseUnit s="-1" kg="1" factor="1e-06" />
+    </Unit>
+    <Unit name="W">
+      <BaseUnit m="2" s="-3" kg="1" />
+    </Unit>
+    <Unit name="1">
+      <BaseUnit />
+    </Unit>
+    <Unit name="kg">
+      <BaseUnit kg="1" />
+    </Unit>
+    <Unit name="J">
+      <BaseUnit m="2" s="-2" kg="1" />
+    </Unit>
+  </UnitDefinitions>
+  <TypeDefinitions>
+    <SimpleType name="Modelica.Fluid.Types.PortFlowDirection">
+      <Enumeration>
+        <Item name="Entering" value="1"/>
+        <Item name="Leaving" value="2"/>
+        <Item name="Bidirectional" value="3"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Fluid.Types.Dynamics">
+      <Enumeration>
+        <Item name="DynamicFreeInitial" value="1"/>
+        <Item name="FixedInitial" value="2"/>
+        <Item name="SteadyStateInitial" value="3"/>
+        <Item name="SteadyState" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Buildings.Fluid.Movers.BaseClasses.Types.PrescribedVariable">
+      <Enumeration>
+        <Item name="Speed" value="1"/>
+        <Item name="FlowRate" value="2"/>
+        <Item name="PressureDifference" value="3"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Modelica.Blocks.Types.Init">
+      <Enumeration>
+        <Item name="NoInit" value="1"/>
+        <Item name="SteadyState" value="2"/>
+        <Item name="InitialState" value="3"/>
+        <Item name="InitialOutput" value="4"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Buildings.Fluid.Types.InputType">
+      <Enumeration>
+        <Item name="Constant" value="1"/>
+        <Item name="Stages" value="2"/>
+        <Item name="Continuous" value="3"/>
+      </Enumeration>
+    </SimpleType>
+    <SimpleType name="Buildings.Fluid.Types.CvTypes">
+      <Enumeration>
+        <Item name="OpPoint" value="1"/>
+        <Item name="Kv" value="2"/>
+        <Item name="Cv" value="3"/>
+        <Item name="Av" value="4"/>
+      </Enumeration>
+    </SimpleType>
+  </TypeDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="1.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="pump.vol.dynBal.U"
+    valueReference="0"
+    description="Internal energy of fluid"
+    >
+    <Real nominal="100000.0" unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="rad.vol[1].dynBal.U"
+    valueReference="1"
+    description="Internal energy of fluid"
+    >
+    <Real nominal="100000.0" unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="rad.vol[2].dynBal.U"
+    valueReference="2"
+    description="Internal energy of fluid"
+    >
+    <Real nominal="100000.0" unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="rad.vol[3].dynBal.U"
+    valueReference="3"
+    description="Internal energy of fluid"
+    >
+    <Real nominal="100000.0" unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="rad.vol[4].dynBal.U"
+    valueReference="4"
+    description="Internal energy of fluid"
+    >
+    <Real nominal="100000.0" unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="rad.vol[5].dynBal.U"
+    valueReference="5"
+    description="Internal energy of fluid"
+    >
+    <Real nominal="100000.0" unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="vol.dynBal.U"
+    valueReference="6"
+    description="Internal energy of fluid"
+    >
+    <Real nominal="100000.0" unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="vol.dynBal.m"
+    valueReference="7"
+    description="Mass of fluid"
+    >
+    <Real min="0.0" unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="vol.dynBal.medium.Xi[1]"
+    valueReference="8"
+    description="Structurally independent mass fractions"
+    initial="exact">
+    <Real start="0.01" min="0.0" max="1.0" nominal="0.1" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="der(pump.vol.dynBal.U)"
+    valueReference="9"
+    description="der(Internal energy of fluid)"
+    >
+    <Real derivative="1" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="der(rad.vol[1].dynBal.U)"
+    valueReference="10"
+    description="der(Internal energy of fluid)"
+    >
+    <Real derivative="2" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="der(rad.vol[2].dynBal.U)"
+    valueReference="11"
+    description="der(Internal energy of fluid)"
+    >
+    <Real derivative="3" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="der(rad.vol[3].dynBal.U)"
+    valueReference="12"
+    description="der(Internal energy of fluid)"
+    >
+    <Real derivative="4" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="der(rad.vol[4].dynBal.U)"
+    valueReference="13"
+    description="der(Internal energy of fluid)"
+    >
+    <Real derivative="5" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="der(rad.vol[5].dynBal.U)"
+    valueReference="14"
+    description="der(Internal energy of fluid)"
+    >
+    <Real derivative="6" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="der(vol.dynBal.U)"
+    valueReference="15"
+    description="der(Internal energy of fluid)"
+    >
+    <Real derivative="7" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="der(vol.dynBal.m)"
+    valueReference="16"
+    description="der(Mass of fluid)"
+    >
+    <Real derivative="8" unit="ks-1.g"/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="der(vol.dynBal.medium.Xi[1])"
+    valueReference="17"
+    description="der(Structurally independent mass fractions)"
+    >
+    <Real derivative="9" unit="Hz"/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="QGaiLat_flow"
+    valueReference="45"
+    description="Latent heat input into zone (positive if heat gain)"
+    causality="output"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="QGaiRad_flow"
+    valueReference="46"
+    description="Radiant heat input into zone (positive if heat gain)"
+    causality="output"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="QGaiSenCon_flow"
+    valueReference="47"
+    description="Convective sensible heat input into zone (positive if heat gain)"
+    causality="output"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="TRadZon"
+    valueReference="48"
+    description="Radiative temperature of the zone"
+    causality="input"
+    >
+    <Real start="0.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="bou.ports[1].h_outflow"
+    valueReference="52"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="bou.ports[1].m_flow"
+    valueReference="53"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-9.999999999999999e+59" max="9.999999999999999e+59" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="const.y"
+    valueReference="54"
+    description="Connector of Real output signal"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="fluPor[1].backward.T"
+    valueReference="55"
+    description="Temperature"
+    causality="input"
+    >
+    <Real start="293.15" min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="fluPor[1].backward.X_w"
+    valueReference="56"
+    description="Water vapor mass fractions per kg total air"
+    causality="input"
+    >
+    <Real start="0.0" min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "28" -->
+  <ScalarVariable
+    name="fluPor[1].forward.T"
+    valueReference="57"
+    description="Temperature"
+    causality="output"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "29" -->
+  <ScalarVariable
+    name="fluPor[1].forward.X_w"
+    valueReference="58"
+    description="Water vapor mass fractions per kg total air"
+    causality="output"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "30" -->
+  <ScalarVariable
+    name="fluPor[1].m_flow"
+    valueReference="59"
+    description="Mass flow rate from the connection point into the component"
+    causality="output"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "31" -->
+  <ScalarVariable
+    name="hea.Q_flow"
+    valueReference="60"
+    description="Heat flow rate added to the fluid (if flow is from port_a to port_b)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "32" -->
+  <ScalarVariable
+    name="hea.TSet"
+    valueReference="61"
+    description="Set point temperature of the fluid that leaves port_b"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "33" -->
+  <ScalarVariable
+    name="hea.dp"
+    valueReference="62"
+    description="Pressure difference between port_a and port_b"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "34" -->
+  <ScalarVariable
+    name="hea.m_flow"
+    valueReference="63"
+    description="Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    initial="exact">
+    <Real start="0.0" min="0.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "35" -->
+  <ScalarVariable
+    name="hea.port_a.h_outflow"
+    valueReference="75"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "36" -->
+  <ScalarVariable
+    name="hea.port_b.m_flow"
+    valueReference="76"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="9.999999999999999e+59" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "37" -->
+  <ScalarVariable
+    name="hea.port_b.p"
+    valueReference="77"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "38" -->
+  <ScalarVariable
+    name="hvacAda.fluPor[1].m_flow"
+    valueReference="84"
+    description="Mass flow rate from the connection point into the component"
+    initial="exact">
+    <Real start="0.0" min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "39" -->
+  <ScalarVariable
+    name="hvacAda.ports[1].h_outflow"
+    valueReference="85"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "40" -->
+  <ScalarVariable
+    name="hvacAda.ports[1].m_flow"
+    valueReference="86"
+    description="Mass flow rate from the connection point into the component"
+    initial="exact">
+    <Real start="0.0" min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "41" -->
+  <ScalarVariable
+    name="pump.P"
+    valueReference="91"
+    description="Electrical power consumed"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "42" -->
+  <ScalarVariable
+    name="pump.VMachine_flow"
+    valueReference="93"
+    description="Volume flow rate"
+    >
+    <Real unit="m3/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "43" -->
+  <ScalarVariable
+    name="pump.dp"
+    valueReference="94"
+    description="Pressure difference between port_a and port_b"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "44" -->
+  <ScalarVariable
+    name="pump.dpMachine"
+    valueReference="95"
+    description="Pressure difference"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "45" -->
+  <ScalarVariable
+    name="pump.eta"
+    valueReference="99"
+    description="Global efficiency"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "46" -->
+  <ScalarVariable
+    name="pump.etaHyd"
+    valueReference="100"
+    description="Hydraulic efficiency"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "47" -->
+  <ScalarVariable
+    name="pump.etaMot"
+    valueReference="101"
+    description="Motor efficiency"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "48" -->
+  <ScalarVariable
+    name="pump.heatPort.Q_flow"
+    valueReference="104"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "49" -->
+  <ScalarVariable
+    name="pump.heatPort.T"
+    valueReference="105"
+    description="Port temperature"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "50" -->
+  <ScalarVariable
+    name="pump.port_a.h_outflow"
+    valueReference="106"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "51" -->
+  <ScalarVariable
+    name="pump.port_a.p"
+    valueReference="107"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "52" -->
+  <ScalarVariable
+    name="rad.QCon_flow"
+    valueReference="131"
+    description="Heat input into the water due to convective heat transfer with room air"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "53" -->
+  <ScalarVariable
+    name="rad.QRad_flow"
+    valueReference="132"
+    description="Heat input into the water due to radiative heat transfer with room"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "54" -->
+  <ScalarVariable
+    name="rad.Q_flow"
+    valueReference="133"
+    description="Heat input into the water"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "55" -->
+  <ScalarVariable
+    name="rad.dp"
+    valueReference="139"
+    description="Pressure difference between port_a and port_b"
+    initial="exact">
+    <Real start="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "56" -->
+  <ScalarVariable
+    name="rad.sta_a.T"
+    valueReference="151"
+    description="Temperature of medium"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "57" -->
+  <ScalarVariable
+    name="rad.sta_b.T"
+    valueReference="152"
+    description="Temperature of medium"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "58" -->
+  <ScalarVariable
+    name="rad.vol[1].T"
+    valueReference="153"
+    description="Temperature of the fluid"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "59" -->
+  <ScalarVariable
+    name="rad.vol[2].T"
+    valueReference="154"
+    description="Temperature of the fluid"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "60" -->
+  <ScalarVariable
+    name="rad.vol[3].T"
+    valueReference="155"
+    description="Temperature of the fluid"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "61" -->
+  <ScalarVariable
+    name="rad.vol[4].T"
+    valueReference="156"
+    description="Temperature of the fluid"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "62" -->
+  <ScalarVariable
+    name="rad.vol[5].T"
+    valueReference="157"
+    description="Temperature of the fluid"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "63" -->
+  <ScalarVariable
+    name="rad.vol[1].heatPort.Q_flow"
+    valueReference="223"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "64" -->
+  <ScalarVariable
+    name="rad.vol[2].heatPort.Q_flow"
+    valueReference="224"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "65" -->
+  <ScalarVariable
+    name="rad.vol[3].heatPort.Q_flow"
+    valueReference="225"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "66" -->
+  <ScalarVariable
+    name="rad.vol[4].heatPort.Q_flow"
+    valueReference="226"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "67" -->
+  <ScalarVariable
+    name="rad.vol[5].heatPort.Q_flow"
+    valueReference="227"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "68" -->
+  <ScalarVariable
+    name="rad.vol[5].p"
+    valueReference="228"
+    description="Pressure of the fluid"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "69" -->
+  <ScalarVariable
+    name="rad.vol[2].ports[2].h_outflow"
+    valueReference="229"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "70" -->
+  <ScalarVariable
+    name="rad.vol[3].ports[2].h_outflow"
+    valueReference="230"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "71" -->
+  <ScalarVariable
+    name="rad.vol[4].ports[2].h_outflow"
+    valueReference="231"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "72" -->
+  <ScalarVariable
+    name="rad.vol[5].ports[2].h_outflow"
+    valueReference="232"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    initial="approx">
+    <Real start="83680.0" min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "73" -->
+  <ScalarVariable
+    name="res[1].dp"
+    valueReference="233"
+    description="Pressure difference between port_a and port_b"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "74" -->
+  <ScalarVariable
+    name="res[1].m_flow"
+    valueReference="234"
+    description="Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    >
+    <Real min="0.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "75" -->
+  <ScalarVariable
+    name="res[1].port_a.h_outflow"
+    valueReference="235"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "76" -->
+  <ScalarVariable
+    name="res[1].port_a.p"
+    valueReference="236"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "77" -->
+  <ScalarVariable
+    name="res[1].port_b.h_outflow"
+    valueReference="237"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "78" -->
+  <ScalarVariable
+    name="val.port_2.h_outflow"
+    valueReference="238"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "79" -->
+  <ScalarVariable
+    name="val.res1.dp"
+    valueReference="241"
+    description="Pressure difference between port_a and port_b"
+    >
+    <Real nominal="6000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "80" -->
+  <ScalarVariable
+    name="val.res1.k"
+    valueReference="242"
+    description="Flow coefficient of valve and pipe in series, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    >
+    <Real min="1e-60"/>
+  </ScalarVariable>
+  <!-- Index of variable = "81" -->
+  <ScalarVariable
+    name="val.res1.phi"
+    valueReference="243"
+    description="Ratio actual to nominal mass flow rate of valve, phi=Kv(y)/Kv(y=1)"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "82" -->
+  <ScalarVariable
+    name="val.res1.port_a.h_outflow"
+    valueReference="244"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    initial="exact">
+    <Real start="83680.0" min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "83" -->
+  <ScalarVariable
+    name="val.res1.port_b.m_flow"
+    valueReference="245"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "84" -->
+  <ScalarVariable
+    name="val.res2.dp"
+    valueReference="246"
+    description="Pressure difference between port_a and port_b"
+    initial="exact">
+    <Real start="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "85" -->
+  <ScalarVariable
+    name="val.res2.port_a.h_outflow"
+    valueReference="247"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    initial="exact">
+    <Real start="83680.0" min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "86" -->
+  <ScalarVariable
+    name="val.res3.dp"
+    valueReference="248"
+    description="Pressure difference between port_a and port_b"
+    >
+    <Real nominal="6000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "87" -->
+  <ScalarVariable
+    name="val.res3.k"
+    valueReference="249"
+    description="Flow coefficient of valve and pipe in series, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    >
+    <Real min="1e-60"/>
+  </ScalarVariable>
+  <!-- Index of variable = "88" -->
+  <ScalarVariable
+    name="val.res3.phi"
+    valueReference="250"
+    description="Ratio actual to nominal mass flow rate of valve, phi=Kv(y)/Kv(y=1)"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "89" -->
+  <ScalarVariable
+    name="val.res3.port_a.h_outflow"
+    valueReference="251"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    initial="exact">
+    <Real start="83680.0" min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "90" -->
+  <ScalarVariable
+    name="val.res3.y"
+    valueReference="252"
+    description="Actuator position (0: closed, 1: open)"
+    initial="exact">
+    <Real start="0.0" min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "91" -->
+  <ScalarVariable
+    name="vol.T"
+    valueReference="254"
+    description="Temperature of the fluid"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "92" -->
+  <ScalarVariable
+    name="vol.heatPort.Q_flow"
+    valueReference="266"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "93" -->
+  <ScalarVariable
+    name="vol.mXi[1]"
+    valueReference="267"
+    description="Species mass of the component"
+    >
+    <Real min="0.0" unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "94" -->
+  <ScalarVariable
+    name="vol.p"
+    valueReference="268"
+    description="Pressure of the fluid"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "95" -->
+  <ScalarVariable
+    name="vol.ports[1].h_outflow"
+    valueReference="269"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "96" -->
+  <ScalarVariable
+    name="zero.y"
+    valueReference="270"
+    description="Connector of Real output signal"
+    initial="exact">
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "97" -->
+  <ScalarVariable
+    name="QCoiC_flow_nominal"
+    valueReference="272"
+    description="Cooling load of coil, taking into account outside air sensible and latent heat removal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "98" -->
+  <ScalarVariable
+    name="QRooC_flow_nominal"
+    valueReference="273"
+    description="Nominal cooling load of the room"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "99" -->
+  <ScalarVariable
+    name="QRooInt_flow"
+    valueReference="274"
+    description="Internal heat gains of the room"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "100" -->
+  <ScalarVariable
+    name="TASup_nominal"
+    valueReference="275"
+    description="Nominal air temperature supplied to room"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "101" -->
+  <ScalarVariable
+    name="THeaRecLvg"
+    valueReference="276"
+    description="Air temperature leaving the heat recovery"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "102" -->
+  <ScalarVariable
+    name="TOut_nominal"
+    valueReference="277"
+    description="Design outlet air temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "103" -->
+  <ScalarVariable
+    name="TRooSet"
+    valueReference="278"
+    description="Nominal room air temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "104" -->
+  <ScalarVariable
+    name="TWRet_nominal"
+    valueReference="279"
+    description="Water return temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "105" -->
+  <ScalarVariable
+    name="TWSup_nominal"
+    valueReference="280"
+    description="Water supply temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "106" -->
+  <ScalarVariable
+    name="UA"
+    valueReference="281"
+    description="Average UA-value of the room"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="W/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "107" -->
+  <ScalarVariable
+    name="bou.T"
+    valueReference="282"
+    description="Fixed value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "108" -->
+  <ScalarVariable
+    name="bou.X[1]"
+    valueReference="283"
+    description="Fixed value of composition"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "109" -->
+  <ScalarVariable
+    name="bou.p"
+    valueReference="284"
+    description="Fixed value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "110" -->
+  <ScalarVariable
+    name="const.k"
+    valueReference="285"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "111" -->
+  <ScalarVariable
+    name="dTFan"
+    valueReference="286"
+    description="Estimated temperature raise across fan that needs to be made up by the cooling coil"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "112" -->
+  <ScalarVariable
+    name="eps"
+    valueReference="287"
+    description="Heat recovery effectiveness"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "113" -->
+  <ScalarVariable
+    name="gain.k"
+    valueReference="288"
+    description="Gain value multiplied with input signal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "114" -->
+  <ScalarVariable
+    name="hea.QMax_flow"
+    valueReference="289"
+    description="Maximum heat flow rate for heating (positive)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "115" -->
+  <ScalarVariable
+    name="hea.T_start"
+    valueReference="290"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "116" -->
+  <ScalarVariable
+    name="hea.deltaM"
+    valueReference="293"
+    description="Fraction of nominal flow rate where flow transitions to laminar"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "117" -->
+  <ScalarVariable
+    name="hea.dp_nominal"
+    valueReference="294"
+    description="Pressure difference"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "118" -->
+  <ScalarVariable
+    name="hea.m_flow_nominal"
+    valueReference="295"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "119" -->
+  <ScalarVariable
+    name="hea.m_flow_small"
+    valueReference="296"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "120" -->
+  <ScalarVariable
+    name="hea.tau"
+    valueReference="326"
+    description="Time constant at nominal flow rate (used if energyDynamics not equal Modelica.Fluid.Types.Dynamics.SteadyState)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "121" -->
+  <ScalarVariable
+    name="mA_flow_nominal"
+    valueReference="333"
+    description="Nominal air mass flow rate, increased by factor 1.3 to allow for recovery after temperature setback"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "122" -->
+  <ScalarVariable
+    name="m_flow_nominal"
+    valueReference="334"
+    description="Nominal water mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "123" -->
+  <ScalarVariable
+    name="pulse.amplitude"
+    valueReference="335"
+    description="Amplitude of pulse"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "124" -->
+  <ScalarVariable
+    name="pulse.offset"
+    valueReference="336"
+    description="Offset of output signal y"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "125" -->
+  <ScalarVariable
+    name="pulse.period"
+    valueReference="337"
+    description="Time for one period"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-60" unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "126" -->
+  <ScalarVariable
+    name="pulse.startTime"
+    valueReference="338"
+    description="Output y = offset for time &lt; startTime"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "127" -->
+  <ScalarVariable
+    name="pulse.width"
+    valueReference="339"
+    description="Width of pulse in % of period"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-60" max="100.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "128" -->
+  <ScalarVariable
+    name="pump.T_start"
+    valueReference="342"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "129" -->
+  <ScalarVariable
+    name="pump.X_start[1]"
+    valueReference="344"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "130" -->
+  <ScalarVariable
+    name="pump.constInput"
+    valueReference="348"
+    description="Constant input set point"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "131" -->
+  <ScalarVariable
+    name="pump.constantMassFlowRate"
+    valueReference="349"
+    description="Constant pump mass flow rate, used when inputType=Constant"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "132" -->
+  <ScalarVariable
+    name="pump.dp_nominal"
+    valueReference="350"
+    description="Nominal pressure raise, used for default pressure curve if not specified in record per"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "133" -->
+  <ScalarVariable
+    name="pump.mSenFac"
+    valueReference="406"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "134" -->
+  <ScalarVariable
+    name="pump.m_flow_nominal"
+    valueReference="407"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-60" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "135" -->
+  <ScalarVariable
+    name="pump.m_flow_small"
+    valueReference="408"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "136" -->
+  <ScalarVariable
+    name="pump.m_flow_start"
+    valueReference="409"
+    description="Initial value of mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "137" -->
+  <ScalarVariable
+    name="pump.massFlowRates[1]"
+    valueReference="410"
+    description="Vector of mass flow rate set points, used when inputType=Stage"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "138" -->
+  <ScalarVariable
+    name="pump.p_start"
+    valueReference="411"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "139" -->
+  <ScalarVariable
+    name="pump.per.constantSpeed"
+    valueReference="412"
+    description="Normalized speed set point, used if inputType = Buildings.Fluid.Types.InputType.Constant"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "140" -->
+  <ScalarVariable
+    name="pump.per.constantSpeed_rpm"
+    valueReference="413"
+    description="Speed set point, used if inputType = Buildings.Fluid.Types.InputType.Constant"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rev/min"/>
+  </ScalarVariable>
+  <!-- Index of variable = "141" -->
+  <ScalarVariable
+    name="pump.per.hydraulicEfficiency.V_flow[1]"
+    valueReference="414"
+    description="Volumetric flow rate at user-selected operating points"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="m3/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "142" -->
+  <ScalarVariable
+    name="pump.per.hydraulicEfficiency.eta[1]"
+    valueReference="415"
+    description="Fan or pump efficiency at these flow rates"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "143" -->
+  <ScalarVariable
+    name="pump.per.motorEfficiency.V_flow[1]"
+    valueReference="416"
+    description="Volumetric flow rate at user-selected operating points"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="m3/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "144" -->
+  <ScalarVariable
+    name="pump.per.motorEfficiency.eta[1]"
+    valueReference="417"
+    description="Fan or pump efficiency at these flow rates"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "145" -->
+  <ScalarVariable
+    name="pump.per.power.P[1]"
+    valueReference="418"
+    description="Fan or pump electrical power at these flow rates"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "146" -->
+  <ScalarVariable
+    name="pump.per.power.V_flow[1]"
+    valueReference="419"
+    description="Volume flow rate at user-selected operating points"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="m3/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "147" -->
+  <ScalarVariable
+    name="pump.per.pressure.V_flow[1]"
+    valueReference="420"
+    description="Volume flow rate at user-selected operating points"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="m3/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "148" -->
+  <ScalarVariable
+    name="pump.per.pressure.V_flow[2]"
+    valueReference="421"
+    description="Volume flow rate at user-selected operating points"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="m3/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "149" -->
+  <ScalarVariable
+    name="pump.per.pressure.dp[1]"
+    valueReference="422"
+    description="Fan or pump total pressure at these flow rates"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "150" -->
+  <ScalarVariable
+    name="pump.per.pressure.dp[2]"
+    valueReference="423"
+    description="Fan or pump total pressure at these flow rates"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "151" -->
+  <ScalarVariable
+    name="pump.per.speed_nominal"
+    valueReference="424"
+    description="Nominal rotational speed for flow characteristic"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "152" -->
+  <ScalarVariable
+    name="pump.per.speed_rpm_nominal"
+    valueReference="425"
+    description="Nominal rotational speed for flow characteristic"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rev/min"/>
+  </ScalarVariable>
+  <!-- Index of variable = "153" -->
+  <ScalarVariable
+    name="pump.per.speeds[1]"
+    valueReference="426"
+    description="Vector of normalized speed set points, used if inputType = Buildings.Fluid.Types.InputType.Stages"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "154" -->
+  <ScalarVariable
+    name="pump.per.speeds_rpm[1]"
+    valueReference="427"
+    description="Vector of speed set points, used if inputType = Buildings.Fluid.Types.InputType.Stages"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="rev/min"/>
+  </ScalarVariable>
+  <!-- Index of variable = "155" -->
+  <ScalarVariable
+    name="pump.riseTime"
+    valueReference="434"
+    description="Rise time of the filter (time to reach 99.6 % of the speed)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "156" -->
+  <ScalarVariable
+    name="pump.stageInputs[1]"
+    valueReference="439"
+    description="Vector of input set points corresponding to stages"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "157" -->
+  <ScalarVariable
+    name="pump.tau"
+    valueReference="440"
+    description="Time constant of fluid volume for nominal flow, used if energy or mass balance is dynamic"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "158" -->
+  <ScalarVariable
+    name="rad.Q_flow_nominal"
+    valueReference="473"
+    description="Nominal heating power (positive for heating)"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "159" -->
+  <ScalarVariable
+    name="rad.TAir_nominal"
+    valueReference="474"
+    description="Air temperature at nominal condition"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "160" -->
+  <ScalarVariable
+    name="rad.TRad_nominal"
+    valueReference="475"
+    description="Radiative temperature at nominal condition"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "161" -->
+  <ScalarVariable
+    name="rad.T_a_nominal"
+    valueReference="481"
+    description="Water inlet temperature at nominal condition"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="288.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "162" -->
+  <ScalarVariable
+    name="rad.T_b_nominal"
+    valueReference="482"
+    description="Water outlet temperature at nominal condition"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="288.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "163" -->
+  <ScalarVariable
+    name="rad.T_start"
+    valueReference="483"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "164" -->
+  <ScalarVariable
+    name="rad.VWat"
+    valueReference="485"
+    description="Water volume of radiator"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "165" -->
+  <ScalarVariable
+    name="rad.X_start[1]"
+    valueReference="486"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "166" -->
+  <ScalarVariable
+    name="rad.deltaM"
+    valueReference="500"
+    description="Fraction of nominal mass flow rate where transition to turbulent occurs"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.01"/>
+  </ScalarVariable>
+  <!-- Index of variable = "167" -->
+  <ScalarVariable
+    name="rad.dp_nominal"
+    valueReference="501"
+    description="Pressure drop at nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "168" -->
+  <ScalarVariable
+    name="rad.fraRad"
+    valueReference="502"
+    description="Fraction radiant heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "169" -->
+  <ScalarVariable
+    name="rad.mDry"
+    valueReference="504"
+    description="Dry mass of radiator that will be lumped to water heat capacity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "170" -->
+  <ScalarVariable
+    name="rad.mSenFac"
+    valueReference="505"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "171" -->
+  <ScalarVariable
+    name="rad.m_flow_nominal"
+    valueReference="506"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "172" -->
+  <ScalarVariable
+    name="rad.m_flow_small"
+    valueReference="507"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "173" -->
+  <ScalarVariable
+    name="rad.n"
+    valueReference="508"
+    description="Exponent for heat transfer"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "174" -->
+  <ScalarVariable
+    name="rad.p_start"
+    valueReference="509"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "175" -->
+  <ScalarVariable
+    name="rad.vol[1].T_start"
+    valueReference="558"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "176" -->
+  <ScalarVariable
+    name="rad.vol[2].T_start"
+    valueReference="559"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "177" -->
+  <ScalarVariable
+    name="rad.vol[3].T_start"
+    valueReference="560"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "178" -->
+  <ScalarVariable
+    name="rad.vol[4].T_start"
+    valueReference="561"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "179" -->
+  <ScalarVariable
+    name="rad.vol[5].T_start"
+    valueReference="562"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "180" -->
+  <ScalarVariable
+    name="rad.vol[1].V"
+    valueReference="563"
+    description="Volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "181" -->
+  <ScalarVariable
+    name="rad.vol[2].V"
+    valueReference="564"
+    description="Volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "182" -->
+  <ScalarVariable
+    name="rad.vol[3].V"
+    valueReference="565"
+    description="Volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "183" -->
+  <ScalarVariable
+    name="rad.vol[4].V"
+    valueReference="566"
+    description="Volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "184" -->
+  <ScalarVariable
+    name="rad.vol[5].V"
+    valueReference="567"
+    description="Volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "185" -->
+  <ScalarVariable
+    name="rad.vol[1].X_start[1]"
+    valueReference="568"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "186" -->
+  <ScalarVariable
+    name="rad.vol[2].X_start[1]"
+    valueReference="569"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "187" -->
+  <ScalarVariable
+    name="rad.vol[3].X_start[1]"
+    valueReference="570"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "188" -->
+  <ScalarVariable
+    name="rad.vol[4].X_start[1]"
+    valueReference="571"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "189" -->
+  <ScalarVariable
+    name="rad.vol[5].X_start[1]"
+    valueReference="572"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "190" -->
+  <ScalarVariable
+    name="rad.vol[1].mSenFac"
+    valueReference="633"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "191" -->
+  <ScalarVariable
+    name="rad.vol[2].mSenFac"
+    valueReference="634"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "192" -->
+  <ScalarVariable
+    name="rad.vol[3].mSenFac"
+    valueReference="635"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "193" -->
+  <ScalarVariable
+    name="rad.vol[4].mSenFac"
+    valueReference="636"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "194" -->
+  <ScalarVariable
+    name="rad.vol[5].mSenFac"
+    valueReference="637"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "195" -->
+  <ScalarVariable
+    name="rad.vol[1].m_flow_nominal"
+    valueReference="638"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "196" -->
+  <ScalarVariable
+    name="rad.vol[2].m_flow_nominal"
+    valueReference="639"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "197" -->
+  <ScalarVariable
+    name="rad.vol[3].m_flow_nominal"
+    valueReference="640"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "198" -->
+  <ScalarVariable
+    name="rad.vol[4].m_flow_nominal"
+    valueReference="641"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "199" -->
+  <ScalarVariable
+    name="rad.vol[5].m_flow_nominal"
+    valueReference="642"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "200" -->
+  <ScalarVariable
+    name="rad.vol[1].m_flow_small"
+    valueReference="643"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "201" -->
+  <ScalarVariable
+    name="rad.vol[2].m_flow_small"
+    valueReference="644"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "202" -->
+  <ScalarVariable
+    name="rad.vol[3].m_flow_small"
+    valueReference="645"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "203" -->
+  <ScalarVariable
+    name="rad.vol[4].m_flow_small"
+    valueReference="646"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "204" -->
+  <ScalarVariable
+    name="rad.vol[5].m_flow_small"
+    valueReference="647"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "205" -->
+  <ScalarVariable
+    name="rad.vol[1].p_start"
+    valueReference="648"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "206" -->
+  <ScalarVariable
+    name="rad.vol[2].p_start"
+    valueReference="649"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "207" -->
+  <ScalarVariable
+    name="rad.vol[3].p_start"
+    valueReference="650"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "208" -->
+  <ScalarVariable
+    name="rad.vol[4].p_start"
+    valueReference="651"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "209" -->
+  <ScalarVariable
+    name="rad.vol[5].p_start"
+    valueReference="652"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "210" -->
+  <ScalarVariable
+    name="res[1].deltaM"
+    valueReference="686"
+    description="Fraction of nominal mass flow rate where transition to turbulent occurs"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-06"/>
+  </ScalarVariable>
+  <!-- Index of variable = "211" -->
+  <ScalarVariable
+    name="res[1].dp_nominal"
+    valueReference="687"
+    description="Pressure drop at nominal mass flow rate"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "212" -->
+  <ScalarVariable
+    name="res[1].k"
+    valueReference="690"
+    description="Flow coefficient, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "213" -->
+  <ScalarVariable
+    name="res[1].m_flow_nominal"
+    valueReference="691"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "214" -->
+  <ScalarVariable
+    name="res[1].m_flow_small"
+    valueReference="693"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "215" -->
+  <ScalarVariable
+    name="res[1].m_flow_turbulent"
+    valueReference="694"
+    description="Turbulent flow if |m_flow| &gt;= m_flow_turbulent"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "216" -->
+  <ScalarVariable
+    name="val.Av"
+    valueReference="697"
+    description="Av (metric) flow coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "217" -->
+  <ScalarVariable
+    name="val.Cv"
+    valueReference="698"
+    description="Cv (US) flow coefficient [USG/min/(psi)^(1/2)]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "218" -->
+  <ScalarVariable
+    name="val.Kv"
+    valueReference="699"
+    description="Kv (metric) flow coefficient [m3/h/(bar)^(1/2)]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "219" -->
+  <ScalarVariable
+    name="val.T_start"
+    valueReference="701"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "220" -->
+  <ScalarVariable
+    name="val.X_start[1]"
+    valueReference="702"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "221" -->
+  <ScalarVariable
+    name="val.deltaM"
+    valueReference="703"
+    description="Fraction of nominal flow rate where linearization starts, if y=1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "222" -->
+  <ScalarVariable
+    name="val.dpFixed_nominal[1]"
+    valueReference="704"
+    description="Nominal pressure drop of pipes and other equipment in flow legs at port_1 and port_3"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "223" -->
+  <ScalarVariable
+    name="val.dpFixed_nominal[2]"
+    valueReference="705"
+    description="Nominal pressure drop of pipes and other equipment in flow legs at port_1 and port_3"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "224" -->
+  <ScalarVariable
+    name="val.dpValve_nominal"
+    valueReference="706"
+    description="Nominal pressure drop of fully open valve, used if CvData=Buildings.Fluid.Types.CvTypes.OpPoint"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="1000.0" min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "225" -->
+  <ScalarVariable
+    name="val.fraK"
+    valueReference="708"
+    description="Fraction Kv(port_3&amp;rarr;port_2)/Kv(port_1&amp;rarr;port_2)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "226" -->
+  <ScalarVariable
+    name="val.l[1]"
+    valueReference="709"
+    description="Valve leakage, l=Kv(y=0)/Kv(y=1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "227" -->
+  <ScalarVariable
+    name="val.l[2]"
+    valueReference="710"
+    description="Valve leakage, l=Kv(y=0)/Kv(y=1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "228" -->
+  <ScalarVariable
+    name="val.mDyn_flow_nominal"
+    valueReference="711"
+    description="Nominal mass flow rate for dynamic momentum and energy balance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "229" -->
+  <ScalarVariable
+    name="val.mSenFac"
+    valueReference="712"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "230" -->
+  <ScalarVariable
+    name="val.m_flow_nominal"
+    valueReference="713"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "231" -->
+  <ScalarVariable
+    name="val.m_flow_small"
+    valueReference="714"
+    description="Small mass flow rate for checking flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "232" -->
+  <ScalarVariable
+    name="val.p_start"
+    valueReference="715"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "233" -->
+  <ScalarVariable
+    name="val.res1.Av"
+    valueReference="716"
+    description="Av (metric) flow coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "234" -->
+  <ScalarVariable
+    name="val.res1.Cv"
+    valueReference="717"
+    description="Cv (US) flow coefficient [USG/min/(psi)^(1/2)]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "235" -->
+  <ScalarVariable
+    name="val.res1.Kv"
+    valueReference="718"
+    description="Kv (metric) flow coefficient [m3/h/(bar)^(1/2)]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "236" -->
+  <ScalarVariable
+    name="val.res1.deltaM"
+    valueReference="722"
+    description="Fraction of nominal flow rate where linearization starts, if y=1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "237" -->
+  <ScalarVariable
+    name="val.res1.dpFixed_nominal"
+    valueReference="723"
+    description="Pressure drop of pipe and other resistances that are in series"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "238" -->
+  <ScalarVariable
+    name="val.res1.dpValve_nominal"
+    valueReference="724"
+    description="Nominal pressure drop of fully open valve, used if CvData=Buildings.Fluid.Types.CvTypes.OpPoint"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "239" -->
+  <ScalarVariable
+    name="val.res1.dp_nominal"
+    valueReference="725"
+    description="Pressure drop at nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "240" -->
+  <ScalarVariable
+    name="val.res1.kFixed"
+    valueReference="729"
+    description="Flow coefficient of fixed resistance that may be in series with valve, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "241" -->
+  <ScalarVariable
+    name="val.res1.l"
+    valueReference="730"
+    description="Valve leakage, l=Kv(y=0)/Kv(y=1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-10" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "242" -->
+  <ScalarVariable
+    name="val.res1.m_flow_nominal"
+    valueReference="731"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "243" -->
+  <ScalarVariable
+    name="val.res1.m_flow_small"
+    valueReference="733"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "244" -->
+  <ScalarVariable
+    name="val.res1.m_flow_turbulent"
+    valueReference="734"
+    description="Turbulent flow if |m_flow| &gt;= m_flow_turbulent"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "245" -->
+  <ScalarVariable
+    name="val.res1.rhoStd"
+    valueReference="735"
+    description="Inlet density for which valve coefficients are defined"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "246" -->
+  <ScalarVariable
+    name="val.res1.riseTime"
+    valueReference="736"
+    description="Rise time of the filter (time to reach 99.6 % of an opening step)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "247" -->
+  <ScalarVariable
+    name="val.res1.y_start"
+    valueReference="739"
+    description="Initial position of actuator"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "248" -->
+  <ScalarVariable
+    name="val.res2.m_flow_nominal"
+    valueReference="742"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "249" -->
+  <ScalarVariable
+    name="val.res2.m_flow_small"
+    valueReference="743"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "250" -->
+  <ScalarVariable
+    name="val.res3.Av"
+    valueReference="744"
+    description="Av (metric) flow coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="m2"/>
+  </ScalarVariable>
+  <!-- Index of variable = "251" -->
+  <ScalarVariable
+    name="val.res3.Cv"
+    valueReference="745"
+    description="Cv (US) flow coefficient [USG/min/(psi)^(1/2)]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "252" -->
+  <ScalarVariable
+    name="val.res3.Kv"
+    valueReference="746"
+    description="Kv (metric) flow coefficient [m3/h/(bar)^(1/2)]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "253" -->
+  <ScalarVariable
+    name="val.res3.deltaM"
+    valueReference="750"
+    description="Fraction of nominal flow rate where linearization starts, if y=1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "254" -->
+  <ScalarVariable
+    name="val.res3.dpFixed_nominal"
+    valueReference="751"
+    description="Pressure drop of pipe and other resistances that are in series"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "255" -->
+  <ScalarVariable
+    name="val.res3.dpValve_nominal"
+    valueReference="752"
+    description="Nominal pressure drop of fully open valve, used if CvData=Buildings.Fluid.Types.CvTypes.OpPoint"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "256" -->
+  <ScalarVariable
+    name="val.res3.dp_nominal"
+    valueReference="753"
+    description="Pressure drop at nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "257" -->
+  <ScalarVariable
+    name="val.res3.kFixed"
+    valueReference="757"
+    description="Flow coefficient of fixed resistance that may be in series with valve, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "258" -->
+  <ScalarVariable
+    name="val.res3.l"
+    valueReference="758"
+    description="Valve leakage, l=Kv(y=0)/Kv(y=1)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1e-10" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "259" -->
+  <ScalarVariable
+    name="val.res3.m_flow_nominal"
+    valueReference="759"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "260" -->
+  <ScalarVariable
+    name="val.res3.m_flow_small"
+    valueReference="761"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "261" -->
+  <ScalarVariable
+    name="val.res3.m_flow_turbulent"
+    valueReference="762"
+    description="Turbulent flow if |m_flow| &gt;= m_flow_turbulent"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "262" -->
+  <ScalarVariable
+    name="val.res3.rhoStd"
+    valueReference="763"
+    description="Inlet density for which valve coefficients are defined"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "263" -->
+  <ScalarVariable
+    name="val.res3.riseTime"
+    valueReference="764"
+    description="Rise time of the filter (time to reach 99.6 % of an opening step)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "264" -->
+  <ScalarVariable
+    name="val.res3.y_start"
+    valueReference="767"
+    description="Initial position of actuator"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "265" -->
+  <ScalarVariable
+    name="val.rhoStd"
+    valueReference="768"
+    description="Inlet density for which valve coefficients are defined"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "266" -->
+  <ScalarVariable
+    name="val.riseTime"
+    valueReference="769"
+    description="Rise time of the filter (time to reach 99.6 % of an opening step)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "267" -->
+  <ScalarVariable
+    name="val.tau"
+    valueReference="770"
+    description="Time constant at nominal flow for dynamic energy and momentum balance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "268" -->
+  <ScalarVariable
+    name="val.y_start"
+    valueReference="772"
+    description="Initial position of actuator"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "269" -->
+  <ScalarVariable
+    name="vol.T_start"
+    valueReference="773"
+    description="Start value of temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "270" -->
+  <ScalarVariable
+    name="vol.V"
+    valueReference="774"
+    description="Volume"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" unit="m3"/>
+  </ScalarVariable>
+  <!-- Index of variable = "271" -->
+  <ScalarVariable
+    name="vol.X_start[1]"
+    valueReference="775"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "272" -->
+  <ScalarVariable
+    name="vol.X_start[2]"
+    valueReference="776"
+    description="Start value of mass fractions m_i/m"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "273" -->
+  <ScalarVariable
+    name="vol.mSenFac"
+    valueReference="793"
+    description="Factor for scaling the sensible thermal mass of the volume"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "274" -->
+  <ScalarVariable
+    name="vol.m_flow_nominal"
+    valueReference="794"
+    description="Nominal mass flow rate"
+    variability="fixed"
+    causality="parameter"
+    >
+    <Real start="0.0" min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "275" -->
+  <ScalarVariable
+    name="vol.m_flow_small"
+    valueReference="795"
+    description="Small mass flow rate for regularization of zero flow"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "276" -->
+  <ScalarVariable
+    name="vol.p_start"
+    valueReference="796"
+    description="Start value of pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "277" -->
+  <ScalarVariable
+    name="wASup_nominal"
+    valueReference="807"
+    description="Nominal air humidity ratio supplied to room [kg/kg] assuming 90% relative humidity"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "278" -->
+  <ScalarVariable
+    name="wHeaRecLvg"
+    valueReference="808"
+    description="Air humidity ratio leaving the heat recovery [kg/kg]"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "279" -->
+  <ScalarVariable
+    name="zero.k"
+    valueReference="809"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "280" -->
+  <ScalarVariable
+    name="bou.ports[1].p"
+    valueReference="51"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "281" -->
+  <ScalarVariable
+    name="gain.u"
+    valueReference="61"
+    description="Input signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "282" -->
+  <ScalarVariable
+    name="gain.y"
+    valueReference="234"
+    description="Output signal connector"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "283" -->
+  <ScalarVariable
+    name="hea.port_a.m_flow"
+    valueReference="63"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-9.999999999999999e+59" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "284" -->
+  <ScalarVariable
+    name="hea.port_a.p"
+    valueReference="51"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "285" -->
+  <ScalarVariable
+    name="hea.port_b.h_outflow"
+    valueReference="75"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "286" -->
+  <ScalarVariable
+    name="hvacAda.TAirZon[1]"
+    valueReference="55"
+    description="Temperature of the backward flowing medium in the connector outlet"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "287" -->
+  <ScalarVariable
+    name="hvacAda.X_wZon[1]"
+    valueReference="56"
+    description="Water mass fraction per total air mass of the backward flowing medium in the connector outlet"
+    >
+    <Real unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "288" -->
+  <ScalarVariable
+    name="hvacAda.fluPor[1].backward.T"
+    valueReference="55"
+    description="Temperature"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "289" -->
+  <ScalarVariable
+    name="hvacAda.fluPor[1].backward.X_w"
+    valueReference="56"
+    description="Water vapor mass fractions per kg total air"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "290" -->
+  <ScalarVariable
+    name="hvacAda.fluPor[1].forward.T"
+    valueReference="57"
+    description="Temperature"
+    >
+    <Real min="1.0" max="10000.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "291" -->
+  <ScalarVariable
+    name="hvacAda.fluPor[1].forward.X_w"
+    valueReference="58"
+    description="Water vapor mass fractions per kg total air"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "292" -->
+  <ScalarVariable
+    name="hvacAda.ports[1].Xi_outflow[1]"
+    valueReference="56"
+    description="Independent mixture mass fractions m_i/m close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "293" -->
+  <ScalarVariable
+    name="hvacAda.ports[1].p"
+    valueReference="268"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "294" -->
+  <ScalarVariable
+    name="pulse.y"
+    valueReference="61"
+    description="Connector of Real output signal"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "295" -->
+  <ScalarVariable
+    name="pump.m_flow"
+    valueReference="234"
+    description="Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "296" -->
+  <ScalarVariable
+    name="pump.m_flow_actual"
+    valueReference="234"
+    description="Actual mass flow rate"
+    >
+    <Real nominal="0.497770667660702" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "297" -->
+  <ScalarVariable
+    name="pump.m_flow_in"
+    valueReference="234"
+    description="Prescribed mass flow rate"
+    >
+    <Real nominal="0.497770667660702" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "298" -->
+  <ScalarVariable
+    name="pump.port_a.m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="0.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "299" -->
+  <ScalarVariable
+    name="pump.port_b.h_outflow"
+    valueReference="237"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "300" -->
+  <ScalarVariable
+    name="pump.port_b.m_flow"
+    valueReference="917"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "301" -->
+  <ScalarVariable
+    name="pump.port_b.p"
+    valueReference="236"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "302" -->
+  <ScalarVariable
+    name="pump.y_actual"
+    valueReference="97"
+    description="Actual normalised pump speed that is used for computations"
+    >
+    <Real unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "303" -->
+  <ScalarVariable
+    name="rad.heatPortCon.Q_flow"
+    valueReference="131"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "304" -->
+  <ScalarVariable
+    name="rad.heatPortCon.T"
+    valueReference="254"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "305" -->
+  <ScalarVariable
+    name="rad.heatPortRad.Q_flow"
+    valueReference="132"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "306" -->
+  <ScalarVariable
+    name="rad.heatPortRad.T"
+    valueReference="254"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "307" -->
+  <ScalarVariable
+    name="rad.m_flow"
+    valueReference="234"
+    description="Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "308" -->
+  <ScalarVariable
+    name="rad.port_a.h_outflow"
+    valueReference="235"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "309" -->
+  <ScalarVariable
+    name="rad.port_a.m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-9.999999999999999e+59" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "310" -->
+  <ScalarVariable
+    name="rad.port_a.p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "311" -->
+  <ScalarVariable
+    name="rad.port_b.h_outflow"
+    valueReference="232"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "312" -->
+  <ScalarVariable
+    name="rad.port_b.m_flow"
+    valueReference="1001"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="9.999999999999999e+59" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "313" -->
+  <ScalarVariable
+    name="rad.port_b.p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "314" -->
+  <ScalarVariable
+    name="rad.sta_a.p"
+    valueReference="228"
+    description="Absolute pressure of medium"
+    >
+    <Real nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "315" -->
+  <ScalarVariable
+    name="rad.sta_b.p"
+    valueReference="228"
+    description="Absolute pressure of medium"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "316" -->
+  <ScalarVariable
+    name="rad.vol[1].U"
+    valueReference="1"
+    description="Internal energy of the component"
+    >
+    <Real unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "317" -->
+  <ScalarVariable
+    name="rad.vol[2].U"
+    valueReference="2"
+    description="Internal energy of the component"
+    >
+    <Real unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "318" -->
+  <ScalarVariable
+    name="rad.vol[3].U"
+    valueReference="3"
+    description="Internal energy of the component"
+    >
+    <Real unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "319" -->
+  <ScalarVariable
+    name="rad.vol[4].U"
+    valueReference="4"
+    description="Internal energy of the component"
+    >
+    <Real unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "320" -->
+  <ScalarVariable
+    name="rad.vol[5].U"
+    valueReference="5"
+    description="Internal energy of the component"
+    >
+    <Real unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "321" -->
+  <ScalarVariable
+    name="rad.vol[1].heatPort.T"
+    valueReference="153"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "322" -->
+  <ScalarVariable
+    name="rad.vol[2].heatPort.T"
+    valueReference="154"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "323" -->
+  <ScalarVariable
+    name="rad.vol[3].heatPort.T"
+    valueReference="155"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "324" -->
+  <ScalarVariable
+    name="rad.vol[4].heatPort.T"
+    valueReference="156"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "325" -->
+  <ScalarVariable
+    name="rad.vol[5].heatPort.T"
+    valueReference="157"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "326" -->
+  <ScalarVariable
+    name="rad.vol[1].m"
+    valueReference="163"
+    description="Mass of the component"
+    >
+    <Real unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "327" -->
+  <ScalarVariable
+    name="rad.vol[2].m"
+    valueReference="164"
+    description="Mass of the component"
+    >
+    <Real unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "328" -->
+  <ScalarVariable
+    name="rad.vol[3].m"
+    valueReference="165"
+    description="Mass of the component"
+    >
+    <Real unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "329" -->
+  <ScalarVariable
+    name="rad.vol[4].m"
+    valueReference="166"
+    description="Mass of the component"
+    >
+    <Real unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "330" -->
+  <ScalarVariable
+    name="rad.vol[5].m"
+    valueReference="167"
+    description="Mass of the component"
+    >
+    <Real unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "331" -->
+  <ScalarVariable
+    name="rad.vol[1].p"
+    valueReference="228"
+    description="Pressure of the fluid"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "332" -->
+  <ScalarVariable
+    name="rad.vol[2].p"
+    valueReference="228"
+    description="Pressure of the fluid"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "333" -->
+  <ScalarVariable
+    name="rad.vol[3].p"
+    valueReference="228"
+    description="Pressure of the fluid"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "334" -->
+  <ScalarVariable
+    name="rad.vol[4].p"
+    valueReference="228"
+    description="Pressure of the fluid"
+    >
+    <Real unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "335" -->
+  <ScalarVariable
+    name="rad.vol[1].ports[1].h_outflow"
+    valueReference="235"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "336" -->
+  <ScalarVariable
+    name="rad.vol[1].ports[2].h_outflow"
+    valueReference="235"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "337" -->
+  <ScalarVariable
+    name="rad.vol[2].ports[1].h_outflow"
+    valueReference="229"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "338" -->
+  <ScalarVariable
+    name="rad.vol[3].ports[1].h_outflow"
+    valueReference="230"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "339" -->
+  <ScalarVariable
+    name="rad.vol[4].ports[1].h_outflow"
+    valueReference="231"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "340" -->
+  <ScalarVariable
+    name="rad.vol[5].ports[1].h_outflow"
+    valueReference="232"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="1000000.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "341" -->
+  <ScalarVariable
+    name="rad.vol[1].ports[1].m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "342" -->
+  <ScalarVariable
+    name="rad.vol[1].ports[2].m_flow"
+    valueReference="1186"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "343" -->
+  <ScalarVariable
+    name="rad.vol[2].ports[1].m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "344" -->
+  <ScalarVariable
+    name="rad.vol[2].ports[2].m_flow"
+    valueReference="1188"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "345" -->
+  <ScalarVariable
+    name="rad.vol[3].ports[1].m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "346" -->
+  <ScalarVariable
+    name="rad.vol[3].ports[2].m_flow"
+    valueReference="1190"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "347" -->
+  <ScalarVariable
+    name="rad.vol[4].ports[1].m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "348" -->
+  <ScalarVariable
+    name="rad.vol[4].ports[2].m_flow"
+    valueReference="1192"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "349" -->
+  <ScalarVariable
+    name="rad.vol[5].ports[1].m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "350" -->
+  <ScalarVariable
+    name="rad.vol[5].ports[2].m_flow"
+    valueReference="1194"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "351" -->
+  <ScalarVariable
+    name="rad.vol[1].ports[1].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "352" -->
+  <ScalarVariable
+    name="rad.vol[1].ports[2].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "353" -->
+  <ScalarVariable
+    name="rad.vol[2].ports[1].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "354" -->
+  <ScalarVariable
+    name="rad.vol[2].ports[2].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "355" -->
+  <ScalarVariable
+    name="rad.vol[3].ports[1].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "356" -->
+  <ScalarVariable
+    name="rad.vol[3].ports[2].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "357" -->
+  <ScalarVariable
+    name="rad.vol[4].ports[1].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "358" -->
+  <ScalarVariable
+    name="rad.vol[4].ports[2].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "359" -->
+  <ScalarVariable
+    name="rad.vol[5].ports[1].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "360" -->
+  <ScalarVariable
+    name="rad.vol[5].ports[2].p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "361" -->
+  <ScalarVariable
+    name="res[1].port_a.m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-9.999999999999999e+59" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "362" -->
+  <ScalarVariable
+    name="res[1].port_b.m_flow"
+    valueReference="1221"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="9.999999999999999e+59" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "363" -->
+  <ScalarVariable
+    name="res[1].port_b.p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "364" -->
+  <ScalarVariable
+    name="val.port_1.h_outflow"
+    valueReference="244"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "365" -->
+  <ScalarVariable
+    name="val.port_1.m_flow"
+    valueReference="63"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="0.0" max="9.999999999999999e+59" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "366" -->
+  <ScalarVariable
+    name="val.port_1.p"
+    valueReference="77"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "367" -->
+  <ScalarVariable
+    name="val.port_2.m_flow"
+    valueReference="1229"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-9.999999999999999e+59" max="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "368" -->
+  <ScalarVariable
+    name="val.port_2.p"
+    valueReference="107"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "369" -->
+  <ScalarVariable
+    name="val.port_3.h_outflow"
+    valueReference="251"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "370" -->
+  <ScalarVariable
+    name="val.port_3.m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="0.0" max="9.999999999999999e+59" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "371" -->
+  <ScalarVariable
+    name="val.port_3.p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "372" -->
+  <ScalarVariable
+    name="val.res1.kVal"
+    valueReference="242"
+    description="Flow coefficient of valve, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    >
+    <Real min="1e-60"/>
+  </ScalarVariable>
+  <!-- Index of variable = "373" -->
+  <ScalarVariable
+    name="val.res1.m_flow"
+    valueReference="63"
+    description="Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    >
+    <Real nominal="0.497770667660702" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "374" -->
+  <ScalarVariable
+    name="val.res1.port_a.m_flow"
+    valueReference="63"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="0.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "375" -->
+  <ScalarVariable
+    name="val.res1.port_a.p"
+    valueReference="77"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "376" -->
+  <ScalarVariable
+    name="val.res1.port_b.h_outflow"
+    valueReference="75"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "377" -->
+  <ScalarVariable
+    name="val.res1.port_b.p"
+    valueReference="107"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "378" -->
+  <ScalarVariable
+    name="val.res1.y"
+    valueReference="54"
+    description="Actuator position (0: closed, 1: open)"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "379" -->
+  <ScalarVariable
+    name="val.res1.y_actual"
+    valueReference="54"
+    description="Actual actuator position"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "380" -->
+  <ScalarVariable
+    name="val.res2.m_flow"
+    valueReference="234"
+    description="Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    >
+    <Real unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "381" -->
+  <ScalarVariable
+    name="val.res2.port_a.m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="0.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "382" -->
+  <ScalarVariable
+    name="val.res2.port_a.p"
+    valueReference="107"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "383" -->
+  <ScalarVariable
+    name="val.res2.port_b.h_outflow"
+    valueReference="238"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "384" -->
+  <ScalarVariable
+    name="val.res2.port_b.m_flow"
+    valueReference="1248"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "385" -->
+  <ScalarVariable
+    name="val.res2.port_b.p"
+    valueReference="107"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "386" -->
+  <ScalarVariable
+    name="val.res3.kVal"
+    valueReference="249"
+    description="Flow coefficient of valve, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    >
+    <Real min="1e-60"/>
+  </ScalarVariable>
+  <!-- Index of variable = "387" -->
+  <ScalarVariable
+    name="val.res3.m_flow"
+    valueReference="234"
+    description="Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    >
+    <Real nominal="0.497770667660702" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "388" -->
+  <ScalarVariable
+    name="val.res3.port_a.m_flow"
+    valueReference="234"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="0.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "389" -->
+  <ScalarVariable
+    name="val.res3.port_a.p"
+    valueReference="228"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "390" -->
+  <ScalarVariable
+    name="val.res3.port_b.h_outflow"
+    valueReference="232"
+    description="Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="-10000000000.0" max="10000000000.0" nominal="83680.0" unit="J/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "391" -->
+  <ScalarVariable
+    name="val.res3.port_b.m_flow"
+    valueReference="1255"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="0.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "392" -->
+  <ScalarVariable
+    name="val.res3.port_b.p"
+    valueReference="107"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "393" -->
+  <ScalarVariable
+    name="val.res3.y_actual"
+    valueReference="252"
+    description="Actual actuator position"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "394" -->
+  <ScalarVariable
+    name="val.y"
+    valueReference="54"
+    description="Actuator position (0: closed, 1: open)"
+    >
+    <Real min="0.0" max="1.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "395" -->
+  <ScalarVariable
+    name="val.y_actual"
+    valueReference="54"
+    description="Actual actuator position"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "396" -->
+  <ScalarVariable
+    name="vol.U"
+    valueReference="6"
+    description="Internal energy of the component"
+    >
+    <Real unit="J"/>
+  </ScalarVariable>
+  <!-- Index of variable = "397" -->
+  <ScalarVariable
+    name="vol.Xi[1]"
+    valueReference="8"
+    description="Species concentration of the fluid"
+    >
+    <Real min="0.0" max="1.0" unit="1"/>
+  </ScalarVariable>
+  <!-- Index of variable = "398" -->
+  <ScalarVariable
+    name="vol.heatPort.T"
+    valueReference="254"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "399" -->
+  <ScalarVariable
+    name="vol.m"
+    valueReference="7"
+    description="Mass of the component"
+    >
+    <Real unit="kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "400" -->
+  <ScalarVariable
+    name="vol.ports[1].Xi_outflow[1]"
+    valueReference="8"
+    description="Independent mixture mass fractions m_i/m close to the connection point if m_flow &lt; 0"
+    >
+    <Real min="0.0" max="1.0" nominal="0.1" unit="kg/kg"/>
+  </ScalarVariable>
+  <!-- Index of variable = "401" -->
+  <ScalarVariable
+    name="vol.ports[1].m_flow"
+    valueReference="80"
+    description="Mass flow rate from the connection point into the component"
+    >
+    <Real min="-100000.0" max="100000.0" unit="kg/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "402" -->
+  <ScalarVariable
+    name="vol.ports[1].p"
+    valueReference="268"
+    description="Thermodynamic pressure in the connection point"
+    >
+    <Real min="0.0" max="100000000.0" nominal="100000.0" unit="Pa"/>
+  </ScalarVariable>
+  <!-- Index of variable = "403" -->
+  <ScalarVariable
+    name="nRes.y"
+    valueReference="0"
+    description="Connector of Integer output signal"
+    variability="discrete"
+    initial="exact">
+    <Integer start="0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "404" -->
+  <ScalarVariable
+    name="bou.nPorts"
+    valueReference="3"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "405" -->
+  <ScalarVariable
+    name="hea.energyDynamics"
+    valueReference="4"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "406" -->
+  <ScalarVariable
+    name="hvacAda.nPorts"
+    valueReference="9"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "407" -->
+  <ScalarVariable
+    name="nRes.k"
+    valueReference="10"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "408" -->
+  <ScalarVariable
+    name="pulse.nperiod"
+    valueReference="11"
+    description="Number of periods (&lt; 0 means infinite number of periods)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "409" -->
+  <ScalarVariable
+    name="pump.energyDynamics"
+    valueReference="18"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "410" -->
+  <ScalarVariable
+    name="pump.init"
+    valueReference="19"
+    description="Type of initialization (no init/steady state/initial state/initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "411" -->
+  <ScalarVariable
+    name="pump.inputType"
+    valueReference="20"
+    description="Control input type"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.Fluid.Types.InputType"/>
+  </ScalarVariable>
+  <!-- Index of variable = "412" -->
+  <ScalarVariable
+    name="pump.massDynamics"
+    valueReference="21"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "413" -->
+  <ScalarVariable
+    name="pump.substanceDynamics"
+    valueReference="24"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "414" -->
+  <ScalarVariable
+    name="pump.traceDynamics"
+    valueReference="25"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "415" -->
+  <ScalarVariable
+    name="rad.energyDynamics"
+    valueReference="36"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "416" -->
+  <ScalarVariable
+    name="rad.massDynamics"
+    valueReference="37"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "417" -->
+  <ScalarVariable
+    name="rad.nEle"
+    valueReference="38"
+    description="Number of elements used in the discretization"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "418" -->
+  <ScalarVariable
+    name="rad.substanceDynamics"
+    valueReference="39"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "419" -->
+  <ScalarVariable
+    name="rad.traceDynamics"
+    valueReference="42"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "420" -->
+  <ScalarVariable
+    name="rad.vol[1].energyDynamics"
+    valueReference="68"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "421" -->
+  <ScalarVariable
+    name="rad.vol[2].energyDynamics"
+    valueReference="69"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "422" -->
+  <ScalarVariable
+    name="rad.vol[3].energyDynamics"
+    valueReference="70"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "423" -->
+  <ScalarVariable
+    name="rad.vol[4].energyDynamics"
+    valueReference="71"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "424" -->
+  <ScalarVariable
+    name="rad.vol[5].energyDynamics"
+    valueReference="72"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "425" -->
+  <ScalarVariable
+    name="rad.vol[1].massDynamics"
+    valueReference="73"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "426" -->
+  <ScalarVariable
+    name="rad.vol[2].massDynamics"
+    valueReference="74"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "427" -->
+  <ScalarVariable
+    name="rad.vol[3].massDynamics"
+    valueReference="75"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "428" -->
+  <ScalarVariable
+    name="rad.vol[4].massDynamics"
+    valueReference="76"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "429" -->
+  <ScalarVariable
+    name="rad.vol[5].massDynamics"
+    valueReference="77"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "430" -->
+  <ScalarVariable
+    name="rad.vol[1].nPorts"
+    valueReference="78"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "431" -->
+  <ScalarVariable
+    name="rad.vol[2].nPorts"
+    valueReference="79"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "432" -->
+  <ScalarVariable
+    name="rad.vol[3].nPorts"
+    valueReference="80"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "433" -->
+  <ScalarVariable
+    name="rad.vol[4].nPorts"
+    valueReference="81"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "434" -->
+  <ScalarVariable
+    name="rad.vol[5].nPorts"
+    valueReference="82"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "435" -->
+  <ScalarVariable
+    name="rad.vol[1].substanceDynamics"
+    valueReference="83"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "436" -->
+  <ScalarVariable
+    name="rad.vol[2].substanceDynamics"
+    valueReference="84"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "437" -->
+  <ScalarVariable
+    name="rad.vol[3].substanceDynamics"
+    valueReference="85"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "438" -->
+  <ScalarVariable
+    name="rad.vol[4].substanceDynamics"
+    valueReference="86"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "439" -->
+  <ScalarVariable
+    name="rad.vol[5].substanceDynamics"
+    valueReference="87"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "440" -->
+  <ScalarVariable
+    name="rad.vol[1].traceDynamics"
+    valueReference="88"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "441" -->
+  <ScalarVariable
+    name="rad.vol[2].traceDynamics"
+    valueReference="89"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "442" -->
+  <ScalarVariable
+    name="rad.vol[3].traceDynamics"
+    valueReference="90"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "443" -->
+  <ScalarVariable
+    name="rad.vol[4].traceDynamics"
+    valueReference="91"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "444" -->
+  <ScalarVariable
+    name="rad.vol[5].traceDynamics"
+    valueReference="92"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "445" -->
+  <ScalarVariable
+    name="val.CvData"
+    valueReference="93"
+    description="Selection of flow coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.Fluid.Types.CvTypes"/>
+  </ScalarVariable>
+  <!-- Index of variable = "446" -->
+  <ScalarVariable
+    name="val.energyDynamics"
+    valueReference="94"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "447" -->
+  <ScalarVariable
+    name="val.init"
+    valueReference="95"
+    description="Type of initialization (no init/steady state/initial state/initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "448" -->
+  <ScalarVariable
+    name="val.massDynamics"
+    valueReference="96"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "449" -->
+  <ScalarVariable
+    name="val.portFlowDirection_1"
+    valueReference="97"
+    description="Flow direction for port_1"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.PortFlowDirection"/>
+  </ScalarVariable>
+  <!-- Index of variable = "450" -->
+  <ScalarVariable
+    name="val.portFlowDirection_2"
+    valueReference="98"
+    description="Flow direction for port_2"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.PortFlowDirection"/>
+  </ScalarVariable>
+  <!-- Index of variable = "451" -->
+  <ScalarVariable
+    name="val.portFlowDirection_3"
+    valueReference="99"
+    description="Flow direction for port_3"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.PortFlowDirection"/>
+  </ScalarVariable>
+  <!-- Index of variable = "452" -->
+  <ScalarVariable
+    name="val.res1.CvData"
+    valueReference="100"
+    description="Selection of flow coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.Fluid.Types.CvTypes"/>
+  </ScalarVariable>
+  <!-- Index of variable = "453" -->
+  <ScalarVariable
+    name="val.res1.init"
+    valueReference="101"
+    description="Type of initialization (no init/steady state/initial state/initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "454" -->
+  <ScalarVariable
+    name="val.res3.CvData"
+    valueReference="102"
+    description="Selection of flow coefficient"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Buildings.Fluid.Types.CvTypes"/>
+  </ScalarVariable>
+  <!-- Index of variable = "455" -->
+  <ScalarVariable
+    name="val.res3.init"
+    valueReference="103"
+    description="Type of initialization (no init/steady state/initial state/initial output)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Blocks.Types.Init"/>
+  </ScalarVariable>
+  <!-- Index of variable = "456" -->
+  <ScalarVariable
+    name="val.substanceDynamics"
+    valueReference="104"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "457" -->
+  <ScalarVariable
+    name="val.traceDynamics"
+    valueReference="105"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "458" -->
+  <ScalarVariable
+    name="vol.energyDynamics"
+    valueReference="111"
+    description="Type of energy balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "459" -->
+  <ScalarVariable
+    name="vol.massDynamics"
+    valueReference="112"
+    description="Type of mass balance: dynamic (3 initialization options) or steady state, must be steady state if energyDynamics is steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "460" -->
+  <ScalarVariable
+    name="vol.nPorts"
+    valueReference="113"
+    description="Number of ports"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Integer/>
+  </ScalarVariable>
+  <!-- Index of variable = "461" -->
+  <ScalarVariable
+    name="vol.substanceDynamics"
+    valueReference="114"
+    description="Type of independent mass fraction balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "462" -->
+  <ScalarVariable
+    name="vol.traceDynamics"
+    valueReference="115"
+    description="Type of trace substance balance: dynamic (3 initialization options) or steady state"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Enumeration declaredType="Modelica.Fluid.Types.Dynamics"/>
+  </ScalarVariable>
+  <!-- Index of variable = "463" -->
+  <ScalarVariable
+    name="allowFlowReveral.y"
+    valueReference="1"
+    description="Connector of Boolean output signal"
+    variability="discrete"
+    initial="exact">
+    <Boolean start="false"/>
+  </ScalarVariable>
+  <!-- Index of variable = "464" -->
+  <ScalarVariable
+    name="from_dp.y"
+    valueReference="2"
+    description="Connector of Boolean output signal"
+    variability="discrete"
+    initial="exact">
+    <Boolean start="false"/>
+  </ScalarVariable>
+  <!-- Index of variable = "465" -->
+  <ScalarVariable
+    name="allowFlowReveral.k"
+    valueReference="3"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "466" -->
+  <ScalarVariable
+    name="allowFlowReversal"
+    valueReference="4"
+    description="= true to allow flow reversal, false restricts to design direction (inlet -&gt; outlet)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "467" -->
+  <ScalarVariable
+    name="bou.use_C_in"
+    valueReference="5"
+    description="Get the trace substances from the input connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "468" -->
+  <ScalarVariable
+    name="bou.use_T_in"
+    valueReference="6"
+    description="Get the temperature from the input connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "469" -->
+  <ScalarVariable
+    name="bou.use_X_in"
+    valueReference="7"
+    description="Get the composition (all fractions) from the input connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "470" -->
+  <ScalarVariable
+    name="bou.use_Xi_in"
+    valueReference="8"
+    description="Get the composition (independent fractions) from the input connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "471" -->
+  <ScalarVariable
+    name="bou.use_p_in"
+    valueReference="9"
+    description="Get the pressure from the input connector"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "472" -->
+  <ScalarVariable
+    name="bou.verifyInputs"
+    valueReference="10"
+    description="Set to true to stop the simulation with an error if the medium temperature is outside its allowable range"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "473" -->
+  <ScalarVariable
+    name="fluPor[1].allowFlowReversal"
+    valueReference="11"
+    description="= true to allow flow reversal, false restricts to design direction (inlet -&gt; outlet)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "474" -->
+  <ScalarVariable
+    name="fluPor[1].use_p_in"
+    valueReference="12"
+    description="= true to use pressure connector, false to remove it"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "475" -->
+  <ScalarVariable
+    name="from_dp.k"
+    valueReference="13"
+    description="Constant output value"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "476" -->
+  <ScalarVariable
+    name="hea.allowFlowReversal"
+    valueReference="14"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "477" -->
+  <ScalarVariable
+    name="hea.computeFlowResistance"
+    valueReference="15"
+    description="=true, compute flow resistance. Set to false to assume no friction"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "478" -->
+  <ScalarVariable
+    name="hea.from_dp"
+    valueReference="16"
+    description="= true, use m_flow = f(dp) else dp = f(m_flow)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "479" -->
+  <ScalarVariable
+    name="hea.linearizeFlowResistance"
+    valueReference="17"
+    description="= true, use linear relation between m_flow and dp for any flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "480" -->
+  <ScalarVariable
+    name="hea.show_T"
+    valueReference="31"
+    description="= true, if actual temperature at port is computed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "481" -->
+  <ScalarVariable
+    name="hvacAda.fluPor[1].allowFlowReversal"
+    valueReference="41"
+    description="= true to allow flow reversal, false restricts to design direction (inlet -&gt; outlet)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "482" -->
+  <ScalarVariable
+    name="hvacAda.fluPor[1].use_p_in"
+    valueReference="42"
+    description="= true to use pressure connector, false to remove it"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "483" -->
+  <ScalarVariable
+    name="pump.addPowerToMedium"
+    valueReference="44"
+    description="Set to false to avoid any power (=heat and flow work) being added to medium (may give simpler equations)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "484" -->
+  <ScalarVariable
+    name="pump.allowFlowReversal"
+    valueReference="45"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "485" -->
+  <ScalarVariable
+    name="pump.computePowerUsingSimilarityLaws"
+    valueReference="46"
+    description="= true, compute power exactly, using similarity laws. Otherwise approximate."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "486" -->
+  <ScalarVariable
+    name="pump.nominalValuesDefineDefaultPressureCurve"
+    valueReference="58"
+    description="Set to true to avoid warning if m_flow_nominal and dp_nominal are used to construct the default pressure curve"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "487" -->
+  <ScalarVariable
+    name="pump.per.havePressureCurve"
+    valueReference="59"
+    description="= true, if default record values are being used"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "488" -->
+  <ScalarVariable
+    name="pump.per.motorCooledByFluid"
+    valueReference="60"
+    description="If true, then motor heat is added to fluid stream"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "489" -->
+  <ScalarVariable
+    name="pump.per.use_powerCharacteristic"
+    valueReference="61"
+    description="Use power data instead of motor efficiency"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "490" -->
+  <ScalarVariable
+    name="pump.show_T"
+    valueReference="68"
+    description="= true, if actual temperature at port is computed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "491" -->
+  <ScalarVariable
+    name="pump.use_inputFilter"
+    valueReference="70"
+    description="= true, if speed is filtered with a 2nd order CriticalDamping filter"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "492" -->
+  <ScalarVariable
+    name="rad.allowFlowReversal"
+    valueReference="84"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "493" -->
+  <ScalarVariable
+    name="rad.from_dp"
+    valueReference="85"
+    description="= true, use m_flow = f(dp) else dp = f(m_flow)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "494" -->
+  <ScalarVariable
+    name="rad.linearized"
+    valueReference="86"
+    description="= true, use linear relation between m_flow and dp for any flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "495" -->
+  <ScalarVariable
+    name="rad.show_T"
+    valueReference="92"
+    description="= true, if actual temperature at port is computed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "496" -->
+  <ScalarVariable
+    name="rad.vol[1].allowFlowReversal"
+    valueReference="93"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal. Used only if model has two ports."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "497" -->
+  <ScalarVariable
+    name="rad.vol[2].allowFlowReversal"
+    valueReference="94"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal. Used only if model has two ports."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "498" -->
+  <ScalarVariable
+    name="rad.vol[3].allowFlowReversal"
+    valueReference="95"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal. Used only if model has two ports."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "499" -->
+  <ScalarVariable
+    name="rad.vol[4].allowFlowReversal"
+    valueReference="96"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal. Used only if model has two ports."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "500" -->
+  <ScalarVariable
+    name="rad.vol[5].allowFlowReversal"
+    valueReference="97"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal. Used only if model has two ports."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "501" -->
+  <ScalarVariable
+    name="rad.vol[1].initialize_p"
+    valueReference="133"
+    description="= true to set up initial equations for pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "502" -->
+  <ScalarVariable
+    name="rad.vol[2].initialize_p"
+    valueReference="134"
+    description="= true to set up initial equations for pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "503" -->
+  <ScalarVariable
+    name="rad.vol[3].initialize_p"
+    valueReference="135"
+    description="= true to set up initial equations for pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "504" -->
+  <ScalarVariable
+    name="rad.vol[4].initialize_p"
+    valueReference="136"
+    description="= true to set up initial equations for pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "505" -->
+  <ScalarVariable
+    name="rad.vol[5].initialize_p"
+    valueReference="137"
+    description="= true to set up initial equations for pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "506" -->
+  <ScalarVariable
+    name="rad.vol[1].use_C_flow"
+    valueReference="143"
+    description="Set to true to enable input connector for trace substance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "507" -->
+  <ScalarVariable
+    name="rad.vol[2].use_C_flow"
+    valueReference="144"
+    description="Set to true to enable input connector for trace substance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "508" -->
+  <ScalarVariable
+    name="rad.vol[3].use_C_flow"
+    valueReference="145"
+    description="Set to true to enable input connector for trace substance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "509" -->
+  <ScalarVariable
+    name="rad.vol[4].use_C_flow"
+    valueReference="146"
+    description="Set to true to enable input connector for trace substance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "510" -->
+  <ScalarVariable
+    name="rad.vol[5].use_C_flow"
+    valueReference="147"
+    description="Set to true to enable input connector for trace substance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "511" -->
+  <ScalarVariable
+    name="res[1].allowFlowReversal"
+    valueReference="154"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "512" -->
+  <ScalarVariable
+    name="res[1].from_dp"
+    valueReference="156"
+    description="= true, use m_flow = f(dp) else dp = f(m_flow)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "513" -->
+  <ScalarVariable
+    name="res[1].linearized"
+    valueReference="157"
+    description="= true, use linear relation between m_flow and dp for any flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "514" -->
+  <ScalarVariable
+    name="res[1].show_T"
+    valueReference="158"
+    description="= true, if actual temperature at port is computed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "515" -->
+  <ScalarVariable
+    name="val.from_dp"
+    valueReference="160"
+    description="= true, use m_flow = f(dp) else dp = f(m_flow)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "516" -->
+  <ScalarVariable
+    name="val.linearized[1]"
+    valueReference="162"
+    description="= true, use linear relation between m_flow and dp for any flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "517" -->
+  <ScalarVariable
+    name="val.linearized[2]"
+    valueReference="163"
+    description="= true, use linear relation between m_flow and dp for any flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "518" -->
+  <ScalarVariable
+    name="val.res1.allowFlowReversal"
+    valueReference="164"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "519" -->
+  <ScalarVariable
+    name="val.res1.from_dp"
+    valueReference="166"
+    description="= true, use m_flow = f(dp) else dp = f(m_flow)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "520" -->
+  <ScalarVariable
+    name="val.res1.linearized"
+    valueReference="167"
+    description="= true, use linear relation between m_flow and dp for any flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "521" -->
+  <ScalarVariable
+    name="val.res1.show_T"
+    valueReference="168"
+    description="= true, if actual temperature at port is computed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "522" -->
+  <ScalarVariable
+    name="val.res1.use_inputFilter"
+    valueReference="169"
+    description="= true, if opening is filtered with a 2nd order CriticalDamping filter"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "523" -->
+  <ScalarVariable
+    name="val.res2.allowFlowReversal"
+    valueReference="170"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "524" -->
+  <ScalarVariable
+    name="val.res2.from_dp"
+    valueReference="171"
+    description="Used to satisfy replaceable models"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "525" -->
+  <ScalarVariable
+    name="val.res2.show_T"
+    valueReference="172"
+    description="= true, if actual temperature at port is computed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "526" -->
+  <ScalarVariable
+    name="val.res3.allowFlowReversal"
+    valueReference="173"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "527" -->
+  <ScalarVariable
+    name="val.res3.from_dp"
+    valueReference="175"
+    description="= true, use m_flow = f(dp) else dp = f(m_flow)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "528" -->
+  <ScalarVariable
+    name="val.res3.linearized"
+    valueReference="176"
+    description="= true, use linear relation between m_flow and dp for any flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "529" -->
+  <ScalarVariable
+    name="val.res3.show_T"
+    valueReference="177"
+    description="= true, if actual temperature at port is computed"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "530" -->
+  <ScalarVariable
+    name="val.res3.use_inputFilter"
+    valueReference="178"
+    description="= true, if opening is filtered with a 2nd order CriticalDamping filter"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "531" -->
+  <ScalarVariable
+    name="val.use_inputFilter"
+    valueReference="179"
+    description="= true, if opening is filtered with a 2nd order CriticalDamping filter"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "532" -->
+  <ScalarVariable
+    name="val.verifyFlowReversal"
+    valueReference="180"
+    description="=true, to assert that the flow does not reverse when portFlowDirection_* does not equal Bidirectional"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "533" -->
+  <ScalarVariable
+    name="vol.allowFlowReversal"
+    valueReference="182"
+    description="= false to simplify equations, assuming, but not enforcing, no flow reversal. Used only if model has two ports."
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "534" -->
+  <ScalarVariable
+    name="vol.initialize_p"
+    valueReference="190"
+    description="= true to set up initial equations for pressure"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  <!-- Index of variable = "535" -->
+  <ScalarVariable
+    name="vol.use_C_flow"
+    valueReference="192"
+    description="Set to true to enable input connector for trace substance"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Boolean/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="19" dependencies="" dependenciesKind="" />
+      <Unknown index="20" dependencies="" dependenciesKind="" />
+      <Unknown index="21" dependencies="" dependenciesKind="" />
+      <Unknown index="28" dependencies="7 8 9" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="29" dependencies="9" dependenciesKind="dependent" />
+      <Unknown index="30" dependencies="" dependenciesKind="" />
+    </Outputs>
+    <Derivatives>
+      <Unknown index="10" dependencies="1 6" dependenciesKind="dependent dependent" />
+      <Unknown index="11" dependencies="1 2 3 7 8 9" dependenciesKind="dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="12" dependencies="2 3 4 7 8 9" dependenciesKind="dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="13" dependencies="3 4 5 7 8 9" dependenciesKind="dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="14" dependencies="4 5 6 7 8 9" dependenciesKind="dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="15" dependencies="5 6 7 8 9" dependenciesKind="dependent dependent dependent dependent dependent" />
+      <Unknown index="16" dependencies="2 3 4 5 6 7 8 9 26 27" dependenciesKind="dependent dependent dependent dependent dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="17" dependencies="" dependenciesKind="" />
+      <Unknown index="18" dependencies="8 9 27" dependenciesKind="dependent dependent dependent" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown index="1" dependencies="" dependenciesKind="" />
+      <Unknown index="2" dependencies="" dependenciesKind="" />
+      <Unknown index="3" dependencies="" dependenciesKind="" />
+      <Unknown index="4" dependencies="" dependenciesKind="" />
+      <Unknown index="5" dependencies="" dependenciesKind="" />
+      <Unknown index="6" dependencies="" dependenciesKind="" />
+      <Unknown index="7" dependencies="" dependenciesKind="" />
+      <Unknown index="8" dependencies="" dependenciesKind="" />
+      <Unknown index="10" dependencies="" dependenciesKind="" />
+      <Unknown index="11" dependencies="9 158 161 162" dependenciesKind="dependent dependent dependent dependent" />
+      <Unknown index="12" dependencies="9 158 161 162" dependenciesKind="dependent dependent dependent dependent" />
+      <Unknown index="13" dependencies="9 158 161 162" dependenciesKind="dependent dependent dependent dependent" />
+      <Unknown index="14" dependencies="9 158 161 162" dependenciesKind="dependent dependent dependent dependent" />
+      <Unknown index="15" dependencies="9 158 161 162" dependenciesKind="dependent dependent dependent dependent" />
+      <Unknown index="16" dependencies="9 26 27 158 161 162" dependenciesKind="dependent dependent dependent dependent dependent dependent" />
+      <Unknown index="17" dependencies="" dependenciesKind="" />
+      <Unknown index="18" dependencies="9 27" dependenciesKind="dependent dependent" />
+      <Unknown index="19" dependencies="" dependenciesKind="" />
+      <Unknown index="20" dependencies="" dependenciesKind="" />
+      <Unknown index="21" dependencies="" dependenciesKind="" />
+      <Unknown index="28" dependencies="9" dependenciesKind="dependent" />
+      <Unknown index="29" dependencies="9" dependenciesKind="dependent" />
+      <Unknown index="30" dependencies="" dependenciesKind="" />
+      <Unknown index="97" dependencies="" dependenciesKind="" />
+      <Unknown index="98" dependencies="" dependenciesKind="" />
+      <Unknown index="99" dependencies="" dependenciesKind="" />
+      <Unknown index="100" dependencies="" dependenciesKind="" />
+      <Unknown index="101" dependencies="" dependenciesKind="" />
+      <Unknown index="102" dependencies="" dependenciesKind="" />
+      <Unknown index="103" dependencies="" dependenciesKind="" />
+      <Unknown index="104" dependencies="" dependenciesKind="" />
+      <Unknown index="105" dependencies="" dependenciesKind="" />
+      <Unknown index="106" dependencies="" dependenciesKind="" />
+      <Unknown index="107" dependencies="" dependenciesKind="" />
+      <Unknown index="108" dependencies="" dependenciesKind="" />
+      <Unknown index="109" dependencies="" dependenciesKind="" />
+      <Unknown index="110" dependencies="" dependenciesKind="" />
+      <Unknown index="111" dependencies="" dependenciesKind="" />
+      <Unknown index="112" dependencies="" dependenciesKind="" />
+      <Unknown index="113" dependencies="" dependenciesKind="" />
+      <Unknown index="114" dependencies="" dependenciesKind="" />
+      <Unknown index="115" dependencies="" dependenciesKind="" />
+      <Unknown index="116" dependencies="" dependenciesKind="" />
+      <Unknown index="119" dependencies="118" dependenciesKind="dependent" />
+      <Unknown index="120" dependencies="" dependenciesKind="" />
+      <Unknown index="121" dependencies="" dependenciesKind="" />
+      <Unknown index="122" dependencies="" dependenciesKind="" />
+      <Unknown index="123" dependencies="" dependenciesKind="" />
+      <Unknown index="124" dependencies="" dependenciesKind="" />
+      <Unknown index="125" dependencies="" dependenciesKind="" />
+      <Unknown index="126" dependencies="" dependenciesKind="" />
+      <Unknown index="127" dependencies="" dependenciesKind="" />
+      <Unknown index="128" dependencies="" dependenciesKind="" />
+      <Unknown index="129" dependencies="" dependenciesKind="" />
+      <Unknown index="130" dependencies="" dependenciesKind="" />
+      <Unknown index="131" dependencies="" dependenciesKind="" />
+      <Unknown index="132" dependencies="" dependenciesKind="" />
+      <Unknown index="133" dependencies="" dependenciesKind="" />
+      <Unknown index="134" dependencies="" dependenciesKind="" />
+      <Unknown index="135" dependencies="" dependenciesKind="" />
+      <Unknown index="136" dependencies="" dependenciesKind="" />
+      <Unknown index="137" dependencies="" dependenciesKind="" />
+      <Unknown index="138" dependencies="" dependenciesKind="" />
+      <Unknown index="139" dependencies="" dependenciesKind="" />
+      <Unknown index="140" dependencies="" dependenciesKind="" />
+      <Unknown index="141" dependencies="" dependenciesKind="" />
+      <Unknown index="142" dependencies="" dependenciesKind="" />
+      <Unknown index="143" dependencies="" dependenciesKind="" />
+      <Unknown index="144" dependencies="" dependenciesKind="" />
+      <Unknown index="145" dependencies="" dependenciesKind="" />
+      <Unknown index="146" dependencies="" dependenciesKind="" />
+      <Unknown index="147" dependencies="" dependenciesKind="" />
+      <Unknown index="148" dependencies="" dependenciesKind="" />
+      <Unknown index="149" dependencies="" dependenciesKind="" />
+      <Unknown index="150" dependencies="" dependenciesKind="" />
+      <Unknown index="151" dependencies="" dependenciesKind="" />
+      <Unknown index="152" dependencies="" dependenciesKind="" />
+      <Unknown index="153" dependencies="" dependenciesKind="" />
+      <Unknown index="154" dependencies="" dependenciesKind="" />
+      <Unknown index="155" dependencies="" dependenciesKind="" />
+      <Unknown index="156" dependencies="" dependenciesKind="" />
+      <Unknown index="157" dependencies="" dependenciesKind="" />
+      <Unknown index="159" dependencies="" dependenciesKind="" />
+      <Unknown index="160" dependencies="" dependenciesKind="" />
+      <Unknown index="163" dependencies="" dependenciesKind="" />
+      <Unknown index="164" dependencies="158" dependenciesKind="dependent" />
+      <Unknown index="165" dependencies="" dependenciesKind="" />
+      <Unknown index="166" dependencies="" dependenciesKind="" />
+      <Unknown index="167" dependencies="" dependenciesKind="" />
+      <Unknown index="168" dependencies="" dependenciesKind="" />
+      <Unknown index="169" dependencies="158" dependenciesKind="dependent" />
+      <Unknown index="170" dependencies="" dependenciesKind="" />
+      <Unknown index="171" dependencies="158 161 162" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="172" dependencies="" dependenciesKind="" />
+      <Unknown index="173" dependencies="" dependenciesKind="" />
+      <Unknown index="174" dependencies="" dependenciesKind="" />
+      <Unknown index="175" dependencies="" dependenciesKind="" />
+      <Unknown index="176" dependencies="" dependenciesKind="" />
+      <Unknown index="177" dependencies="" dependenciesKind="" />
+      <Unknown index="178" dependencies="" dependenciesKind="" />
+      <Unknown index="179" dependencies="" dependenciesKind="" />
+      <Unknown index="180" dependencies="" dependenciesKind="" />
+      <Unknown index="181" dependencies="" dependenciesKind="" />
+      <Unknown index="182" dependencies="" dependenciesKind="" />
+      <Unknown index="183" dependencies="" dependenciesKind="" />
+      <Unknown index="184" dependencies="" dependenciesKind="" />
+      <Unknown index="185" dependencies="" dependenciesKind="" />
+      <Unknown index="186" dependencies="" dependenciesKind="" />
+      <Unknown index="187" dependencies="" dependenciesKind="" />
+      <Unknown index="188" dependencies="" dependenciesKind="" />
+      <Unknown index="189" dependencies="" dependenciesKind="" />
+      <Unknown index="190" dependencies="" dependenciesKind="" />
+      <Unknown index="191" dependencies="" dependenciesKind="" />
+      <Unknown index="192" dependencies="" dependenciesKind="" />
+      <Unknown index="193" dependencies="" dependenciesKind="" />
+      <Unknown index="194" dependencies="" dependenciesKind="" />
+      <Unknown index="195" dependencies="" dependenciesKind="" />
+      <Unknown index="196" dependencies="" dependenciesKind="" />
+      <Unknown index="197" dependencies="" dependenciesKind="" />
+      <Unknown index="198" dependencies="" dependenciesKind="" />
+      <Unknown index="199" dependencies="" dependenciesKind="" />
+      <Unknown index="200" dependencies="" dependenciesKind="" />
+      <Unknown index="201" dependencies="" dependenciesKind="" />
+      <Unknown index="202" dependencies="" dependenciesKind="" />
+      <Unknown index="203" dependencies="" dependenciesKind="" />
+      <Unknown index="204" dependencies="" dependenciesKind="" />
+      <Unknown index="205" dependencies="" dependenciesKind="" />
+      <Unknown index="206" dependencies="" dependenciesKind="" />
+      <Unknown index="207" dependencies="" dependenciesKind="" />
+      <Unknown index="208" dependencies="" dependenciesKind="" />
+      <Unknown index="209" dependencies="" dependenciesKind="" />
+      <Unknown index="210" dependencies="" dependenciesKind="" />
+      <Unknown index="212" dependencies="" dependenciesKind="" />
+      <Unknown index="214" dependencies="213" dependenciesKind="dependent" />
+      <Unknown index="215" dependencies="" dependenciesKind="" />
+      <Unknown index="216" dependencies="224" dependenciesKind="dependent" />
+      <Unknown index="217" dependencies="224" dependenciesKind="dependent" />
+      <Unknown index="218" dependencies="224" dependenciesKind="dependent" />
+      <Unknown index="219" dependencies="" dependenciesKind="" />
+      <Unknown index="220" dependencies="" dependenciesKind="" />
+      <Unknown index="221" dependencies="" dependenciesKind="" />
+      <Unknown index="222" dependencies="" dependenciesKind="" />
+      <Unknown index="223" dependencies="" dependenciesKind="" />
+      <Unknown index="225" dependencies="" dependenciesKind="" />
+      <Unknown index="226" dependencies="" dependenciesKind="" />
+      <Unknown index="227" dependencies="" dependenciesKind="" />
+      <Unknown index="228" dependencies="" dependenciesKind="" />
+      <Unknown index="229" dependencies="" dependenciesKind="" />
+      <Unknown index="230" dependencies="" dependenciesKind="" />
+      <Unknown index="231" dependencies="" dependenciesKind="" />
+      <Unknown index="232" dependencies="" dependenciesKind="" />
+      <Unknown index="233" dependencies="" dependenciesKind="" />
+      <Unknown index="234" dependencies="" dependenciesKind="" />
+      <Unknown index="235" dependencies="" dependenciesKind="" />
+      <Unknown index="236" dependencies="" dependenciesKind="" />
+      <Unknown index="237" dependencies="" dependenciesKind="" />
+      <Unknown index="238" dependencies="224" dependenciesKind="dependent" />
+      <Unknown index="239" dependencies="" dependenciesKind="" />
+      <Unknown index="240" dependencies="" dependenciesKind="" />
+      <Unknown index="241" dependencies="" dependenciesKind="" />
+      <Unknown index="242" dependencies="" dependenciesKind="" />
+      <Unknown index="243" dependencies="" dependenciesKind="" />
+      <Unknown index="244" dependencies="" dependenciesKind="" />
+      <Unknown index="245" dependencies="" dependenciesKind="" />
+      <Unknown index="246" dependencies="" dependenciesKind="" />
+      <Unknown index="247" dependencies="" dependenciesKind="" />
+      <Unknown index="248" dependencies="" dependenciesKind="" />
+      <Unknown index="249" dependencies="" dependenciesKind="" />
+      <Unknown index="250" dependencies="" dependenciesKind="" />
+      <Unknown index="251" dependencies="" dependenciesKind="" />
+      <Unknown index="252" dependencies="" dependenciesKind="" />
+      <Unknown index="253" dependencies="" dependenciesKind="" />
+      <Unknown index="254" dependencies="" dependenciesKind="" />
+      <Unknown index="255" dependencies="224" dependenciesKind="dependent" />
+      <Unknown index="256" dependencies="" dependenciesKind="" />
+      <Unknown index="257" dependencies="" dependenciesKind="" />
+      <Unknown index="258" dependencies="" dependenciesKind="" />
+      <Unknown index="259" dependencies="" dependenciesKind="" />
+      <Unknown index="260" dependencies="" dependenciesKind="" />
+      <Unknown index="261" dependencies="" dependenciesKind="" />
+      <Unknown index="262" dependencies="" dependenciesKind="" />
+      <Unknown index="263" dependencies="" dependenciesKind="" />
+      <Unknown index="264" dependencies="" dependenciesKind="" />
+      <Unknown index="265" dependencies="" dependenciesKind="" />
+      <Unknown index="266" dependencies="" dependenciesKind="" />
+      <Unknown index="267" dependencies="" dependenciesKind="" />
+      <Unknown index="268" dependencies="" dependenciesKind="" />
+      <Unknown index="269" dependencies="" dependenciesKind="" />
+      <Unknown index="271" dependencies="" dependenciesKind="" />
+      <Unknown index="272" dependencies="" dependenciesKind="" />
+      <Unknown index="273" dependencies="" dependenciesKind="" />
+      <Unknown index="275" dependencies="274" dependenciesKind="dependent" />
+      <Unknown index="276" dependencies="" dependenciesKind="" />
+      <Unknown index="277" dependencies="" dependenciesKind="" />
+      <Unknown index="278" dependencies="" dependenciesKind="" />
+      <Unknown index="279" dependencies="" dependenciesKind="" />
+      <Unknown index="404" dependencies="" dependenciesKind="" />
+      <Unknown index="405" dependencies="" dependenciesKind="" />
+      <Unknown index="406" dependencies="" dependenciesKind="" />
+      <Unknown index="407" dependencies="" dependenciesKind="" />
+      <Unknown index="408" dependencies="" dependenciesKind="" />
+      <Unknown index="409" dependencies="" dependenciesKind="" />
+      <Unknown index="410" dependencies="" dependenciesKind="" />
+      <Unknown index="411" dependencies="" dependenciesKind="" />
+      <Unknown index="412" dependencies="" dependenciesKind="" />
+      <Unknown index="413" dependencies="" dependenciesKind="" />
+      <Unknown index="414" dependencies="" dependenciesKind="" />
+      <Unknown index="415" dependencies="" dependenciesKind="" />
+      <Unknown index="416" dependencies="" dependenciesKind="" />
+      <Unknown index="417" dependencies="" dependenciesKind="" />
+      <Unknown index="418" dependencies="" dependenciesKind="" />
+      <Unknown index="419" dependencies="" dependenciesKind="" />
+      <Unknown index="420" dependencies="" dependenciesKind="" />
+      <Unknown index="421" dependencies="" dependenciesKind="" />
+      <Unknown index="422" dependencies="" dependenciesKind="" />
+      <Unknown index="423" dependencies="" dependenciesKind="" />
+      <Unknown index="424" dependencies="" dependenciesKind="" />
+      <Unknown index="425" dependencies="" dependenciesKind="" />
+      <Unknown index="426" dependencies="" dependenciesKind="" />
+      <Unknown index="427" dependencies="" dependenciesKind="" />
+      <Unknown index="428" dependencies="" dependenciesKind="" />
+      <Unknown index="429" dependencies="" dependenciesKind="" />
+      <Unknown index="430" dependencies="" dependenciesKind="" />
+      <Unknown index="431" dependencies="" dependenciesKind="" />
+      <Unknown index="432" dependencies="" dependenciesKind="" />
+      <Unknown index="433" dependencies="" dependenciesKind="" />
+      <Unknown index="434" dependencies="" dependenciesKind="" />
+      <Unknown index="435" dependencies="" dependenciesKind="" />
+      <Unknown index="436" dependencies="" dependenciesKind="" />
+      <Unknown index="437" dependencies="" dependenciesKind="" />
+      <Unknown index="438" dependencies="" dependenciesKind="" />
+      <Unknown index="439" dependencies="" dependenciesKind="" />
+      <Unknown index="440" dependencies="" dependenciesKind="" />
+      <Unknown index="441" dependencies="" dependenciesKind="" />
+      <Unknown index="442" dependencies="" dependenciesKind="" />
+      <Unknown index="443" dependencies="" dependenciesKind="" />
+      <Unknown index="444" dependencies="" dependenciesKind="" />
+      <Unknown index="445" dependencies="" dependenciesKind="" />
+      <Unknown index="446" dependencies="" dependenciesKind="" />
+      <Unknown index="447" dependencies="" dependenciesKind="" />
+      <Unknown index="448" dependencies="" dependenciesKind="" />
+      <Unknown index="449" dependencies="" dependenciesKind="" />
+      <Unknown index="450" dependencies="" dependenciesKind="" />
+      <Unknown index="451" dependencies="" dependenciesKind="" />
+      <Unknown index="452" dependencies="" dependenciesKind="" />
+      <Unknown index="453" dependencies="" dependenciesKind="" />
+      <Unknown index="454" dependencies="" dependenciesKind="" />
+      <Unknown index="455" dependencies="" dependenciesKind="" />
+      <Unknown index="456" dependencies="" dependenciesKind="" />
+      <Unknown index="457" dependencies="" dependenciesKind="" />
+      <Unknown index="458" dependencies="" dependenciesKind="" />
+      <Unknown index="459" dependencies="" dependenciesKind="" />
+      <Unknown index="460" dependencies="" dependenciesKind="" />
+      <Unknown index="461" dependencies="" dependenciesKind="" />
+      <Unknown index="462" dependencies="" dependenciesKind="" />
+      <Unknown index="465" dependencies="" dependenciesKind="" />
+      <Unknown index="466" dependencies="" dependenciesKind="" />
+      <Unknown index="467" dependencies="" dependenciesKind="" />
+      <Unknown index="468" dependencies="" dependenciesKind="" />
+      <Unknown index="469" dependencies="" dependenciesKind="" />
+      <Unknown index="470" dependencies="" dependenciesKind="" />
+      <Unknown index="471" dependencies="" dependenciesKind="" />
+      <Unknown index="472" dependencies="" dependenciesKind="" />
+      <Unknown index="473" dependencies="" dependenciesKind="" />
+      <Unknown index="474" dependencies="" dependenciesKind="" />
+      <Unknown index="475" dependencies="" dependenciesKind="" />
+      <Unknown index="476" dependencies="" dependenciesKind="" />
+      <Unknown index="477" dependencies="117" dependenciesKind="dependent" />
+      <Unknown index="478" dependencies="" dependenciesKind="" />
+      <Unknown index="479" dependencies="" dependenciesKind="" />
+      <Unknown index="480" dependencies="" dependenciesKind="" />
+      <Unknown index="481" dependencies="" dependenciesKind="" />
+      <Unknown index="482" dependencies="" dependenciesKind="" />
+      <Unknown index="483" dependencies="" dependenciesKind="" />
+      <Unknown index="484" dependencies="" dependenciesKind="" />
+      <Unknown index="485" dependencies="" dependenciesKind="" />
+      <Unknown index="486" dependencies="" dependenciesKind="" />
+      <Unknown index="487" dependencies="" dependenciesKind="" />
+      <Unknown index="488" dependencies="" dependenciesKind="" />
+      <Unknown index="489" dependencies="" dependenciesKind="" />
+      <Unknown index="490" dependencies="" dependenciesKind="" />
+      <Unknown index="491" dependencies="" dependenciesKind="" />
+      <Unknown index="492" dependencies="" dependenciesKind="" />
+      <Unknown index="493" dependencies="" dependenciesKind="" />
+      <Unknown index="494" dependencies="" dependenciesKind="" />
+      <Unknown index="495" dependencies="" dependenciesKind="" />
+      <Unknown index="496" dependencies="" dependenciesKind="" />
+      <Unknown index="497" dependencies="" dependenciesKind="" />
+      <Unknown index="498" dependencies="" dependenciesKind="" />
+      <Unknown index="499" dependencies="" dependenciesKind="" />
+      <Unknown index="500" dependencies="" dependenciesKind="" />
+      <Unknown index="501" dependencies="" dependenciesKind="" />
+      <Unknown index="502" dependencies="" dependenciesKind="" />
+      <Unknown index="503" dependencies="" dependenciesKind="" />
+      <Unknown index="504" dependencies="" dependenciesKind="" />
+      <Unknown index="505" dependencies="" dependenciesKind="" />
+      <Unknown index="506" dependencies="" dependenciesKind="" />
+      <Unknown index="507" dependencies="" dependenciesKind="" />
+      <Unknown index="508" dependencies="" dependenciesKind="" />
+      <Unknown index="509" dependencies="" dependenciesKind="" />
+      <Unknown index="510" dependencies="" dependenciesKind="" />
+      <Unknown index="511" dependencies="" dependenciesKind="" />
+      <Unknown index="512" dependencies="" dependenciesKind="" />
+      <Unknown index="513" dependencies="" dependenciesKind="" />
+      <Unknown index="514" dependencies="" dependenciesKind="" />
+      <Unknown index="515" dependencies="" dependenciesKind="" />
+      <Unknown index="516" dependencies="" dependenciesKind="" />
+      <Unknown index="517" dependencies="" dependenciesKind="" />
+      <Unknown index="518" dependencies="" dependenciesKind="" />
+      <Unknown index="519" dependencies="" dependenciesKind="" />
+      <Unknown index="520" dependencies="" dependenciesKind="" />
+      <Unknown index="521" dependencies="" dependenciesKind="" />
+      <Unknown index="522" dependencies="" dependenciesKind="" />
+      <Unknown index="523" dependencies="" dependenciesKind="" />
+      <Unknown index="524" dependencies="" dependenciesKind="" />
+      <Unknown index="525" dependencies="" dependenciesKind="" />
+      <Unknown index="526" dependencies="" dependenciesKind="" />
+      <Unknown index="527" dependencies="" dependenciesKind="" />
+      <Unknown index="528" dependencies="" dependenciesKind="" />
+      <Unknown index="529" dependencies="" dependenciesKind="" />
+      <Unknown index="530" dependencies="" dependenciesKind="" />
+      <Unknown index="531" dependencies="" dependenciesKind="" />
+      <Unknown index="532" dependencies="" dependenciesKind="" />
+      <Unknown index="533" dependencies="" dependenciesKind="" />
+      <Unknown index="534" dependencies="" dependenciesKind="" />
+      <Unknown index="535" dependencies="" dependenciesKind="" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

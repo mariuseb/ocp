@@ -1,0 +1,58 @@
+{
+    "model": {
+        "ode": {
+            "dTi": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci) + w1",
+            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + w2",
+            "dTh": "(Th - Ti)/(Rih*Ch) + phi_h/Ch  + w3"
+        },
+        "alg": {
+            "h": "y1 - Ti - v1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Ci",
+            "Ce",
+            "Ch",
+            "Ai"
+        ],
+        "u": [
+            "phi_h",
+            "Ta", 
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "w": [
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "v": [
+            "v1"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma27",
+        "ipopt.ma57_pre_alloc": 3
+    },
+    "codegen": true
+}

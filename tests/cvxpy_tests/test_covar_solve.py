@@ -1,4 +1,4 @@
-from ocp.covar_solve import CovarianceSolver
+from ocp.covar_solve_old import CovarianceSolver
 import pandas as pd
 from ocp.tests.utils import get_data_path
 import os

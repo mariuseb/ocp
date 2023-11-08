@@ -1,0 +1,57 @@
+{
+    "model": {
+        "ode": {
+            "dTi": "(Te - Ti)/(Rie*Ci) + (1/Ci)*(Th - Ti) + Ai*(phi_s/Ci)",
+            "dTe": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "dTh": "(Tsup - Th)/(Rsup_h*Ch) + (Ti - Th)/(Rih*Ch)"
+        },
+        "alg": {
+            "h1": "y1 - Ti - v1",
+            "g1": "Ph - (Tsup - Th)/(Rsup_h*Ch) - (1/Ci)*(Th - Ti)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Rsup_h",
+            "Ci",
+            "Ce",
+            "Ch",
+            "Ai"
+        ],
+        "u": [
+            "Ph",
+            "Tsup",
+            "Ta", 
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "v": [
+            "v1"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

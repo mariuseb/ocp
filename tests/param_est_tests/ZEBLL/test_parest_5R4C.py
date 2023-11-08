@@ -13,7 +13,7 @@ from ocp.boptest_api import Boptest
 from pprint import pprint
 from ocp.filters import EKF
 from matplotlib import rc
-from ocp.covar_solve import CovarianceSolver
+from ocp.covar_solve_old import CovarianceSolver
 import os
 rc('mathtext', default='regular')
 # datetime:

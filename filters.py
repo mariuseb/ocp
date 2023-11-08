@@ -12,7 +12,7 @@ from copy import deepcopy
 from scipy.linalg import expm
 
 '''
-An EKF implementation.
+EKF implementations.
 '''
 
 class Filter(object):
@@ -163,139 +163,49 @@ class EKF(Filter):
             first iteration, do the calculation:
                 P_0 = P_s int_t0^{t1} exp(A*dt)QQ^{T}exp(A*dt)^{T}dt
             """
-            from scipy import integrate
-            from numpy import vectorize
-            P_s = 1 # scaling factor
-            
-            
-            A = np.array(A)
-            Q = np.array(self.Q)
-            # quadrature:
-            #@staticmethod
-            """
-            def f(A, Q):
-                def g(dt):
-                    #return np.exp(A*dt)@Q@Q.T@np.exp(A*dt).T
-                    return np.matmul(np.exp(A*dt), np.matmul(Q, np.matmul(Q.T, np.exp(A*dt).T)))
-                return g
-            
-            _A = np.array(A)
-            _Q = np.array(self.Q)
-            fv = np.vectorize(f)
-            u = fv(_A, _Q)
-            
-            P0 = np.vectorize(integrate.quad)(u, 0, self.dt)
-            """
-            from sympy import integrate, var, Matrix, MatrixSymbol, Transpose, transpose, MatMul, HadamardPower, hadamard_product  
+            #from scipy import integrate
+            #from numpy import vectorize
+            from sympy import var, Matrix, MatMul, HadamardPower
+            #from sympy import integrate, var, Matrix, MatrixSymbol, Transpose, transpose, MatMul, HadamardPower, hadamard_product  
             import scipy
             from sympy.utilities import lambdify
             from mpmath import quad
+            P_s = 1 # scaling factor
+
+            A = np.array(A)
+            Q = np.array(self.Q)
+            """
+            Integrate P0 through 
+            the Wiener process.
             
+            Cf. https://ctsm.info/mathguide.pdf,
+            page 19.
+            """            
             _A = Matrix(A)
             _Q = Matrix(Q)
             dt = var("dt")
-            #_A[0,0] *= dt 
-            #_A[0,1] *= dt 
-            #_A[1,0] *= dt 
-            #_A[1,1] *= dt 
-            
+             
             exp_A = HadamardPower(np.e, _A*dt)
-            
             quadr = MatMul(exp_A, MatMul(_Q, MatMul(_Q.T, exp_A.T)))
-            
             P_0 = scipy.zeros(quadr.shape, dtype=float)
-            
-            #quadr.subs({_A: A, _Q: Q})
             for (i,j), expr in scipy.ndenumerate(quadr):
                 tmp = lambdify((dt), expr, 'math')
                 P_0[i,j] = quad(tmp, (0, self.dt))
-            
-            self.P_prev = ca.DM(P_0)
-            #P00 = integrate(quadr[0,0], (dt, 0, self.dt))
-            #P01 = integrate(quadr[0,1], (dt, 0, self.dt))
-            #P10 = integrate(quadr[1,0], (dt, 0, self.dt))
-            #P11 = integrate(quadr[1,1], (dt, 0, self.dt))
-            
-            #P0 = integrate(quadr, (dt, 0, self.dt))
-            
+            self.P_prev = ca.DM(P_0)    
             P_apriori = ca.mtimes([A, self.P_prev, ca.transpose(A)]) + self.Q
-            #self.P_prev = integrate.quadrature(f, 0, self.dt, args=(np.array(A), self.dt, np.array(self.Q)))
-            #global _A
-            #global _Q
-            #_A = np.array(A)
-            #_Q = np.array(self.Q)
-            
-            #dt = self.dt
-            
-            #tol = np.array([[1E-5, 1E-5], [1E-5, 1E-5]])
-            #rtol = np.array([[1E-5, 1E-5], [1E-5, 1E-5]])
-            #self.P_prev = vectorize(integrate.quadrature)(f, 0, dt)
-            #self.P_prev = integrate.quadrature(f, 0, dt, tol=tol, rtol=rtol)
-            #self.P_prev = integrate.quadrature(f, 0, self.dt, args=(_A, _Q))
-            
-            
-            """
-            Nm, Mm = np.meshgrid(range(3), range(2))
-
-            def f(m,n):
-                def g(x):
-                    return m*x+n*x
-                return g
-
-            fv=np.vectorize(f)
-
-            u=fv(Mm,Nm)
-
-            np.vectorize(integrate.quad)(u,0,1)
-            
-            # casadi expr:
-            A_sym = ca.SX.sym("A", 2,2)
-            Q_sym = ca.SX.sym("Q", 2,2)
-            x_sym = ca.SX.sym("x", 2,2)
-            s = ca.SX.sym("s")
-            
-            # integrand:
-            expr = ca.mtimes(
-                             ca.exp(A_sym*s),
-                             ca.mtimes(
-                                    Q_sym,
-                                        ca.mtimes(
-                                                Q_sym.T,
-                                                ca.exp(A_sym*s).T
-                                                 )
-                                        )
-                             )
-            P0 = ca.Function("P0",
-                             [A_sym, Q_sym, s],
-                             [expr],
-                             ["A", "Q", "s"],
-                             ["P0"])
-            
-            opts = {
-                    "step0":    self.dt,
-                    "t0"      : 0.0,
-                    "tf"      : self.dt,
-                    "abstol"  : 1E-4
-                            }
-            """
-            # u->z in integrator call (algebraic var, constant on between phase boundaries (check term. in Betts ch. 4))
-            #I = ca.integrator("I", "idas", {"x": x_sym, "p": ca.vertcat(A_sym, Q_sym), "ode": expr}, opts)
-            #expr = ca.mtimes(ca.exp(A_sym*s), ca.mtimes(Q_sym, ca.mtimes())
-             
-            
-
+        
+        # Kalman gain:
         K = ca.mtimes(ca.mtimes(P_apriori, ca.transpose(C)), ca.inv(ca.mtimes([C, P_apriori, ca.transpose(C)]) + self.R))
-
+        # filtered prediction:
         x_post = x_pred + ca.mtimes(K, (y - h_x))
-
+        # reshape for storing.
         x_post = np.array(x_post).reshape(-1)
         # store estimation result. TODO: check ordering of states.
         self.df.loc[self.k*self.dt, self.dae.x] = x_post
+        # filtered covariance prediction:
         self.P_prev = ca.mtimes((self.I - ca.mtimes(K, C)), P_apriori)
         self.k += 1
-        
-        # keep P a posteriori:
-        #self.P[self.k] = deepcopy(self.P_prev)
+        # store it:
         self.P[self.k] = ca.mtimes((self.I - ca.mtimes(K, C)), P_apriori)
 
         return x_post

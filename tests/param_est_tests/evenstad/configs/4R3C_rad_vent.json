@@ -1,0 +1,78 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)", 
+            "Th": "(Ti - Th)/(Rih*Ch) + (1/Ch)*P_rad"
+        },
+        "alg": {
+            "P_vent_in": "cp_air*rho_air*(Tsup_air - Ti)*V_flow_sup_air/900 - P_vent_in",
+            "P_vent_out": "cp_air*rho_air*(Ti - Tret_air)*V_flow_exh_air/900 - P_vent_out",
+            "P_vent": "P_vent_in + P_vent_out - P_vent",
+            "P_rad": "UA_nom*regNonZeroPower((Tsup_rad - Tret_rad), n, 0.05)"
+            
+        },
+        "w": {
+            "v1": "y1 - Ti",
+            "v2": "y2 - (P_vent + P_rad)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Ci",
+            "Ce",
+            "Ch",
+            "Ai",
+            "UA_nom",
+            "n",
+            "cp_air",
+            "rho_air"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s",
+            "Ta",
+            "Tsup_air",
+            "Tret_air",
+            "Tsup_rad",
+            "Tret_rad",
+            "P_water",
+            "V_flow_sup_air",
+            "V_flow_exh_air"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "z": [
+            "P_vent_in",
+            "P_vent_out",
+            "P_vent",
+            "P_rad"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "P_water"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

@@ -1,6 +1,6 @@
 #from ast import Param
 from ocp.param_est import ParameterEstimation
-from ocp.covar_solve import CovarianceSolver
+from ocp.covar_solve_old import CovarianceSolver
 import numpy as np
 import json
 import casadi as ca

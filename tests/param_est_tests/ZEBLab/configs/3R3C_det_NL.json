@@ -1,0 +1,71 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci_NL) + (Th - Ti)/(Rih*Ci_NL) + Ai*(phi_s/Ci_NL) + (Ta - Ti)/(Ria*Ci_NL)",
+            "Te": "(Ti - Te)/(Rie*Ce_NL) + (Ta - Te)/(Rea*Ce_NL)",
+            "Th": "(Ti - Th)/(Rih*Ch) + (1/Ch)*phi_h"
+        },
+        "alg": {
+            "Ce_NL": "Ce_b + Ce_a*phi_h**2 - Ce_NL",
+            "Ci_NL": "Ci_b + Ci_a*phi_h**2 - Ci_NL"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Ria",
+            "Ci_b",
+            "Ci_a",
+            "Ce_b",
+            "Ce_a",
+            "Ch",
+            "Ai",
+            "n1",
+            "n2"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s",
+            "Ta"
+        ],
+        "z": [
+            "Ce_NL",
+            "Ci_NL"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [1E6,1E6],
+            "ubz": [1E12,1E12]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}
