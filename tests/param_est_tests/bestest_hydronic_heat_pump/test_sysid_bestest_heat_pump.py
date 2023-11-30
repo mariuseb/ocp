@@ -41,10 +41,10 @@ if __name__ == "__main__":
 
     GENERATE_DATA = True
 
-    boptest = Boptest(
-                      boptest_cfg,
-                      name="bestest_heat_pump"
-                      )
+    #boptest = Boptest(
+    #                  boptest_cfg,
+    #                  name="bestest_heat_pump"
+    #                 )
     
     sampling_time = "15min"
       
@@ -56,10 +56,18 @@ if __name__ == "__main__":
         prbs_4 = randomizer_prbs_4()
         # presumed time constants: 15 mins, 4H, 20H
         #prbs = pd.Series(data=np.concatenate((np.array(prbs_6), np.repeat(prbs_6, 4), np.repeat(prbs_4, 80))))
-        prbs = pd.Series(data=np.concatenate((np.repeat(prbs_6, 12), np.repeat(prbs_4, 40))))
-        prbs.index *= 900
-        prbs.index = pd.TimedeltaIndex(prbs.index, unit="s").round(freq="S")
-        prbs.index = range(len(prbs.index))
+        #prbs = pd.Series(data=np.concatenate((np.repeat(prbs_6, 2), np.repeat(prbs_4, 4))))
+        prbs_short = pd.Series(data=(np.repeat(prbs_6, 2)))
+        prbs_long = pd.Series(data=np.repeat(prbs_4, 1))
+        prbs_short.index *= 3600
+        prbs_long.index *= 20*3600
+        prbs_short.index = pd.TimedeltaIndex(prbs_short.index, unit="s").round(freq="S")
+        prbs_long.index = pd.TimedeltaIndex(prbs_long.index, unit="s").round(freq="S")
+        prbs_long = prbs_long.resample(rule="60min").ffill()
+        prbs = pd.concat([prbs_short, prbs_long])
+        prbs.to_csv("PRBS_1H.csv", index=True)
+        #prbs = prbs.resample(rule="1H").mean()
+        #prbs.index = range(len(prbs.index))
         # 20 hrs -> concat prbs_4 80 times to get long periods
         #prbs_6 = pd.DataFrame(data=np.repeat(prbs_4, 80))
         """

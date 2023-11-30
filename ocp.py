@@ -483,9 +483,10 @@ class OCP(metaclass=ABCMeta):
     def get_hess_lag(self, residual, nlp_x):
       # objective only indirectly affected by collocation points...
         J = ca.jacobian(residual, nlp_x)
+        p = ca.veccat(self.R, self.Q)
         H = ca.triu(ca.mtimes(J.T, J))
         sigma = ca.MX.sym("sigma")
-        hess_lag = ca.Function('nlp_hess_l',{'x':nlp_x,'lam_f':sigma, 'hess_gamma_x_x':sigma*H},
+        hess_lag = ca.Function('nlp_hess_l',{'x':nlp_x,'lam_f':sigma, 'p': p,'hess_gamma_x_x':sigma*H},
                                 ['x','p','lam_f','lam_g'], ['hess_gamma_x_x'],
                                 dict(jit=self.with_jit, compiler=self.compiler))
         return hess_lag
@@ -556,13 +557,14 @@ class OCP(metaclass=ABCMeta):
         v = bounds.pop("v")
         y = bounds.pop("y")
         r = bounds.pop("r")
+        w = bounds.pop("w")
         
         # use this and fill rest with -inf and inf
         lbx = np.array([])
         ubx = np.array([])
         x0 = np.array([])
         
-        for bound_dict, (k, v) in zip((x, z, u, p, s, v, y, r), self.nlp_parser.vars.items()):
+        for bound_dict, (k, v) in zip((x, z, u, p, s, v, y, r, w), self.nlp_parser.vars.items()):
         #for arr, (k, v) in zip((x, z, p, w, v), self.nlp_parser.vars.items()):
             # TODO: check also lb
             #if bound_dict["ub"] is None:
@@ -630,6 +632,61 @@ class OCP(metaclass=ABCMeta):
             self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
         
     #def set_x_guess(self, )
+    def add_h(self):
+        """
+        Inequality constraints independent of external data.
+        """
+        expr_dict = {}
+        for i, elem in self.h_exprs.items():
+            expr_string = elem["body"]
+            vals = {}
+            for symbol in elem["symbols"]:
+                vals[symbol] = self.get(symbol)
+            # TODO: collocation logic:
+            if self.method == "collocation":
+                # if mix of x and z, take x only at collocation points:
+                x_symbols = [symbol for symbol in elem["symbols"] if symbol in self.dae.x]
+                if (
+                    any(symbol in self.dae.z for symbol in elem["symbols"])
+                    and 
+                    any(symbol in self.dae.x for symbol in elem["symbols"])
+                    ):
+                    #z_symbols = [symbol for symbol in elem["symbols"] if symbol in self.dae.z]
+                    #vals["Ti"] = vals["Ti"][0::(self.integrator.d+1)]                     
+                    for x_ in x_symbols:
+                        slices = []
+                        for n in range(self.N-1):
+                            offset = n*(self.integrator.d+1) + 1
+                            _slice = ca.Slice(offset, offset + self.integrator.d)
+                            slices.append(vals[x_][_slice])
+                        vals[x_] = ca.vertcat(*slices)
+                        #vals[x_] = vals[x_][1::(self.integrator.d+1)]                     
+                    #for z_ in z_symbols:
+                    #    vals[z_] = vals[z_][0::(self.integrator.d+1)]                       
+                else: # take x-symbols at finite elements:
+                    for x_ in x_symbols:
+                        vals[x_] = vals[x_][0::(self.integrator.d+1)]
+                    
+                    
+            vals["expr_dict"] = expr_dict
+            exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
+            #exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
+            #print(expr_dict)
+            
+            """
+            Now, add this constraint to nlp.g
+            add also corresponding entries for lbg and ubg
+            
+            TODO: more solid logic here!
+            """
+            
+            expr = expr_dict[i]
+            #if self.method == "collocation":
+                #expr = expr.T
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], expr) # TODO: .T?
+            self.lbg = np.append(self.lbg, np.array([elem["lhs"]]*expr.shape[0]))
+            self.ubg = np.append(self.ubg, np.array([elem["rhs"]]*expr.shape[0]))
+    
             
     @abstractmethod
     def solve(self):
@@ -649,16 +706,27 @@ class OCP(metaclass=ABCMeta):
                                 lambda x: 10**x,
                                         np.floor(
                                                 np.log10(
-                                                        param_guess
-                                                        #np.abs(param_guess)
+                                                        #param_guess
+                                                        np.abs(param_guess)
                                                         )
                                                 )
                                     )
                                 )
                         ).flatten()
         
+        """
+        -inf appears if parameter guess is
+        zero. Replace it with 0.
+        """
+        dec_scale[dec_scale == -np.inf] = 0
+        
         prefix = param_guess/dec_scale
         ceiled = np.ceil(prefix)
+        
+        """
+        Replace nan with 0.
+        """
+        ceiled = np.nan_to_num(ceiled)
         #return np.multiply(ceiled, dec_scale)
         return np.array(np.multiply(ceiled, dec_scale)).flatten()
         #return dec_scale
@@ -717,8 +785,8 @@ class OCP(metaclass=ABCMeta):
         
     def compile_c_code(self, **kwargs):
         # Create a new NLP solver instance from the compiled code
-        compiler = kwargs.pop("compiler", "gcc")
-        flags = kwargs.pop("flags", ["-O3"])
+        compiler = kwargs.pop("compiler", "clang")
+        flags = kwargs.pop("flags", ["-O0"])
         cmd_args = [compiler,"-fPIC","-shared"] + \
                     flags + \
                     [self.gen_code_filename, "-o", self.so_filename]
@@ -784,11 +852,12 @@ class OCP(metaclass=ABCMeta):
     
     def get_ocp_name_and_offset(self, name):
         # TODO: include all:
-        for varname in ("x", "u", "z", "p", "s", "v"):
-            if varname in ("x", "u", "z", "p"):
+        for varname in ("x", "u", "z", "p", "s", "v", "w"):
+            if varname in ("x", "u", "z", "p", "w"):
                 varlist = getattr(self.dae.dae, varname)()
             elif varname in ("s", "v"): # TODO: add v, r
-                varlist = getattr(self.dae, name[0] + "_names")
+                #varlist = getattr(self.dae, name[0] + "_names")
+                varlist = getattr(self.dae, varname + "_names")
                 varname = name[0]
             offset = 0
             for _name in varlist:
@@ -967,6 +1036,10 @@ class OCP(metaclass=ABCMeta):
     def r_names(self):
         return self.dae.r_names
     
+    @property
+    def w_names(self):
+        return self.dae.w_names
+    
     def set_A(self):
         """
         Set casadi-Function that retrieves A.
@@ -1057,6 +1130,12 @@ class OCP(metaclass=ABCMeta):
                 bounds["p"]["x0"] = lbp/self.scale
             else:
                 bounds["p"]["x0"] = p_init/self.scale
+                
+            # what if 0 in self.scale? replace here.
+            #print(bounds["p"]["x0"])
+            bounds["p"]["x0"] = np.nan_to_num(bounds["p"]["x0"])
+            bounds["p"]["ub"] = np.nan_to_num(bounds["p"]["ub"])
+            bounds["p"]["lb"] = np.nan_to_num(bounds["p"]["lb"])
         
         if lbx is not None and ubx is not None or x_init is not None:
             
@@ -1202,8 +1281,8 @@ class OCP(metaclass=ABCMeta):
                         else:
                             vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
                     
-                    if varname == "r":
-                        print(varname) 
+                    #if varname == "r":
+                    #    print(varname) 
                                 
                     vals -= bias
                     vals /= scale
@@ -1274,8 +1353,8 @@ class OCP(metaclass=ABCMeta):
                         """    
                         #if isinstance(scale, np.ndarray):
                         #    scale = np.tile(scale, dim)
-                        if varname == "u":
-                            print(varname)
+                        #if varname == "u":
+                        #    print(varname)
                         
                         
                         lb = np.array(bounds_cfg[varname]["lb" + varname]*dim)

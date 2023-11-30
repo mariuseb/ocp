@@ -19,16 +19,18 @@ class DAE(object):
                 setattr(self, k, v)
         
         # set z empty
-        #self.z = []
-        
+        #self.z = [
+        self.v_names = []
+        self.s_names = []
+        self.w_names = []
         self.add_params()
         self.add_states()
         self.add_alg_states()
         self.add_controls()
         self.add_refs()
         self.add_meas()
-        self.add_process_noise()
-        self.add_meas_noise()
+        #self.add_process_noise()
+        #self.add_meas_noise()
         self.add_w()
         #self.add_meas()
         self.add_odes()
@@ -42,12 +44,10 @@ class DAE(object):
             self.__setattr__(name, param)
 
         self.__setattr__("p", self.config["p"])
-        
+    
+    """
     def add_process_noise(self): # s
-        """
-        Add:
-            - process noise/disturbance.
-        """
+
         try:
             for name in self.config["s"]:
                 # can't add to dae:
@@ -62,12 +62,7 @@ class DAE(object):
             
         
     def add_meas_noise(self):
-        """
-        Add:
-            - measurement noise
-            
-        NOTE: as algebraic var
-        """
+
         try:
             for name in self.config["v"]:
                 # can't add to dae:
@@ -83,7 +78,8 @@ class DAE(object):
             #self.z.extend(self.v_names)
         except KeyError:
             self.__setattr__("v_names", [])
-            
+    """   
+         
     def add_refs(self):
         """
         Add:
@@ -241,7 +237,7 @@ class DAE(object):
 
     @property
     def n_w(self):
-        return self.dae.nw()
+        return self.dae.nw() - self.n_v - self.n_s
 
     @property
     def n_v(self):
@@ -265,7 +261,7 @@ class DAE(object):
     
     @property
     def order(self):
-        return ("x", "z", "u", "p", "s", "v", "y", "r")
+        return ("x", "z", "u", "p", "s", "v", "y", "r", "w")
     
     @property
     def all_names(self):
@@ -279,6 +275,7 @@ class DAE(object):
                self.p + \
                self.s_names + \
                self.v_names + \
+               self.w_names + \
                list(self.y.keys()) + \
                self.r_names
 
@@ -353,8 +350,19 @@ class DAE(object):
 
                 #exec('ode =' + ode_string, globals())
                 #exec(f'self.%s["{expr_name}"] =' + expr_string)
-                exec(f'expr_dict["{expr_name}"] =' + expr_string)
-                #self.dae.add_ode(expr_name, expr_dict[expr_name])
+                try:
+                    exec(f'expr_dict["{expr_name}"] =' + expr_string)
+                except NameError:
+                    # backward lag for difference equation:
+                    _mx = ca.MX.sym(expr_name + "_prev")
+                    self.__setattr__(expr_name + "_prev", _mx)
+                    # regenerate the symbol table:
+                    repl_table = self._get_repl_table()
+                    pattern = re.compile(r'\b(' + '|'.join(repl_table.keys()) + r')\b')
+                    expr_string = pattern.sub(lambda x: repl_table[x.group()], _string)
+                    #expr_string = expr_string.replace(expr_name, "self." + expr_name + "_prev")
+                    exec(f'expr_dict["{expr_name}"] =' + expr_string)
+                    
                 mx = method(expr_name, expr_dict[expr_name])
                 
                 if mx is not None:
@@ -371,7 +379,11 @@ class DAE(object):
                     elif expr_name.startswith("s"):
                         self.s_names.append(expr_name)
                     else: # other kinds of dependent variables, not handled yet
-                        pdb.set_trace()
+                        #raise ValueError("Check argument.")
+                        self.w_names.append(expr_name)
+                        print("Regular dependant variable %s" % (expr_name,) +
+                              " added")
+                        
                     
                 elif hasattr(self, expr_name):
                     print("Already existing variable. Check.")

@@ -910,6 +910,9 @@ class ParameterEstimation(OCP):
             self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
             self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
+        self.add_h()
+        
+        
         if Ti_gt_Te:
             """
             Follows a generalizable pattern: 

@@ -81,7 +81,7 @@ class Shooting(metaclass=ABCMeta):
 
     @property
     def n_w(self):
-        return self.F.dae.n_w - self.F.dae.n_v
+        return self.F.dae.n_w # - self.F.dae.n_v - self.F.dae.n_s
     
     @property
     def n_s(self):
@@ -112,11 +112,11 @@ class NLPParser(object):
         """
         Parameters:
             var_tuple: 
-                tuple - expect order "x", "z", "u", "p", "s", "v", "y"
+                tuple - expect order "x", "z", "u", "p", "s", "v", "y", "r", "w"
         """
         
         d = {}
-        varnames = ("x", "z", "u", "p", "s", "v", "y", "r")
+        varnames = ("x", "z", "u", "p", "s", "v", "y", "r", "w")
         #varnames = ("x", "z", "p", "w", "v")
         
         prev = 0
@@ -180,6 +180,7 @@ class MultipleShooting(Shooting):
         # TODO: init p here instead (for TVP etc.):
         #p = self.F.p
         p = self.get_p()
+        w = self.get_w()
         
         # TODO: refactor
         #if isinstance(self.F, (idas, Cvodes)):
@@ -236,23 +237,12 @@ class MultipleShooting(Shooting):
             self.F_map = self.map_F()
             xn = self.F_map(
                             x0=x[:,:-1]*self.x_nom + self.x_nom_b,
-                            #x0=x[:,:-1]*self.x_nom,
-                            #x0=x*self.x_nom,
-                            #x0=x*self.x_nom + self.x_nom_b,
                             z=z[:,:-1]*self.z_nom + self.z_nom_b,
-                            #z=z[:,:-1]*self.z_nom,
-                            #z=z*self.z_nom,
                             u=u[:,:-1]*self.u_nom + self.u_nom_b,
-                            #u=u[:,:-1]*self.u_nom,
                             p=self.p_nom*ca.repmat(p, 1, self.N-1) + self.p_nom_b,
-                            #p=self.p_nom*ca.repmat(p, 1, self.N),
-                            #p=ca.repmat(p, 1, self.N),
-                            # w same unit as dT/dt -> factor: 1/300/900
-                            #w=w*self.w_nom,
                             s=s[:,:-1]*self.s_nom,
-                            #s=s[:,:-1]*self.s_nom,
-                            r=r[:,:-1]*self.r_nom + self.r_nom_b
-                            #r=r[:,:-1]*self.r_nom
+                            r=r[:,:-1]*self.r_nom + self.r_nom_b,
+                            w=w[:,:-1]
                             )["xf"]
             xn_orig = self.F_map(
                                 x0=x[:,:-1],
@@ -260,7 +250,8 @@ class MultipleShooting(Shooting):
                                 u=u[:,:-1],
                                 p=ca.repmat(p, 1, self.N-1),
                                 s=s[:,:-1],
-                                r=r[:,:-1]
+                                r=r[:,:-1],
+                                w=w[:,:-1]
                                 )["xf"]
             x_gaps = xn - (self.x_nom*x[:,1:] + self.x_nom_b)
             x_gaps_orig = xn_orig - x[:,1:]
@@ -274,8 +265,9 @@ class MultipleShooting(Shooting):
         try:
             self.h_map = self.map_h()
             self.g_map = self.map_g()
+            self.w_map = self.map_wdef()
         except AttributeError:
-            pass
+            raise
         #self.G_map = self.map_G()
         
         
@@ -303,7 +295,8 @@ class MultipleShooting(Shooting):
                                 u=u*self.u_nom + self.u_nom_b,
                                 p=self.p_nom*ca.repmat(p, 1, self.N),
                                 v=v*self.v_nom + self.v_nom_b,
-                                r=r*self.r_nom + self.r_nom_b 
+                                r=r*self.r_nom + self.r_nom_b,
+                                w=w
                                 )["h"]
             h_gaps_orig = self.h_map(
                                     y=y,
@@ -312,10 +305,36 @@ class MultipleShooting(Shooting):
                                     u=u,
                                     p=ca.repmat(p, 1, self.N),
                                     v=v,
-                                    r=r 
+                                    r=r, 
+                                    w=w
                                     )["h"]
         except AttributeError:
             h_gaps = ca.MX()
+            
+        try:
+            """
+            Discrete-time, difference equation defines w,
+            i.e. w == wdef(w_prev,x,z,u,p,t).
+            
+            Propagate w forward, take difference with shifted
+            variable.
+            """
+            
+            wn = self.w_map(
+                            #y=y*self.y_nom + self.y_nom_b,
+                            #x=x*self.x_nom + self.x_nom_b,
+                            y=y[:,:-1]*self.y_nom + self.y_nom_b,
+                            x=x[:,:-1]*self.x_nom + self.x_nom_b,
+                            z=z[:,:-1]*self.z_nom + self.z_nom_b,
+                            u=u[:,:-1]*self.u_nom + self.u_nom_b,
+                            p=self.p_nom*ca.repmat(p, 1, self.N-1),
+                            v=v[:,:-1]*self.v_nom + self.v_nom_b,
+                            r=r[:,:-1]*self.r_nom + self.r_nom_b,
+                            w=w[:,:-1]
+                            )["wdef"]
+            w_gaps = wn - w[:,1:]
+        except AttributeError:
+            w_gaps = ca.MX()
             
         #G_p = ca.vertcat(x*self.x_nom, u*self.u_nom, p*self.p_nom, v*self.v_nom, r*self.r_nom)
         #G_p = ca.vertcat(x*self.x_nom, u*self.u_nom, p*self.p_nom, v*self.v_nom, r*self.r_nom)
@@ -340,7 +359,8 @@ class MultipleShooting(Shooting):
                                 #v=v*self.v_nom,
                                 s=s*self.s_nom,
                                 #r=r[:,:-1]*self.r_nom
-                                r=r*self.r_nom + self.r_nom_b
+                                r=r*self.r_nom + self.r_nom_b,
+                                w=w
                                 #r=0
                                 )["g"]
         except AttributeError:
@@ -350,7 +370,7 @@ class MultipleShooting(Shooting):
         ###################################################
         
         # constraints:
-        g = ca.vertcat(ca.vec(x_gaps), ca.vec(g_gaps), ca.vec(h_gaps))
+        g = ca.vertcat(ca.vec(x_gaps), ca.vec(g_gaps), ca.vec(h_gaps), ca.vec(w_gaps))
         
         """
         vars in same order as the system def:
@@ -361,10 +381,10 @@ class MultipleShooting(Shooting):
         
         """
         #V = ca.veccat(x, z, u, p, w, v, y, r)
-        V = ca.veccat(x, z, u, p, s, v, y, r)
+        V = ca.veccat(x, z, u, p, s, v, y, r, w)
         
         #nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
-        nlp_parser = NLPParser((x, z, u, p, s, v, y, r))
+        nlp_parser = NLPParser((x, z, u, p, s, v, y, r, w))
         # keep orig g:
         nlp_parser.set_g(g)  
         nlp_parser.set_x_orig(x)  
@@ -497,6 +517,10 @@ class MultipleShooting(Shooting):
         """ Paralell map of algebraic eqs """
         #return self.F.g.map(self.N-1, "openmp")
         return self.F.g.map(self.N)
+
+    def map_wdef(self):
+        """ Paralell map of dependant variables """
+        return self.F.wdef.map(self.N-1)
         
     
 # TODO: fix
