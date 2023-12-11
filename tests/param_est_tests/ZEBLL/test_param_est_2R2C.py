@@ -75,10 +75,10 @@ if __name__ == "__main__":
     N = len(y_data)
     dt = y_data.index[1] - y_data.index[0]
 
-    param_guess = ca.DM([0.01,0.1,1E6,1E7,2])
+    param_guess = np.array([0.01,0.1,1E6,1E7,2])
     #param_guess = ca.DM([1.532625e-03,1.160423e-02,1.328633e+06,6.644898e+06,5.578587e+00])
-    lbp = ca.DM([0.001,0.01,1E5,1E6,1])
-    ubp = ca.DM([0.1,1,1E7,1E8,50])
+    lbp = np.array([0.001,0.01,1E5,1E6,1])
+    ubp = np.array([0.1,1,1E7,1E8,50])
     #param_guess = ca.DM([0.001,0.009,1,1E6,1E7,1])
     #param_est = ParameterEstimation(cfg_path, y_data, param_guess)
 
@@ -137,110 +137,3 @@ if __name__ == "__main__":
         ax.legend()
         plt.show()
         print(params)
-
-"""
-Specify and solve problem using rockit g
-"""
-
-from rockit import *
-
-# Problem specification
-# ---------------------
-
-# Start an optimal control environment with a time horizon of 10 seconds
-# starting from t0=0s.
-#  (free-time problems can be configured with `FreeTime(initial_guess)`)
-Tf = (N-1)*dt
-ocp = Ocp(t0=0, T=Tf)
-
-# Define two scalar states (vectors and matrices also supported)
-Ti = ocp.state()
-Te = ocp.state()
-
-# Measurements of state
-Ti_meas = y_data.Ti.values[:-1]
-
-Ti_meas_param = ocp.parameter(grid='control')
-#ocp.set_value(Ti_meas_param, Ti_meas[:-1])
-ocp.set_value(Ti_meas_param, Ti_meas)
-
-# Measurements of control
-phi_h_meas = y_data.phi_h[:-1]
-Ta_meas = y_data.Ta[:-1]
-phi_s_meas = y_data.phi_s[:-1]
-
-# Define one piecewise constant control input
-#  (use `order=1` for piecewise linear)
-phi_h = ocp.parameter(grid='control')
-Ta = ocp.parameter(grid='control')
-phi_s = ocp.parameter(grid='control')
-
-ocp.set_value(phi_h, phi_h_meas)
-ocp.set_value(Ta, Ta_meas)
-ocp.set_value(phi_s, phi_s_meas)
-
-# Unknown system parameters
-Rie = ocp.variable()
-Rea = ocp.variable()
-Ci = ocp.variable()
-Ce = ocp.variable()
-Ai = ocp.variable()
-
-# Initial guesses for system parameters
-ocp.set_initial(Rie, 1e-2)
-ocp.set_initial(Rea, 1e-2)
-ocp.set_initial(Ci, 1e6)
-ocp.set_initial(Ce, 1e7)
-ocp.set_initial(Ai, 5)
-
-ocp.subject_to(1e-4 <= (Rie <= 1))
-ocp.subject_to(1e-4 <= (Rea <= 1))
-ocp.subject_to(1e4 <= (Ci <= 1e8))
-ocp.subject_to(1e5 <= (Ce <= 1e9))
-ocp.subject_to(1 <= (Ai <= 100))
-
-# Compose time-dependent expressions a.k.a. signals
-#e = alpha - beta*x2**2
-
-# Specify differential equations for states
-ocp.set_der(Ti, (Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci))
-ocp.set_der(Te, (Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce))
-
-error_sq = (Ti-Ti_meas_param)**2
-
-# Objective: sum of error_sq
-ocp.add_objective(ocp.sum(error_sq))
-
-# Pick an NLP solver backend
-opts = param_est.opt
-opts["ipopt.linear_solver"] = "ma57"
-ocp.solver('ipopt', param_est.opt)
-
-# Pick a solution method
-method = MultipleShooting(N=N-1, intg='rk')
-ocp.method(method)
-
-# Exploit the availability of measurements
-ocp.set_initial(Ti, Ti_meas)
-ocp.set_initial(Te, Ti_meas)
-#ocp.set_initial(x2, x2_meas)
-
-# Solve
-sol = ocp.solve()
-
-print("Estimated parameters = ")
-print(sol.value(Rie))
-print(sol.value(Rea))
-print(sol.value(Ci))
-print(sol.value(Ce))
-print(sol.value(Ai))
-t, Ti = sol.sample(Ti, grid="control")
-
-ax = y_data["y1"].plot(color="k")
-ax.plot(t, Ti, color="r", linestyle="dashed")
-ax.plot(t, sol_["Ti"].values, color="y", linestyle="dashed")
-ax.legend()
-plt.show()
-
-# plot trajectory:
-print(params)
