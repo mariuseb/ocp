@@ -12,8 +12,8 @@
             "m_flow": "m_flow - m_flow_nom*u_val"
         },
         "w": {
-            "v1": "m_flow_weight*(Tret - y1)",
-            "v2": "m_flow_weight*(Tsup - y2)",
+            "v1": "Tret - y1",
+            "v2": "Tsup - y2",
             "v3": "Prad - y3",
             "v4": "m_flow - y4"
         },
@@ -68,14 +68,14 @@
     "bounds": {
         "z": {
             "lbz": [280,-500,0],
-            "ubz": [320,3000,0.015]
+            "ubz": [320,3000,0.1]
         }
     },
     "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(v4, v4)@R[3,3]",
     "ocp": {
         "h": 
         [
-            "0 <= m_flow_bool*(Tsup - Th)"      
+            "0 <= m_flow_bool*(Tsup - Th)"     
         ]
     },
     "method": "multiple_shooting",

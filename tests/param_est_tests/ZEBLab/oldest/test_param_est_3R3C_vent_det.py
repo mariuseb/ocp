@@ -63,7 +63,7 @@ if __name__ == "__main__":
     cp_air ~ 1000 [J/(kg*K )]
     
     """
-    cp_water = 4200
+    cp_water = 4200sup_det_tvp
     cp_air = 1000
     data.V_flow_219 /= 3600
     data.V_ext_air_219 *= (1.225/3600)

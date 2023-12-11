@@ -796,6 +796,8 @@ class ParameterEstimation(OCP):
               Th_gt_Ti=False,
               Ci_gt_Ch=False,
               Ce_gt_Ch=False,
+              Th_anti_bias=False,
+              Te_anti_bias=False,
               x_guess=None,
               return_raw_sol=False
               ):
@@ -963,6 +965,34 @@ class ParameterEstimation(OCP):
                                        np.array([0]*constr.shape[0])])
             self.ubg = np.concatenate([self.ubg,
                                        np.array([np.inf]*constr.shape[0])])
+        if Th_anti_bias:
+            """
+            Counteract biased state for steady state model.
+            
+            Assume slack of e.g. 2 at first.
+            """
+            Th = self.get("Th")
+            constr = Th[0] - Th[self.N-1]
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
+            slack = 4
+            self.lbg = np.concatenate([self.lbg,
+                                       np.array([-slack]*constr.shape[0])])
+            self.ubg = np.concatenate([self.ubg,
+                                       np.array([slack]*constr.shape[0])])
+        if Te_anti_bias:
+            """
+            Counteract biased state for steady state model.
+            
+            Assume slack of e.g. 2 at first.
+            """
+            Te = self.get("Te")
+            constr = Te[0] - Te[self.N-1]
+            self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
+            slack = 1
+            self.lbg = np.concatenate([self.lbg,
+                                       np.array([-slack]*constr.shape[0])])
+            self.ubg = np.concatenate([self.ubg,
+                                       np.array([slack]*constr.shape[0])])
 
         self.prepare_solver()
         
