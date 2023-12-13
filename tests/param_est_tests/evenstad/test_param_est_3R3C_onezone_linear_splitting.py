@@ -219,8 +219,8 @@ if __name__ == "__main__":
     #                             param_guess=param_guess) as param_est:
     x_guess = np.array([
                         y_data.Ti.values.flatten(),
-                        y_data.Ti.values.flatten(),
-                        y_data.Ti.values.flatten()
+                        y_data.Ti.values.flatten() - 2,
+                        y_data.Ti.values.flatten() + 5
                         #y_data.Ti1.values.flatten(),
                         #y_data.Ti1.values.flatten()
                         ])

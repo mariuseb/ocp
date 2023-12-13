@@ -33,6 +33,7 @@ from ocp.filters import KalmanBucy
 from utils import save_journal_plot, plot_residuals
 from matplotlib import rc
 from ocp.filters import KalmanBucy
+from sklearn.metrics import r2_score
 # text:
 rc('text', usetex=True)
 
@@ -66,11 +67,16 @@ class ResultGenerator(object):
     def rmse(self, y, y_pred):
         return np.sqrt(self.mse(y, y_pred))
     
-    def nrmse(self, y, y_pred):
+    def nrmse(self, y, y_pred, by_std_dev=True):
         """
         Normalize by |y_max - y_min|
         """
-        return self.rmse(y, y_pred)/(y.max() - y.min())
+        
+        rmse = self.rmse(y, y_pred)
+        if by_std_dev:
+            return rmse/y.std()
+        else:
+            return rmse/(y.max() - y.min())
     
     def aic(self, y, y_pred, num_params):
         """
@@ -110,6 +116,7 @@ class ResultGenerator(object):
         metrics.loc["mse", name] = self.mse(y, y_pred)
         metrics.loc["rmse", name] = self.rmse(y, y_pred)
         metrics.loc["nrmse", name] = self.nrmse(y, y_pred)
+        metrics.loc["r2", name] = r2_score(y, y_pred)
         metrics.loc["aic", name] = self.aic(y, y_pred, self.num_params)
         metrics.loc["bic", name] = self.bic(y, y_pred, self.num_params)
         
@@ -137,7 +144,12 @@ class ResultGenerator(object):
         """
         Try initial z_guess as ones:
         """
-        z_guess = [1]*self.dae.n_z
+        
+        #z_guess = [1]*self.dae.n_z
+        
+        # get time-varying params:
+        tvp = list(map(lambda x: x.split("_")[0], [p for p in self.params.index if p.endswith("_a")]))
+        z_guess = self.params.loc[tvp].values
         v = [0]*self.dae.n_v
         N = len(y_data)
         
@@ -167,6 +179,7 @@ class ResultGenerator(object):
                           y_data,
                           ekf_config=None,
                           tvp=False,
+                          cond_series=None,
                           p_base: pd.Series = None,
                           p_mod: pd.Series = None,
                           switch=None
@@ -178,9 +191,10 @@ class ResultGenerator(object):
         ekf.set_R(np.diag([1]))
         # set R, Q? P0?
         N = len(y_data)
+        x_names = ekf.dae.x
         result = pd.DataFrame(
                               index=range(N-1),
-                              columns=["res", "y_pred","y_meas","x_filt"]
+                              columns=["res", "y_pred","y_meas"] + x_names
                               )
     
         xs = np.array([x0])
@@ -190,17 +204,24 @@ class ResultGenerator(object):
         # get correct order for ekf:
         if isinstance(p_base, (pd.Series, pd.DataFrame)):
             p_base = p_base.loc[ekf.dae.p].values.flatten()
-        
+
         if switch is None:
             def bypass(cond, p_base, p_mod):
                 return p_base
             switch = bypass
+            
+        if cond_series is None:
+            cond_series = pd.Series([0]*N)
+        
+        
+        
         
         for n in range(N-1):   
             u = y_data[ekf.dae.u_names].iloc[n].values
             r = y_data[ekf.dae.r_names].iloc[n].values
                 
-            p = switch(y_data.index[0], p_base, p_mod)
+            #p = switch(y_data.index[0], p_base, p_mod)
+            p = switch(cond_series.iloc[n], p_base, p_mod)
             # noiseless model prediction:
             x_pred = I(x0,0,u,p,0,r,0)
             xs = np.append(xs, np.array(x_pred))    
@@ -224,7 +245,9 @@ class ResultGenerator(object):
                 result.loc[n, "res"] = np.nan
                 
             result.loc[n, "y_pred"] = float(x_pred[0])
-            result.loc[n, "x_filt"] = float(x0[0])
+            #result.loc[n, "x_filt"] = float(x0[0])
+            # set filtered values:
+            result.loc[n, x_names] = x0
         
         one_step, y_data = self._post_process_sim(
                                       xs,
@@ -268,7 +291,7 @@ class ResultGenerator(object):
         y_data.Ti.plot(color="k", linestyle="dashed", linewidth=0.75, ax=ax)
         y_data.Ta.plot(color="b", linestyle="dashed", linewidth=0.75, ax=ax)
         ax1 = ax.twinx()
-        y_data.weeknd.plot(ax=ax1, color="y", linewidth=0.75)
+        y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75)
         (y_data.phi_h/y_data.phi_h.max()).plot(ax=ax1, color="g", linewidth=0.75)
         ax.legend(["model", "measured"])
         plt.show()
@@ -280,6 +303,7 @@ class ResultGenerator(object):
                             p_base,
                             p_mod=None,
                             ekf_config=None,
+                            cond_series=None,
                             switch=None
                             ):
         """
@@ -290,6 +314,7 @@ class ResultGenerator(object):
                                                     x0,
                                                     y_data,
                                                     ekf_config=ekf_config,
+                                                    cond_series=cond_series,
                                                     tvp=True,
                                                     p_base=p_base,
                                                     p_mod=p_mod,
@@ -303,10 +328,11 @@ class ResultGenerator(object):
         # now, can plot:
         ax = res.Ti.plot(color="r")
         y_data.Ti.plot(color="k", linestyle="dashed", linewidth=0.75, ax=ax)
-        filtered.x_filt.plot(color="g", linestyle="dashed", linewidth=0.75, ax=ax)
+        filtered.Ti.plot(color="g", linestyle="dashed", linewidth=0.75, ax=ax)
         y_data.Ta.plot(color="b", linestyle="dashed", linewidth=0.75, ax=ax)
         ax1 = ax.twinx()
-        y_data.weeknd.plot(ax=ax1, color="y", linewidth=0.75)
+        #y_data.weeknd.plot(ax=ax1, color="y", linewidth=0.75)
+        y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75)
         (y_data.phi_h/y_data.phi_h.max()).plot(ax=ax1, color="g", linewidth=0.75)
         ax.legend(["model", "measured", "filtered"])
         plt.show()
@@ -328,7 +354,8 @@ class ResultGenerator(object):
         plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
         plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
         plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-        plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
+        #plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
+        plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
     
         

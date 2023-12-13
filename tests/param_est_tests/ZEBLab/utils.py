@@ -73,6 +73,57 @@ def prepare_data(data):
     #y_data.index = range(0,len(y_data.index)*dt,dt)
     
     return y_data
+
+def prepare_data(data):
+    """
+    Prepare data for identification.
+    """
+    cp_water = 4200
+    data.V_flow_219 /= 3600
+    data.V_flow_220 /= 3600
+    data["phi_h_219"] = cp_water*data["V_flow_219"]*(data['T_sup_219'] - data['T_ret_219'])
+    #data["phi_h_220"] = cp_water*data["V_flow_220"]*(data['T_sup_220'] - data['T_ret_220'])
+    
+    # do a plot of phi_h vs 219 temps
+    temps_219_cols = [col for col in data.columns if "T_219" in col]
+    #temps_219 = data[temps_219_cols]
+    temps_219 = data[temps_219_cols].mean(axis=1)
+    #temps_219 = data["T_219_TR3"]
+    #y_data = data[["phi_h_219"]]
+    y_data = data[["P_rad_219"]]*1000
+    y_data.columns = ["phi_h"]
+    
+    # ventilation:
+    y_data["T_ext_air"] = data["T_ext_air_219"]
+    y_data["T_sup_air"] = data["T_sup_air_219"]
+    y_data["V_ext_air"] = data["V_ext_air_219"]
+    #y_data["V_sup_air"] = data["V_sup_air_219"]
+    # recalculate V_sup_air to m_flow*cp_air:
+    # "invert":
+    #y_data["V_sup_air"] = (data["V_sup_air_219"].max() - data["V_sup_air_219"])
+    #y_data["V_sup_air"] = (data["V_sup_air_219"]/3600)*1.204*1.006*1000 # [-> m3/s -> kg/s -> W/K]
+    y_data["V_sup_air"] = data["V_sup_air_219"]
+    y_data["T_207"] = data["T_207"]
+    y_data["T_211"] = data["T_211"]
+    y_data["T_213"] = data["T_213"]
+    y_data["T_217"] = data["T_217"]
+    y_data["T_121"] = data["RSegm121"]
+    y_data["T_321"] = data["RSegm321"]
+    y_data["T_320"] = data["RSegm320"]
+    
+    #data["phi_h"] = data["phi_h_219"]
+    y_data["Ti"] = temps_219 # take avg (of different heights?)
+    #data["Ti"] = data['T_219_TR4']
+    y_data["phi_s"] = data["I_ver"]
+    y_data["Ta"] = data["T_amb"]
+    y_data["y1"] = y_data["Ti"]
+    y_data["vent_on"] = (y_data["V_sup_air"] > 10).astype(int) 
+    y_data["dt_index"] = y_data.index
+    y_data.dt_index.name = ""
+    y_data["weekday"] = y_data["dt_index"].apply(lambda x: x.weekday())
+    y_data["weeknd"] = y_data["weekday"].apply(lambda x: 1 if x in (5,6) else 0)
+    
+    return y_data
     
 
 class ZEBData(object):
@@ -224,14 +275,15 @@ def save_journal_plot(data, name):
     ax.set_ylabel("Temperature $[^\circ C]$")
     ax.legend(["$T_i$", "$T_{i}^{meas}$"], loc="upper left", ncols=2)
     ylim = ax.get_ylim()
-    ax.set_ylim([ylim[0], ylim[1]*1.1])
+    ax.set_ylim([ylim[0], ylim[1]*1.3])
     ax1 = ax.twinx()
     ax = ax1
-    data["weeknd"].plot(color="m", ax=ax, drawstyle="steps-post", linewidth=0.75)
-    ax.legend(["$\sigma_{wknd}$"], loc="upper right", ncols=1)
+    #data["weeknd"].plot(color="m", ax=ax, drawstyle="steps-post", linewidth=0.75)
+    data["vent_on"].plot(color="m", ax=ax, drawstyle="steps-post", linewidth=0.75)
+    ax.legend(["$\sigma_{vent}$"], loc="upper right", ncols=1)
     ax.set_yticks([0,1])
     ylim = ax.get_ylim()
-    ax.set_ylim([ylim[0], ylim[1]*1.25])
+    ax.set_ylim([ylim[0], ylim[1]*1.35])
     
     ax = axes[1]
     
