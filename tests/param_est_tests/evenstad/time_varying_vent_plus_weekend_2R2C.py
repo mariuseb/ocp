@@ -25,7 +25,7 @@ PLOT = True
 
 if __name__ == "__main__":
 
-    cfg_path = "configs/3R3C_det_vent_207_full_tvp.json"
+    cfg_path = "configs/2R2C_det_vent_double_tvp.json"
     df = pd.read_csv("evenstad_data_2023/evenstad_all_data.csv", index_col=0)
     df.index = df["dt_index"] = pd.to_datetime(df.index)
     temp_cols = [col for col in df.columns if "Ti_" in col 
@@ -152,9 +152,11 @@ if __name__ == "__main__":
     dt_index = pd.Series(all_data.index)
     #all_data["weeknd"] = dt_index.apply(filter_weekend)
     all_data["weekday"] = dt_index.apply(lambda x: x.dayofweek)
-    all_data["weeknd"] = dt_index.apply(lambda x: True if x in (5,6) else False)
+    weeknd = (dt_index.apply(lambda x: True if x.dayofweek in (5,6) else False)).astype(int)
+    weeknd.index = all_data.index
     # boolean series for the two additional modes:
     all_data["vent_on"] = (all_data["V_flow_sup_air"] > 20000).astype(int)
+    all_data["weeknd"] = weeknd
     
     start = pd.Timestamp("2023-01-30 00:00")
     stop = pd.Timestamp("2023-02-13 00:00")
@@ -168,18 +170,16 @@ if __name__ == "__main__":
 
     param_guess = np.array([1e-02,
                     1e-02,
+                    1e-02,
                     1e-01, 
                     1e-01,
-                    1e-02,
-                    1e-02,
-                    1e-02,
-                    1e-03,
+                    1e-01,
+                    1E6,
                     1E6,
                     1E6,
                     5E6,
                     1E6,
-                    1E6, 
-                    1E6, 
+                    1E6,
                     6.42261677e-01,
                     1,
                     0.5])
@@ -194,58 +194,40 @@ if __name__ == "__main__":
     #ubp[3] = 10000
     #lbp[4] = 1E-4
     lbp[1] = -100
-    lbp[3] = -100
+    lbp[2] = -100
+    lbp[4] = -100
     lbp[5] = -100
-    lbp[7] = -100
     #
-    #lbp[5] = -1E7
-    lbp[9] = -1E10
-    ubp[9] = 1E10
-    
-    lbp[11] = -1E10
-    ubp[11] = 1E10
-    #lbp[9] = -1E9
+    lbp[7] = -1E10
+    lbp[8] = -1E10
     # Ce_a:
-    ubp[13] = -1E10
-    ubp[13] = 1E10
-    # Ch:
-    #lbp[11] = 1E5
-    #lbp[7] = 0
+    lbp[10] = -1E10
+    lbp[11] = -1E10
     len_p = param_guess.shape[0]
-    lbp[len_p-1] = 1E-3
-    ubp[len_p-1] = 1000
-    
-    # constrain Ch:
-    #ubp[len_p-3] = 1E8
-    # constrain Ce_b:
-    #lbp[7] = 1E6
-    #ubp[7] = 1E9
-    # set ub of all resistances to 1
-    #for i in range(5):
-    #    ubp[i] = 1
+    #lbp[len_p-1] = 1E-3
+    #ubp[len_p-1] = 1000
     
     # constrain in particular Th to physically meaningful values:
     x_guess = np.array([
                     y_data.Ti.values.flatten(),
-                    y_data.Ti.values.flatten() - 2,
-                    y_data.Ti.values.flatten() + 5
+                    y_data.Ti.values.flatten() - 2 #,
+                    #y_data.Ti.values.flatten() + 5
                     ])
     lbx = 0.7*x_guess
     ubx = 2.0*x_guess
 
+    ax = y_data.vent_on.plot(color="r", drawstyle="steps-post")
+    y_data.weeknd.plot(ax=ax, color="b", drawstyle="steps-post")
+    ax.legend()
+    plt.show()
 
-    
     with ParameterEstimation(config=cfg_path,
                              N=N,
                              dt=dt,
                              functions=functions,
                              param_guess=param_guess) as param_est:
         
-        Q = ca.DM.eye(3)
-        #Q[0,0] = 6.55919266e-01
-        #Q[1,1] = 4.52496393e-01
-        #Q[1,0] = 0.01
-        #Q[0,1] = 0.01
+        Q = ca.DM.eye(2)
         R = ca.DM.eye(1)
         #R[1,1] = 1E-11
         # provide Q, R in solve here:
@@ -284,7 +266,7 @@ if __name__ == "__main__":
                                         ubx=ubx,
                                         x_guess=x_guess,
                                         Te_anti_bias=True,
-                                        Th_anti_bias=True,
+                                        #Th_anti_bias=True,
                                         covar=ca.veccat(Q, R),
                                         return_raw_sol=True
                                         )
@@ -295,13 +277,13 @@ if __name__ == "__main__":
         sol["y1"].plot(color="k", ax=ax, drawstyle="steps-post")
         ax.legend(["Ti_model", "Ti_measured"])
         ax = axes[1]
-        sol[["Ti", "Te", "Th"]].plot(ax=ax)
-        ax.legend(["Ti", "Te", "Th"])
+        sol[["Ti", "Te"]].plot(ax=ax)
+        ax.legend(["Ti", "Te"])
         plt.show()
         #pd.set_option("display.precision", 1)
         print(params)
-        print("Time constants are:")
         """
+        print("Time constants are:")
         param_est.set_A()
         taus = param_est.get_taus(p=params.values)
         print("Ti: %s hours" % (str(int(taus[0]))))
@@ -337,7 +319,7 @@ if __name__ == "__main__":
     g = I.g
     G = I.G # Newton-solver for algebraic system of equations
     # guess for z for the Newton-solver:
-    p_base = params[["Ce", "Ci", "Ch", "Rie", "Rea", "Ria", "Rih"]].values
+    p_base = params[["Ce", "Ci", "Rie", "Rea"]].values
     z_guess = p_base
     v = [0]
     N = len(y_data)
@@ -353,7 +335,7 @@ if __name__ == "__main__":
         x0 = I.one_sample(x0,z,u,p,0,r,0)
         z_guess = z
         
-    res = pd.DataFrame(data=xs.reshape(N, 3), columns=["Ti", "Te", "Th"])
+    res = pd.DataFrame(data=xs.reshape(N, 2), columns=["Ti", "Te"])
     res.index = y_data.index
     y_data.index = y_data.index
     ax = res.Ti.plot(color="r")

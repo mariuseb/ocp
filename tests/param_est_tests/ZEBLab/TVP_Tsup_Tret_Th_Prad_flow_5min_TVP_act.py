@@ -34,7 +34,7 @@ if __name__ == "__main__":
     Use room 219 first.
     """
 
-    cfg_path = os.path.join("configs", "Tret_Tsup_Th_Prad_flow_TVP.json")
+    cfg_path = os.path.join("configs", "Tret_Tsup_Th_Prad_flow_TVP_actual.json")
     #data_path = os.path.join("ZEBLab_year_15m_T_last.csv")
     data = pd.read_csv("ZEBLab_dec_2022_1m.csv")
   
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     """
     
     start_train = pd.Timestamp("2022-12-14 00:00")
-    stop_train = pd.Timestamp("2022-12-17 00:00")
+    stop_train = pd.Timestamp("2022-12-15 00:00")
     stop_val = pd.Timestamp("2022-12-20 00:00")
     validation_data = data.loc[stop_train:stop_val]
     data = data.loc[start_train:stop_train]
@@ -326,13 +326,13 @@ if __name__ == "__main__":
         """
         
         Tsup = sol["Tsup"].sort_values(ascending=False)
-        Tsup_act = sol["y1"][Tsup.index]
+        Tsup_act = sol["y3"][Tsup.index]
         Tsup.index = range(len(Tsup.index))
         Tsup_act.index = range(len(Tsup_act.index))
         Tsup_act = pd.DataFrame(Tsup_act)
         Tsup_act["time"] = Tsup_act.index
         ax = Tsup.plot(color="k", linewidth=0.5)
-        Tsup_act.plot(kind="scatter" ,x="time", y="y2", ax=ax, color="r")
+        Tsup_act.plot(kind="scatter" ,x="time", y="y3", ax=ax, color="r")
         ax.legend()
         plt.show()
         
@@ -399,7 +399,7 @@ if __name__ == "__main__":
     g = I.g
     G = I.G # Newton-solver for algebraic system of equations
     # guess for z for the Newton-solver:
-    z_guess = [310, 0, 0]
+    z_guess = [310, 0, 0, 0]
     v = [0,0,0,0]
     # "set" dataset
     data = validation_data
@@ -416,7 +416,7 @@ if __name__ == "__main__":
         z_guess = z
         #x0 = I.one_sample(x0,0,ca.vertcat(p, r),u,0,0,0)[0]
     res_x = pd.DataFrame(data=xs.reshape(N, 4), columns=["Tret", "Tsup", "Th", "u_val"])
-    res_z = pd.DataFrame(data=zs.reshape(N, 3), columns=["T_set_sup", "Prad", "m_flow"])
+    res_z = pd.DataFrame(data=zs.reshape(N, 3), columns=["T_set_sup", "Prad", "m_flow", "m_flow_bool"])
     #res = pd.DataFrame(data=xs.reshape(N,2), columns=["Ti", "Te"])
     res = pd.merge(res_x, res_z, left_index=True, right_index=True)
     res.index = data.index

@@ -29,10 +29,9 @@ import numpy as np
 from utils import ZEBData
 from ocp.param_est import ParameterEstimation
 import matplotlib.pyplot as plt
-from ocp.filters import KalmanBucy
+from ocp.filters import KalmanDAE
 from utils import save_journal_plot, plot_residuals
 from matplotlib import rc
-from ocp.filters import KalmanBucy
 from sklearn.metrics import r2_score
 # text:
 rc('text', usetex=True)
@@ -44,18 +43,21 @@ class ResultGenerator(object):
     def __init__(self,
                  config=None,
                  params=None,
-                 dt=None):
+                 dt=None,
+                 z_guess=None):
         # for simplicity, to get the integrator:
-        param_est = ParameterEstimation(
-                                        config=config,
-                                        N=2, # no map in any case
-                                        dt=dt,
-                                        param_guess=params.values.flatten()
-                                        )
+        self.param_est = \
+            param_est = ParameterEstimation(
+                            config=config,
+                            N=2, # no map in any case
+                            dt=dt,
+                            param_guess=params.values.flatten()
+                            )
         self.dae = param_est.dae
         self.I = param_est.integrator.one_sample
         self.G = param_est.integrator.G
         self.params = params
+        self.z_guess = z_guess
        
        
     def mse(self, y, y_pred):
@@ -148,8 +150,15 @@ class ResultGenerator(object):
         #z_guess = [1]*self.dae.n_z
         
         # get time-varying params:
+        """
+        TODO: fix 
+        """
         tvp = list(map(lambda x: x.split("_")[0], [p for p in self.params.index if p.endswith("_a")]))
-        z_guess = self.params.loc[tvp].values
+        if self.z_guess is None:
+            z_guess = self.params.loc[tvp].values
+        else:
+            z_guess = self.z_guess
+            
         v = [0]*self.dae.n_v
         N = len(y_data)
         
@@ -164,9 +173,19 @@ class ResultGenerator(object):
             zs = np.append(zs, np.array(z))
             x0 = I(x0,z,u,p,0,r,0)
             z_guess = z
+        # last x:
+        """
+        xs = np.append(xs, np.array(x0))
+        # last z?
+        u = y_data[self.dae.u_names].iloc[n].values
+        r = y_data[self.dae.r_names].iloc[n].values
+        z = G(z_guess, x0, u, p, v, 0, 0, 0)
+        zs = np.append(zs, np.array(z))
+        """
         
         res, y_data = self._post_process_sim(
                                       xs,
+                                      zs,
                                       y_data
                                       )
         self.res = res
@@ -187,8 +206,8 @@ class ResultGenerator(object):
         """
         Simulate one-step ahead with Kalman feedback.
         """
-        ekf = KalmanBucy(ekf_config)
-        ekf.set_R(np.diag([1]))
+        ekf = KalmanDAE(ekf_config)
+        #ekf.set_R(np.diag([1]))
         # set R, Q? P0?
         N = len(y_data)
         x_names = ekf.dae.x
@@ -198,7 +217,11 @@ class ResultGenerator(object):
                               )
     
         xs = np.array([x0])
+        zs = np.array([])
         I = ekf.integrator.one_sample    
+        G = self.G
+        v = [0]*self.dae.n_v
+        z_guess = self.z_guess
         #p = p_base
         
         # get correct order for ekf:
@@ -213,87 +236,137 @@ class ResultGenerator(object):
         if cond_series is None:
             cond_series = pd.Series([0]*N)
         
-        
-        
-        
         for n in range(N-1):   
             u = y_data[ekf.dae.u_names].iloc[n].values
             r = y_data[ekf.dae.r_names].iloc[n].values
                 
             #p = switch(y_data.index[0], p_base, p_mod)
             p = switch(cond_series.iloc[n], p_base, p_mod)
-            # noiseless model prediction:
-            x_pred = I(x0,0,u,p,0,r,0)
+            
+            """
+            TODO: figure out ordering of z,x.
+            For now, we assume ability estimate
+            X_k = (z_k-1, x_k), i.e. z lagging x
+            by one time-step.
+            """
+            
+            # z_k-1|k-1:
+            z_pred = G(z_guess,x0, u, p, v, 0, 0, 0)
+            # x_k|k-1:
+            x_pred = I(x0,z_pred,u,p,0,r,0)
+            
             xs = np.append(xs, np.array(x_pred))    
+            zs = np.append(zs, np.array(z_pred))
+            # guess for next iteration:
+            z_guess = z_pred
             
             # filtering of prediction:s
+            residual_cols = list(map(lambda x: x + "_res", ekf.y))
             try:
-                x0 = ekf.estimate(
-                                x_pred,
-                                p=p,
-                                y=y_data[ekf.dae.y_names].iloc[n+1].values,
-                                u=y_data[ekf.dae.u].iloc[n].values,
-                                r=y_data[ekf.dae.r_names].iloc[n].values
-                                )
-                result.loc[n, "y_meas"] = float(y_data[ekf.dae.y_names].iloc[n+1].values)
-                result.loc[n, "res"] = np.array(x_pred[0,0])[0][0] - y_data[ekf.dae.y_names].iloc[n+1].values
+                """
+                Return filtered x, z splitted
+                """
+                x0, z0, h0 = ekf.estimate(
+                                        x_pred,
+                                        z=z_pred,
+                                        p=p,
+                                        y=y_data[ekf.dae.y_names].iloc[n+1].values,
+                                        u=y_data[ekf.dae.u].iloc[n].values,
+                                        r=y_data[ekf.dae.r_names].iloc[n].values
+                                      )
+                #result.loc[n, "y_meas"] = float(y_data[ekf.dae.y_names].iloc[n+1].values)
+                #result.loc[n, "res"] = np.array(x_pred[0,0])[0][0] - y_data[ekf.dae.y_names].iloc[n+1].values
+                """
+                vectorize:
+                """
+                result.loc[n, ekf.y] = y_data[ekf.y].iloc[n+1].values
+                result.loc[n, residual_cols] = result.loc[n, ekf.y].values - h0
             except IndexError:
-                assert n == N -1
+                assert n == N-1
                 # then, estimate eq. to pred:
                 x0 = x_pred
+                #result.loc[n, "y_meas"] = np.nan
+                #result.loc[n, "res"] = np.nan
+                """
+                vectorize:
+                """
                 result.loc[n, "y_meas"] = np.nan
-                result.loc[n, "res"] = np.nan
+                result.loc[n, residual_cols] = np.nan
                 
-            result.loc[n, "y_pred"] = float(x_pred[0])
+            # last iteration, only prediction:
+            result.loc[n, ekf.y] = h0
             #result.loc[n, "x_filt"] = float(x0[0])
             # set filtered values:
             result.loc[n, x_names] = x0
         
         one_step, y_data = self._post_process_sim(
-                                      xs,
+                                      xs[:-self.dae.n_x],
+                                      zs,
                                       y_data
                                       )
         self.one_step_res = one_step
         self.filtered = result
         return one_step, y_data, result
-        
-        """
-        ax = result["y_meas"].plot(color="k", linewidth=0.5)
-        result["y_pred"].plot(color="r", linestyle="dashed", linewidth=0.5, ax=ax)
-        plt.show()
-        """    
        
     def _post_process_sim(
                           self,
                           xs: np.array,
+                          zs: np.array,
                           y_data: pd.DataFrame
                          ):
+        xsim = xs.reshape(
+                        int(xs.shape[0]/self.dae.n_x),
+                        self.dae.n_x
+                        )
+        zsim = zs.reshape(
+                        int(zs.shape[0]/self.dae.n_z),
+                        self.dae.n_z
+                        )
+        sim_data = np.hstack([xsim, zsim])
         res = pd.DataFrame(
-                        data=xs.reshape(
-                                        int(xs.shape[0]/self.dae.n_x),
-                                        self.dae.n_x
-                                        ),
-                        columns=self.dae.x
+                        data=sim_data,
+                        columns=self.dae.x + self.dae.z
                         )
         # set index to date-time
-        res.index = y_data.dt_index
-        #res.index = y_data.dt_index[1:]
-        y_data.index = y_data.dt_index
+        try:
+            res.index = y_data.dt_index
+            y_data.index = y_data.dt_index
+        except ValueError:
+            dt_index = y_data.dt_index[:-1]
+            res.index = dt_index
+            y_data.index = dt_index
+            
         
         return res, y_data
     
-    def simple_sim_plot(self, y_data, x0):
+    def simple_sim_plot(self, y_data, x0, HVAC=False):
         """
         Create a simple plot.
+        
+        TODO: modularize
         """
         res, y_data = self.simulate_full(x0, y_data)
-        ax = res.Ti.plot(color="r")
-        y_data.Ti.plot(color="k", linestyle="dashed", linewidth=0.75, ax=ax)
-        y_data.Ta.plot(color="b", linestyle="dashed", linewidth=0.75, ax=ax)
-        ax1 = ax.twinx()
-        y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75)
-        (y_data.phi_h/y_data.phi_h.max()).plot(ax=ax1, color="g", linewidth=0.75)
-        ax.legend(["model", "measured"])
+        if not HVAC:
+            """
+            Plot envelope model.
+            """
+            ax = res.Ti.plot(color="r")
+            y_data.Ti.plot(color="k", linestyle="dashed", linewidth=0.75, ax=ax)
+            y_data.Ta.plot(color="b", linestyle="dashed", linewidth=0.75, ax=ax)
+            ax1 = ax.twinx()
+            y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75)
+            (y_data.phi_h/y_data.phi_h.max()).plot(ax=ax1, color="g", linewidth=0.75)
+            ax.legend(["model", "measured"])
+        else:
+            y_map = self.param_est.dae.y
+            fig, axes = plt.subplots(4,1, sharex=True)
+            for i, (y, var) in enumerate(y_map.items()):
+                name = var.name()
+                ax = axes[i]
+                y_data[y].plot(color="k", linewidth=0.75, ax=ax)
+                res[name].plot(color="r", linestyle="dashed", linewidth=0.75, ax=ax)
+                ax.legend([y, name])
+            
         plt.show()
         
     def simple_one_step_plot(
