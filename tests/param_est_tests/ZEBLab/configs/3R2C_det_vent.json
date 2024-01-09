@@ -1,7 +1,7 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ch)*phi_h + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci) + (1/Ci)*alpha_vent*V_sup_air*(T_sup_air - Ti) + (Ta - Ti)/(Ria*Ci)",
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + (1/Ci)*alpha_vent*V_sup_air*(T_sup_air - Ti) + (Ta - Ti)/(Ria*Ci)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + Ae*(phi_s/Ce)"
         },
         "w": {
@@ -13,7 +13,6 @@
             "Ria",
             "Ci",
             "Ce",
-            "Ch",
             "Ai",
             "Ae",
             "alpha_vent"

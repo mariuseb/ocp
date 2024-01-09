@@ -36,14 +36,13 @@ if __name__ == "__main__":
 
     cfg_path = os.path.join("configs", "Tret_Tsup_Th_Prad_flow_TVP.json")
     #data_path = os.path.join("ZEBLab_year_15m_T_last.csv")
-    data = pd.read_csv("ZEBLab_valve_year_1m.csv")
-    
+    data = pd.read_csv("ZEBLab_dec_2022_1m.csv")
+  
     """
     Try to plot.
     """
-    
-    
-    data.V_flow_219[data["V_flow_219"] > 0.005] = 0.005
+     
+    #data.V_flow_219[data["V_flow_219"] > 0.005] = 0.005
     # bfill:
     data.index = pd.to_datetime(data._time)
     data.index = data.index.tz_localize(None)
@@ -55,10 +54,7 @@ if __name__ == "__main__":
     data.drop(columns=["_time"], inplace=True)
     data = data.resample(rule="5min").mean()
     
-    data["m_flow"] = data.V_flow_219*1.293
-    data["delta_m_flow"] = (data.m_flow - data.m_flow.shift(1))
-    data["delta_m_flow"].fillna(method="bfill", inplace=True)
-    # resample
+    data = prepare_data(data)
 
     normed = (data.delta_m_flow.resample(rule="5min").mean()/data.delta_m_flow.max()).resample("5min").ffill()
     normed[normed < 0] = 0
@@ -84,7 +80,6 @@ if __name__ == "__main__":
 
     """
     Sort data by val_219, plot flow as function of it.
-    """
     Tdata = pd.read_csv("ZEBLab_year_5m.csv", index_col=0)
     Tdata = prepare_data(Tdata)
     Tdata = Tdata[1:-1]
@@ -94,7 +89,6 @@ if __name__ == "__main__":
     Tdata[Tdata.Ti > 30] = 30
     deltaT = Tdata.Tset - Tdata.Ti
     deltaT.loc[start:stop]
-    
     val_219 = data["val_pos_219"].sort_values(ascending=True)
     flow_219 = data["V_flow_219"][val_219.index]
     flow_219.index = val_219.values
@@ -150,38 +144,7 @@ if __name__ == "__main__":
     Tdata.Tsup.plot(ax=ax1, color="r", linestyle="dashed", linewidth=0.7, drawstyle="steps-post")
     Tdata.Tret.plot(ax=ax1, color="b", linestyle="dashed", linewidth=0.7, drawstyle="steps-post")
     plt.show()
-
-    # TODO: enable calling this function in model defintion
     """
-    First: construct the function outside initialization,
-    pass it as a separate object, which must be part of 
-    namespace when init'ing DAE object.
-    """
-    
-    """
-    data["m_flow_bool"] = 0
-    gr_th_zero = data.m_flow[data.m_flow > data.m_flow.max()/3].astype(bool).astype(int)
-    data["m_flow_bool"].loc[gr_th_zero.index] = gr_th_zero
-    """
-    
-    """
-    Resample m_flow_bool:
-    """
-    
-    #data["y1"] = data["m_flow"]
-    data["u_val"] = data.val_pos_219
-    data["Ti"] = Tdata["Ti"] + 273.15
-    data["Tsup"] = Tdata["Tsup"] + 273.15
-    data["Tret"] = Tdata["Tret"] + 273.15
-    data["Ta"] = Tdata["Ta"] + 273.15
-    data["y1"] = data["Tret"]
-    data["y2"] = data["Tsup"]
-    data["y3"] = Tdata["Prad"]
-    data["y4"] = data.V_flow_219*1.293
-    #data["u_val_set"] = data.val_pos_219
-    # filter deltaT:
-    deltaT[deltaT < 0] = 0
-    data["deltaT"] = deltaT
 
     """
     Separate training and validation.
@@ -255,8 +218,8 @@ if __name__ == "__main__":
     len_p = param_guess.shape[0]
     lbp[len_p-1] = 2000
     ubp[len_p-1] = 50000
-    lbp[len_p-2] = 0.004
-    ubp[len_p-2] = 0.01
+    lbp[len_p-2] = 0.002
+    ubp[len_p-2] = 0.04
     lbp[len_p-3] = 10
     ubp[len_p-3] = 1000
     #lbp[len_p-4] = 7
@@ -298,17 +261,17 @@ if __name__ == "__main__":
         R[2,2] = 1E-4
         R[3,3] = 1E-1
         
-        v1 = param_est.get("v1")
         v2 = param_est.get("v2")
         v3 = param_est.get("v3")
         v4 = param_est.get("v4")
+        v5 = param_est.get("v5")
         
         R_MX = param_est.R
         
         param_est.res = ca.vertcat(
             #ca.sqrt(R_MX[0,0])*v1,
             #ca.sqrt(R_MX[1,1])*v2,
-            ca.sqrt(R_MX[2,2])*v3
+            ca.sqrt(R_MX[2,2])*v4
             #ca.sqrt(R_MX[3,3])*v4
         ).T
         
@@ -324,7 +287,7 @@ if __name__ == "__main__":
                                       )
 
         ax = sol["Tret"].plot(color="r")
-        sol["y1"].plot(color="k", ax=ax)
+        sol["y2"].plot(color="k", ax=ax)
         #sol["Tset_sup"].plot(color="y", ax=ax)
         sol["Ti"].plot(color="m", linewidth=0.5, linestyle="dashed", ax=ax)
         sol["Ta"].plot(color="b", linewidth=0.5, linestyle="dashed", ax=ax)
@@ -335,7 +298,7 @@ if __name__ == "__main__":
         plt.show()
         
         ax = sol["Tsup"].plot(color="r")
-        sol["y2"].plot(color="k", ax=ax)
+        sol["y3"].plot(color="k", ax=ax)
         #sol["Tset_sup"].plot(color="y", ax=ax)
         sol["Ti"].plot(color="m", linewidth=0.5, linestyle="dashed", ax=ax)
         sol["Ta"].plot(color="b", linewidth=0.5, linestyle="dashed", ax=ax)
@@ -346,9 +309,9 @@ if __name__ == "__main__":
         #sol["fall"].plot(ax=ax1, drawstyle="steps-post")
         """
         plot delta_m_flow.
-        """
         sol["rise"].plot(ax=ax1, color="y", linewidth=0.75, linestyle="dashed", drawstyle="steps-post")
         ax1.legend(["rise","hold","fall","delta_m_flow"])
+        """
 
         plt.show()
         print(params)
@@ -356,7 +319,7 @@ if __name__ == "__main__":
         ax = sol[["Tret", "Th", "Tsup", "Ti"]].plot()
         plt.show()
         
-        autocorrelation_plot(sol.v1)
+        autocorrelation_plot(sol.v2)
         plt.show()
         """
         Plot (sorted) heating curve.
@@ -369,7 +332,7 @@ if __name__ == "__main__":
         Tsup_act = pd.DataFrame(Tsup_act)
         Tsup_act["time"] = Tsup_act.index
         ax = Tsup.plot(color="k", linewidth=0.5)
-        Tsup_act.plot(kind="scatter" ,x="time", y="y1", ax=ax, color="r")
+        Tsup_act.plot(kind="scatter" ,x="time", y="y2", ax=ax, color="r")
         ax.legend()
         plt.show()
         
@@ -377,10 +340,10 @@ if __name__ == "__main__":
         fig, axes = plt.subplots(3,1, sharex=True)
         ax = axes[0]
         sol["Prad"].plot(ax=ax,linewidth=0.75, drawstyle="steps-post", color="k")
-        data["y3"].plot(ax=ax, linewidth=0.75, drawstyle="steps-post", color="r", linestyle="dashed")
+        data["y4"].plot(ax=ax, linewidth=0.75, drawstyle="steps-post", color="r", linestyle="dashed")
         
         deltaT = sol["Tsup"] - sol["Tret"]
-        truth = sol["y2"] - sol["y1"]
+        truth = sol["y3"] - sol["y2"]
         ax = axes[1]
         deltaT.plot(ax=ax, drawstyle="steps-post")
         truth.plot(ax=ax, drawstyle="steps-post", color="r")
@@ -396,17 +359,20 @@ if __name__ == "__main__":
         sol.index = data.dt_index
         data.index = data.dt_index
         ax = sol.Prad.resample(rule="1H").mean().plot(drawstyle="steps-post")
-        sol.y3.resample(rule="1H").mean().plot(drawstyle="steps-post", color="m")
+        sol.y4.resample(rule="1H").mean().plot(drawstyle="steps-post", color="m")
         plt.show()
         
-        autocorrelation_plot(sol.v3)
+        autocorrelation_plot(sol.v4)
         plt.show()
         
-        autocorrelation_plot(sol.v3.resample(rule="1H").mean())
+        autocorrelation_plot(sol.v4.resample(rule="1H").mean())
         plt.show()
         
-        sol.v3.resample(rule="1H").mean().hist()
+        sol.v4.resample(rule="1H").mean().hist()
         plt.show()
+        
+        params.to_csv("results_HVAC/params_HVAC_model_tvp.csv", index=True)
+        sol.to_csv("results_HVAC/sol_HVAC_model_tvp.csv", index=True)
         
         print(params)
         

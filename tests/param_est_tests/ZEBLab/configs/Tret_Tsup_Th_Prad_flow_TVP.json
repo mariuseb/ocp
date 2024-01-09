@@ -12,10 +12,10 @@
             "m_flow": "m_flow - m_flow_nom*u_val"
         },
         "w": {
-            "v1": "Tret - y1",
-            "v2": "Tsup - y2",
-            "v3": "Prad - y3",
-            "v4": "m_flow - y4"
+            "v2": "Tret - y2",
+            "v3": "Tsup - y3",
+            "v4": "Prad - y4",
+            "v5": "m_flow - y5"
         },
         "p": [
             "Ta_dim",
@@ -59,10 +59,10 @@
           "u_val"
         ],
         "y": [
-            ["y1", "Tret"],
-            ["y2", "Tsup"],
-            ["y3", "Prad"],
-            ["y4", "m_flow"]
+            ["y2", "Tret"],
+            ["y3", "Tsup"],
+            ["y4", "Prad"],
+            ["y5", "m_flow"]
         ]
     },
     "bounds": {
@@ -71,7 +71,7 @@
             "ubz": [320,3000,0.1]
         }
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(v4, v4)@R[3,3]",
+    "objective": "dot(v2, v2)@R[0,0] + dot(v3, v3)@R[1,1] + dot(v4, v4)@R[2,2] + dot(v5, v5)@R[3,3]",
     "ocp": {
         "h": 
         [

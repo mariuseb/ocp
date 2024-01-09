@@ -153,8 +153,10 @@ if __name__ == "__main__":
     #all_data["weeknd"] = dt_index.apply(filter_weekend)
     all_data["weekday"] = dt_index.apply(lambda x: x.dayofweek)
     all_data["weeknd"] = dt_index.apply(lambda x: True if x in (5,6) else False)
+    # boolean series for the two additional modes:
+    all_data["vent_on"] = (all_data["V_flow_sup_air"] > 20000).astype(int)
     
-    start = pd.Timestamp("2023-02-06 00:00")
+    start = pd.Timestamp("2023-01-30 00:00")
     stop = pd.Timestamp("2023-02-13 00:00")
     y_data = all_data.loc[start:stop]
     y_data = y_data.interpolate()

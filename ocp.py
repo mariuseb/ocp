@@ -786,7 +786,8 @@ class OCP(metaclass=ABCMeta):
     def compile_c_code(self, **kwargs):
         # Create a new NLP solver instance from the compiled code
         compiler = kwargs.pop("compiler", "clang")
-        flags = kwargs.pop("flags", ["-O0"])
+        #flags = kwargs.pop("flags", ["-O0"])
+        flags = kwargs.pop("flags", ["-Ofast"])
         cmd_args = [compiler,"-fPIC","-shared"] + \
                     flags + \
                     [self.gen_code_filename, "-o", self.so_filename]

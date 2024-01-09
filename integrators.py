@@ -1,7 +1,8 @@
 #from casadi import *
 import casadi as ca
 from abc import ABC, abstractmethod, ABCMeta
-import numpy as np
+import numpy as n
+from ocp.dae import DAE
 
 class Integrator(metaclass=ABCMeta):
     @classmethod
@@ -24,17 +25,50 @@ class Integrator(metaclass=ABCMeta):
             mxs.append(self.dae.dae.var(name))
         return ca.vertcat(*mxs)
     
+    def var(self, var: str):
+        if isinstance(self.dae, DAE):
+            return self.vars(getattr(self.dae.dae, var)())
+        elif isinstance(self.dae, dict):
+            return self.dae[var]
+    
+    """
+    another_stand_alone_function = my_shiny_new_decorator(another_stand_alone_function)
+    ->
+    @my_shiny_new_decorator
+    def another_stand_alone_function():
+        print("Leave me alone")
+    """
+    
+    
+    """
     @property
     def x(self):
-         return self.vars(self.dae.dae.x())
+        return self.vars(self.dae.dae.x())
+    """
+    
+    @property
+    def x(self):
+        return self.var("x")
 
+    """
     @property
     def u(self):
          return self.vars(self.dae.dae.u())
+    """
 
+    @property
+    def u(self):
+        return self.var("u")
+
+    """
     @property
     def p(self):
          return self.vars(self.dae.dae.p())
+    """
+
+    @property
+    def p(self):
+        return self.var("p")
      
     @property
     def z(self):
@@ -56,9 +90,17 @@ class Integrator(metaclass=ABCMeta):
     def s(self):
         return self.vars(self.dae.s_names)
 
+    """
+    TODO: clean up r:
+    """
+
     @property
     def r(self):
         return ca.vertcat(*[getattr(self.dae, name) for name in self.dae.r_names])
+
+    @property
+    def r(self):
+        return self.var("r")
     
     @property
     def all_vars(self):
@@ -686,6 +728,14 @@ class IRK(Integrator):
         
 
 
+"""
+TODO: recfactor RK4. __init__ should take either:
+    - DAE wrapper 
+    or
+    - MXDict/SXDict 
+    describing the DAE-dynamics.
+"""
+
 class RK4(Integrator):
     ''' 
     Simple RK4 implementation. 
@@ -708,16 +758,25 @@ class RK4(Integrator):
         self.dt = dt/n_steps
         self.set_ode_expr()
         self.set_ode_func()     
-        self.set_h_expr()
-        self.set_h()
-        self.set_H()
-        self.set_g_expr()
-        self.set_g()
+        #self.set_h_expr()
+        #self.set_h()
+        #self.set_H()
+        """
+        NOTE: algebraic expressions should not be 
+        part of explicit integrator.
+        """
+        #self.set_g_expr()
+        #self.set_g()
         self.one_step = self.get_one_step()
         self.one_sample = self.get_one_sample()
 
     def set_ode_expr(self):
-        self.ode = ca.vertcat(*self.dae.dae.ode())
+        if isinstance(self.dae, DAE):
+            self.ode = ca.vertcat(*self.dae.dae.ode())
+        elif isinstance(self.dae, dict):
+            self.ode = self.dae["ode"]
+        else: 
+            raise TypeError("Unknown DAE-type")
     
     ''' def set_meas_expr(self):
         self._h = vertcat(*self.dae.algs.values())
@@ -783,69 +842,73 @@ class RK4(Integrator):
         
     def set_ode_func(self):
         self.f = ca.Function('f',
-                          [self.x, self.z, self.u, self.p, self.s, self.r],
+                          [self.x, self.u, self.p, self.r],
                           [self.ode],
-                          ["x", "z", "u", "p", "s", "r"],
+                          ["x", "u", "p", "r"],
                           ["f"])
         
     @property
     def k1(self):
-        return self.f(self.x, self.z, self.u, self.p, self.s, self.r)
+        return self.f(self.x, self.u, self.p, self.r)
 
     @property
     def k2(self):
-        return self.f(self.x + self.dt/2.0*self.k1, self.z, self.u, self.p, self.s, self.r)
+        return self.f(self.x + self.dt/2.0*self.k1, self.u, self.p, self.r)
 
     @property
     def k3(self):
-        return self.f(self.x + self.dt/2.0*self.k2, self.z, self.u, self.p, self.s, self.r)
+        return self.f(self.x + self.dt/2.0*self.k2, self.u, self.p, self.r)
     #X = self.x
     @property
     def k4(self):
-        return self.f(self.x + self.dt*self.k3, self.z, self.u, self.p, self.s, self.r)
+        return self.f(self.x + self.dt*self.k3, self.u, self.p, self.r)
     
     @property
     def states_final(self):
         return self.x + self.dt/6.0*(self.k1 + 2*self.k2 + 2*self.k3 + self.k4)
     
-
     @property
     def final_expr(self):
         X = self.x
         for i in range(self.n_steps):
-            X = self.one_step(X, self.z, self.u, self.p, self.s, self.r)
+            X = self.one_step(X, self.u, self.p, self.r)
         return X
 
     def get_one_sample(self):
         return ca.Function('one_sample',
-                        [self.x, self.z, self.u, self.p, self.s, self.r],
+                        [self.x, self.u, self.p, self.r],
                         [self.final_expr],
-                        ["x0", "z", "u", "p", "s", "r"], ["xf"])  
+                        ["x0", "u", "p", "r"], ["xf"])  
     
 
     def get_one_step(self): # return Function-object
         return ca.Function('one_step',
-                        [self.x, self.z, self.u, self.p, self.s, self.r],
+                        [self.x, self.u, self.p, self.r],
                         [self.states_final],
-                        ["x", "z", "u", "p", "s", "r"],
+                        ["x", "u", "p", "r"],
                         ["xf"]) 
 
-    def simulate(self, x0, U, params):
+    def simulate(self, 
+                 N=None,
+                 x0=None,
+                 u=ca.DM([]),
+                 p=ca.DM([]),
+                 r=ca.DM([])
+                 ):
         """ 
-        Simulate with given:
+        Simulate ODE-dynamics over N time-steps with given:
             - x0
-            - U
-            - params
-
-        TODO: what about z/noise states?
+            - u
+            - p
+            - r
         """
+        if N is None:
+            if u.shape[1] == 1:
+                N = u.shape[0]
+            else:
+                N = u.shape[1]
 
-        if U.shape[1] == 1:
-            N = U.shape[0]
-        else:
-            N = U.shape[1]
-
-        all_samples = self.get_one_sample().mapaccum("all_samples", N)
-
-        return all_samples(x0, 0, U, ca.repmat(params,1,N), 0, 0) # -> empty z 
+        all_samples = self.get_one_sample().mapaccum("all_samples", int(N))
+        #return all_samples(x0, 0, U, ca.repmat(params,1,N), 0, 0) # -> empty z 
+        return all_samples(x0, u, p, r)
         
