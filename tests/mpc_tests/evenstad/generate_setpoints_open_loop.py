@@ -175,7 +175,7 @@ if __name__ == "__main__":
     start = pd.Timestamp("2023-02-08 18:00")
     stop = pd.Timestamp("2023-02-09 17:00")
     Tset = sol["Ti"].loc[start:stop]
-    Tset.columns = ["Tset"]
+    Tset.name = "Tset"
     Tset.to_csv("To_SAUTER_test.csv", index=True)
     
     
