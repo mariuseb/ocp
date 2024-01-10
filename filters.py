@@ -629,11 +629,34 @@ class KalmanDAE(Filter):
         self.init_h_expr()
         self.init_f()
         self.init_h()
+        
+        """
+        Set all vars:
+        """
+        all_vars = []
+        all_names = []
+        for name in self.integrator.all_vars:
+            var = getattr(self.integrator, name)
+            if isinstance(var, (ca.MX, ca.SX)):
+                all_vars.append(var)
+            else:
+                all_vars.append(ca.MX())
+            all_names.append(name)
+                         
+        self.all_vars = all_vars
+        self.all_names = all_names
+        
+        
         self.init_jac_f_x()
+        self.init_jac_h_x()
+        
+        """
+        Optional:
+        """
         self.init_jac_f_z()
         self.init_jac_g_x()
         self.init_jac_g_z()
-        self.init_jac_h_x()
+    
         self.init_identity()
         
         #self.init_DMs()
@@ -720,15 +743,24 @@ class KalmanDAE(Filter):
     
     @property
     def jac_g_z_expr(self):
-        return ca.jacobian(self.g_expr, self.z_symbolic)
-    
+        try:
+            return ca.jacobian(self.g_expr, self.z_symbolic)
+        except RuntimeError:
+            return ca.MX()
+        
     @property
     def jac_f_z_expr(self):
-        return ca.jacobian(self.f_expr, self.z_symbolic)
+        try:
+            return ca.jacobian(self.f_expr, self.z_symbolic)
+        except RuntimeError:
+            return ca.MX()
     
     @property
     def jac_g_x_expr(self):
-        return ca.jacobian(self.g_expr, self.x_symbolic)
+        try:
+            return ca.jacobian(self.g_expr, self.x_symbolic)
+        except RuntimeError:
+            return ca.MX()
 
     @property
     def jac_h_x(self):
@@ -738,46 +770,52 @@ class KalmanDAE(Filter):
     
     def init_jac_f_x(self):
         self.jac_f_x = ca.Function('jac_f_x',
-                                self.integrator.all_vars,
+                                #self.integrator.all_vars,
+                                self.all_vars,
                                 #[self.x_symbolic],
                                 [self.jac_f_x_expr],
                                 #["x"],
-                                self.order,
+                                #self.order,
+                                self.all_names,
                                 ['jac_f_x']) 
     
     def init_jac_f_z(self):
         self.jac_f_z = ca.Function('jac_f_z',
                                 #[self.z_symbolic],
-                                self.integrator.all_vars,
+                                #self.integrator.all_vars,
+                                self.all_vars,
                                 [self.jac_f_z_expr],
-                                self.order,
+                                self.all_names,
                                 #["z"],
                                 ['jac_f_z']) 
         
     def init_jac_g_x(self):
         self.jac_g_x = ca.Function('jac_g_x',
-                                self.integrator.all_vars,
+                                #self.integrator.all_vars,
+                                self.all_vars,
                                 #[self.x_symbolic],
                                 [self.jac_g_x_expr],
-                                self.order,
+                                self.all_names,
                                 #["x"],
                                 ['jac_g_x']) 
     
     def init_jac_g_z(self):
         self.jac_g_z = ca.Function('jac_g_z',
                                 #[self.z_symbolic],
-                                self.integrator.all_vars,
+                                #self.integrator.all_vars,
+                                self.all_vars,
                                 [self.jac_g_z_expr],
                                 #["z"],
-                                self.order,
+                                self.all_names,
                                 ['jac_g_z']) 
         
 
     def init_jac_h_x(self):
         self.jac_h = ca.Function('jac_h',
-                                self.integrator.all_vars,
+                                #self.integrator.all_vars,
+                                self.all_vars,
                                 [self.jac_h_x],
-                                self.order,
+                                self.all_names,
                                 ['jac_h'])
         
         
@@ -840,6 +878,8 @@ class KalmanDAE(Filter):
             A[nx:dim, nx:dim] = A22
         else:
             A = A11
+            dim = nx
+            
         Ad = expm(A*self.dt)
         C = self.jac_h(x_pred, z, u, self.p if p is None else p, s, v, y_pad, r, w)
         #h_x = self.h(y, x_pred, z, u, self.p if p is None else p, v, r)

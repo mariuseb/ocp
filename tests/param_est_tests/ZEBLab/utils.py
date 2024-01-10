@@ -147,7 +147,7 @@ def prepare_data(data):
     y_data.Tret[y_data.Tret > 38] = 38
     #data["Ti"] = 
     
-    # bfill:
+    y_data["Tret_above"] = (y_data.Tret > 24).astype(int)
     
     #data.drop(columns=["_time"], inplace=True)
     #data = data.resample(rule="5min").mean()
@@ -161,21 +161,29 @@ def prepare_data(data):
     normed[normed < 0] = 0
     #normed[normed < 0] = normed[normed < 0].astype(bool).astype(int)*(-1)
     normed[normed > 0] = normed[normed > 0].astype(bool).astype(int)
-    y_data["normed"] = normed
+    #y_data["normed"] = normed
+    y_data["rise"] = normed
     
     #data["u_val_set"] = data.val_pos_219
     y_data["u_val_set"] = y_data.u_val
     
     m_flow_bool = (y_data.m_flow.resample(rule="5min").mean().astype(bool).astype(int)).resample("5min").ffill()
     y_data["m_flow_bool"] = m_flow_bool
-    y_data["m_flow_weight"] = m_flow_bool + 0.01
+    y_data["flow_weight"] = m_flow_bool + 1E-2
+    #y_data.m_flow_weight[(y_data.Tsup - y_data.Tret) > 20]
+    #large_indices = y_data.index[(y_data.Tsup - y_data.Tret) > 20]
+    #y_data.flow_weight.loc[large_indices] += 10
     #data["y1"] = data["m_flow"]
     y_data["u_val"] = data.val_pos_219
+    y_data["valve_open"] = (data.val_pos_219 > 0).astype(int).round(0)
+    y_data["valve_weight"] = y_data["valve_open"] + 1E-2
     # filter u_val
     y_data.u_val[y_data["u_val"] > 1] = 1
     #y_data["Ti"] = data["Ti"] + 273.15
     y_data["Tsup"] = y_data["Tsup"] + 273.15
     y_data["Tret"] = y_data["Tret"] + 273.15
+    
+    
     #y_data["Ta"] = data["Ta"] + 273.15
     y_data["y2"] = y_data["Tret"]
     y_data["y3"] = y_data["Tsup"]

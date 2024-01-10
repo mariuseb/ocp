@@ -1,7 +1,7 @@
 #from casadi import *
 import casadi as ca
 from abc import ABC, abstractmethod, ABCMeta
-import numpy as n
+import numpy as np
 from ocp.dae import DAE
 
 class Integrator(metaclass=ABCMeta):
@@ -15,6 +15,14 @@ class Integrator(metaclass=ABCMeta):
 #    def get_one_sample(self): 
 #        raise NotImplementedError
     
+    def _nvar(self, var):
+        return var.shape[0]
+    
+    def _init_nvar_property(self, varname):
+        def func(var):
+            return var.shape[0]
+        self.__setattr__("n" + varname, func(getattr(self, varname)))
+    
     @property
     def x(self):
          return ca.vertcat(*self.dae.dae.x)
@@ -22,12 +30,17 @@ class Integrator(metaclass=ABCMeta):
     def vars(self, names):
         mxs = []
         for name in names:
-            mxs.append(self.dae.dae.var(name))
+            #mxs.append(self.dae.dae.var(name))
+            mxs.append(getattr(self.dae, name)) # get mx by name
         return ca.vertcat(*mxs)
     
     def var(self, var: str):
         if isinstance(self.dae, DAE):
-            return self.vars(getattr(self.dae.dae, var)())
+            if var in ("r", "s", "w", "v"): 
+                return self.vars(getattr(self.dae, var + "_names"))
+            else:
+                return self.vars(getattr(self.dae.dae, var)())
+                
         elif isinstance(self.dae, dict):
             return self.dae[var]
     
@@ -38,6 +51,71 @@ class Integrator(metaclass=ABCMeta):
     def another_stand_alone_function():
         print("Leave me alone")
     """
+    
+    def set_ode_expr(self):
+        if isinstance(self.dae, DAE):
+            self.ode = ca.vertcat(*self.dae.dae.ode())
+        elif isinstance(self.dae, dict):
+            self.ode = self.dae["ode"]
+        else: 
+            raise TypeError("Unknown DAE-type")
+        
+
+    """
+    TODO: fix for w-exprs:
+    """        
+    def set_h_expr(self):
+        # collect meas noise:
+        """
+        TODO: fragile, dependant on self-defined naming.
+        Make conformant with DaeBuilder.
+        """
+        if isinstance(self.dae, DAE):
+            lhs_v = self.v
+            lhs_w = self.w
+            exprs = []
+            w_exprs = []
+            for w, expr in zip(self.dae.dae.w(), self.dae.dae.wdef()):
+                if w.startswith("v"):
+                    exprs.append(expr)
+                else:
+                    w_exprs.append(expr)
+                    
+            rhs_v = ca.vertcat(*exprs)
+            #rhs_w = ca.vertcat(*w_exprs)
+            #exprs_w = lhs_w - rhs_w
+            #exprs_wdef = rhs_w
+            #self.w_expr = exprs_w
+            #self.w_expr_def = exprs_wdef
+            # TODO: concatenate z and x for h
+            # set:
+            exprs_v = lhs_v - rhs_v      
+        elif isinstance(self.dae, dict):
+            exprs_v = self.dae["h"]
+        else: 
+            raise TypeError("Unknown DAE-type")
+        
+        self.h_expr = exprs_v
+        
+    
+    def set_g_expr(self):
+        """
+        Set algebraic expressions.
+        
+        Rule:
+            Any expression in config-file under
+            keys "model", "alg" NOT starting with
+            "h" is taken as algebraic expr.
+        """
+        if isinstance(self.dae, DAE):
+            exprs = (v for k, v in self.dae.algs.items() if not k.startswith("h"))
+            g_expr = ca.vertcat(*exprs)
+        elif isinstance(self.dae, dict): 
+            g_expr = self.dae["g"]
+        else: 
+            raise TypeError("Unknown DAE-type")
+        
+        self.g_expr = g_expr        
     
     
     """
@@ -70,33 +148,62 @@ class Integrator(metaclass=ABCMeta):
     def p(self):
         return self.var("p")
      
+    """
     @property
     def z(self):
          return self.vars(self.dae.dae.z())
-     
+    """
+    
+    @property
+    def z(self):
+        return self.var("z")
+    
+    """
     @property
     def y(self):
          return self.vars(self.dae.dae.y())
+    """ 
     
+    @property
+    def y(self):
+        return self.var("y")
+    
+    """
     @property
     def v(self):
         return self.vars(self.dae.v_names)
+    """
     
+    @property
+    def v(self):
+        return self.var("v")
+
     @property
     def w(self):
         return self.vars(self.dae.w_names)
-     
+
+    @property
+    def w(self):
+        return self.var("w")
+    
+    """
     @property
     def s(self):
         return self.vars(self.dae.s_names)
-
+    """ 
+    
+    @property
+    def s(self):
+        return self.var("s")
+    
+    
     """
     TODO: clean up r:
-    """
 
     @property
     def r(self):
         return ca.vertcat(*[getattr(self.dae, name) for name in self.dae.r_names])
+    """
 
     @property
     def r(self):
@@ -104,7 +211,8 @@ class Integrator(metaclass=ABCMeta):
     
     @property
     def all_vars(self):
-        return [getattr(self, name) for name in self.dae.order]
+        #return [getattr(self, name) for name in self.dae.order]
+        return ("x","z","u","p","r","s","y","w","v")
     
     """
     @property
@@ -347,33 +455,34 @@ class IRK(Integrator):
         #self.set_meas_func()
         self.set_h_expr()
         self.set_h()
+        
+        for name in self.all_vars:
+            self._init_nvar_property(name)
+        
         self.set_g_expr()
-        self.set_g()
+        if not self.g_expr.is_empty():
+            self.set_g() # the function-obj
+            self.set_G() # rootfinder
+        # TODO: fix w, dependant parameters
         #self.set_w()
-        self.set_wdef()
-        self.set_G()
+        #self.set_wdef()
+        
         self.init_integrator()
         #self.one_sample = self.get_one_sample()
     
         
-    def set_ode_expr(self):
-        self.ode = ca.vertcat(*self.dae.dae.ode())
     
     ''' def set_meas_expr(self):
         self._h = vertcat(*self.dae.algs.values())
         
     def set_meas_func(self):
         self.g = Function('g', [self.x, self.y, self.v], [self._h], ["x", "y", "v"], ["g"]) '''
+      
+    """
+    def set_ode_expr(self):
+        self.ode = ca.vertcat(*self.dae.dae.ode())
         
     def set_h_expr(self):
-        """
-        Set measurement expressions.
-        
-        Rule:
-            Any expression in config-file under
-            keys "model", "alg" starting with
-            "h" is taken as measurement expr.
-        """
         #exprs = (v for k, v in self.dae.algs.items() if k.startswith("h"))
         #self.h_expr = ca.vertcat(*exprs)
         exprs = (self.dae.y[name] for name in self.dae.dae.y())
@@ -381,14 +490,6 @@ class IRK(Integrator):
         
     # rename: rearrange_w
     def set_h_expr(self):
-        
-        # collect meas noise:
-        lhs_v = self.v
-        lhs_w = self.w
-        """
-        TODO: fragile, dependant on self-defined naming.
-        Make conformant with DaeBuilder.
-        """
         exprs = []
         w_exprs = []
         for w, expr in zip(self.dae.dae.w(), self.dae.dae.wdef()):
@@ -398,16 +499,17 @@ class IRK(Integrator):
                 w_exprs.append(expr)
                 
         rhs_v = ca.vertcat(*exprs)
-        rhs_w = ca.vertcat(*w_exprs)
+        #rhs_w = ca.vertcat(*w_exprs)
         # set:
         exprs_v = lhs_v - rhs_v
-        exprs_w = lhs_w - rhs_w
-        exprs_wdef = rhs_w
+        #exprs_w = lhs_w - rhs_w
+        #exprs_wdef = rhs_w
         self.h_expr = exprs_v
-        self.w_expr = exprs_w
-        self.w_expr_def = exprs_wdef
+        #self.w_expr = exprs_w
+        #self.w_expr_def = exprs_wdef
         
         # TODO: concatenate z and x for h
+    """  
     
     def set_h(self):
         self.h = ca.Function('h',
@@ -423,6 +525,8 @@ class IRK(Integrator):
                           ["y", "x", "z", "u", "p", "v", "r", "w"],
                           ["wdef"])
                           #**{"allow_duplicate_io_names" : True})
+                          
+    """
     def set_wdef(self):
         self.wdef = ca.Function('wdef',
                           [self.y, self.x, self.z, self.u, self.p, self.v, self.r, self.w],
@@ -433,16 +537,9 @@ class IRK(Integrator):
         
     
     def set_g_expr(self):
-        """
-        Set algebraic expressions.
-        
-        Rule:
-            Any expression in config-file under
-            keys "model", "alg" NOT starting with
-            "h" is taken as algebraic expr.
-        """
         exprs = (v for k, v in self.dae.algs.items() if not k.startswith("h"))
         self.g_expr = ca.vertcat(*exprs)
+    """
         
     def set_g(self):
         self.g = ca.Function('g',
@@ -454,6 +551,7 @@ class IRK(Integrator):
     def set_G(self):
         """ g non-explicit."""
         
+        """
         nx = len(self.dae.dae.x())
         nu = len(self.dae.dae.u())
         nz = len(self.dae.dae.z())        
@@ -461,6 +559,15 @@ class IRK(Integrator):
         ns = len(self.dae.s_names)
         nr = len(self.dae.r_names)
         nw = len(self.dae.w_names)
+        """
+        
+        nx = self.nx
+        nu = self.nu
+        nz = self.nz
+        np = self.np
+        ns = self.ns
+        nr = self.nr
+        nw = self.nw
         
         # x0, p, u, r, z, w, v:
         X = ca.MX.sym('X',nx)
@@ -574,8 +681,9 @@ class IRK(Integrator):
     def init_integrator(self):
         
         # improve handling:
-        d, C, D, h, n, f, g = self.d, self.C, self.D, self.dt_n, self.n, self.f, self.g
+        d, C, D, h, n, f = self.d, self.C, self.D, self.dt_n, self.n, self.f
         
+        """
         nx = len(self.dae.dae.x())
         nu = len(self.dae.dae.u())
         nz = len(self.dae.dae.z())        
@@ -583,6 +691,14 @@ class IRK(Integrator):
         ns = len(self.dae.s_names)
         nr = len(self.dae.r_names)
         nw = len(self.dae.w_names)
+        """
+        nx = self.nx
+        nu = self.nu
+        nz = self.nz
+        np = self.np
+        ns = self.ns
+        nr = self.nr
+        nw = self.nw
         
         # x0, p, u, r, z, w, v:
         X0 = ca.MX.sym('X0',nx)
@@ -694,37 +810,30 @@ class IRK(Integrator):
                                    #["x", "u", "p", "s", "r"],
                                    ["xf"]
                                    )
-        
-    def simulate(self, x0, U, params):
+
+    def simulate(self, 
+                 N=None,
+                 x0=None,
+                 u=ca.DM([]),
+                 p=ca.DM([]),
+                 r=ca.DM([])
+                 ):
         """ 
-        Simulate with given:
+        Simulate ODE-dynamics over N time-steps with given:
             - x0
-            - U
-            - params
-
-        TODO: what about noise?
-            - standard behaviour -> sim without noise.
+            - u
+            - p
+            - r
         """
-        if U.shape[1] == 1:
-            N = U.shape[0]
-        else:
-            N = U.shape[1]
+        if N is None:
+            if u.shape[1] == 1:
+                N = u.shape[0]
+            else:
+                N = u.shape[1]
 
-        #all_samples = self.get_one_sample().mapaccum("all_samples", N)
-        all_samples = self.one_sample.mapaccum("all_samples", N)
-        #u_coll = vertcat(U.T, repmat(params, 1, N), repmat(DM([0, 0]), 1, N))
-
-        # TODO: fix case of more inputs
-        #return all_samples(x0, u_coll, 0, 0, 0, 0)[0]
-        s_vals = ca.repmat(ca.DM([0]*len(self.dae.dae.x)), 1, N)
-        #v_vals = repmat(DM([0]*len(self.dae.dae.y)), 1, N)
-        #return all_samples(x0, U.T, repmat(params, 1, N), w_vals)
-        
-        #### TODO: fix handling of 'z'
-        
-        x = all_samples(x0, 0, U.T, ca.repmat(params, 1, N), s_vals, 0)
-        return ca.horzcat(x0, x)
-        #return x
+        all_samples = self.one_sample.mapaccum("all_samples", int(N))
+        #return all_samples(x0, 0, U, ca.repmat(params,1,N), 0, 0) # -> empty z 
+        return all_samples(x0,0,u,p,0,r,0)
         
 
 
@@ -769,14 +878,6 @@ class RK4(Integrator):
         #self.set_g()
         self.one_step = self.get_one_step()
         self.one_sample = self.get_one_sample()
-
-    def set_ode_expr(self):
-        if isinstance(self.dae, DAE):
-            self.ode = ca.vertcat(*self.dae.dae.ode())
-        elif isinstance(self.dae, dict):
-            self.ode = self.dae["ode"]
-        else: 
-            raise TypeError("Unknown DAE-type")
     
     ''' def set_meas_expr(self):
         self._h = vertcat(*self.dae.algs.values())

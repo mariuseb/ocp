@@ -159,7 +159,7 @@ if __name__ == "__main__":
     all_data["weeknd"] = weeknd
     
     start = pd.Timestamp("2023-01-30 00:00")
-    stop = pd.Timestamp("2023-02-13 00:00")
+    stop = pd.Timestamp("2023-02-06 00:00")
     y_data = all_data.loc[start:stop]
     y_data = y_data.interpolate()
     y_data = y_data.bfill()
@@ -197,9 +197,11 @@ if __name__ == "__main__":
     lbp[2] = -100
     lbp[4] = -100
     lbp[5] = -100
-    #
+    # Ci_a
     lbp[7] = -1E10
     lbp[8] = -1E10
+    #ubp[7] = 5E8
+    #ubp[8] = 5E8
     # Ce_a:
     lbp[10] = -1E10
     lbp[11] = -1E10
@@ -294,7 +296,7 @@ if __name__ == "__main__":
         
         # validate with unseen data:
 
-    start = pd.Timestamp("2023-02-13 00:00")
+    start = pd.Timestamp("2023-02-06 00:00")
     stop = pd.Timestamp("2023-02-27 00:00")
     
     y_data = all_data.loc[start:stop]

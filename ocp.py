@@ -853,13 +853,15 @@ class OCP(metaclass=ABCMeta):
     
     def get_ocp_name_and_offset(self, name):
         # TODO: include all:
-        for varname in ("x", "u", "z", "p", "s", "v", "w"):
+        for varname in ("x", "u", "z", "p", "s", "v", "w", "r"):
             if varname in ("x", "u", "z", "p", "w"):
                 varlist = getattr(self.dae.dae, varname)()
-            elif varname in ("s", "v"): # TODO: add v, r
+            elif varname in ("s", "v", "r"): # TODO: add v, r
                 #varlist = getattr(self.dae, name[0] + "_names")
                 varlist = getattr(self.dae, varname + "_names")
-                varname = name[0]
+                #varname = name[0]
+                if varname == "r":
+                    print(name)
             offset = 0
             for _name in varlist:
                 if _name == name:
@@ -1110,6 +1112,17 @@ class OCP(metaclass=ABCMeta):
             
         varnames = self.dae.order
         
+        """
+        The below conditions must be fulfilled as 
+        a consequence of dealing with non-linear 
+        optimization problems:
+            - p_init not None 
+            - x_init not None
+            
+        Bounds can be passed as either arrays
+        part of config-files.
+        """
+        
         if lbp is not None or ubp is not None or p_init is not None:
             
             varnames = list(set(varnames).difference(set("p")))
@@ -1140,7 +1153,10 @@ class OCP(metaclass=ABCMeta):
         
         if lbx is not None and ubx is not None or x_init is not None:
             
-            varnames = list(set(varnames).difference(set("x")))
+            if lbx is not None:
+                assert ubx is not None, "If lbx is passed as array, " + \
+                    "ubx must be passed as array too."
+            
             bounds["x"] = {}
     
     
@@ -1155,66 +1171,37 @@ class OCP(metaclass=ABCMeta):
                 scale = self.x_nom
             
     
-            if ubx is not None:
-                #bounds["x"]["ub"] = (ubx - self.x_nom_b)/self.x_nom
-                # TODO: improve:
-                """
-                if ubx.shape != scale.shape:
-                    scale = self.x_nom = scale.reshape(ubx.shape)
-                    bias = self.x_nom_b = bias.reshape(ubx.shape)
-                """
+            if lbx is not None: # passed as array:
                 bounds["x"]["ub"] = (ubx - bias)/scale
+                bounds["x"]["lb"] = (lbx - bias)/scale
+                varnames = list(set(varnames).difference(set("x")))
             else:
-                bounds["x"]["ub"] = None
+                if "x" in bounds_cfg:
+                    bounds["x"]["ub"] = bounds_cfg["x"]["ubx"]
+                    bounds["x"]["lb"] = bounds_cfg["x"]["lbx"]
+                else:
+                    bounds["x"]["ub"] = None
+                    bounds["x"]["lb"] = None
+            """
             if lbx is not None:
                 #bounds["x"]["lb"] = (lbx - self.x_nom_b)/self.x_nom
-                bounds["x"]["lb"] = (lbx - bias)/scale
             else:
-                bounds["x"]["lb"] = None
+                if "x" in bounds_cfg:
+                    bounds["x"]["lb"] = bounds_cfg["x"]["lbx"]
+                else:
+                    bounds["x"]["lb"] = None
                 # not None:
+            """
             #bounds["x"]["x0"] = x_init/self.x_nom
             #bounds["x"]["x0"] = (x_init - self.x_nom_b)/self.x_nom
             bounds["x"]["x0"] = (x_init - bias)/scale
-            
-            """
-            varname = "x"
-            names = getattr(self, varname + "_names")
-            dim = int(self.nlp_parser["x"]["dim"]/len(names))
-            try:
-                # these should be passed as python lists:
-                scale = getattr(self, varname + "_nom")
-                bias = getattr(self, varname + "_nom_b")
-                
-                if not isinstance(scale, list):
-                    scale = [scale]*len(names)
-                if not isinstance(bias, list):
-                    bias = [bias]*len(names)
-                    
-                bias = np.array(bias)
-                scale = np.array(scale)
-                bias = bias.reshape((1, bias.shape[0])).T
-                bias = np.vstack([bias for n in range(dim)])
-                scale = scale.reshape((1, scale.shape[0])).T
-                scale = np.vstack([scale for n in range(dim)])
-            except (AttributeError, IndexError) as e: # fallback:
-                scale = 1    
-                bias = 0 
-            if ubx is not None:
-                bounds["x"]["ub"] = (ubx - bias)/scale
-            else:
-                bounds["x"]["ub"] = None
-            if lbx is not None:
-                bounds["x"]["lb"] = (lbx - bias)/scale
-            else:
-                bounds["x"]["lb"] = None
-                # not None:
-            #bounds["x"]["x0"] = x_init/self.x_nom
-            bounds["x"]["x0"] = (x_init - bias)/scale
-            """
-            
+
         # TODO: extend with lbz, ubz
                  
         for varname in varnames:
+            
+            if varname == "x":
+                print("yes")
                 
             bounds[varname] = {}
             names = getattr(self, varname + "_names")
@@ -1624,7 +1611,7 @@ class OCP(metaclass=ABCMeta):
                                             data = scaled_vals
                                          )
         # return time-series, params  
-        sol_df.index = self.data.index 
+        #sol_df.index = self.data.index 
         """
         params = {
                   name: val

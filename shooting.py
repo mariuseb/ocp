@@ -262,12 +262,14 @@ class MultipleShooting(Shooting):
         # TODO: skip this for built-in integrators, e.g. IDAS 
         # h and g will hold if passed as algebraic equations
         
+        # h must be present:
+        self.h_map = self.map_h()
+        # g is optional: 
         try:
-            self.h_map = self.map_h()
             self.g_map = self.map_g()
-            self.w_map = self.map_wdef()
+            #self.w_map = self.map_wdef()
         except AttributeError:
-            raise
+            pass
         #self.G_map = self.map_G()
         
         

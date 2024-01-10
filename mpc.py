@@ -862,6 +862,8 @@ class MPC(OCP):
         
         #################################################################################
         if not return_raw_sol:
-            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values
+            #return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values
+            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[1, self.x_names].values
         else:
-            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values, sol
+            #return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values, sol
+            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[1, self.x_names].values, sol
