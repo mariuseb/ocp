@@ -246,7 +246,7 @@
     {
       "misc": {
         "h": 900,
-        "N": 25,
+        "N": 48,
         "start_time": 0,
         "warmup_period": 604800
       },
@@ -269,7 +269,7 @@
                "oveValCoi": "oveValCoi"
               },
         "y": {"Ti": "reaTZon_y",
-              "Ptot": "reaQHea_y",
+              "Pvent": "reaQHea_y",
               "Prad": "reaPRad_y",
               "reaPFan_y": "reaPFan_y",
               "reaPPum_y": "reaPPum_y",
@@ -278,7 +278,7 @@
               "ahu_reaTHeaRec": "ahu_reaTHeaRec_y",
               "ahu_reaTRetAir": "ahu_reaTRetAir_y",
               "reaValRad_y": "reaValRad_y",
-              "ahu_reaTSupAir": "ahu_reaTSupAir_y",
+              "Tsup_air": "ahu_reaTSupAir_y",
               "ahu_reaFloSupAir": "ahu_reaFloSupAir_y",
               "CO2_in": "reaCO2Zon_y",
               "n_occ": "reaOcc_y",
@@ -295,7 +295,7 @@
                           "ahu_reaTCoiRet": "reaTCoiRet_y",
                           "ahu_reaTHeaRec": "ahu_reaTHeaRec_y",
                           "ahu_reaTRetAir": "ahu_reaTRetAir_y",
-                          "ahu_reaTSupAir": "ahu_reaTSupAir_y",
+                          "Tsup_air": "ahu_reaTSupAir_y",
                           "ahu_reaFloSupAir": "ahu_reaFloSupAir_y",
                           "ahu_pump_sup": "ahu_oveFanSup_u",
                           "ahu_pump_ret": "ahu_oveFanRet_u",
@@ -308,7 +308,7 @@
                           "oveCO2ZonSet": "oveCO2ZonSet_u",
                           "oveValCoi": "oveValCoi_u",
                           "n_occ": "reaOcc_y",
-                          "Ptot": "reaQHea_y",
+                          "Pvent": "reaQHea_y",
                           "Prad": "reaPRad_y",
                           "reaFlo": "reaValFlo_y",
                           "Tret": "reaTRadOut_y",

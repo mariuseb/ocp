@@ -5,13 +5,17 @@
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "alg": {
-            "ahu_reaTRetAir": "ahu_pump_ret*(ahu_reaTRetAir - Ti)"
+            "ahu_reaTRetAir": "ahu_pump_ret*(ahu_reaTRetAir - Ti)",
+            "Pvent": "Pvent - (m_flow_air_nom*ahu_pump_sup*cp_air*(ahu_reaTSupAir-ahu_reaTHeaRec))",
+            "ahu_reaTHeaRec": "(Ta + (ahu_reaTRetAir - Ta)*eta_hex2 - ahu_reaTHeaRec)",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*ahu_pump_sup"
+
         },
         "w": {
             "v1": "Ti - y1", 
-            "v2": "Pvent*eta_hex1 - (m_flow_air_nom*ahu_pump_sup*cp_air*(ahu_reaTSupAir-ahu_reaTHeaRec))",
-            "v3": "ahu_pump_ret*(Ta + (ahu_reaTRetAir - Ta)*eta_hex2 - ahu_reaTHeaRec)",
-            "v4": "ahu_reaFloSupAir - m_flow_air_nom*ahu_pump_sup",
+            "v2": "y2*eta_hex1 - Pvent",
+            "v3": "ahu_pump_ret*(y3 - ahu_reaTHeaRec)",
+            "v4": "y4 - ahu_reaFloSupAir",
             "v5": "ahu_pump_ret*(y5 - ahu_reaTRetAir)"
         },
         "p": [
@@ -23,16 +27,14 @@
             "Ce",
             "Ai",
             "m_flow_air_nom",
+            "rec_bias",
             "cp_air",
             "eta_hex1",
             "eta_hex2"
         ],
         "u": [
-            "Pvent",
             "ahu_pump_sup",
             "ahu_pump_ret",
-            "ahu_reaTHeaRec",
-            "ahu_reaFloSupAir",
             "ahu_reaTSupAir"
         ],
         "r": [
@@ -47,7 +49,10 @@
             "Te"
         ],
         "z": [
-            "ahu_reaTRetAir"
+            "ahu_reaTRetAir",
+            "Pvent",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir"
         ],
         "y": [
             ["y1", "Ti"],
@@ -57,7 +62,13 @@
             ["y5", "ahu_reaTRetAir"]
         ]
     },
-    "objective": "dot(v1, v1)@R[0,0]",
+    "bounds": {
+        "x": {
+            "lbx": [280,270],
+            "ubx": [320,330]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(v4, v4)@R[3,3] + dot(v5, v5)@R[4,4]",
     "method": "multiple_shooting",
     "integrator": 
         {

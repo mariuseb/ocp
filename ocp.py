@@ -807,7 +807,7 @@ class OCP(metaclass=ABCMeta):
                                 self.so_filename,
                                 opts)
         
-    def prepare_solver(self):
+    def prepare_solver(self, codegen=False):
         """
         Prepare solver.
         """
@@ -816,7 +816,7 @@ class OCP(metaclass=ABCMeta):
 
         #gen_code_filename = self.get_c_code_name()
 
-        if self.codegen:
+        if codegen:
             if not os.path.exists(self.gen_code_filename):
                 self.pregenerate_c_code(self.gen_code_filename)
             if not os.path.exists(self.so_filename):
@@ -1109,6 +1109,8 @@ class OCP(metaclass=ABCMeta):
         bounds = {}
         
         bounds_cfg = self.bounds_cfg
+        if bounds_cfg is None:
+            bounds_cfg = dict()
             
         varnames = self.dae.order
         
@@ -1163,6 +1165,7 @@ class OCP(metaclass=ABCMeta):
             # TODO: bounds on x here:
             
             # TODO: improve logic:
+            
             if isinstance(self.x_nom_b, list):
                 bias = self.x_nom_b = np.tile(self.x_nom_b, self.N)
                 scale = self.x_nom = np.tile(self.x_nom, self.N)
@@ -1170,18 +1173,23 @@ class OCP(metaclass=ABCMeta):
                 bias = self.x_nom_b
                 scale = self.x_nom
             
-    
             if lbx is not None: # passed as array:
                 bounds["x"]["ub"] = (ubx - bias)/scale
                 bounds["x"]["lb"] = (lbx - bias)/scale
-                varnames = list(set(varnames).difference(set("x")))
+                #varnames = list(set(varnames).difference(set("x")))
             else:
                 if "x" in bounds_cfg:
-                    bounds["x"]["ub"] = bounds_cfg["x"]["ubx"]
-                    bounds["x"]["lb"] = bounds_cfg["x"]["lbx"]
+                    
+                    dim = int(self.nlp_parser["x"]["dim"]/self.n_x)
+                    lbx = np.hstack([bounds_cfg["x"]["lbx"] for n in range(dim)])
+                    ubx = np.hstack([bounds_cfg["x"]["ubx"] for n in range(dim)])
+                    bounds["x"]["lb"] = (lbx - bias)/scale
+                    bounds["x"]["ub"] = (ubx - bias)/scale
                 else:
                     bounds["x"]["ub"] = None
                     bounds["x"]["lb"] = None
+                    
+            varnames = list(set(varnames).difference(set("x")))
             """
             if lbx is not None:
                 #bounds["x"]["lb"] = (lbx - self.x_nom_b)/self.x_nom
@@ -1201,7 +1209,7 @@ class OCP(metaclass=ABCMeta):
         for varname in varnames:
             
             if varname == "x":
-                print("yes")
+               print("yes")
                 
             bounds[varname] = {}
             names = getattr(self, varname + "_names")

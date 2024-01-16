@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF, KalmanBucy
+from ocp.filters import EKF, KalmanBucy, KalmanDAE
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
@@ -28,9 +28,9 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("mpc_configs", "4R2C_MPC_vent_no_water.json")
+    mpc_cfg = os.path.join("mpc_configs", "4R2C_MPC_vent_only.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join("ekf_configs", "4R2C_EKF_vent_no_water.json")
+    ekf_cfg = os.path.join("ekf_configs", "4R2C_EKF_vent_only.json")
 
     # pass in config?
     """
@@ -59,21 +59,57 @@ if __name__ == "__main__":
                     ]
                    )
     
-    params = ca.DM(
+    params = np.array(
                    [
-                5.798972e-05,
-                2.470447e-02,
-                2.415008e-04,
-                3.219042e-01,
-                4.549992e+07,
-                2.500057e+09,
-                6.312371e+01,
-                3.092358e+01,
-                1.000000e+03,
-                9.906093e-01,
-                5.933963e-01
+                    5.076387e-05,
+                    2.470447e-02,
+                    2.195603e-04,
+                    2.867640e-01,
+                    4.137229e+07,
+                    2.386876e+09,
+                    5.464908e+01,
+                    3.320573e+02,
+                    8.899615e+00,
+                    3.092358e+01,
+                    4.200000e+03,
+                    1.000000e+03,
+                    1.000000e+00,
+                    9.906744e-01,
+                    5.949649e-01
                     ]
                    )
+    
+    
+    kwargs = {
+        "x_nom": 300,
+        "z_nom": 5000,
+        "u_nom": 300,
+        "r_nom": 300,
+        "p_nom": [1E-3,1E-3,1E6,1E7,1,1,10,1,300],
+        "y_nom": 300,
+        #"slack": Trues
+        "slack": False
+    }
+    kwargs = {
+        "x_nom": 1,
+        "u_nom": 1,
+        "z_nom": [300000],
+        "z_nom_b": [0],
+        "r_nom": 1,
+        "y_nom": 1,
+        #"slack": Trues
+        "slack": True
+    }
+    kwargs = {
+        "x_nom": 1,
+        "u_nom": 1,
+        "z_nom": 1,
+        "r_nom": 1,
+        "y_nom": 1,
+        "p_nom": [1E-5,1E-4,1E-5,1E8,1E9,1E2,1,1E3,1,1],
+        #"slack": Trues
+        "slack": True
+    }
     kwargs = {
         "x_nom": 1,
         "u_nom": 1,
@@ -86,27 +122,16 @@ if __name__ == "__main__":
     kwargs = {
         "x_nom": 12,
         "x_nom_b ": 289.15,
-        "z_nom": [12,1E5,12,40],
-        "z_nom_b": [289.15,0,289.15,0],
-        "r_nom": [12,300,1E5,1E5,1E5],
+        "u_nom": [1,1,1,12],
+        "u_nom_b ": [0,0,0,289.15],
+        "z_nom": [12,1E6,12,12,1],
+        "z_nom_b": [289.15, 0,289.15,289.15,0],
+        "r_nom": [12,300,1E6,1E6,1E6],
         "r_nom_b": [289.15,0,0,0,0],
-        "u_nom": [1,1,12],
-        "u_nom_b ": [0,0,289.15],
         #"p_nom": [1E-5,1E-4,1E-5,1E8,1E9,1E2,1,1E3,1,1],
         #"p_nom_b": [0,0,0,0,0,0,0,0,289.15],
-        #"slack": True
         "slack": False
-    }
-    
-    kwargs = {
-        "x_nom": 300,
-        "z_nom": [300,1E5,300,40],
-        "r_nom": [300,300,1E5,1E5,1E5],
-        "u_nom": [1,1,300],
-        #"p_nom": [1E-5,1E-4,1E-5,1E8,1E9,1E2,1,1E3,1,1],
-        #"p_nom_b": [0,0,0,0,0,0,0,0,289.15],
-        #"slack": True
-        "slack": False
+        #"slack": False
     }
     
     mpc = MPC(config=mpc_cfg,
@@ -115,7 +140,7 @@ if __name__ == "__main__":
               **deepcopy(kwargs))  # to remove, replace with N
     
     
-    ekf = KalmanBucy(ekf_cfg,
+    ekf = KalmanDAE(ekf_cfg,
                      functions=deepcopy(functions)
                      )
     # set params:
@@ -149,30 +174,34 @@ if __name__ == "__main__":
     x0 = np.array([293.15, 293.15])
     
     # sim horizon: 2 days
-    days = 2
+    days = 1
     K = days*24*bounds.t_h
     time = pd.DataFrame(columns=["time"])
-    u_hist = pd.DataFrame(columns=mpc.dae.u)
-    y_hist = pd.DataFrame(columns=ekf.y)
+
+    """
+    Get positions of y entries:
+    """
+    y_order = pd.DataFrame.from_dict(
+                                     boptest.y,
+                                     orient="index",
+                                     columns=["name"]
+                                     )
+    pos = []
+    for name in ekf.y:
+        pos.append(y_order.index.get_loc(name))
 
     for k in range(K):
         
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
         
-        sol, u, x0, raw_sol  = mpc.solve(
+        sol, u, x0  = mpc.solve(
                                data[0:mpc.N],
                                x0=x0,
                                lbx=lbx,
                                ubx=ubx,
                                params=params,
-                               codegen=True,
-                               return_raw_sol=True
+                               codegen=True
                                )
-        
-        #if raw_sol["f"] > 1E6:
-        #    print(sol)
-        # do not want heat from radiator:
-        u["dh_pump"] = 0
         
         """
         if k == 14:
@@ -192,61 +221,51 @@ if __name__ == "__main__":
                          data=[0.03],
                          index=["ahu_pump_sup"]
                          )
-        #u.loc["oveCO2ZonSet"] = 1000
         u = pd.Series(
                          data=[1000.0],
                          index=["oveCO2ZonSet"]
                          )
-        u.loc["ahu_pump_sup"] = 0.03
-        u.loc["ahu_pump_ret"] = 0.03
+        """
+        u.loc["rad_val"] = 0
+        
+        #u.loc["ahu_pump_sup"] = 0.03
+        #u.loc["ahu_pump_ret"] = 0.03
         #u.loc["ahu_Tsup"] = 288.15
         #u.loc["oveValCoi"] = 0.01
         #u["dh_pump"] = 1
-        """
         #data, y_meas, u_meas = boptest.evolve(u=u)
-        data, y_meas, u_meas = boptest.evolve(
-                                              u=u, 
-                                              y_as_array=False,
-                                              u_as_array=False
-                                              )
-        u_hist.loc[k*mpc.dt] = u
-        y_hist.loc[mpc.dt*k] = [y_meas[name] for name in ekf.y]
+        data, y_meas, u_meas = boptest.evolve(u=u)
+        y_ = y_meas[pos]
         
         # input z as from model prediction:
         z_model = sol[ekf.dae.z].iloc[0].values
         u_model = sol[ekf.dae.u].iloc[0].values
         r_pred = data[ekf.dae.r_names].iloc[0].values
-        
-        # TODO: check if constraint active 
-        y_z_meas = [y_meas[name] for name in ekf.y]
-        x0 = ekf.estimate(
+               
+        x0, z0, h_x = ekf.estimate(
                           x0, 
                           z=z_model,
-                          y=y_z_meas, 
+                          y=y_, 
                           u=u_model, 
                           r=r_pred
                           )
+        #x0[0] = y_[0]
         
+
     plt.rcParams.update({'font.size': 12})
     fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds, heat_key="Pvent")
     fig.tight_layout()
     plt.show()   
     res = boptest.get_data(tf=K*boptest.h)
-    ax = res.n_occ.plot()
-    res.CO2_in.plot(ax=ax)
+    #ax = res.reaOcc_y.plot()
+    ax = ekf.df.Ti.plot()
+    res.Ti.plot(ax=ax)
     ax.legend()
     plt.show()
     print(res)
+    
+    # look at CO2-concentration
 
-    """
-    Look at deviation: ahu_pump_<x> vs. real
-    """
-    ax = (res.ahu_pump_sup*30.9).plot(drawstyle="steps-post")
-    res.ahu_reaFloSupAir.plot(drawstyle="steps-post", ax=ax)
-    (res.ahu_pump_ret*30.9).plot(ax=ax, drawstyle="steps-post")
-    res.ahu_reaFloExtAir.plot(drawstyle="steps-post", ax=ax)
-    ax.legend()
-    plt.show()
     """
     plt.rcParams.update({'font.size': 11})
     

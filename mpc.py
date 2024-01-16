@@ -651,7 +651,12 @@ class MPC(OCP):
               sqp=False
               ):
         lbg, ubg = self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
-        return self._solve(lbg=lbg, ubg=ubg, return_raw_sol=return_raw_sol, p_val=p_val, sqp=sqp)
+        return self._solve(lbg=lbg,
+                           ubg=ubg,
+                           return_raw_sol=return_raw_sol,
+                           p_val=p_val,
+                           sqp=sqp,
+                           codegen=codegen)
     
     def add_h(self):
         """
@@ -791,7 +796,8 @@ class MPC(OCP):
                ubg=None,
                return_raw_sol=False,
                p_val=None,
-               sqp=False
+               sqp=False,
+               codegen=False
               ):
         
         # TODO: parameter re-init solver
@@ -822,7 +828,7 @@ class MPC(OCP):
             pprint(k + ": ")
             pprint(self.x0[v["range"]["a"]:v["range"]["b"]])
         """
-        
+        self.prepare_solver(codegen=codegen)
         if p_val is None:
             sol = solver(
                         x0=self.x0,

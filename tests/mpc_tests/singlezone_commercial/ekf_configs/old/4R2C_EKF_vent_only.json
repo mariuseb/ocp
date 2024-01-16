@@ -1,5 +1,5 @@
 {
-    model": {
+    "model": {
          "ode": {
              "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*ahu_reaFloSupAir*cp_air*(oveTSupSet - Ti)",
              "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
@@ -54,9 +54,9 @@
          ],
          "y": [
             ["y1", "Ti"],
-            ["y2", "ahu_TRetAir"],
+            ["y2", "ahu_reaTRetAir"],
             ["y3", "Pvent"],
-            ["y4", "ahu_TCoiRet"],
+            ["y4", "ahu_reaTCoiRet"],
             ["y5", "ahu_reaTHeaRec"],
             ["y6", "ahu_reaFloSupAir"]
          ]
@@ -70,5 +70,5 @@
         "n_steps": 1
         },
     "Q": [1,1,1,1000,1,1,1],
-    "R": [1,1,1,1,1,1]
+    "R": [1,1,1000,1,1,1]
 }

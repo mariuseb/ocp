@@ -22,6 +22,7 @@ rc('mathtext', default='regular')
 # datetime:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
+from ocp.functions import functions
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path, get_data_path
     
 
@@ -29,17 +30,7 @@ if __name__ == "__main__":
     
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
-    
-    #cfg_path = os.path.join(opt_config_base, "3R3C_bestest_hydronic_gn.json")
-    #cfg_path = os.path.join(opt_config_base, "3R3C_bestest_Tsup_linear.json")
-    #cfg_path = os.path.join(opt_config_base, "2R3C_bestest_Tsup_DAE.json")
-    #cfg_path = os.path.join(opt_config_base, "2R2C_bestest_Tsup_linear_UAnom_1meas.json")
-    #cfg_path = os.path.join("configs", "4R2C_inf_DAE.json")
-    #cfg_path = os.path.join("configs", "2R2C_rad_pump_DAE.json")
-    #cfg_path = os.path.join("configs", "2R2C_func_DAE.json")
-    #cfg_path = os.path.join("configs", "2R2C_orig.json")
-    #cfg_path = os.path.join("configs", "4R2C_inf_vent.json")
-    cfg_path = os.path.join("configs", "4R2C_vent_no_waterside.json")
+    cfg_path = os.path.join("configs", "4R3C_vent_n_power.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
     GENERATE_DATA = False
@@ -69,24 +60,17 @@ if __name__ == "__main__":
         
         
         #u_measured = []
+        k = 0.05
         for n in range(N):
-            #u_0 = pd.Series(index=['dh_Tsup'], data=[283.15 + prbs.loc[n]*50])
             u_0 = pd.Series(index=['rad_val'], data=[0])
-            #u_0["TsetHea"] = 283.15 + prbs.loc[n]*20
-            #u_0["TsetHea"] = 318.15
-            #u_0["dh_pump"] = prbs.loc[n]
-            #u_0["rad_val"] = 0
-            #u_0["ahu_pump_sup"] = prbs.loc[n] + 0.01*(1 - prbs.loc[n])
-            #u_0["ahu_pump_ret"] = prbs.loc[n] + 0.01*(1 - prbs.loc[n])
-            u_0["ahu_pump_sup"] = prbs.loc[n]
-            u_0["ahu_pump_ret"] = prbs.loc[n]
-            #u_0["oveValCoi"] = prbs.loc[n]
-            #u_0["ahu_pump_sup"] = 0.01
-            #u_0["ahu_pump_ret"] = 0.01
-            #u_0["ahu_Tsup"] = 288.15 + prbs.loc[n]*25
-            #u_0["ahu_Tsup"] = 288.15 + prbs.loc[n]*10
-            u_0["oveTSupSet"] = 288.15 + prbs.loc[n]*25
-            #u_0["ahu_Tsup"] = 288.15
+            u_0["ahu_pump_sup"] = k*prbs.loc[n]
+            u_0["ahu_pump_ret"] = k*prbs.loc[n]
+            u_0["oveTSupSet"] = 288.15 + prbs.loc[n]*255
+            if prbs.loc[n]:
+                k += 0.05
+                if k > 1: # reset:
+                    k = 0.05
+                    
             try:
                 _, y_meas, u_meas = boptest.evolve(u=u_0)
             except TypeError:
@@ -134,12 +118,19 @@ if __name__ == "__main__":
     data["ahu_pump_ret"] = data["ahu_pump_ret"].shift(-1) 
     data["ahu_reaTCoiSup"] = data["ahu_reaTCoiSup"].shift(-1) 
     data["ahu_reaTCoiRet"] = data["ahu_reaTCoiRet"].shift(-1) 
-    data["ahu_reaTSupAir"] = data["ahu_reaTSupAir"].shift(-1) 
+    #data["Tsup_air"] = data["Tsup_air"].shift(-1) 
     data["oveTSupSet"] = data["oveTSupSet"].shift(-1) 
+    
+    """
+    Adjust:
+    """
+    data.oveTSupSet[data.oveTSupSet == 288.15] += 15
+    data["m_flow_weight"] = data["ahu_pump_sup"] + 0.01 
+    
     # unsure whether to pull this back or not:
-    #data["ahu_reaTRetAir"] = data["ahu_reaTRetAir"].shift(-1) 
-    #data["ahu_reaTHeaRec"] = data["ahu_reaTHeaRec"].shift(-1) 
-    #data["ahu_reaFloSupAir"] = data["ahu_reaFloSupAir"].shift(-1)
+    data["ahu_reaTRetAir"] = data["ahu_reaTRetAir"].shift(-1) 
+    data["ahu_reaTHeaRec"] = data["ahu_reaTHeaRec"].shift(-1) 
+    data["ahu_reaFloSupAir"] = data["ahu_reaFloSupAir"].shift(-1)
     y_data = data[:-2]
     # TODO: need to modularize this:
     y_data["y1"] = y_data["Ti"]
@@ -147,6 +138,7 @@ if __name__ == "__main__":
     y_data["y3"] = y_data["ahu_reaTHeaRec"]
     y_data["y4"] = y_data["ahu_reaFloSupAir"]
     y_data["y5"] = y_data["ahu_reaTRetAir"]
+    y_data["y6"] = y_data["Tsup_air"]
     #y_data["y5"] = y_data["ahu_reaFloSupAir"]
     #y_data["y6"] = y_data["ahu_reaTCoiSup"]
     #y_data["y2"] = y_data["Ph"]
@@ -186,9 +178,9 @@ if __name__ == "__main__":
         y_data.Ti.plot(ax=ax[0], linestyle="dashed", drawstyle="steps-post")
         y_data.ahu_reaTRetAir.plot(ax=ax[0], drawstyle="steps-post")
         y_data.ahu_reaTHeaRec.plot(ax=ax[0], drawstyle="steps-post")
-        y_data.ahu_reaTSupAir.plot(ax=ax[0], drawstyle="steps-post")
+        y_data.Tsup_air.plot(ax=ax[0], drawstyle="steps-post")
         y_data.oveTSupSet.plot(ax=ax[0], drawstyle="steps-post")
-        (y_data.Ta + (y_data.ahu_reaTRetAir - y_data.Ta)*0.58).plot(ax=ax[0], drawstyle="steps-post")
+        (y_data.Ta + (y_data.ahu_reaTRetAir - y_data.Ta)*0.77).plot(ax=ax[0], drawstyle="steps-post")
         y_data.Ta.plot(ax=ax[0], drawstyle="steps-post")
         ax[0].legend(["Ti", "Tret", "Trec", "Tsup", "oveTSupSet", "Trec_model", "Ta"])
         y_data.ahu_pump_sup.plot(ax=ax[1], drawstyle="steps-post")
@@ -196,9 +188,15 @@ if __name__ == "__main__":
         y_data.Pvent.plot(ax=ax[2], drawstyle="steps-post")
         plt.show()
         
+        # only TRec
+        ax = data.ahu_reaTHeaRec.plot(color="k")
+        ax1 = ax.twinx()
+        data.ahu_pump_sup .plot(color="y", ax=ax1)
+        plt.show()
+        
         # power balances
         y_data["Ph_water"] = y_data["oveValCoi"]*2*1000*25*(y_data["ahu_reaTCoiSup"] - y_data["ahu_reaTCoiRet"])
-        y_data["Ph_air"] = y_data.ahu_reaFloSupAir*32*1*30*(y_data["ahu_reaTSupAir"] - y_data["ahu_reaTHeaRec"])
+        y_data["Ph_air"] = y_data.ahu_reaFloSupAir*32*1*30*(y_data["Tsup_air"] - y_data["ahu_reaTHeaRec"])
         ax = y_data.Ph_water.plot(drawstyle="steps-post")
         y_data.Ph_air.plot(ax=ax, drawstyle="steps-post")
         y_data.Pvent.plot(ax=ax, drawstyle="steps-post")
@@ -255,7 +253,9 @@ if __name__ == "__main__":
                         2.499e+09,
                         1.040476e+02,
                         32,
-                        2,
+                        1.5,
+                        300,
+                        900,
                         1000,
                         0.99,
                         0.60
@@ -285,16 +285,22 @@ if __name__ == "__main__":
     ubp[3] = 1
     #ubp[7] = 338.15
     # eta_hex:
-    lbp[len_p-1] = 0.55
-    ubp[len_p-1] = 0.65
-    lbp[len_p-2] = 0.95
+    lbp[len_p-1] = 0.30
+    ubp[len_p-1] = 0.80
+    lbp[len_p-2] = 0.65
     ubp[len_p-2] = 1
     #lbp[len_p-3] = 1.0
     #ubp[len_p-3] = 1.0
-    lbp[len_p-3] = 1000
-    ubp[len_p-3] = 1000
-    lbp[len_p-4] = 0
-    ubp[len_p-4] = 10
+    lbp[len_p-3] = 900
+    ubp[len_p-3] = 1100
+    lbp[len_p-4] = 10
+    ubp[len_p-4] = 10000
+    lbp[len_p-5] = 290
+    ubp[len_p-5] = 305
+    lbp[len_p-6] = 1
+    ubp[len_p-6] = 3
+    lbp[len_p-7] = 0.3
+    ubp[len_p-7] = 0.7
     
     kwargs = {
         "x_nom": 300,
@@ -334,16 +340,16 @@ if __name__ == "__main__":
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
-        "z_nom": [12,1E6,12,1], 
-        "z_nom_b": [289.15,0,289.15,0],
-        "u_nom": [1,1,12,],
-        "u_nom_b": [0,0,289.15],
+        "z_nom": [12,1E6,12,1,1], 
+        "z_nom_b": [289.15,0,289.15,0,0],
+        "u_nom": [1,1,12,1],
+        "u_nom_b": [0,0,289.15,0],
         "r_nom": [12,300,1E6,1E6,1E6],
         "r_nom_b": [289.15,0,0,0,0],
         #"p_nom": [1E-5,1E-4,1E8,1E9,1E2,1,1E3,1,12],
         #"p_nom_b": [0,0,0,0,0,0,0,0,289.15],
-        "y_nom": [12,1E6,12,1,12],
-        "y_nom_b": [289.15,0,289.15,0,289.15]
+        "y_nom": [12,1E6,12,1,12,12],
+        "y_nom_b": [289.15,0,289.15,0,289.15,289.15]
     }
     
     x_guess = np.array([y_data.Ti.values.flatten(), y_data.Ti.values.flatten()])
@@ -354,22 +360,26 @@ if __name__ == "__main__":
     with ParameterEstimation(config=cfg_path,
                              N=N,
                              dt=dt,
+                             functions=functions,
                              param_guess=param_guess,
                              **kwargs) as param_est:
                              #as param_est:
         
-        Q = ca.DM.eye(2)
-        R = ca.DM.eye(5)
+        Q = ca.DM.eye(3)
+        R = ca.DM.eye(6)
         #R[1,1] = 1E-8
         #R[2,2] = 1E-8
         
         # power:
-        R[1,1] = 1E-8
+        R[1,1] = 1E-10
         #R[2,2] = 1E-8
         # temperature:
-        R[2,2] = 1E-4
+        #R[2,2] = 1E-4
         R[3,3] = 1E-4
         R[4,4] = 1E-4
+        R[5,5] = 1E-4
+        #R[0,0] = 1E-4
+        #R[5,5] = 1E-2
         #R[4,4] = 1E-4
         #R[5,5] = 1E-4
         
@@ -382,6 +392,7 @@ if __name__ == "__main__":
         v3 = param_est.nlp["x"][(v_inds["a"]+2):v_inds["b"]:param_est.dae.n_y]
         v4 = param_est.nlp["x"][(v_inds["a"]+3):v_inds["b"]:param_est.dae.n_y]
         v5 = param_est.nlp["x"][(v_inds["a"]+4):v_inds["b"]:param_est.dae.n_y]
+        v6 = param_est.nlp["x"][(v_inds["a"]+5):v_inds["b"]:param_est.dae.n_y]
         #v6 = param_est.nlp["x"][(v_inds["a"]+5):v_inds["b"]:param_est.dae.n_y]
         # what to do with this? 
         #eta_rad = param_est.dae.dae.var("eta_rad")
@@ -401,8 +412,8 @@ if __name__ == "__main__":
             R[1,1]*ca.dot(v2, v2) + \
             R[2,2]*ca.dot(v3, v3) + \
             R[3,3]*ca.dot(v4, v4) + \
-            R[4,4]*ca.dot(v5, v5) # + \
-            #R[5,5]*ca.dot(v6, v6)
+            R[4,4]*ca.dot(v5, v5) + \
+            R[5,5]*ca.dot(v6, v6)
                 
         #param_est.res = ca.vertcat(ca.sqrt(R[0,0])*v1, ca.sqrt(R[1,1])*v2)
         sol, params = param_est.solve(
@@ -411,7 +422,8 @@ if __name__ == "__main__":
                                       x_guess=x_guess,
                                       lbp=lbp,
                                       ubp=ubp,
-                                      covar=ca.veccat(Q, R)
+                                      covar=ca.veccat(Q, R),
+                                      codegen=True
                                       )    
         
         ax = sol["Ti"].plot(color="r")
@@ -431,9 +443,10 @@ if __name__ == "__main__":
         """
         ax = sol["ahu_reaTHeaRec"].plot(color="r")
         sol["y3"].plot(color="k", linestyle="dashed", ax=ax)
+        sol["Ti"].plot(color="b", ax=ax)
         ax1 = ax.twinx()
         sol["ahu_pump_ret"].plot(ax=ax1, color="y", drawstyle="steps-post")
-        ax.set_ylim([282,310])
+        ax.set_ylim([282,350])
         ax.legend()
         plt.show()
         
@@ -445,7 +458,15 @@ if __name__ == "__main__":
         
         ax = sol["ahu_reaTRetAir"].plot(color="r")
         sol["y5"].plot(color="k", linestyle="dashed", ax=ax)
-        ax.set_ylim([282,310])
+        ax.set_ylim([282,315])
+        ax.legend()
+        ax1 = ax.twinx()
+        sol["ahu_pump_ret"].plot(ax=ax1, color="y", drawstyle="steps-post")
+        plt.show()
+        
+        ax = sol["Tsup_air"].plot(color="r")
+        sol["y6"].plot(color="k", linestyle="dashed", ax=ax)
+        ax.set_ylim([282,315])
         ax.legend()
         ax1 = ax.twinx()
         sol["ahu_pump_ret"].plot(ax=ax1, color="y", drawstyle="steps-post")
@@ -483,77 +504,3 @@ if __name__ == "__main__":
     ax1 = ax.twinx()
     ax1.plot(y_data.index, y_data.oveValCoi, drawstyle="steps-post", color="k")
     plt.show()
-    
-    # check TRec deviation:
-    #ax = sol["v4"].plot(drawstyle="steps-post")
-    #ax.plot(sol.index, vent_zero, drawstyle="steps-post")
-    
-    
-    # compare inferred heat with measured:  
-    #Ph_model = sol["v2"] + sol["y2"]*params["eta_hex"]
-    #y_data["Pvent_model"] = 60000*(y_data["ahu_reaTSupAir"] - y_data["Ti"])*y_data["oveValCoi"]
-    #ax = y_data.Pvent_model.plot(color="k", drawstyle="steps-post", linestyle="dashed")
-    #ax1 = ax.twinx()
-    #(y_data.Pvent*params["eta_hex"]).plot(color="r", drawstyle="steps-post", linestyle="dashed", ax=ax)
-    #ax.legend(["deltaT"])
-    #ax.legend(["Ph_inf", "Ph"], loc="upper left")
-    #ax1.legend(["Ph"])
-    #plt.show()
-    
-
-    """ 
-    Possible to turn the following Modelica-function into casadi?
-        
-    function regStep
-        "Approximation of a general step, such that the characteristic is continuous and differentiable"
-        extends Modelica.Icons.Function;
-        input Real x "Abscissa value";
-        input Real y1 "Ordinate value for x > 0";
-        input Real y2 "Ordinate value for x < 0";
-        input Real x_small(min=0) = 1e-5
-            "Approximation of step for -x_small <= x <= x_small; x_small >= 0 required";
-        output Real y "Ordinate value to approximate y = if x > 0 then y1 else y2";
-    algorithm
-            y := smooth(1, if x >  x_small then y1 else
-                            if x < -x_small then y2 else
-                            if x_small > 0 then (x/x_small)*((x/x_small)^2 - 3)*(y2-y1)/4 + (y1+y2)/2 else (y1+y2)/2);
-    end regStep;
-    
-    
-    x = ca.MX.sym("x")
-    y1 = ca.MX.sym("y1")
-    y2 = ca.MX.sym("y2")
-    x_small = ca.MX.sym("x_small")
-    _y = ca.MX.sym("y")
-    
-    y = ca.tanh(ca.if_else(x > x_small, y1, ca.if_else(x < -x_small, y2, ca.if_else(x_small > 0, (x/x_small)*(ca.power((x/x_small), 2) - 3)*(y2-y1)/4 + (y1+y2)/2, (y1+y2)/2))))
-    
-    y_jac = ca.jacobian(y, x)
-    
-    F = ca.Function("regStep", [x,y1,y2,x_small], [y], ["x", "y1", "y2", "x_small"], ["y"])
-    
-    ys = []
-    _y1 = -1
-    _y2 = 1
-    
-    _x_small = 1E-5
-    for _x in range(-50, 50):
-        __x = _x*0.1
-        y_val = F(__x, _y1, _y2, _x_small)
-        ys.append(float(y_val))
-    plt.plot(ys)
-    
-    
-    param_guess = ca.DM([0.01,0.1,1E6,1E7,2])
-    lbp = ca.DM([0.001,0.01,1E5,1E6,1])
-    ubp = ca.DM([0.1,1,1E7,1E8,50])
-
-    Q = ca.DM.eye(2)
-    R = ca.DM.eye(1)
-    params = {}
-    covar = {}
-    dt = 900 
-    
-
-    """
-    

@@ -1,0 +1,105 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*ahu_reaFloSupAir*cp_air*(Tsup_air - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Tsup_air": "(oveTSupSet - Tsup_air)/tau_sup",
+            "eta_hex2": "(eta_hex2_set - eta_hex2)/tau_eff"
+        },
+        "alg": {
+            "ahu_reaTRetAir": "ahu_reaTRetAir - Ti",
+            "Pvent": "Pvent - ahu_reaFloSupAir*cp_air*(Tsup_air-ahu_reaTHeaRec)*eta_hex1",
+            "ahu_reaTHeaRec": "(Ta + (ahu_reaTRetAir - Ta)*eta_hex2)*ahu_pump_sup_on + (1-ahu_pump_sup_on)*Trec_off - ahu_reaTHeaRec",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*regNonZeroPower(ahu_pump_sup, n, 0.01)",
+            "ahu_pump_sup_on": "ahu_pump_sup_on - ca.if_else(ahu_pump_sup > 1E-4, 1, 0)",
+            "eta_hex2_set": "eta_hex2_set - ca.if_else(ahu_pump_sup > eff_threshold, eta_hex2_above, eta_hex2_below)"
+
+        },
+        "w": {
+            "v1": "Ti - y1", 
+            "v2": "y2 - Pvent",
+            "v3": "m_flow_weight*(y3 - ahu_reaTHeaRec)",
+            "v4": "y4 - ahu_reaFloSupAir",
+            "v5": "y5 - ahu_reaTRetAir",
+            "v6": "ahu_pump_ret*(y6 - Tsup_air)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai",
+            "m_flow_air_nom",
+            "eff_threshold",
+            "tau_eff",
+            "n",
+            "Trec_off",
+            "tau_sup",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2_above",
+            "eta_hex2_below"
+        ],
+        "u": [
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "oveTSupSet",
+            "m_flow_weight"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Tsup_air",
+            "eta_hex2"
+        ],
+        "z": [
+            "ahu_reaTRetAir",
+            "Pvent",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir",
+            "ahu_pump_sup_on",
+            "eta_hex2_set"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Pvent"],
+            ["y3", "ahu_reaTHeaRec"],
+            ["y4", "ahu_reaFloSupAir"],
+            ["y5", "ahu_reaTRetAir"],
+            ["y6", "Tsup_air"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,270,270,0],
+            "ubx": [320,330,320,1]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(v4, v4)@R[3,3] + dot(v5, v5)@R[4,4] + dot(v6, v6)@R[5,5]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

@@ -28,9 +28,9 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("mpc_configs", "4R3C_MPC_inf_vent.json")
+    mpc_cfg = os.path.join("mpc_configs", "4R2C_MPC_vent_no_water.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join("ekf_configs", "4R3C_inf_vent.json")
+    ekf_cfg = os.path.join("ekf_configs", "4R2C_EKF_vent_no_water.json")
 
     # pass in config?
     """
@@ -59,19 +59,44 @@ if __name__ == "__main__":
                     ]
                    )
     
-    params = np.array([5.12604529e-05,
-                       1.90559480e-03,
-                       2.52586300e-04,
-                       2.90850614e-01,
-                       4.42147266e+07,
-                       3.11292923e+09, 
-                       8.23731203e+01,
-                       3.09235785e+01,
-                       2.97289739e+02,
-                       9.65186947e+02,
-                       1.04530499e+03,
-                       1.00000001e+00,
-                       5.94843471e-01])
+    params = np.array(
+                   [
+                5.798972e-05,
+                2.470447e-02,
+                2.415008e-04,
+                3.219042e-01,
+                4.549992e+07,
+                2.500057e+09,
+                6.312371e+01,
+                3.092358e+01,
+                1.000000e+03,
+                9.906093e-01,
+                5.933963e-01
+                    ]
+                   )
+    kwargs = {
+        "x_nom": 1,
+        "u_nom": 1,
+        "z_nom": 1,
+        "r_nom": 1,
+        "y_nom": 1,
+        #"slack": Trues
+        "slack": False
+    }
+    kwargs = {
+        "x_nom": 12,
+        "x_nom_b ": 289.15,
+        "z_nom": [12,1E5,12,40],
+        "z_nom_b": [289.15,0,289.15,0],
+        "r_nom": [12,300,1E5,1E5,1E5],
+        "r_nom_b": [289.15,0,0,0,0],
+        "u_nom": [1,1,12],
+        "u_nom_b ": [0,0,289.15],
+        #"p_nom": [1E-5,1E-4,1E-5,1E8,1E9,1E2,1,1E3,1,1],
+        #"p_nom_b": [0,0,0,0,0,0,0,0,289.15],
+        #"slack": True
+        "slack": False
+    }
     
     kwargs = {
         "x_nom": 300,
@@ -83,29 +108,6 @@ if __name__ == "__main__":
         #"slack": True
         "slack": False
     }
-    
-    kwargs = {
-        "x_nom": 1,
-        "u_nom": 1,
-        "z_nom": 1,
-        "r_nom": 1,
-        "y_nom": 1,
-        #"slack": Trues
-        "slack": False
-    }
-    
-    kwargs = {
-        "x_nom": 12,
-        "x_nom_b ": 289.15,
-        "z_nom": [12,1E6,12,40,1,1],
-        "z_nom_b": [289.15,0,289.15,0,0,0],
-        "r_nom": [12,300,1E6,1E6,1E6],
-        "r_nom_b": [289.15,0,0,0,0],
-        "u_nom": [1,1,12],
-        "u_nom_b ": [0,0,289.15],
-        "slack": False
-    }
-    
     
     mpc = MPC(config=mpc_cfg,
               functions=deepcopy(functions),
@@ -129,7 +131,7 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     #dt = mpc.dt
-    lb_night = {"Ti": 293.15}
+    lb_night = {"Ti": 289.15}
     ub_night = {"Ti": 301.15}
     lb_day = {"Ti": 293.15}
     ub_day = {"Ti": 296.15}
@@ -144,7 +146,7 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0 = np.array([294.15, 293.15, 300.15])
+    x0 = np.array([293.15, 293.15])
     
     # sim horizon: 2 days
     days = 2
@@ -214,8 +216,6 @@ if __name__ == "__main__":
         #u.loc["oveValCoi"] = 0.01
         #u["dh_pump"] = 1
         """
-        u.loc["ahu_pump_sup"] *= 10
-        u.loc["ahu_pump_ret"] *= 10
         u["rad_val"] = 0
         #data, y_meas, u_meas = boptest.evolve(u=u)
         data, y_meas, u_meas = boptest.evolve(
@@ -245,9 +245,7 @@ if __name__ == "__main__":
                           u=u_model, 
                           r=r_pred
                           )
-        # take the measurements:
-        x0[0] = y_meas["Ti"]
-        x0[2] = y_meas["Tsup_air"]
+        x0[0] = y_[0]
         
     plt.rcParams.update({'font.size': 12})
     fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds, heat_key="Pvent")
@@ -269,3 +267,52 @@ if __name__ == "__main__":
     res.ahu_reaFloExtAir.plot(drawstyle="steps-post", ax=ax)
     ax.legend()
     plt.show()
+    """
+    plt.rcParams.update({'font.size': 11})
+    
+    fig = plt.figure(figsize=(10,6))
+    ax = fig.add_subplot(111)
+    
+    # colors
+    colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
+    #for i in range(n):
+    #c = next(colors)
+    #plt.plot(x, y, c=c)
+    
+    dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
+    
+    #l1 = res.Ti.plot(ax=ax, color="k")
+    #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
+    l1 = ax.plot(dt_index, (res.Ti-273.15), color=next(colors), label="$T_i$")
+    ax1 = ax.twinx()
+    #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
+    #l2 = ax1.plot(res.index, res.phi_h, color="k", linestyle="dashed", label="$\phi_h$")
+    l2 = ax1.plot(dt_index, res.phi_h, color=next(colors), label="$\phi_h$")
+    
+    #ax.legend([l1, l2], , loc=0)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
+    fig.autofmt_xdate()
+    #ax.legend(["Ti"])
+    #ax1.legend(["phi_h"])
+    # plot bounds:
+    #bounds_plt = pd.concat([bounds]*days)
+    bounds_plt = bounds.get_full(days)
+    bounds_plt.index = res.index
+    #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
+    #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
+    l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{lb}$")
+    l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), color="k", drawstyle="steps", label="$T_{i}^{ub}$")
+    lns = l1+l2+l3+l4
+    labs = [l.get_label() for l in lns]
+    ax.legend(lns, labs, loc='upper center', ncol=4)
+    _min, _max = ax.get_ylim()
+    ax.set_ylim([_min, _max+1])
+    _min, _max = ax1.get_ylim()
+    ax1.set_ylim([_min, _max+1000])
+    
+    ax.set_ylabel(r"Temperature [$^\circ$C]")
+    ax1.set_ylabel(r"Power [W]")
+    
+    fig.tight_layout()
+    plt.show()    
+    """

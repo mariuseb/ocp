@@ -799,7 +799,8 @@ class ParameterEstimation(OCP):
               Th_anti_bias=False,
               Te_anti_bias=False,
               x_guess=None,
-              return_raw_sol=False
+              return_raw_sol=False,
+              codegen=False
               ):
         """
         Set initials for v, w to 0
@@ -994,7 +995,7 @@ class ParameterEstimation(OCP):
             self.ubg = np.concatenate([self.ubg,
                                        np.array([slack]*constr.shape[0])])
 
-        self.prepare_solver()
+        self.prepare_solver(codegen=codegen)
         
         # check jac_g_x
         """
