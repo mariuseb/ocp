@@ -1,0 +1,53 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + phi_h*(1/Ci) + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai"
+        ],
+        "u": [
+            "phi_h"
+        ],
+        "r": [
+            "Ta", 
+            "phi_s",
+            "Ti_ref"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0],
+            "ubu": [1E4]
+        }
+    },
+    "objective": "1E3*dot(Ti - Ti_ref, Ti - Ti_ref) + 1E-8*dot(phi_h, phi_h)",
+    "N": 719,
+    "dt": 3600,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "mumps",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "yes"
+    },
+    "codegen": false
+}
