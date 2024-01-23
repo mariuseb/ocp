@@ -1,0 +1,1155 @@
+<?xml version = "1.0" encoding="UTF-8"?>
+
+<!-- description of the model interface using an extention of the FMI standard -->
+<fmiModelDescription
+  fmiVersion                          = "1.0"
+
+  modelName                           = "TwoWayValve"
+  modelIdentifier                     = "TwoWayValve"
+
+  OPENMODELICAHOME                    = "/home/marius/Documents/OpenModelica/build/install_cmake/bin/.."
+
+  guid                                = "{3e36adcd-1aeb-42e9-992d-f7ba3eeb5e0a}"
+
+  description                         = ""
+  generationTool                      = "OpenModelica Compiler v1.21.0-2-g0bc3d29bd9-cmake"
+  generationDateAndTime               = "2024-01-17T10:40:05Z"
+
+  variableNamingConvention            = "structured"
+
+  numberOfEventIndicators             = "2"  cmt_numberOfEventIndicators             = "NG:       number of zero crossings,                           FMI"
+  numberOfTimeEvents                  = "0"  cmt_numberOfTimeEvents                  = "NG_SAM:   number of zero crossings that are samples,          OMC"
+
+  numberOfInputVariables              = "0"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
+  numberOfOutputVariables             = "0"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
+
+  numberOfExternalObjects             = "0"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
+  numberOfFunctions                   = "9"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
+
+  numberOfContinuousStates            = "0"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"
+  numberOfRealAlgebraicVariables      = "17"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
+  numberOfRealAlgebraicAliasVariables = "16"  cmt_numberOfRealAlgebraicAliasVariables = "NA:       number of alias variables,                          OMC"
+  numberOfRealParameters              = "34"  cmt_numberOfRealParameters              = "NP:       number of parameters,                               OMC"
+
+  numberOfIntegerAlgebraicVariables   = "0"  cmt_numberOfIntegerAlgebraicVariables   = "NYINT:    number of alg. int variables,                       OMC"
+  numberOfIntegerAliasVariables       = "0"  cmt_numberOfIntegerAliasVariables       = "NAINT:    number of alias int variables,                      OMC"
+  numberOfIntegerParameters           = "6"  cmt_numberOfIntegerParameters           = "NPINT:    number of int parameters,                           OMC"
+
+  numberOfStringAlgebraicVariables    = "0"  cmt_numberOfStringAlgebraicVariables    = "NYSTR:    number of alg. string variables,                    OMC"
+  numberOfStringAliasVariables        = "0"  cmt_numberOfStringAliasVariables        = "NASTR:    number of alias string variables,                   OMC"
+  numberOfStringParameters            = "0"  cmt_numberOfStringParameters            = "NPSTR:    number of string parameters,                        OMC"
+
+  numberOfBooleanAlgebraicVariables   = "0"  cmt_numberOfBooleanAlgebraicVariables   = "NYBOOL:   number of alg. bool variables,                      OMC"
+  numberOfBooleanAliasVariables       = "0"  cmt_numberOfBooleanAliasVariables       = "NABOOL:   number of alias bool variables,                     OMC"
+  numberOfBooleanParameters           = "18"  cmt_numberOfBooleanParameters           = "NPBOOL:   number of bool parameters,                          OMC" >
+
+
+  <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->
+  <DefaultExperiment
+    startTime      = "0"
+    stopTime       = "1"
+    stepSize       = "0.002"
+    tolerance      = "1e-06"
+    solver        = "dassl"
+    outputFormat      = "mat"
+    variableFilter      = ".*" />
+
+  <!-- variables in the model -->
+  <ModelVariables>
+
+  <ScalarVariable
+    name = "$cse1.T"
+    valueReference = "1000"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rAlg"
+    isProtected = "true" hideResult = "true" initNonlinear = "false"
+    fileName = "" startLine = "0" startColumn = "0" endLine = "0" endColumn = "0" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "$cse1.p"
+    valueReference = "1001"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rAlg"
+    isProtected = "true" hideResult = "true" initNonlinear = "false"
+    fileName = "" startLine = "0" startColumn = "0" endLine = "0" endColumn = "0" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "$cse2.T"
+    valueReference = "1002"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rAlg"
+    isProtected = "true" hideResult = "true" initNonlinear = "false"
+    fileName = "" startLine = "0" startColumn = "0" endLine = "0" endColumn = "0" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "$cse2.p"
+    valueReference = "1003"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rAlg"
+    isProtected = "true" hideResult = "true" initNonlinear = "false"
+    fileName = "" startLine = "0" startColumn = "0" endLine = "0" endColumn = "0" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.T_in_internal"
+    valueReference = "1004"
+    description = "Needed to connect to conditional connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "36" startColumn = "3" endLine = "38" endColumn = "49" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="K" displayUnit="degC" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.X_in_internal[1]"
+    valueReference = "1005"
+    description = "Needed to connect to conditional connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "39" startColumn = "3" endLine = "41" endColumn = "49" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="kg/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.p_in_internal"
+    valueReference = "1006"
+    description = "Needed to connect to conditional connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "33" startColumn = "3" endLine = "34" endColumn = "49" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.ports[1].h_outflow"
+    valueReference = "1007"
+    description = "Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "7" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "16" startColumn = "5" endLine = "17" endColumn = "84" fileWritable = "true">
+    <Real start="83680.0" fixed="false" useNominal="true" nominal="1000000.0" min="-10000000000.0" max="10000000000.0" unit="J/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.T_in_internal"
+    valueReference = "1008"
+    description = "Needed to connect to conditional connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "8" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "36" startColumn = "3" endLine = "38" endColumn = "49" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="K" displayUnit="degC" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.X_in_internal[1]"
+    valueReference = "1009"
+    description = "Needed to connect to conditional connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "9" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "39" startColumn = "3" endLine = "41" endColumn = "49" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="kg/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.p_in_internal"
+    valueReference = "1010"
+    description = "Needed to connect to conditional connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "10" classType = "rAlg"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "33" startColumn = "3" endLine = "34" endColumn = "49" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.ports[1].h_outflow"
+    valueReference = "1011"
+    description = "Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "11" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "16" startColumn = "5" endLine = "17" endColumn = "84" fileWritable = "true">
+    <Real start="83680.0" fixed="false" useNominal="true" nominal="1000000.0" min="-10000000000.0" max="10000000000.0" unit="J/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.dp"
+    valueReference = "1012"
+    description = "Pressure difference between port_a and port_b"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "12" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPortInterface.mo" startLine = "23" startColumn = "3" endLine = "26" endColumn = "52" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="true" nominal="6000.0" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.k"
+    valueReference = "1013"
+    description = "Flow coefficient of valve and pipe in series, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "13" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/PartialTwoWayValve.mo" startLine = "27" startColumn = "3" endLine = "28" endColumn = "95" fileWritable = "true">
+    <Real fixed="false" useNominal="false" min="1e-60" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.m_flow"
+    valueReference = "1014"
+    description = "Mass flow rate from port_a to port_b (m_flow &gt; 0 is design flow direction)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "14" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPortInterface.mo" startLine = "20" startColumn = "3" endLine = "21" endColumn = "81" fileWritable = "true">
+    <Real start="0.0" fixed="false" useNominal="true" nominal="2.0" min="-9.999999999999999e+59" max="100000.0" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.phi"
+    valueReference = "1015"
+    description = "Ratio actual to nominal mass flow rate of valve, phi=Kv(y)/Kv(y=1)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "15" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/PartialTwoWayValve.mo" startLine = "20" startColumn = "3" endLine = "21" endColumn = "73" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "y.y"
+    valueReference = "1016"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "16" classType = "rAlg"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "300" startColumn = "5" endLine = "301" endColumn = "56" fileWritable = "true">
+    <Real start="0.0" fixed="false" useNominal="false" min="0.0" max="1.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.T"
+    valueReference = "1017"
+    description = "Fixed value of temperature"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "16" startColumn = "3" endLine = "18" endColumn = "68" fileWritable = "true">
+    <Real start="293.15" fixed="true" useNominal="true" nominal="300.0" min="1.0" max="10000.0" unit="K" displayUnit="degC" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.X[1]"
+    valueReference = "1018"
+    description = "Fixed value of composition"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "15" startColumn = "3" endLine = "18" endColumn = "90" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="true" nominal="0.1" min="0.0" max="1.0" unit="kg/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.p"
+    valueReference = "1019"
+    description = "Fixed value of pressure"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "9" startColumn = "3" endLine = "11" endColumn = "69" fileWritable = "true">
+    <Real start="300000.0" fixed="true" useNominal="true" nominal="100000.0" min="0.0" max="100000000.0" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.T"
+    valueReference = "1020"
+    description = "Fixed value of temperature"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "16" startColumn = "3" endLine = "18" endColumn = "68" fileWritable = "true">
+    <Real start="293.15" fixed="true" useNominal="true" nominal="300.0" min="1.0" max="10000.0" unit="K" displayUnit="degC" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.X[1]"
+    valueReference = "1021"
+    description = "Fixed value of composition"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "15" startColumn = "3" endLine = "18" endColumn = "90" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="true" nominal="0.1" min="0.0" max="1.0" unit="kg/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.p"
+    valueReference = "1022"
+    description = "Fixed value of pressure"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "9" startColumn = "3" endLine = "11" endColumn = "69" fileWritable = "true">
+    <Real start="306000.0" fixed="true" useNominal="true" nominal="100000.0" min="0.0" max="100000000.0" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.Av"
+    valueReference = "1023"
+    description = "Av (metric) flow coefficient"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "17" startColumn = "3" endLine = "19" endColumn = "93" fileWritable = "true">
+    <Real start="0.0" fixed="false" useNominal="false" unit="m2" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.Cv"
+    valueReference = "1024"
+    description = "Cv (US) flow coefficient [USG/min/(psi)^(1/2)]"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "7" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "12" startColumn = "3" endLine = "16" endColumn = "74" fileWritable = "true">
+    <Real start="0.0" fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.Kv"
+    valueReference = "1025"
+    description = "Kv (metric) flow coefficient [m3/h/(bar)^(1/2)]"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "8" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "7" startColumn = "3" endLine = "11" endColumn = "74" fileWritable = "true">
+    <Real start="0.0" fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.Kv_SI"
+    valueReference = "1026"
+    description = "Flow coefficient for fully open valve in SI units, Kv=m_flow/sqrt(dp) [kg/s/(Pa)^(1/2)]"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "9" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "38" startColumn = "3" endLine = "43" endColumn = "79" fileWritable = "true">
+    <Real start="0.0" fixed="false" useNominal="false" min="0.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin._dp_start"
+    valueReference = "1027"
+    description = "Start value for dp, used to avoid a warning if not set in dp, and to avoid dp.start in parameter window"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "10" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPortInterface.mo" startLine = "53" startColumn = "3" endLine = "55" endColumn = "110" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin._m_flow_start"
+    valueReference = "1028"
+    description = "Start value for m_flow, used to avoid a warning if not set in m_flow, and to avoid m_flow.start in parameter window"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "11" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPortInterface.mo" startLine = "51" startColumn = "3" endLine = "52" endColumn = "122" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.deltaM"
+    valueReference = "1029"
+    description = "Fraction of nominal flow rate where linearization starts, if y=1"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "12" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "21" startColumn = "3" endLine = "23" endColumn = "60" fileWritable = "true">
+    <Real start="0.02" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.dpFixed_nominal"
+    valueReference = "1030"
+    description = "Pressure drop of pipe and other resistances that are in series"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "13" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/PartialTwoWayValve.mo" startLine = "13" startColumn = "3" endLine = "16" endColumn = "51" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" min="0.0" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.dpValve_nominal"
+    valueReference = "1031"
+    description = "Nominal pressure drop of fully open valve, used if CvData=Buildings.Fluid.Types.CvTypes.OpPoint"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "14" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "26" startColumn = "3" endLine = "31" endColumn = "109" fileWritable = "true">
+    <Real start="6000.0" fixed="true" useNominal="false" min="0.0" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.dp_nominal"
+    valueReference = "1032"
+    description = "Pressure drop at nominal mass flow rate"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "15" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/BaseClasses/PartialResistance.mo" startLine = "19" startColumn = "3" endLine = "21" endColumn = "51" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.dp_nominal_pos"
+    valueReference = "1033"
+    description = "Absolute value of nominal pressure difference"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "16" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/BaseClasses/PartialResistance.mo" startLine = "39" startColumn = "3" endLine = "41" endColumn = "52" fileWritable = "true">
+    <Real fixed="true" useNominal="false" unit="Pa" displayUnit="Pa" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.eta_default"
+    valueReference = "1034"
+    description = "Dynamic viscosity, used to compute transition to turbulent flow regime"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "17" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/BaseClasses/PartialResistance.mo" startLine = "33" startColumn = "3" endLine = "35" endColumn = "77" fileWritable = "true">
+    <Real start="0.001" fixed="true" useNominal="false" min="0.0" unit="Pa.s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.fCut"
+    valueReference = "1035"
+    description = "Cut-off frequency of filter"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "18" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "37" startColumn = "3" endLine = "38" endColumn = "46" fileWritable = "true">
+    <Real start="0.006631455962162306" fixed="true" useNominal="false" unit="Hz" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.kFixed"
+    valueReference = "1036"
+    description = "Flow coefficient of fixed resistance that may be in series with valve, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "19" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/PartialTwoWayValve.mo" startLine = "22" startColumn = "3" endLine = "24" endColumn = "120" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" min="0.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.l"
+    valueReference = "1037"
+    description = "Valve leakage, l=Kv(y=0)/Kv(y=1)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "20" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/PartialTwoWayValve.mo" startLine = "18" startColumn = "3" endLine = "19" endColumn = "39" fileWritable = "true">
+    <Real start="0.05" fixed="true" useNominal="false" min="1e-10" max="1.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.m_flow_nominal"
+    valueReference = "1038"
+    description = "Nominal mass flow rate"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "21" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPortInterface.mo" startLine = "8" startColumn = "3" endLine = "9" endColumn = "76" fileWritable = "true">
+    <Real start="2.0" fixed="true" useNominal="false" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.m_flow_nominal_pos"
+    valueReference = "1039"
+    description = "Absolute value of nominal flow rate"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "22" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/BaseClasses/PartialResistance.mo" startLine = "37" startColumn = "3" endLine = "38" endColumn = "60" fileWritable = "true">
+    <Real start="2.0" fixed="true" useNominal="false" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.m_flow_small"
+    valueReference = "1040"
+    description = "Small mass flow rate for regularization of zero flow"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "23" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPortInterface.mo" startLine = "10" startColumn = "3" endLine = "12" endColumn = "40" fileWritable = "true">
+    <Real start="0.0002" fixed="true" useNominal="false" min="0.0" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.m_flow_turbulent"
+    valueReference = "1041"
+    description = "Turbulent flow if |m_flow| &gt;= m_flow_turbulent"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "24" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/BaseClasses/PartialResistance.mo" startLine = "27" startColumn = "3" endLine = "28" endColumn = "53" fileWritable = "true">
+    <Real start="0.04" fixed="true" useNominal="false" min="0.0" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.rhoStd"
+    valueReference = "1042"
+    description = "Inlet density for which valve coefficients are defined"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "25" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "33" startColumn = "3" endLine = "35" endColumn = "67" fileWritable = "true">
+    <Real start="995.586" fixed="true" useNominal="false" min="0.0" unit="kg/m3" displayUnit="g/cm3" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.riseTime"
+    valueReference = "1043"
+    description = "Rise time of the filter (time to reach 99.6 % of an opening step)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "26" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "10" startColumn = "3" endLine = "15" endColumn = "31" fileWritable = "true">
+    <Real start="120.0" fixed="true" useNominal="false" unit="s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.sta_default.T"
+    valueReference = "1044"
+    description = "Temperature of medium"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "27" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Media/package.mo" startLine = "5870" startColumn = "7" endLine = "5870" endColumn = "44" fileWritable = "true">
+    <Real start="293.15" fixed="true" useNominal="true" nominal="300.0" min="1.0" max="10000.0" unit="K" displayUnit="degC" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.sta_default.p"
+    valueReference = "1045"
+    description = "Absolute pressure of medium"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "28" classType = "rPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Media/package.mo" startLine = "5869" startColumn = "7" endLine = "5869" endColumn = "55" fileWritable = "true">
+    <Real start="300000.0" fixed="true" useNominal="true" nominal="100000.0" min="0.0" max="100000000.0" unit="Pa" displayUnit="bar" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.y_start"
+    valueReference = "1046"
+    description = "Initial position of actuator"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "29" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "19" startColumn = "3" endLine = "20" endColumn = "88" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "y.duration"
+    valueReference = "1047"
+    description = "Duration of ramp (= 0.0 gives a Step)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "30" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Sources.mo" startLine = "247" startColumn = "5" endLine = "248" endColumn = "46" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" min="0.0" unit="s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "y.height"
+    valueReference = "1048"
+    description = "Height of ramps"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "31" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Sources.mo" startLine = "245" startColumn = "5" endLine = "246" endColumn = "100" fileWritable = "true">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "y.offset"
+    valueReference = "1049"
+    description = "Offset of output signal y"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "32" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "479" startColumn = "5" endLine = "479" endColumn = "56" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "y.startTime"
+    valueReference = "1050"
+    description = "Output y = offset for time &lt; startTime"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "33" classType = "rPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Blocks/Interfaces.mo" startLine = "480" startColumn = "5" endLine = "480" endColumn = "75" fileWritable = "true">
+    <Real start="0.0" fixed="true" useNominal="false" unit="s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.h_internal"
+    valueReference = "1051"
+    description = "Internal connector for enthalpy"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sin.ports[1].h_outflow" aliasVariableId="7"
+    classIndex = "0" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "39" startColumn = "3" endLine = "41" endColumn = "38" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.ports[1].m_flow"
+    valueReference = "1052"
+    description = "Mass flow rate from the connection point into the component"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="valLin.m_flow" aliasVariableId="14"
+    classIndex = "1" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "13" startColumn = "5" endLine = "14" endColumn = "68" fileWritable = "true">
+    <Real fixed="false" useNominal="false" min="-9.999999999999999e+59" max="9.999999999999999e+59" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.ports[1].p"
+    valueReference = "1053"
+    description = "Thermodynamic pressure in the connection point"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sin.p_in_internal" aliasVariableId="6"
+    classIndex = "2" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "15" startColumn = "5" endLine = "15" endColumn = "79" fileWritable = "true">
+    <Real start="300000.0" fixed="false" useNominal="true" nominal="100000.0" min="0.0" max="100000000.0" unit="Pa" displayUnit="bar" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.h_internal"
+    valueReference = "1054"
+    description = "Internal connector for enthalpy"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sou.ports[1].h_outflow" aliasVariableId="11"
+    classIndex = "3" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "39" startColumn = "3" endLine = "41" endColumn = "38" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.ports[1].m_flow"
+    valueReference = "1055"
+    description = "Mass flow rate from the connection point into the component"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "negatedAlias" aliasVariable="valLin.m_flow" aliasVariableId="55"
+    classIndex = "4" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "13" startColumn = "5" endLine = "14" endColumn = "68" fileWritable = "true">
+    <Real fixed="false" useNominal="false" min="-9.999999999999999e+59" max="9.999999999999999e+59" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.ports[1].p"
+    valueReference = "1056"
+    description = "Thermodynamic pressure in the connection point"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sou.p_in_internal" aliasVariableId="10"
+    classIndex = "5" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "15" startColumn = "5" endLine = "15" endColumn = "79" fileWritable = "true">
+    <Real start="300000.0" fixed="false" useNominal="true" nominal="100000.0" min="0.0" max="100000000.0" unit="Pa" displayUnit="bar" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.kVal"
+    valueReference = "1057"
+    description = "Flow coefficient of valve, k=m_flow/sqrt(dp), with unit=(kg.m)^(1/2)."
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="valLin.k" aliasVariableId="13"
+    classIndex = "6" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/PartialTwoWayValve.mo" startLine = "25" startColumn = "3" endLine = "26" endColumn = "76" fileWritable = "true">
+    <Real fixed="false" useNominal="false" min="1e-60" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.port_a.h_outflow"
+    valueReference = "1058"
+    description = "Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sin.ports[1].h_outflow" aliasVariableId="7"
+    classIndex = "7" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "16" startColumn = "5" endLine = "17" endColumn = "84" fileWritable = "true">
+    <Real start="83680.0" fixed="false" useNominal="true" nominal="83680.0" min="-10000000000.0" max="10000000000.0" unit="J/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.port_a.m_flow"
+    valueReference = "1059"
+    description = "Mass flow rate from the connection point into the component"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="valLin.m_flow" aliasVariableId="14"
+    classIndex = "8" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "13" startColumn = "5" endLine = "14" endColumn = "68" fileWritable = "true">
+    <Real fixed="false" useNominal="false" min="-9.999999999999999e+59" max="100000.0" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.port_a.p"
+    valueReference = "1060"
+    description = "Thermodynamic pressure in the connection point"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sou.p_in_internal" aliasVariableId="10"
+    classIndex = "9" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "15" startColumn = "5" endLine = "15" endColumn = "79" fileWritable = "true">
+    <Real start="300000.0" fixed="false" useNominal="true" nominal="100000.0" min="0.0" max="100000000.0" unit="Pa" displayUnit="bar" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.port_b.h_outflow"
+    valueReference = "1061"
+    description = "Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sou.ports[1].h_outflow" aliasVariableId="11"
+    classIndex = "10" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "16" startColumn = "5" endLine = "17" endColumn = "84" fileWritable = "true">
+    <Real start="83680.0" fixed="false" useNominal="true" nominal="83680.0" min="-10000000000.0" max="10000000000.0" unit="J/kg" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.port_b.m_flow"
+    valueReference = "1062"
+    description = "Mass flow rate from the connection point into the component"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "negatedAlias" aliasVariable="valLin.m_flow" aliasVariableId="62"
+    classIndex = "11" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "13" startColumn = "5" endLine = "14" endColumn = "68" fileWritable = "true">
+    <Real fixed="false" useNominal="false" min="-100000.0" max="9.999999999999999e+59" unit="kg/s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.port_b.p"
+    valueReference = "1063"
+    description = "Thermodynamic pressure in the connection point"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="sin.p_in_internal" aliasVariableId="6"
+    classIndex = "12" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Modelica 4.0.0+maint.om/Fluid/Interfaces.mo" startLine = "15" startColumn = "5" endLine = "15" endColumn = "79" fileWritable = "true">
+    <Real start="300000.0" fixed="false" useNominal="true" nominal="100000.0" min="0.0" max="100000000.0" unit="Pa" displayUnit="bar" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.y"
+    valueReference = "1064"
+    description = "Actuator position (0: closed, 1: open)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="y.y" aliasVariableId="16"
+    classIndex = "13" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "22" startColumn = "3" endLine = "29" endColumn = "26" fileWritable = "true">
+    <Real fixed="false" useNominal="false" min="0.0" max="1.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.y_actual"
+    valueReference = "1065"
+    description = "Actual actuator position"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="y.y" aliasVariableId="16"
+    classIndex = "14" classType = "rAli"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "31" startColumn = "3" endLine = "33" endColumn = "69" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.y_internal"
+    valueReference = "1066"
+    description = "Output connector for internal use (= y_actual if not casePreInd)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="y.y" aliasVariableId="16"
+    classIndex = "15" classType = "rAli"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "43" startColumn = "3" endLine = "44" endColumn = "71" fileWritable = "true">
+    <Real fixed="false" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.flowDirection"
+    valueReference = "1067"
+    description = "Allowed flow direction"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "iPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "31" startColumn = "3" endLine = "32" endColumn = "80" fileWritable = "true">
+    <Integer start="3" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.nPorts"
+    valueReference = "1068"
+    description = "Number of ports"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "16" startColumn = "3" endLine = "16" endColumn = "88" fileWritable = "true">
+    <Integer start="1" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.flowDirection"
+    valueReference = "1069"
+    description = "Allowed flow direction"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "iPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "31" startColumn = "3" endLine = "32" endColumn = "80" fileWritable = "true">
+    <Integer start="3" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.nPorts"
+    valueReference = "1070"
+    description = "Number of ports"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "16" startColumn = "3" endLine = "16" endColumn = "88" fileWritable = "true">
+    <Integer start="1" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.CvData"
+    valueReference = "1071"
+    description = "Selection of flow coefficient"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ValveParameters.mo" startLine = "4" startColumn = "3" endLine = "6" endColumn = "50" fileWritable = "true">
+    <Integer start="1" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.init"
+    valueReference = "1072"
+    description = "Type of initialization (no init/steady state/initial state/initial output)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "iPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "16" startColumn = "3" endLine = "18" endColumn = "88" fileWritable = "true">
+    <Integer start="4" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.use_C_in"
+    valueReference = "1073"
+    description = "Get the trace substances from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "12" startColumn = "3" endLine = "14" endColumn = "83" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.use_T_in"
+    valueReference = "1074"
+    description = "Get the temperature from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "13" startColumn = "3" endLine = "15" endColumn = "82" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.use_X_in"
+    valueReference = "1075"
+    description = "Get the composition (all fractions) from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "6" startColumn = "3" endLine = "8" endColumn = "71" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.use_Xi_in"
+    valueReference = "1076"
+    description = "Get the composition (independent fractions) from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "9" startColumn = "3" endLine = "11" endColumn = "83" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.use_p_in"
+    valueReference = "1077"
+    description = "Get the pressure from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "6" startColumn = "3" endLine = "8" endColumn = "83" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sin.verifyInputs"
+    valueReference = "1078"
+    description = "Set to true to stop the simulation with an error if the medium temperature is outside its allowable range"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "17" startColumn = "3" endLine = "19" endColumn = "54" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.use_C_in"
+    valueReference = "1079"
+    description = "Get the trace substances from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "12" startColumn = "3" endLine = "14" endColumn = "83" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.use_T_in"
+    valueReference = "1080"
+    description = "Get the temperature from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "7" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "13" startColumn = "3" endLine = "15" endColumn = "82" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.use_X_in"
+    valueReference = "1081"
+    description = "Get the composition (all fractions) from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "8" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "6" startColumn = "3" endLine = "8" endColumn = "71" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.use_Xi_in"
+    valueReference = "1082"
+    description = "Get the composition (independent fractions) from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "9" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource_Xi_C.mo" startLine = "9" startColumn = "3" endLine = "11" endColumn = "83" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.use_p_in"
+    valueReference = "1083"
+    description = "Get the pressure from the input connector"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "10" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/Boundary_pT.mo" startLine = "6" startColumn = "3" endLine = "8" endColumn = "83" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "sou.verifyInputs"
+    valueReference = "1084"
+    description = "Set to true to stop the simulation with an error if the medium temperature is outside its allowable range"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "11" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Sources/BaseClasses/PartialSource.mo" startLine = "17" startColumn = "3" endLine = "19" endColumn = "54" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.allowFlowReversal"
+    valueReference = "1085"
+    description = "= false to simplify equations, assuming, but not enforcing, no flow reversal"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "12" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPort.mo" startLine = "14" startColumn = "3" endLine = "16" endColumn = "57" fileWritable = "true">
+    <Boolean start="true" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.casePreInd"
+    valueReference = "1086"
+    description = "In case of PressureIndependent the model I/O is modified"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "13" classType = "bPar"
+    isProtected = "true" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "40" startColumn = "3" endLine = "42" endColumn = "30" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.from_dp"
+    valueReference = "1087"
+    description = "= true, use m_flow = f(dp) else dp = f(m_flow)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "14" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/BaseClasses/PartialResistance.mo" startLine = "15" startColumn = "3" endLine = "17" endColumn = "55" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.linearized"
+    valueReference = "1088"
+    description = "= true, use linear relation between m_flow and dp for any flow rate"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "15" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/BaseClasses/PartialResistance.mo" startLine = "23" startColumn = "3" endLine = "25" endColumn = "54" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.show_T"
+    valueReference = "1089"
+    description = "= true, if actual temperature at port is computed"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "16" classType = "bPar"
+    isProtected = "false" hideResult = "true" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Interfaces/PartialTwoPortInterface.mo" startLine = "14" startColumn = "4" endLine = "18" endColumn = "23" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "valLin.use_inputFilter"
+    valueReference = "1090"
+    description = "= true, if opening is filtered with a 2nd order CriticalDamping filter"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "17" classType = "bPar"
+    isProtected = "false" hideResult = "" initNonlinear = "false"
+    fileName = "/home/marius/.openmodelica/libraries/Buildings 10.0.0/Fluid/Actuators/BaseClasses/ActuatorSignal.mo" startLine = "7" startColumn = "3" endLine = "9" endColumn = "65" fileWritable = "true">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+
+
+
+  </ModelVariables>
+
+
+</fmiModelDescription>
+

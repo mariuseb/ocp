@@ -867,15 +867,17 @@ class RK4(Integrator):
         self.dt = dt/n_steps
         self.set_ode_expr()
         self.set_ode_func()     
-        #self.set_h_expr()
-        #self.set_h()
+        self.set_h_expr()
+        self.set_h()
         #self.set_H()
         """
         NOTE: algebraic expressions should not be 
         part of explicit integrator.
+        
+        TODO: fix
         """
-        #self.set_g_expr()
-        #self.set_g()
+        self.set_g_expr()
+        self.set_g()
         self.one_step = self.get_one_step()
         self.one_sample = self.get_one_sample()
     
@@ -913,9 +915,9 @@ class RK4(Integrator):
         
     def set_h(self):
         self.h = ca.Function('h',
-                          [self.v, self.y, self.x, self.z, self.u, self.p, self.r],
+                          [self.v, self.y, self.x, self.z, self.u, self.p, self.r, self.w],
                           [self.h_expr],
-                          ["v", "y", "x", "z", "u", "p", "r"],
+                          ["v", "y", "x", "z", "u", "p", "r", "w"],
                           ["h"])
         
     def set_H(self):
@@ -936,33 +938,33 @@ class RK4(Integrator):
         
     def set_g(self):
         self.g = ca.Function('g',
-                          [self.z, self.x, self.u, self.p, self.v, self.s, self.r],
+                          [self.z, self.x, self.u, self.p, self.v, self.s, self.r, self.w],
                           [self.g_expr],
-                          ["z", "x", "u", "p", "v", "s", "r"],
+                          ["z", "x", "u", "p", "v", "s", "r", "w"],
                           ["g"])
         
     def set_ode_func(self):
         self.f = ca.Function('f',
-                          [self.x, self.u, self.p, self.r],
+                          [self.x, self.z, self.u, self.p, self.s, self.r, self.w],
                           [self.ode],
-                          ["x", "u", "p", "r"],
+                          ["x", "z", "u", "p", "s", "r", "w"],
                           ["f"])
         
     @property
     def k1(self):
-        return self.f(self.x, self.u, self.p, self.r)
+        return self.f(self.x, self.z, self.u, self.p, self.s, self.r, self.w)
 
     @property
     def k2(self):
-        return self.f(self.x + self.dt/2.0*self.k1, self.u, self.p, self.r)
+        return self.f(self.x + self.dt/2.0*self.k1, self.z, self.u, self.p, self.s, self.r, self.w)
 
     @property
     def k3(self):
-        return self.f(self.x + self.dt/2.0*self.k2, self.u, self.p, self.r)
+        return self.f(self.x + self.dt/2.0*self.k2, self.z, self.u, self.p, self.s, self.r, self.w)
     #X = self.x
     @property
     def k4(self):
-        return self.f(self.x + self.dt*self.k3, self.u, self.p, self.r)
+        return self.f(self.x + self.dt*self.k3, self.z, self.u, self.p, self.s, self.r, self.w)
     
     @property
     def states_final(self):
@@ -972,21 +974,22 @@ class RK4(Integrator):
     def final_expr(self):
         X = self.x
         for i in range(self.n_steps):
-            X = self.one_step(X, self.u, self.p, self.r)
+            X = self.one_step(X, self.z, self.u, self.p, self.s, self.r, self.w)
         return X
 
     def get_one_sample(self):
         return ca.Function('one_sample',
-                        [self.x, self.u, self.p, self.r],
+                        [self.x, self.z, self.u, self.p, self.s, self.r, self.w],
                         [self.final_expr],
-                        ["x0", "u", "p", "r"], ["xf"])  
+                        ["x0", "z", "u", "p", "s", "r", "w"],
+                        ["xf"])  
     
 
     def get_one_step(self): # return Function-object
         return ca.Function('one_step',
-                        [self.x, self.u, self.p, self.r],
+                        [self.x, self.z, self.u, self.p, self.s, self.r, self.w],
                         [self.states_final],
-                        ["x", "u", "p", "r"],
+                        ["x", "z", "u", "p", "s", "r", "w"],
                         ["xf"]) 
 
     def simulate(self, 

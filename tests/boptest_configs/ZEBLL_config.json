@@ -266,7 +266,7 @@
                "dh_pump": "ovePum",
                "rad_val": "oveValRad",
                "oveCO2ZonSet": "oveCO2ZonSet",
-               "oveValCoi": "oveValCoi"
+               "coi_val": "oveValCoi"
               },
         "y": {"Ti": "reaTZon_y",
               "Pvent": "reaQHea_y",
@@ -277,15 +277,14 @@
               "ahu_reaTCoiRet": "reaTCoiRet_y",
               "ahu_reaTHeaRec": "ahu_reaTHeaRec_y",
               "ahu_reaTRetAir": "ahu_reaTRetAir_y",
-              "reaValRad_y": "reaValRad_y",
               "Tsup_air": "ahu_reaTSupAir_y",
               "ahu_reaFloSupAir": "ahu_reaFloSupAir_y",
               "CO2_in": "reaCO2Zon_y",
               "n_occ": "reaOcc_y",
-              "reaFlo": "reaValFlo_y",
               "Tret": "reaTRadOut_y",
               "Tsup": "reaTRadIn_y",
-              "rad_flo": "reaRadFlo_y"
+              "rad_flo": "reaValFlo_y",
+              "coi_flo": "reaCoiFlo_y"
             },
             "boptest_to_ocp": {
                           "Ti": "reaTZon_y",
@@ -300,20 +299,19 @@
                           "ahu_pump_sup": "ahu_oveFanSup_u",
                           "ahu_pump_ret": "ahu_oveFanRet_u",
                           "CO2_in": "reaCO2Zon_y",
-                          "reaValRad_y": "reaValRad_y",
                           "rad_val": "oveValRad_u",
+                          "coi_val": "oveValCoi_u",
                           "TsetHea": "oveTZonSet_u",
                           "oveTSupSet": "oveTSupSet_u",
                           "dh_pump": "ovePum_u",
                           "oveCO2ZonSet": "oveCO2ZonSet_u",
-                          "oveValCoi": "oveValCoi_u",
                           "n_occ": "reaOcc_y",
                           "Pvent": "reaQHea_y",
                           "Prad": "reaPRad_y",
-                          "reaFlo": "reaValFlo_y",
                           "Tret": "reaTRadOut_y",
                           "Tsup": "reaTRadIn_y",
-                          "rad_flo": "reaRadFlo_y"
+                          "rad_flo": "reaValFlo_y",
+                          "coi_flo": "reaCoiFlo_y"
                           },
         "sampling": {
                      "integrate": ["Ph","reaPPum_y","reaPFan_y"],

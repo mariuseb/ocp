@@ -788,8 +788,14 @@ class OCP(metaclass=ABCMeta):
         compiler = kwargs.pop("compiler", "clang")
         #flags = kwargs.pop("flags", ["-O0"])
         flags = kwargs.pop("flags", ["-Ofast"])
+        if os.path.exists("_l4c_generated"):
+            linkage = ["-L./", "_l4c_generated/libl4casadi_f.so"]
+        else:
+            linkage = []
+            
         cmd_args = [compiler,"-fPIC","-shared"] + \
                     flags + \
+                    linkage + \
                     [self.gen_code_filename, "-o", self.so_filename]
         # compile:
         subprocess.run(cmd_args)
@@ -1272,7 +1278,8 @@ class OCP(metaclass=ABCMeta):
                         vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))
                     except ValueError:
                         vals = vals[:-1, :]
-                        if varname == "z" and isinstance(self.strategy, Collocation):
+                        #if varname == "z" and isinstance(self.strategy, Collocation):
+                        if varname == "z" and self.strategy.name == "Collocation":
                             vals = np.tile(vals.flatten(), self.strategy.d)
                         else:
                             vals = vals.reshape((self.nlp_parser[varname]["dim"], 1))

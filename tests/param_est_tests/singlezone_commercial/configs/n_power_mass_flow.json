@@ -1,0 +1,61 @@
+{
+    "model": {
+        "alg": {
+            "Pvent": "Pvent - ahu_reaFloSupAir*cp_air*(Tsup_air-ahu_reaTHeaRec)*eta_hex1",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*regNonZeroPower(ahu_pump_sup, n, 0.01)"
+
+        },
+        "w": {
+            "v2": "y2 - Pvent",
+            "v4": "y4 - ahu_reaFloSupAir"
+        },
+        "p": [
+            "m_flow_air_nom",
+            "n",
+            "cp_air",
+            "eta_hex1"
+
+        ],
+        "u": [
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "oveTSupSet",
+            "m_flow_weight",
+            "Tsup_air",
+            "ahu_reaTHeaRec"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "z": [
+            "Pvent",
+            "ahu_reaFloSupAir"
+        ],
+        "y": [
+            ["y2", "Pvent"],
+            ["y4", "ahu_reaFloSupAir"]
+        ]
+    },
+    "objective": "dot(v2, v2)@R[0,0] + dot(v4, v4)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}
