@@ -76,6 +76,8 @@ N = len(y_data)
 dt = y_data.index[1] - y_data.index[0]
 
 param_guess = np.array([1E-03,1E-03,1E+08,1E+08,3E+02])
+lbp = 1*param_guess
+ubp = 1*param_guess
 lbp = np.array([1E-05,1E-05,1E+06,1E+06,1E+02])
 ubp = np.array([1E-02,1E-02,1E+11,1E+11,7E+02])
 

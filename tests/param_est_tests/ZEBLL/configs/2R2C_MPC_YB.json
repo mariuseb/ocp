@@ -26,8 +26,8 @@
     },
     "bounds": {
         "u": {
-            "lbu": [0],
-            "ubu": [1E4]
+            "lbu": [-1E6],
+            "ubu": [1E6]
         }
     },
     "objective": "1E3*dot(Ti - Ti_ref, Ti - Ti_ref) + 1E-8*dot(phi_h, phi_h)",
