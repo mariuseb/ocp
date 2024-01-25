@@ -1,7 +1,7 @@
 {
     "name": "DevContainerOCP",
     "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "/bin/python",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
         "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
@@ -16,7 +16,8 @@
         "python.pythonPath": "/usr/local/bin/python",
         "python.languageServer": "Pylance",
         "python.formatting.provider": "black",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+		"workspaceFolder": "/workspaces"
     },
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [

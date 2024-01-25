@@ -130,8 +130,8 @@ if __name__ == "__main__":
     #dt = mpc.dt
     lb_night = {"Ti": 289.15}
     ub_night = {"Ti": 301.15}
-    lb_day = {"Ti": 293.15}
-    ub_day = {"Ti": 296.15}
+    lb_day = {"Ti": 294.15}
+    ub_day = {"Ti": 297.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -164,7 +164,7 @@ if __name__ == "__main__":
                         lbx=lbx,
                         ubx=ubx,
                         params=params,
-                        codegen=True
+                        codegen=False
                         )
     sol.index = data.index
     ax = sol.Ti.plot(color="r")
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     
     start = pd.Timestamp("2023-02-08 18:00")
     stop = pd.Timestamp("2023-02-09 17:00")
-    Tset = sol["Ti"].loc[start:stop]
+    Tset = (sol["Ti"].loc[start:stop] - 273.15)
     Tset.name = "Tset"
     Tset.to_csv("To_SAUTER_test.csv", index=True)
     

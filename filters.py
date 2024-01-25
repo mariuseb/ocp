@@ -852,11 +852,11 @@ class KalmanDAE(Filter):
             #    y_pad = np.append(y_pad, 0)
          
         #A11 = self.jac_f_x(x_pred,z,u,self.p,s,v,y,r,w)
-        A11 = self.jac_f_x(x_pred,z,u,self.p,r,s,y,w,v)
-        A12 = self.jac_f_z(x_pred,z,u,self.p,r,s,y,w,v)
+        A11 = self.jac_f_x(x_pred,z,u,p,r,s,y,w,v)
+        A12 = self.jac_f_z(x_pred,z,u,p,r,s,y,w,v)
         
-        dGdx = self.jac_g_x(x_pred,z,u,self.p,r,s,y,w,v)
-        dGdz = self.jac_g_z(x_pred,z,u,self.p,r,s,y,w,v)
+        dGdx = self.jac_g_x(x_pred,z,u,p,r,s,y,w,v)
+        dGdz = self.jac_g_z(x_pred,z,u,p,r,s,y,w,v)
         
         """
         Numerical inversion, 
@@ -883,7 +883,7 @@ class KalmanDAE(Filter):
             
         Ad = expm(A*self.dt)
         #C = self.jac_h(x_pred, z, u, self.p if p is None else p, s, v, y_pad, r, w)
-        C = self.jac_h(x_pred,z,u,self.p,r,s,y,w,v)
+        C = self.jac_h(x_pred,z,u,p,r,s,y,w,v)
         #h_x = self.h(y, x_pred, z, u, self.p if p is None else p, v, r)
         h_x = self.h(x_pred, z)
         try:
