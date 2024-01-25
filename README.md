@@ -25,13 +25,17 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
 
       1.) Download Docker desktop from: https://www.docker.com/products/docker-desktop/.
 
-      2.) Download Vscode from: https://code.visualstudio.com/.
+      2.) Install WSL: https://learn.microsoft.com/en-us/windows/wsl/install (backend for Docker Desktop).
+            - Make sure to enable wsl2
+            - Enable integration with default WSL distro (settings -> Resources -> WSL Integration)
 
-      3.) Open Vscode in root-folder of "ocp"-repo.
+      3.) Download Vscode from: https://code.visualstudio.com/.
 
-      4.) Install development container (pop-up window)
+      4.) Open Vscode in root-folder of "ocp"-repo.
 
-      5.) Copy-paste the following into "launch.json" (located under "workspaces/.vscode/launch.json"):
+      5.) Install development container (pop-up window)
+
+      6.) Copy-paste the following into "launch.json" (located under "workspaces/.vscode/launch.json"):
 
             {
             // Use IntelliSense to learn about possible attributes.
@@ -54,7 +58,7 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
             ]
             }
 
-      6.) Run example scripts.
+      7.) Run example scripts.
 
 **2. Full setup (TODO)**
 
