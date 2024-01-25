@@ -32,10 +32,15 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
       3.) Download Vscode from: https://code.visualstudio.com/.
 
       4.) Open Vscode in root-folder of "ocp"-repo.
+			- Run 'code .' from any terminal
 
       5.) Install development container (pop-up window)
+			- Let container be installed.
+	  
+	  6.) Switch workspace-folder from ocp root to /workspaces:
+			- File -> Open Folder.. -> workspaces
 
-      6.) Copy-paste the following into "launch.json" (located under "workspaces/.vscode/launch.json"):
+      7.) Copy-paste the following into "launch.json" (located under "workspaces/.vscode/launch.json"):
 
             {
             // Use IntelliSense to learn about possible attributes.
@@ -58,7 +63,7 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
             ]
             }
 
-      7.) Run example scripts.
+      8.) Run example scripts.
 
 **2. Full setup (TODO)**
 
