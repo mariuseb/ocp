@@ -39,7 +39,7 @@
         }
     },
     "objective": "dot(P_spot, phi_h)",
-    "N": 27,
+    "N": 34,
     "dt": 3600,
     "method": "multiple_shooting",
     "integrator": {

@@ -17,21 +17,56 @@ from ocp.frost_function import get_metno_data, get_stations, get_observations
 from ocp.functions import functions
 # text:
 rc('mathtext', default='regular')
-
+from metnwp_api import getLatestForecast, get_historical
 # datetime:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
 from ocp.result_generator import ResultGenerator
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 
+"""
+
+TODO:
+    - visualize the recent measurements compared to the one-step model output.
+    CONNECT with:
+    - visualize the optimal set-points.
+
+TODO:
+    - bounds on Tset / Ti between 14-17:
+
+        1.) First day : as operated normally (21 degrees)
+
+        2.) Rest: as obtained by optimal control algorithm.
+
+    - Write only hours in set-point outfile
+
+    - Split this script into two:
+
+        1.) Obtains, cleans data from respective sources 
+        writes to one unified input file.
+        
+        2.) Sets up the optimal control problem,
+        solves, writes set-points to output-file
+
+    - check if historical data can be gotten from same source
+    as forecast.
+"""
+
 PLOT = True
+location = {
+            "lat": 61.424779678595705, 
+            "lon": 11.082286053879768
+            }
 
 if __name__ == "__main__":
 
     """
     Needed data is read below:
     """
-    
+    index = pd.Timestamp.now().round("1H").tz_localize("UTC")
+    #forecast = getLatestForecast(index, location)
+    hist = get_historical(index, location)
+
     weather = pd.read_csv("weather_data_open_loop_test.csv", index_col=0)
     weather["T_sup_air"] = weather["Tsup_air"]
     #weather["Ta"] += 273.15

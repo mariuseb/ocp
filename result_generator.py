@@ -216,6 +216,10 @@ class ResultGenerator(object):
         """
         Simulate one-step ahead with Kalman feedback.
         """
+
+        if tvp:
+            assert switch is not None
+
         ekf = KalmanDAE(ekf_config)
         #ekf.set_R(np.diag([1]))
         # set R, Q? P0?
@@ -314,7 +318,8 @@ class ResultGenerator(object):
             result.loc[n, x_names] = x0
         
         one_step, y_data = self._post_process_sim(
-                                      xs[:-self.dae.n_x],
+                                      #xs[:-self.dae.n_x],
+                                      xs,
                                       zs,
                                       y_data
                                       )

@@ -63,7 +63,9 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
             ]
             }
 
-      8.) Run example scripts.
+      8.) Run example scripts
+	  
+	  9.) Run workflow:
 
 **2. Full setup (TODO)**
 
