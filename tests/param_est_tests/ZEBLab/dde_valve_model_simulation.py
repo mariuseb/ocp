@@ -136,7 +136,7 @@ dae_u = {
         }
 
 dt = 60
-irk = IRK(dae_u, dt=dt, n_steps=100, degree=2, method="legendre")
+irk = IRK(dae_u, dt=dt, n_steps=1, degree=2, method="legendre")
 print(irk)
 
 # Simulate:

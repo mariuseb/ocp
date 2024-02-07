@@ -2,7 +2,7 @@
     "model": {
         "alg": {
             "Tsup_air": "Tsup_air - ((ahu_reaTHeaRec + Rsr*Pvent)*ahu_pump_sup_high + (oveTSupSet + Rsr*Pvent)*ahu_pump_sup_low + Tsup_air_ss*(1 - ahu_pump_sup_on))",
-            "Rsr": "Rsr - ca.if_else(ahu_pump_sup > 0.4, (Rsr_b + Rsr_a*regNonZeroPower((1-ahu_pump_sup), n2, 0.01)), Rs_low)"
+            "Rsr": "Rsr - ca.if_else(ahu_pump_sup > 0.35, (Rsr_b + Rsr_a*regNonZeroPower((1-ahu_pump_sup), n2, 0.01)), Rs_low)"
         },
         "w": {
             "v8": "y8 - Tsup_air"

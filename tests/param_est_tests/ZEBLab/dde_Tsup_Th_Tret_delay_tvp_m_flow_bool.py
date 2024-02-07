@@ -8,67 +8,24 @@ from pprint import pprint
 from ocp.param_est import ParameterEstimation
 from utils import prepare_data
 
-"""
-MATLAB code:
-
-function [ udot] = mydde(t, u) 
-    d=1;
-    N=20;
-    udot=zeros(N,1);
-    for k=2:N
-        udot(k)=-N/d*(u(k)-u(k-1));
-    end 
-    udot(1)= - u(N); 
-    end
-
-[tout,uout]=ode15s(@mypde, [0 10], u0) 
-figure(1);
-plot(tout,yout);
-figure(2);
-surf(tout,linspace(0,1,20),uout)    
-
-"""
-
-"""
-
-Model a simple time delay:
-
-    dot(x)(t) = − x(t − d)
-    
-    with d the delay, as:
-    
-    dot(u)_k = − (N / d) * (u_k − u_k−1), ∀k ∈ [1, . . . , N-1]:
-    
-    with:
-    
-    x(t − d) ≈ u_N 
-    
-Reformulate the time delay model to:
-
-    dot(u)(t) = u(t − d)
-    x(t) = u(t)
-    
-
-We generate the symbolic DAE first, then simulate.
-
-"""
-
-data = pd.read_csv("ZEBLab_dec_2022_1m.csv")
+data = pd.read_csv("ZEBLab_2024_1m.csv")
 data.index = pd.to_datetime(data._time)
 data.index = data.index.tz_localize(None)
 data = prepare_data(data)
-data = data.resample(rule="5min").mean()
+#data = data.resample(rule="5min").mean()
 y_data = data.bfill() 
-y_data["u_val_set"] = y_data.val_pos_219
+#y_data["u_val_set"] = y_data.val_cmd_219
 #y_data["m_flow"] = (y_data.V_flow_219/y_data.V_flow_219.max())
 #y_data["m_flow"] = y_data.V_flow_219
 #y_data["y1"] = y_data["m_flow"]
 # take only time point between 0400 and 1100
-start = pd.Timestamp("2022-12-13 00:00")
-stop = pd.Timestamp("2022-12-16 00:00")
+#start = pd.Timestamp("2022-12-13 00:00")
+#stop = pd.Timestamp("2022-12-16 00:00")
+start = pd.Timestamp("2023-12-01 00:00")
+stop = pd.Timestamp("2023-12-03 00:00")
 y_data = y_data.loc[start:stop]
 
-index_selection = [ndx for ndx in y_data.index if ndx.hour in range(4,14)]
+index_selection = [ndx for ndx in y_data.index if ndx.hour in range(6,13)]
 y_data = y_data.loc[index_selection]
 #data = data.iloc[0:1000]
 
@@ -183,7 +140,8 @@ with ParameterEstimation(config=cfg_path,
                                     ubx=ubx,
                                     x_guess=x_guess,
                                     #Th_anti_bias=True,
-                                    covar=ca.veccat(Q, R)
+                                    covar=ca.veccat(Q, R),
+                                    codegen=True
                                     )
 
     #k = params["k"]

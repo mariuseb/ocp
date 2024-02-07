@@ -134,6 +134,7 @@ def prepare_data(data):
     
     # waterborne:
     y_data["u_val"] = data["val_pos_219"]
+    #y_data["u_val"] = data["val_cmd_219"]
     y_data["val_pos_219"] = data["val_pos_219"]
     y_data["Tsup"] = data["T_sup_219"]
     y_data["Tret"] = data["T_ret_219"]
@@ -165,9 +166,10 @@ def prepare_data(data):
     y_data["rise"] = normed
     
     #data["u_val_set"] = data.val_pos_219
-    y_data["u_val_set"] = y_data.u_val
+    y_data["u_val_set"] = data.val_cmd_219
     
-    m_flow_bool = (y_data.m_flow.resample(rule="5min").mean().astype(bool).astype(int)).resample("5min").ffill()
+    #m_flow_bool = (y_data.m_flow.resample(rule="5min").mean().astype(bool).astype(int)).resample("5min").ffill()
+    m_flow_bool = (y_data.m_flow.astype(bool).astype(int)) #.resample("1min").ffill()
     y_data["m_flow_bool"] = m_flow_bool
     y_data["flow_weight"] = m_flow_bool + 1E-2
     #y_data.m_flow_weight[(y_data.Tsup - y_data.Tret) > 20]
@@ -175,7 +177,9 @@ def prepare_data(data):
     #y_data.flow_weight.loc[large_indices] += 10
     #data["y1"] = data["m_flow"]
     y_data["u_val"] = data.val_pos_219
+    #y_data["u_val"] = data.val_cmd_219
     y_data["valve_open"] = (data.val_pos_219 > 0).astype(int).round(0)
+    #y_data["valve_open"] = (data.val_cmd_219 > 0).astype(int).round(0)
     y_data["valve_weight"] = y_data["valve_open"] + 1E-2
     # filter u_val
     y_data.u_val[y_data["u_val"] > 1] = 1

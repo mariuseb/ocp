@@ -53,7 +53,7 @@ if __name__ == "__main__":
                             get_data_path(), 
                             "data_bestest_hydronic_normal_op.csv"
                             )    
-    N = 563*2
+    N = 563*4
 
     if GENERATE_DATA_NORMAL_OP:
         
@@ -78,9 +78,6 @@ if __name__ == "__main__":
             
             
         data = boptest.get_data(tf=N*boptest.h, downsample=False)
-        # check
-        # ax = data.Ti.plot()
-        # data.oveTSetSup_u.plot(ax=ax, color="r", drawstyle="steps-post")
         data.to_csv(data_path)
 
         print(data)
@@ -135,9 +132,9 @@ if __name__ == "__main__":
     
     # unsure whether to pull this back or not:
     #data["ahu_reaTRetAir"] = data["ahu_reaTRetAir"].shift(-1) 
-    data["ahu_pump_sup_high"] = (data["ahu_pump_sup"] > 0.4).astype(bool).astype(int)
+    data["ahu_pump_sup_high"] = (data["ahu_pump_sup"] > 0.35).astype(bool).astype(int)
     data["ahu_pump_sup_on"] = (data["ahu_pump_sup"] > 0.0).astype(bool).astype(int)
-    data["ahu_pump_sup_low"] = ((data["ahu_pump_sup"] <= 0.4) & (data["ahu_pump_sup"] > 0)).astype(bool).astype(int)
+    data["ahu_pump_sup_low"] = ((data["ahu_pump_sup"] <= 0.35) & (data["ahu_pump_sup"] > 0)).astype(bool).astype(int)
     data["ahu_reaTHeaRec"] = data["ahu_reaTHeaRec"].shift(-1) 
     data["Ta"] = data["Ta"].shift(-1) 
     data["phi_s"] = data["phi_s"].shift(-1) 

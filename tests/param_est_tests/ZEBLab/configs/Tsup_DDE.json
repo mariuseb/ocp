@@ -1,10 +1,13 @@
 {
     "model": {
         "ode": {
-            "Tsup": "(Tset_sup - Tsup)/(Rsup*Csup)*m_flow_bool + (Tset_sup - Tsup)/(Rsup_hold*Csup_hold)*(1-m_flow_bool)"
+            "x1": "(3/d_sup)*(Tset_sup - x1)",
+            "x2": "(3/d_sup)*(x1 - x2)",
+            "Tsup": "(x2 - Tsup)*(3/d_sup)",
+            "flow": "((u_val_set - flow)/tau)"
         },
         "alg": {
-            "Tset_sup": "Tset_sup - (T_set_sup_b - T_set_sup_a*(Ta - Ta_dim))*m_flow_bool - Tsup_ss*(1 - m_flow_bool)"
+            "Tset_sup": "Tset_sup - (T_set_sup_b - T_set_sup_a*(Ta - Ta_dim) - s*flow**5)*m_flow_bool - Tsup_ss*(1 - m_flow_bool)"
         },
         "w": {
             "v3": "Tsup - y3"
@@ -15,24 +18,31 @@
             "T_set_sup_b",
             "T_set_sup_a",
             "Tsup_ss",
-            "Rsup",
-            "Csup",
-            "Rsup_hold",
-            "Csup_hold"
+            "s",
+            "tau",
+            "tau_off",
+            "m_flow_nom",
+            "d_sup"
         ],
         "u": [
             "Ta",
             "Ti",
             "m_flow_bool",
-            "m_flow_weight",
+            "flo_weight",
             "delta_m_flow",
-            "u_val_set"
+            "u_val_set",
+            "Tret",
+            "valve_open",
+            "m_flow"
         ],
         "z": [
             "Tset_sup"
         ],
         "x": [
-          "Tsup"
+            "x1",
+            "x2",
+            "Tsup",
+            "flow"
         ],
         "y": [
             ["y3", "Tsup"]
@@ -42,9 +52,13 @@
         "z": {
             "lbz": [280],
             "ubz": [320]
+        },
+        "x": {
+            "lbx": [280,280,280,-2],
+            "ubx": [320,320,320,2]
         }
     },
-    "objective": "dot(m_flow_weight*v3, m_flow_weight*v3)@R[0,0]",
+    "objective": "dot(flo_weight*v3, flo_weight*v3)@R[0,0]",
     "method": "multiple_shooting",
     "integrator": 
         {
@@ -58,9 +72,10 @@
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma57",
-        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_pre_alloc": 100,
+        "ipopt.ma57_print_level": 2,
         "ipopt.ma57_automatic_scaling" : "yes",
         "ipopt.hessian_approximation": "exact"
     },
-    "codegen": true
+    "codegen": false
 }

@@ -760,7 +760,7 @@ class IRK(Integrator):
                         )
         """
         # Convert to SX to decrease overhead
-        #vfcn_sx = vfcn.expand()
+        vfcn_sx = vfcn.expand()
         #zfcn_sx = zfcn.expand()
 
         # Create a implicit function instance to solve the system of equations
@@ -768,9 +768,12 @@ class IRK(Integrator):
         #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
         #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
         #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
-        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
+        #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
+        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+
         
         V = ifcn(ca.MX(), X0, Z, U, P, S, R, W)
+        
         #V = ifcn(ca.MX(), X0, U, P, S, R)
         X = [X0 if r==0 else V[(r-1)*nx:r*nx] for r in range(d+1)]
         #offset = d*nx
@@ -834,9 +837,8 @@ class IRK(Integrator):
         all_samples = self.one_sample.mapaccum("all_samples", int(N))
         #return all_samples(x0, 0, U, ca.repmat(params,1,N), 0, 0) # -> empty z 
         return all_samples(x0,0,u,p,0,r,0)
-        
-
-
+    
+    
 """
 TODO: recfactor RK4. __init__ should take either:
     - DAE wrapper 
@@ -866,9 +868,12 @@ class RK4(Integrator):
         self.n_steps = n_steps
         self.dt = dt/n_steps
         self.set_ode_expr()
-        self.set_ode_func()     
-        self.set_h_expr()
-        self.set_h()
+        self.set_ode_func()  
+        try:   
+            self.set_h_expr()
+            self.set_h()
+        except:
+            print("Not able to set measurement expressions...")
         #self.set_H()
         """
         NOTE: algebraic expressions should not be 
@@ -876,8 +881,12 @@ class RK4(Integrator):
         
         TODO: fix
         """
-        self.set_g_expr()
-        self.set_g()
+        try:   
+            self.set_g_expr()
+            self.set_g()
+        except:
+            print("Not able to set algebraic expressions...")
+            
         self.one_step = self.get_one_step()
         self.one_sample = self.get_one_sample()
     
@@ -997,7 +1006,12 @@ class RK4(Integrator):
                  x0=None,
                  u=ca.DM([]),
                  p=ca.DM([]),
-                 r=ca.DM([])
+                 r=ca.DM([]),
+                 z=ca.DM([]),
+                 s=ca.DM([]),
+                 y=ca.DM([]),
+                 w=ca.DM([]),
+                 v=ca.DM([])
                  ):
         """ 
         Simulate ODE-dynamics over N time-steps with given:
@@ -1014,5 +1028,5 @@ class RK4(Integrator):
 
         all_samples = self.get_one_sample().mapaccum("all_samples", int(N))
         #return all_samples(x0, 0, U, ca.repmat(params,1,N), 0, 0) # -> empty z 
-        return all_samples(x0, u, p, r)
+        return all_samples(x0, z, u, p, s, r, w)
         

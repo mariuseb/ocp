@@ -43,7 +43,7 @@
             "Ta",
             "Ti",
             "m_flow_bool",
-            "m_flow_weight",
+            "flow_weight",
             "delta_m_flow",
             "u_val_set"
         ],
@@ -67,17 +67,15 @@
     },
     "bounds": {
         "z": {
-            "lbz": [280,-500,0],
-            "ubz": [320,3000,0.1]
+            "lbz": [280,-500,-1],
+            "ubz": [320,5000,1]
+        },
+        "x": {
+            "lbx": [280,280,280,-1],
+            "ubx": [320,320,320,1]
         }
     },
     "objective": "dot(v2, v2)@R[0,0] + dot(v3, v3)@R[1,1] + dot(v4, v4)@R[2,2] + dot(v5, v5)@R[3,3]",
-    "ocp": {
-        "h": 
-        [
-            "0 <= m_flow_bool*(Tsup - Th)"     
-        ]
-    },
     "method": "multiple_shooting",
     "integrator": 
         {
@@ -89,11 +87,11 @@
     ,
     "solver": "",
     "opt": {
-        "verbose": false,
+        "verbose": true,
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10,
         "ipopt.ma57_automatic_scaling" : "yes",
         "ipopt.hessian_approximation": "exact"
     },
-    "codegen": true
+    "codegen": false
 }
