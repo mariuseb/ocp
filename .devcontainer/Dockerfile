@@ -22,4 +22,11 @@ RUN pip3 install --no-cache-dir numpy
 RUN pip3 install --no-cache-dir pandas
 RUN pip3 install --no-cache-dir matplotlib
 RUN pip3 install --no-cache-dir casadi
+RUN pip3 install --no-cache-dir requests
+RUN pip3 install --no-cache-dir netCDF4
+RUN pip3 install --no-cache-dir pyproj
+RUN pip3 install --no-cache-dir scikit-learn
+RUN pip3 install --no-cache-dir openpyxl
 # Add further installations here as they are cached
+
+#ENV PYTHONPATH="/workspaces:${PYTHONPATH}"

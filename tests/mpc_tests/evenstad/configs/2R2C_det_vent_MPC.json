@@ -3,7 +3,7 @@
         "ode": {
             "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + (1/Ci)*alpha_vent*V_flow_sup_air*(T_sup_air - Ti)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + Ae*(phi_s/Ce)"
-         },
+        },
         "p": [
             "Rie",
             "Rea",
@@ -30,27 +30,29 @@
     },
     "bounds": {
         "u": {
-            "lbu": [0],
-            "ubu": [1E6]
+            "lbu": [
+                0
+            ],
+            "ubu": [
+                1E6
+            ]
         }
     },
     "objective": "dot(P_spot, phi_h)",
-    "N": 27,
+    "N": 34,
     "dt": 3600,
     "method": "multiple_shooting",
-    "integrator": 
-        {
+    "integrator": {
         "name": "IRK",
         "method": "legendre",
         "degree": 3,
         "n_steps": 1
-        }
-    ,
+    },
     "solver": "",
     "opt": {
         "verbose": false,
-        "ipopt.linear_solver": "ma57",
-        "ipopt.ma57_pre_alloc": 3, 
+        "ipopt.linear_solver": "mumps",
+        "ipopt.ma57_pre_alloc": 3,
         "ipopt.max_cpu_time": 300,
         "ipopt.hessian_approximation": "exact"
     },

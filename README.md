@@ -21,6 +21,52 @@ Parameter estimation, model predictive control, moving horizon estimation, reinf
       
       5.) See e.g. tests/param_est_tests/ZEBLL/test_param_est_2R2C.py on how to do parameter estimation on already existing data.
 
-**1. Full setup (TODO)**
+**1. Devcontainer setup (Windows/Linux)**
+
+      1.) Download Docker desktop from: https://www.docker.com/products/docker-desktop/.
+
+      2.) Install WSL: https://learn.microsoft.com/en-us/windows/wsl/install (backend for Docker Desktop).
+            - Make sure to enable wsl2
+            - Enable integration with default WSL distro (settings -> Resources -> WSL Integration)
+
+      3.) Download Vscode from: https://code.visualstudio.com/.
+
+      4.) Open Vscode in root-folder of "ocp"-repo.
+			- Run 'code .' from any terminal
+
+      5.) Install development container (pop-up window)
+			- Let container be installed.
+	  
+	  6.) Switch workspace-folder from ocp root to /workspaces:
+			- File -> Open Folder.. -> workspaces
+
+      7.) Copy-paste the following into "launch.json" (located under "workspaces/.vscode/launch.json"):
+
+            {
+            // Use IntelliSense to learn about possible attributes.
+            // Hover to view descriptions of existing attributes.
+            // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+            "version": "0.2.0",
+            "configurations": [
+                  {
+                        "name": "Python: Current File",
+                        "type": "python",
+                        "request": "launch",
+                        "program": "${file}",
+                        "console": "integratedTerminal",
+                        "cwd": "${workspaceFolder}/${relativeFileDirname}",
+                        "justMyCode": true,
+                        "env": {
+                        "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
+                        }
+                  }
+            ]
+            }
+
+      8.) Run example scripts
+	  
+	  9.) Run workflow:
+
+**2. Full setup (TODO)**
 
       For a full setup, README is TODO.

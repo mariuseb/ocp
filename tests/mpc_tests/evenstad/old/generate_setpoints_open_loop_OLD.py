@@ -17,21 +17,56 @@ from ocp.frost_function import get_metno_data, get_stations, get_observations
 from ocp.functions import functions
 # text:
 rc('mathtext', default='regular')
-
+from metnwp_api import getLatestForecast, get_historical
 # datetime:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
 from ocp.result_generator import ResultGenerator
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 
+"""
+
+TODO:
+    - visualize the recent measurements compared to the one-step model output.
+    CONNECT with:
+    - visualize the optimal set-points.
+
+TODO:
+    - bounds on Tset / Ti between 14-17:
+
+        1.) First day : as operated normally (21 degrees)
+
+        2.) Rest: as obtained by optimal control algorithm.
+
+    - Write only hours in set-point outfile
+
+    - Split this script into two:
+
+        1.) Obtains, cleans data from respective sources 
+        writes to one unified input file.
+        
+        2.) Sets up the optimal control problem,
+        solves, writes set-points to output-file
+
+    - check if historical data can be gotten from same source
+    as forecast.
+"""
+
 PLOT = True
+location = {
+            "lat": 61.424779678595705, 
+            "lon": 11.082286053879768
+            }
 
 if __name__ == "__main__":
 
     """
     Needed data is read below:
     """
-    
+    index = pd.Timestamp.now().round("1H").tz_localize("UTC")
+    #forecast = getLatestForecast(index, location)
+    hist = get_historical(index, location)
+
     weather = pd.read_csv("weather_data_open_loop_test.csv", index_col=0)
     weather["T_sup_air"] = weather["Tsup_air"]
     #weather["Ta"] += 273.15
@@ -130,8 +165,8 @@ if __name__ == "__main__":
     #dt = mpc.dt
     lb_night = {"Ti": 289.15}
     ub_night = {"Ti": 301.15}
-    lb_day = {"Ti": 293.15}
-    ub_day = {"Ti": 296.15}
+    lb_day = {"Ti": 294.15}
+    ub_day = {"Ti": 297.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -164,7 +199,7 @@ if __name__ == "__main__":
                         lbx=lbx,
                         ubx=ubx,
                         params=params,
-                        codegen=True
+                        codegen=False
                         )
     sol.index = data.index
     ax = sol.Ti.plot(color="r")
@@ -174,7 +209,7 @@ if __name__ == "__main__":
     
     start = pd.Timestamp("2023-02-08 18:00")
     stop = pd.Timestamp("2023-02-09 17:00")
-    Tset = sol["Ti"].loc[start:stop]
+    Tset = (sol["Ti"].loc[start:stop] - 273.15)
     Tset.name = "Tset"
     Tset.to_csv("To_SAUTER_test.csv", index=True)
     
