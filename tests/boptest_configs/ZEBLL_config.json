@@ -65,10 +65,19 @@
         "warmup_period": 604800
       },
       "maps" : {
-        "r" : {"Ta": "TDryBul"},
+        "r" : {"Ta": "TDryBul",
+               "LowerSetp[1]": "LowerSetp[1]",
+               "UpperSetp[1]": "UpperSetp[1]",
+               "PriceElectricPowerHighlyDynamic": "PriceElectricPowerHighlyDynamic"
+              },
         "u" : {"phi_h": "oveAct"},
         "y": {"Ti": "TRooAir_y"},
-        "boptest_to_ocp": {"phi_h": "QHea_y", "Ti": "TRooAir_y"},
+        "boptest_to_ocp": {
+                          "phi_h": "QHea_y", "Ti": "TRooAir_y",
+                          "LowerSetp[1]": "LowerSetp[1]",
+                          "UpperSetp[1]": "UpperSetp[1]",
+                          "PriceElectricPowerHighlyDynamic": "PriceElectricPowerHighlyDynamic"
+                          },
         "sampling": {
                      "integrate": ["phi_h"],
                      "point": ["Ta", "phi_s", "Ti"]

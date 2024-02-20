@@ -2,10 +2,10 @@
 <fmiModelDescription
   fmiVersion="2.0"
   modelName="SimpleRC"
-  guid="{1adfed85-0360-400f-a062-b0996569b37a}"
+  guid="{3f23d689-da2c-426c-8633-51160ab559a9}"
   description="A simple thermal R1C1 model with sinusoidal outside air temperature and a feedback controlled heater."
   generationTool="OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"
-  generationDateAndTime="2024-02-14T00:52:18Z"
+  generationDateAndTime="2024-02-20T23:18:36Z"
   variableNamingConvention="structured"
   numberOfEventIndicators="0">
   <ModelExchange
