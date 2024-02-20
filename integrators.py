@@ -460,9 +460,9 @@ class IRK(Integrator):
             self._init_nvar_property(name)
         
         self.set_g_expr()
-        if not self.g_expr.is_empty():
-            self.set_g() # the function-obj
-            self.set_G() # rootfinder
+        #if not self.g_expr.is_empty():
+        self.set_g() # the function-obj
+        self.set_G() # rootfinder
         # TODO: fix w, dependant parameters
         #self.set_w()
         #self.set_wdef()
@@ -760,16 +760,14 @@ class IRK(Integrator):
                         )
         """
         # Convert to SX to decrease overhead
-        vfcn_sx = vfcn.expand()
+        try:
+            #vfcn_sx = vfcn.expand()
+            vfcn = vfcn.expand()
+        except RuntimeError:
+            pass
         #zfcn_sx = zfcn.expand()
-
-        # Create a implicit function instance to solve the system of equations
-        #v_ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
-        #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
         #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
-        #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
-        #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
-        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
+        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
 
         
         V = ifcn(ca.MX(), X0, Z, U, P, S, R, W)

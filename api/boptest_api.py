@@ -48,7 +48,7 @@ class RestApi(object):
     ''' Abstract class. '''
     def __init__(self):
         self.url = 'http://bacssaas_boptest:5000'
-        self.name = self.get_name()['name']
+        self.name = self.get_name()['payload']['name']
 
     def initialize(self):
         return requests.put('{0}/initialize'.format(self.url), data={'start_time': self.start_time, 'warmup_period': self.warmup_period})
@@ -149,7 +149,7 @@ class Boptest(RestApi):
 
         return forecast, y_sorted
 
-    def forcast(self):
+    def forecast(self):
         return self.to_np_array(self.get_forecast(), self.cfg["maps"]["r"], self.var["r"]["labels"])
     
     @staticmethod

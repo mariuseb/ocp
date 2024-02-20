@@ -1,0 +1,47 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "ode(ca.vertcat(Ti), ca.vertcat(Ta, phi_h))[0]"
+        },
+        "p": [
+        ],
+        "u": [
+            "phi_h"
+        ],
+        "r": [
+            "Ta"
+        ],
+        "x": [
+            "Ti"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [-10000],
+            "ubu": [10000]
+        }
+    },
+    "objective": "dot(phi_h, phi_h)",
+    "N": 24,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "yes",
+        "ipopt.max_cpu_time": 100,
+        "ipopt.hessian_approximation": "limited-memory"
+    },
+    "codegen": false,
+    "map_eval": true
+}

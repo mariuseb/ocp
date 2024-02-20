@@ -1,0 +1,54 @@
+EXPORTS
+  ;***************************************************
+  ;Common Functions
+  ;****************************************************
+  SimpleRC_fmiGetTypesPlatform @1
+  SimpleRC_fmiGetVersion @2
+  SimpleRC_fmiSetDebugLogging @3
+  SimpleRC_fmiInstantiate @4
+  SimpleRC_fmiFreeInstance @5
+  SimpleRC_fmiSetupExperiment @6
+  SimpleRC_fmiEnterInitializationMode @7
+  SimpleRC_fmiExitInitializationMode @8
+  SimpleRC_fmiTerminate @9
+  SimpleRC_fmiReset @10
+  SimpleRC_fmiGetReal @11
+  SimpleRC_fmiGetInteger @12
+  SimpleRC_fmiGetBoolean @13
+  SimpleRC_fmiGetString @14
+  SimpleRC_fmiSetReal @15
+  SimpleRC_fmiSetInteger @16
+  SimpleRC_fmiSetBoolean @17
+  SimpleRC_fmiSetString @18
+  SimpleRC_fmiGetFMUstate @19
+  SimpleRC_fmiSetFMUstate @20
+  SimpleRC_fmiFreeFMUstate @21
+  SimpleRC_fmiSerializedFMUstateSize @22
+  SimpleRC_fmiSerializeFMUstate @23
+  SimpleRC_fmiDeSerializeFMUstate @24
+  SimpleRC_fmiGetDirectionalDerivative @25
+  ;***************************************************
+  ;Functions for FMI for Model Exchange
+  ;****************************************************
+  SimpleRC_fmiEnterEventMode @26
+  SimpleRC_fmiNewDiscreteStates @27
+  SimpleRC_fmiEnterContinuousTimeMode @28
+  SimpleRC_fmiCompletedIntegratorStep @29
+  SimpleRC_fmiSetTime @30
+  SimpleRC_fmiSetContinuousStates @31
+  SimpleRC_fmiGetDerivatives @32
+  SimpleRC_fmiGetEventIndicators @33
+  SimpleRC_fmiGetContinuousStates @34
+  SimpleRC_fmiGetNominalsOfContinuousStates @35
+  ;***************************************************
+  ;Functions for FMI for Co-Simulation
+  ;****************************************************
+  SimpleRC_fmiSetRealInputDerivatives @36
+  SimpleRC_fmiGetRealOutputDerivatives @37
+  SimpleRC_fmiDoStep @38
+  SimpleRC_fmiCancelStep @39
+  SimpleRC_fmiGetStatus @40
+  SimpleRC_fmiGetRealStatus @41
+  SimpleRC_fmiGetIntegerStatus @42
+  SimpleRC_fmiGetBooleanStatus @43
+  SimpleRC_fmiGetStringStatus @44

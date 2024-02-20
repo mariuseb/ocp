@@ -727,10 +727,10 @@ class OCP(metaclass=ABCMeta):
         """
         Replace nan with 0.
         """
-        ceiled = np.nan_to_num(ceiled)
+        #ceiled = np.nan_to_num(ceiled)
         #return np.multiply(ceiled, dec_scale)
-        return np.array(np.multiply(ceiled, dec_scale)).flatten()
-        #return dec_scale
+        #return np.array(np.multiply(ceiled, dec_scale)).flatten()
+        return dec_scale
     
     def __del__(self):
         pass
@@ -1487,7 +1487,8 @@ class OCP(metaclass=ABCMeta):
                 if start != stop:
                     params = np.array(sol_x[start:stop]*scale).flatten()
                 else:
-                    params = solution["p"]
+                    #params = solution["p"]
+                    params = []
                 _vals = np.tile(
                                 (np.array(
                                         params)).reshape((1,self.n_p)), self.N).reshape(

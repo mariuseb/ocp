@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="SimpleRC"
+  guid="{1adfed85-0360-400f-a062-b0996569b37a}"
+  description="A simple thermal R1C1 model with sinusoidal outside air temperature and a feedback controlled heater."
+  generationTool="OpenModelica Compiler OpenModelica 1.21.0~dev-298-g51286f2"
+  generationDateAndTime="2024-02-14T00:52:18Z"
+  variableNamingConvention="structured"
+  numberOfEventIndicators="0">
+  <ModelExchange
+    modelIdentifier="SimpleRC" providesDirectionalDerivative="true">
+    <SourceFiles>
+      <File name="SimpleRC.c" />
+      <File name="SimpleRC_functions.c" />
+      <File name="SimpleRC_records.c" />
+      <File name="SimpleRC_01exo.c" />
+      <File name="SimpleRC_02nls.c" />
+      <File name="SimpleRC_03lsy.c" />
+      <File name="SimpleRC_04set.c" />
+      <File name="SimpleRC_05evt.c" />
+      <File name="SimpleRC_06inz.c" />
+      <File name="SimpleRC_07dly.c" />
+      <File name="SimpleRC_08bnd.c" />
+      <File name="SimpleRC_09alg.c" />
+      <File name="SimpleRC_10asr.c" />
+      <File name="SimpleRC_11mix.c" />
+      <File name="SimpleRC_12jac.c" />
+      <File name="SimpleRC_13opt.c" />
+      <File name="SimpleRC_14lnz.c" />
+      <File name="SimpleRC_15syn.c" />
+      <File name="SimpleRC_16dae.c" />
+      <File name="SimpleRC_17inl.c" />
+      <File name="SimpleRC_18spd.c" />
+      <File name="SimpleRC_init_fmu.c" />
+      <File name="SimpleRC_FMU.c" />
+      <File name="./gc/memory_pool.c" />
+      <File name="./gc/omc_gc.c" />
+      <File name="./util/base_array.c" />
+      <File name="./util/boolean_array.c" />
+      <File name="./util/context.c" />
+      <File name="./util/division.c" />
+      <File name="./util/doubleEndedList.c" />
+      <File name="./util/generic_array.c" />
+      <File name="./util/index_spec.c" />
+      <File name="./util/integer_array.c" />
+      <File name="./util/jacobian_util.c" />
+      <File name="./util/list.c" />
+      <File name="./util/modelica_string_lit.c" />
+      <File name="./util/modelica_string.c" />
+      <File name="./util/ModelicaUtilities.c" />
+      <File name="./util/omc_error.c" />
+      <File name="./util/omc_file.c" />
+      <File name="./util/omc_init.c" />
+      <File name="./util/omc_mmap.c" />
+      <File name="./util/omc_msvc.c" />
+      <File name="./util/omc_numbers.c" />
+      <File name="./util/parallel_helper.c" />
+      <File name="./util/rational.c" />
+      <File name="./util/real_array.c" />
+      <File name="./util/ringbuffer.c" />
+      <File name="./util/simulation_options.c" />
+      <File name="./util/string_array.c" />
+      <File name="./util/utility.c" />
+      <File name="./util/varinfo.c" />
+      <File name="./math-support/pivot.c" />
+      <File name="./simulation/omc_simulation_util.c" />
+      <File name="./simulation/options.c" />
+      <File name="./simulation/simulation_info_json.c" />
+      <File name="./simulation/simulation_omc_assert.c" />
+      <File name="./simulation/solver/delay.c" />
+      <File name="./simulation/solver/fmi_events.c" />
+      <File name="./simulation/solver/model_help.c" />
+      <File name="./simulation/solver/omc_math.c" />
+      <File name="./simulation/solver/spatialDistribution.c" />
+      <File name="./simulation/solver/stateset.c" />
+      <File name="./simulation/solver/synchronous.c" />
+      <File name="./simulation/solver/initialization/initialization.c" />
+      <File name="./meta/meta_modelica_catch.c" />
+    </SourceFiles>
+  </ModelExchange>
+  <UnitDefinitions>
+    <Unit name="K/W">
+      <BaseUnit m="-2" s="3" K="1" kg="-1" />
+    </Unit>
+    <Unit name="1/K">
+      <BaseUnit K="-1" />
+    </Unit>
+    <Unit name="J/K">
+      <BaseUnit m="2" s="-2" K="-1" kg="1" />
+    </Unit>
+    <Unit name="W">
+      <BaseUnit m="2" s="-3" kg="1" />
+    </Unit>
+    <Unit name="K/s">
+      <BaseUnit s="-1" K="1" />
+    </Unit>
+    <Unit name="s-1.K">
+      <BaseUnit s="-1" K="1" />
+    </Unit>
+    <Unit name="K">
+      <BaseUnit K="1" />
+    </Unit>
+  </UnitDefinitions>
+  <LogCategories>
+    <Category name="logEvents" />
+    <Category name="logSingularLinearSystems" />
+    <Category name="logNonlinearSystems" />
+    <Category name="logDynamicStateSelection" />
+    <Category name="logStatusWarning" />
+    <Category name="logStatusDiscard" />
+    <Category name="logStatusError" />
+    <Category name="logStatusFatal" />
+    <Category name="logStatusPending" />
+    <Category name="logAll" />
+    <Category name="logFmi2Call" />
+  </LogCategories>
+  <DefaultExperiment startTime="0.0" stopTime="60.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <!-- Index of variable = "1" -->
+  <ScalarVariable
+    name="cap.T"
+    valueReference="0"
+    description="Temperature of element"
+    initial="exact">
+    <Real start="293.15" min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "2" -->
+  <ScalarVariable
+    name="der(cap.T)"
+    valueReference="1"
+    description="der(Temperature of element)"
+    >
+    <Real derivative="1" unit="s-1.K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "3" -->
+  <ScalarVariable
+    name="Ta"
+    valueReference="2"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "4" -->
+  <ScalarVariable
+    name="cap.der_T"
+    valueReference="3"
+    description="Time derivative of temperature (= der(T))"
+    >
+    <Real unit="K/s"/>
+  </ScalarVariable>
+  <!-- Index of variable = "5" -->
+  <ScalarVariable
+    name="cap.port.Q_flow"
+    valueReference="4"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "6" -->
+  <ScalarVariable
+    name="phi_h"
+    valueReference="5"
+    causality="input"
+    >
+    <Real start="0.0"/>
+  </ScalarVariable>
+  <!-- Index of variable = "7" -->
+  <ScalarVariable
+    name="res.Q_flow"
+    valueReference="6"
+    description="Heat flow rate from port_a -&gt; port_b"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "8" -->
+  <ScalarVariable
+    name="res.dT"
+    valueReference="7"
+    description="port_a.T - port_b.T"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "9" -->
+  <ScalarVariable
+    name="senTZone.port.Q_flow"
+    valueReference="8"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    initial="exact">
+    <Real start="0.0" unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "10" -->
+  <ScalarVariable
+    name="y"
+    valueReference="9"
+    causality="output"
+    >
+    <Real/>
+  </ScalarVariable>
+  <!-- Index of variable = "11" -->
+  <ScalarVariable
+    name="cap.C"
+    valueReference="10"
+    description="Heat capacity of element (= cp*m)"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="J/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "12" -->
+  <ScalarVariable
+    name="preHeat.T_ref"
+    valueReference="11"
+    description="Reference temperature"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "13" -->
+  <ScalarVariable
+    name="preHeat.alpha"
+    valueReference="12"
+    description="Temperature coefficient of heat flow rate"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="1/K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "14" -->
+  <ScalarVariable
+    name="res.R"
+    valueReference="13"
+    description="Constant thermal resistance of material"
+    variability="fixed"
+    causality="calculatedParameter"
+    >
+    <Real unit="K/W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "15" -->
+  <ScalarVariable
+    name="cap.port.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "16" -->
+  <ScalarVariable
+    name="preHeat.Q_flow"
+    valueReference="5"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "17" -->
+  <ScalarVariable
+    name="preHeat.port.Q_flow"
+    valueReference="17"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "18" -->
+  <ScalarVariable
+    name="preHeat.port.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "19" -->
+  <ScalarVariable
+    name="preTOut.T"
+    valueReference="2"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "20" -->
+  <ScalarVariable
+    name="preTOut.port.Q_flow"
+    valueReference="20"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "21" -->
+  <ScalarVariable
+    name="preTOut.port.T"
+    valueReference="2"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "22" -->
+  <ScalarVariable
+    name="res.port_a.Q_flow"
+    valueReference="6"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "23" -->
+  <ScalarVariable
+    name="res.port_a.T"
+    valueReference="2"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "24" -->
+  <ScalarVariable
+    name="res.port_b.Q_flow"
+    valueReference="24"
+    description="Heat flow rate (positive if flowing from outside into the component)"
+    >
+    <Real unit="W"/>
+  </ScalarVariable>
+  <!-- Index of variable = "25" -->
+  <ScalarVariable
+    name="res.port_b.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "26" -->
+  <ScalarVariable
+    name="senTZone.T"
+    valueReference="0"
+    description="Absolute temperature as output signal"
+    >
+    <Real unit="K"/>
+  </ScalarVariable>
+  <!-- Index of variable = "27" -->
+  <ScalarVariable
+    name="senTZone.port.T"
+    valueReference="0"
+    description="Port temperature"
+    >
+    <Real min="0.0" nominal="300.0" unit="K"/>
+  </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="10" dependencies="1" dependenciesKind="dependent" />
+    </Outputs>
+    <Derivatives>
+      <Unknown index="2" dependencies="1 3 6" dependenciesKind="dependent dependent dependent" />
+    </Derivatives>
+    <InitialUnknowns>
+      <Unknown index="2" dependencies="1 3 6" dependenciesKind="dependent dependent dependent" />
+      <Unknown index="10" dependencies="1" dependenciesKind="dependent" />
+      <Unknown index="11" dependencies="" dependenciesKind="" />
+      <Unknown index="12" dependencies="" dependenciesKind="" />
+      <Unknown index="13" dependencies="" dependenciesKind="" />
+      <Unknown index="14" dependencies="" dependenciesKind="" />
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

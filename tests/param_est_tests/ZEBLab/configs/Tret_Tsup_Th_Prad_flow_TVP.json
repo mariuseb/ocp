@@ -90,6 +90,7 @@
         "verbose": true,
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_iter": 30000,
         "ipopt.ma57_automatic_scaling" : "yes",
         "ipopt.hessian_approximation": "exact"
     },

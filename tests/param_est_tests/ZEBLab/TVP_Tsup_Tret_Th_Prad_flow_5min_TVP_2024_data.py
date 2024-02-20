@@ -41,7 +41,7 @@ if __name__ == "__main__":
     data.index = pd.to_datetime(data.index)
     data.index = data.index.tz_localize(None)
     # take subset of data:
-    start = pd.Timestamp("2023-12-14 00:00")
+    start = pd.Timestamp("2023-12-11 00:00")
     stop = pd.Timestamp("2023-12-20 00:00")
     data = data.loc[start:stop]
     
@@ -113,7 +113,7 @@ if __name__ == "__main__":
                        ]
     data = data.loc[index_selection]
       
-    start_train = pd.Timestamp("2023-12-14 00:00")
+    start_train = pd.Timestamp("2023-12-11 00:00")
     stop_train = pd.Timestamp("2023-12-17 00:00")
     stop_val = pd.Timestamp("2023-12-20 00:00")
     validation_data = data.loc[stop_train:stop_val]
@@ -146,7 +146,6 @@ if __name__ == "__main__":
                             1.19874920e+02, # tau
                             7.00000002e-03, # m_flow_nom
                             1.69461662e+04])# cp_water
-    """
     param_guess = np.array([2.57052111e+02,
                             3.15325352e+02,
                             3.65584143e-01,
@@ -167,6 +166,13 @@ if __name__ == "__main__":
                             5.94313309e+02,
                             7.53148927e-03,
                             2.29344233e+04])
+    """
+    
+    param_guess = np.array([2.53149997e+02, 3.13149996e+02, 2.19950909e-01, 1.27270577e+01,
+       2.66700193e+01, 1.08245743e-02, 2.36248666e-02, 4.30693864e+02,
+       1.04073223e+02, 3.35113826e+05, 6.80414204e-02, 1.70267083e+05,
+       2.55489892e+02, 3.37221343e+01, 9.94004798e+00, 9.72875315e+00,
+       8.33333182e+04, 1.43494207e+02, 3.99999969e-02, 6.11412411e+03])
     
     lbp = 1E-3*param_guess
     ubp = 1E3*param_guess
@@ -189,11 +195,11 @@ if __name__ == "__main__":
     #ubp[len_p-4] = 7
     # force deltaT_h low:
     #lbp[len_p-6] = 2.90
-    lbp[len_p-6] = 0.1
-    ubp[len_p-6] = 10
     lbp[len_p-5] = 0.1
     ubp[len_p-5] = 10
-
+    lbp[len_p-6] = 0.1
+    ubp[len_p-6] = 10
+    #lbp[len_p-7] = 1E2
     x_guess = data[["Tret", "Tsup", "Tsup","u_val_set"]]
     x_guess.columns = ["Tret", "Tsup", "Th", "u_val"]
     #x_guess = data[["Tret", "Tsup", "Tsup"]]

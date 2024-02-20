@@ -59,7 +59,7 @@
     "testcase1":
     {
       "misc": {
-        "h": 60,
+        "h": 900,
         "N": 97,
         "start_time": 0,
         "warmup_period": 604800
@@ -68,7 +68,7 @@
         "r" : {"Ta": "TDryBul"},
         "u" : {"phi_h": "oveAct"},
         "y": {"Ti": "TRooAir_y"},
-        "boptest_to_ocp": {"phi_h": "PHea_y", "Ti": "TRooAir_y"},
+        "boptest_to_ocp": {"phi_h": "QHea_y", "Ti": "TRooAir_y"},
         "sampling": {
                      "integrate": ["phi_h"],
                      "point": ["Ta", "phi_s", "Ti"]

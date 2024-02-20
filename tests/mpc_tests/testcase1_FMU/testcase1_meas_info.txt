@@ -1,0 +1,12 @@
+{'CO2RooAir_y': {'Description': 'Zone air CO2 concentration',
+                 'Maximum': None,
+                 'Minimum': None,
+                 'Unit': 'ppm'},
+ 'PHea_y': {'Description': 'Heater power',
+            'Maximum': None,
+            'Minimum': None,
+            'Unit': 'W'},
+ 'TRooAir_y': {'Description': 'Zone air temperature',
+               'Maximum': None,
+               'Minimum': None,
+               'Unit': 'K'}}
