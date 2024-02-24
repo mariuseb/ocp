@@ -77,7 +77,7 @@ if __name__ == "__main__":
     
     with open('profile_RL_testcase1.txt', 'w+') as stream:
         stats = pstats.Stats(prof, stream=stream).strip_dirs().sort_stats("cumtime")
-        stats.print_stats(100)
+        stats.print_stats(1000)
     
     plot_results(
                  boptest,

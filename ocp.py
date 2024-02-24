@@ -179,11 +179,12 @@ class OCP(metaclass=ABCMeta):
         if isinstance(config, str) or isinstance(config, os.PathLike):
             with open(config, "r") as f:
                 config = json.load(f, object_pairs_hook=OrderedDict)
+        self.config = copy.deepcopy(config)
         """
         Hash config to avoid re-generating, compiling c-code.
         """
-        self.gen_code_filename = self.get_c_code_name(config)
-        self.so_filename = self.gen_code_filename.replace(".c", ".so")
+        #self.gen_code_filename = self.get_c_code_name(config)
+        #self.so_filename = self.gen_code_filename.replace(".c", ".so")
 
         if N is None: # look in config
             self.N = N = config["N"]
@@ -537,7 +538,7 @@ class OCP(metaclass=ABCMeta):
             #self.sqp_adj = self.sqp_solver.reverse(1)
             #self.sqp_forward = self.sqp_solver.forward(self.nlp["p"].shape[0])
                 
-    def set_bounds(self):
+    def set_bounds(self, skip_u=False, slack=False):
         
         #(x, z, u, p, w, v, y)
         
@@ -546,7 +547,14 @@ class OCP(metaclass=ABCMeta):
         # bounds:
         x = bounds.pop("x")
         z = bounds.pop("z")
-        u = bounds.pop("u")
+        if skip_u:
+            u = {
+                "lb": None,
+                "ub": None,
+                "x0": None
+            }
+        else:
+            u = bounds.pop("u")
         p = bounds.pop("p")
         #w = bounds.pop("w")
         """
@@ -616,9 +624,10 @@ class OCP(metaclass=ABCMeta):
                     
                 x0 = np.append(x0, bound_dict["x0"])
         # nan issue:
-        lbx = np.nan_to_num(lbx, nan=0)
-        ubx = np.nan_to_num(ubx, nan=0)
-        x0 = np.nan_to_num(x0, nan=0)
+        
+        #lbx = np.nan_to_num(lbx, nan=0)
+        #ubx = np.nan_to_num(ubx, nan=0)
+        #x0 = np.nan_to_num(x0, nan=0)
         
         # rounding issue
         self.lbx = lbx       
@@ -626,11 +635,15 @@ class OCP(metaclass=ABCMeta):
         self.x0 = x0
         
         # slack: 
-        if self.slack:
+        if self.slack or slack:
+            dim = self.nlp_parser.vars["sl"]["dim"]
             #self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.nlp_parser.vars["sl"]["dim"]))
-            self.lbx = np.append(self.lbx, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
-            self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["sl"]["dim"]))
-            self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
+            #self.lbx = np.append(self.lbx, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
+            #self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["sl"]["dim"]))
+            #self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
+            self.lbx = np.append(self.lbx, np.repeat([0], dim))
+            self.ubx = np.append(self.ubx, np.repeat([np.inf], dim))
+            self.x0 = np.append(self.x0, np.repeat([0], dim))
         
     #def set_x_guess(self, )
     def add_h(self):
@@ -705,7 +718,8 @@ class OCP(metaclass=ABCMeta):
                         list(
                             map(
                                 lambda x: 10**x,
-                                        np.floor(
+                                        #np.floor(
+                                        np.round(
                                                 np.log10(
                                                         #param_guess
                                                         np.abs(param_guess)
@@ -779,12 +793,18 @@ class OCP(metaclass=ABCMeta):
         """
         #so_filename = gen_code_filename.replace(".c", ".so")
         # keep names for later:
-        so_filename = self.so_filename
-        self.c_files.append(gen_code_filename)
-        self.c_files.append(so_filename)
-        self.solver.generate_dependencies(gen_code_filename)
+        #self.c_files.append(gen_code_filename)
+        #self.c_files.append(so_filename)
+        solver = kwargs.pop("solver")
+        solver.generate_dependencies(gen_code_filename)
+        return gen_code_filename.replace(".c", ".so")
         
-    def compile_c_code(self, **kwargs):
+    def compile_c_code(
+                       self,
+                       c_code_path,
+                       so_path,
+                       **kwargs
+                       ):
         # Create a new NLP solver instance from the compiled code
         compiler = kwargs.pop("compiler", "clang")
         #flags = kwargs.pop("flags", ["-O0"])
@@ -797,38 +817,47 @@ class OCP(metaclass=ABCMeta):
         cmd_args = [compiler,"-fPIC","-shared"] + \
                     flags + \
                     linkage + \
-                    [self.gen_code_filename, "-o", self.so_filename]
+                    [
+                    c_code_path, 
+                     "-o",
+                     so_path
+                     ]
         # compile:
         subprocess.run(cmd_args)
     
-    def init_codegen_solver(self):
-        self.opt.pop("verbose", False)
+    def init_codegen_solver(self,
+                            so_filename,
+                            **opts):
+        """
+        TODO: solver name
+        """
+        #self.opt.pop("verbose", False)
         #self.opt.pop("ipopt.hessian_approximation")
-        opts = dict()
+        solver_opts = copy.deepcopy(opts)
         opts["ipopt"] = dict()
-        for k, v in self.opt.items():
+        for k, v in solver_opts.items():
             opts["ipopt"][k.replace("ipopt.", "")] = v
         # re-init solver object:
-        self.solver = ca.nlpsol("solver", 
-                                "ipopt",
-                                self.so_filename,
-                                opts)
-        
-    def prepare_solver(self, codegen=False):
+        return ca.nlpsol("solver", 
+                        "ipopt",
+                        so_filename,
+                        opts)
+
+    def prepare_solver(self, codegen=False, **kwargs):
         """
         Prepare solver.
         """
         if not hasattr(self, "solver"):      
             self._init_solver()
-
-        #gen_code_filename = self.get_c_code_name()
+        opts = kwargs.pop("opts", dict())
+        gen_code_filename = self.get_c_code_name(self.config)
 
         if codegen:
-            if not os.path.exists(self.gen_code_filename):
-                self.pregenerate_c_code(self.gen_code_filename)
+            if not os.path.exists(gen_code_filename):
+                self.pregenerate_c_code(gen_code_filename, **kwargs)
             if not os.path.exists(self.so_filename):
                 self.compile_c_code()
-            self.init_codegen_solver()    
+            self.init_codegen_solver(**opts)    
     
       
     def get_nlp_var(self, varname):
@@ -897,9 +926,25 @@ class OCP(metaclass=ABCMeta):
         #    ret_val = ret_val[:-1]
             
         return ret_val
-            
-                
     
+    def get_var_at_stage(self, name, stage: int):
+        """
+        Get ocp variable <name> at stage n ∈ N
+        
+        Make working version, then optimize for
+        speed later.
+        
+        TODO: fix for collocation
+        """
+        var = self.get_nlp_var(name)
+        n_ocp_var = getattr(self, "n_" + name)
+        if isinstance(self.method, Collocation) and name == "x":
+            n_skip = self.method.d + 1
+        else:
+            n_skip = 1
+        start = n_skip*stage
+        return var[start:(start+n_ocp_var)]
+         
     @property
     def nlp_v(self):
         return self.get_nlp_var("v")

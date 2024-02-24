@@ -18,6 +18,7 @@ import json
 # datetime:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
+from functools import reduce
     
 
 class Forecaster(object):
@@ -101,13 +102,13 @@ class RestApi(object):
 
 class Boptest(RestApi):
     ''' Wrapper for Restful-API to BOPTEST. '''
-    def __init__(self, cfg, name=None):
+    def __init__(self, cfg, name=None, bypass_forecast=False):
         RestApi.__init__(self)
         
         if isinstance(cfg, str) or isinstance(cfg, os.PathLike):
             with open(cfg, "r") as f:
                 cfg = json.load(f)
-        
+                
         cfg = cfg[name]
         
         self.maps = cfg.pop("maps")
@@ -118,6 +119,10 @@ class Boptest(RestApi):
         self.h = h = cfg["misc"].pop("h")
         self.N = N = cfg["misc"].pop("N")
         self.noise = cfg["misc"].pop("noise", False)
+        self.bypass_forecast = bypass_forecast
+        if bypass_forecast:
+            # read resource folder:s
+            self.get_forecast_df() # path?
         
         if self.noise:
             np.random.seed(seed=42)    
@@ -125,7 +130,7 @@ class Boptest(RestApi):
         self.set_step(h)
         self.set_forecast_params({"horizon": h*(N-1), "interval": h})
 
-        self.start_time = cfg["misc"].pop("start_time")
+        self.start_time = self.time = cfg["misc"].pop("start_time")
         self.warmup_period = cfg["misc"].pop("warmup_period")
         
         # write info to text files in current dir
@@ -190,10 +195,48 @@ class Boptest(RestApi):
         self.initialize()
 
         # invert map for forecast:
-        forecast_map = {v: k for k, v in self.maps["r"].items()}
+        self.forecast_map = {v: k for k, v in self.maps["r"].items()}
 
-        cfg = {'boptest_map': forecast_map}# 'mosiop_map':self.var} # TODO to make this more generic boptest_map should have similar variables maps for y,u,z,r,p (latter empty if not applicable)
+        cfg = {'boptest_map': self.forecast_map}# 'mosiop_map':self.var} # TODO to make this more generic boptest_map should have similar variables maps for y,u,z,r,p (latter empty if not applicable)
         self.forecaster = Forecaster(cfg)
+
+    def get_forecast_df(self):
+        """
+        Get forecast df.
+        """
+        files = os.listdir("Resources")
+        dfs = []
+        for file in files:
+            path = os.path.join("Resources", file)
+            # first read:
+            df = pd.read_csv(path, 
+                        header=[100],
+                        #skiprows=[0,2,3,4,5,6], 
+                        index_col=0)
+            #header = len(df.columns) + 2
+            n_cols = len(df.columns)
+            #header = n_cols + 2
+            header = 1
+            skiprows = list(set(range(n_cols + 2)).difference(set([header])))
+            df = pd.read_csv(path, 
+                        header=[header],
+                        #header=[n_cols],
+                        skiprows=skiprows, 
+                        index_col=0)
+            if file.startswith("weather"):
+                # resample to MPC sampling time:
+                #df = df[0:-1:self.h]
+                indices = [ndx for ndx in df.index if ndx % self.h == 0]
+                df = df.loc[indices]
+            df["time"] = df.index
+            df.index.name = ""
+            dfs.append(df)
+        
+        df = reduce(lambda left, right: 
+            pd.merge(left, right, on=['time'],
+                    how='outer'), dfs)
+        df.index = df.time
+        self.whole_forecast_df = df.ffill()
 
     def evolve(self,
                u={},
@@ -210,6 +253,8 @@ class Boptest(RestApi):
         forecast = self.forecast()
         
         y = self.advance(u=self.get_control(u))
+        # internal time:
+        self.time = y["time"]
         # set next column empty:
         self.result_df.loc[y["time"], :] = np.nan
         #self.forecast_df.loc[y["time"]] = forecast.iloc[0]
@@ -239,14 +284,23 @@ class Boptest(RestApi):
 
     def forecast(self):
         #return self.to_np_array(self.get_forecast(), self.r, self.var["r"])
-        _forecast = self.get_forecast(self.N, self.h)
-        vals = self.to_np_array(_forecast,
-                                self.r,
-                                self.var["r"])
+        index = np.arange(0, self.h*(self.N), self.h)
         
-        return pd.DataFrame(index=np.arange(0, self.h*(self.N), self.h),
+        if self.bypass_forecast:
+            start = self.time
+            stop = self.time + (self.N-1)*self.h
+            _forecast = self.whole_forecast_df.loc[start:stop].rename(columns=self.forecast_map)
+            forecast = _forecast[self.var["r"]]
+            forecast.index = index
+        else:
+            _forecast = self.get_forecast(self.N, self.h)    
+            vals = self.to_np_array(_forecast,
+                                    self.r,
+                                    self.var["r"])
+            forecast = pd.DataFrame(index=index,
                             data=vals,
                             columns=self.var["r"])
+        return forecast
     
     @staticmethod
     def to_np_array(y, mapping, var_labels):

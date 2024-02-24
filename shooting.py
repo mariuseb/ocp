@@ -168,7 +168,7 @@ class MultipleShooting(Shooting):
         #self.u_nom = 5000
         #self.r_nom = 300
         #self.p_nom = self.scale
-        
+        #g_shooting = []
         x = self.get_x()
         #w = self.get_w()
         s = self.get_s()
@@ -238,7 +238,8 @@ class MultipleShooting(Shooting):
             xn = self.F_map(
                             x0=x[:,:-1]*self.x_nom + self.x_nom_b,
                             z=z[:,:-1]*self.z_nom + self.z_nom_b,
-                            u=u[:,:-1]*self.u_nom + self.u_nom_b,
+                            #u=u[:,:-1]*self.u_nom + self.u_nom_b,
+                            u=u*self.u_nom + self.u_nom_b,
                             p=self.p_nom*ca.repmat(p, 1, self.N-1) + self.p_nom_b,
                             s=s[:,:-1]*self.s_nom,
                             r=r[:,:-1]*self.r_nom + self.r_nom_b,
@@ -391,6 +392,7 @@ class MultipleShooting(Shooting):
         nlp_parser.set_g(g)  
         nlp_parser.set_x_orig(x)  
         nlp_parser.set_p_orig(p)  
+        nlp_parser.vars["x"]["shooting_gaps"] = x_gaps
         
         """
         Gaps without noise, scaling for covariance estimation:
@@ -850,6 +852,7 @@ class Collocation(Shooting):
         y = []
         xb = []
         x_gaps = []
+        g_shooting = []
         h_gaps = []
         
         x_nom = self.x_nom 
@@ -1057,22 +1060,26 @@ class Collocation(Shooting):
             xb.append(Xk)
             # Add equality constraint
             g.append(Xk_end - Xk)
+            g_shooting.append(Xk_end - Xk)
             #g.append(x_nom*Xk_end - x_nom*Xk)
-            x_gaps.append(g[-1])
+            #x_gaps.append(g[-1])
 
         #Yk = ca.MX.sym('Y_' + str(k+1), n_y)
+        
+        """
         Vk = ca.MX.sym('V_' + str(k+1), n_v)
         Rk = ca.MX.sym('R_' + str(k+1), n_r)
-        Uk = ca.MX.sym('R_' + str(k+1), n_u)
+        Uk = ca.MX.sym('U_' + str(k+1), n_u)
         #Zk = ca.MX.sym('Z_' + str(k+1), n_z)
         v.append(Vk)
         #y.append(Yk)
         r.append(Rk)
         u.append(Uk)
+        """
+        
         #z.append(Zk)
         # add last measurement equation
-        
-        
+         
         """
         g.append(self.F.h(Yk*y_nom + y_nom_b, 
                           Xk*x_nom + x_nom_b, 
@@ -1143,8 +1150,9 @@ class Collocation(Shooting):
         
         # set inds for boundary points:
         nlp_parser.vars["x"]["boundary_vars"] = ca.vertcat(*xb)
+        nlp_parser.vars["x"]["shooting_gaps"] = ca.vertcat(*g_shooting)
         
-        nlp_parser.set_x_gaps(ca.vertcat(*x_gaps))
+        #nlp_parser.set_x_gaps(ca.vertcat(*x_gaps))
         nlp_parser.set_h_gaps(ca.vertcat(*h_gaps))
         
         # keep orig g:
@@ -1185,7 +1193,7 @@ class Collocation(Shooting):
     def get_u(self):
         """ Process noise. """
         #return ca.MX.sym("u", self.n_u, self.N)*self.u_nom
-        return ca.MX.sym("u", self.n_u, self.N)
+        return ca.MX.sym("u", self.n_u, self.N-1)
 
     # TODO: fix algebraic equations?? See Biegler
     def get_z(self):

@@ -24,7 +24,7 @@
         }
     },
     "objective": "dot(phi_h, phi_h)",
-    "N": 24,
+    "N": 12,
     "dt": 900,
     "method": "collocation",
     "integrator": 
@@ -45,5 +45,5 @@
         "ipopt.hessian_approximation": "exact"
     },
     "codegen": false,
-    "map_eval": false
+    "map_eval": true
 }

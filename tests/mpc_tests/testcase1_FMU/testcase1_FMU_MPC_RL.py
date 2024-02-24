@@ -1,6 +1,6 @@
 # %%
 #from ast import Param
-from ocp.parametric_mpc import ParametricMPC
+from ocp.parametric_mpc import ParametricMPC, MPCfunapprox
 import numpy as np
 import json
 import casadi as ca
@@ -18,13 +18,35 @@ from ocp.functions import functions
 from copy import deepcopy
 from project1_boptest_gym.examples.test_and_plot import plot_results
 from project1_boptest_gym.boptestGymEnv import BoptestGymEnv
+from ocp.q_learning import Qlearning
+from ocp.replay_buffer import BasicBuffer, ReplayBuffer
 
 # text:
 rc('mathtext', default='regular')
 # datetime:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
-    
+
+
+# Additional functions
+def rollout_sample(env, agent, n_steps = 50, mode="train"):
+    state, obs = env.reset()
+    agent.reset(obs)
+    rollout_return = 0
+    rollout_buffer = BasicBuffer()
+
+    for _ in range(n_steps):
+        action, add_info = agent.act_forward(obs, mode=mode)
+        next_state, next_obs, reward, _ = env.step(action)
+        if mode == "train":
+            rollout_buffer.push(
+                state, obs, action, reward, next_state, next_obs, add_info
+            )
+        rollout_return += reward
+        state = next_state.copy()
+        obs = next_obs.copy()
+    return rollout_return, rollout_buffer
+ 
 
 if __name__ == "__main__":
     
@@ -67,12 +89,37 @@ if __name__ == "__main__":
         #"slack": Trues
         "slack": False
     }
-    
-    mpc = ParametricMPC(config=mpc_cfg,
+
+    seed = 1
+    agent_params= {
+            "gamma": 1,
+            "opt_params": {
+                "cost_defn": ["fullW", "fullR"],
+                "cost_wt": [[1.0, 1.0, 1.0, 1.0], [0.1, 0.1]],
+                "horizon": 10
+            },
+            "eps": 0.25,
+            "learning_params": {
+                "lr": 1e-3,
+                "tr": 0.2,
+                "train_params": {
+                    "iterations": 25,
+                    "batch_size": 32
+                },
+                "constrained_updates": False
+            }
+        }
+
+    # init mpc agent:
+    mpc = MPCfunapprox(
+                        agent_params,
+                        config=mpc_cfg,
                         param_guess=params, 
                         functions=functions,
-                        **deepcopy(kwargs))  # to remove, replace with N
-    J, h, g = mpc.objective_cost(), mpc.inequality_constraints(), mpc.equality_constraints()
+                        **deepcopy(kwargs)
+                        )  # to remove, replace with N
+    
+    
     url = 'http://bacssaas_boptest:5000'
     # Use gym env from Javiers code instead:
     boptest = BoptestGymEnv(boptest_cfg,
@@ -113,14 +160,23 @@ if __name__ == "__main__":
     days = 3
     K = days*24*bounds.t_h
 
-    hist = pd.DataFrame(columns=["pred", "act"])
+    #hist = pd.DataFrame(columns=["pred", "act"])
     rewards = []
+    
+    """
+    First test:
+    
+    See if we can run the parametric MPC for some days,
+    w/o any parameter updates.
+    
+    Find out how to set parameters of nlp
+    in a reasonable way.
+    """
+    policy_params = np.array([0]*mpc.P.shape[0])
+    #actions = pd.DataFrame(columns=["a"])
     for k in range(K):
+        lbx, ubx, ref = bounds.get_bounds(k, mpc.N) 
         """
-        TODO: transform to RL API.
-        DONE.
-        """
-        lbx, ubx, ref = bounds.get_bounds(k, mpc.N)   
         sol, u_0, x0 = mpc.solve(
                                data[0:mpc.N],
                                x0=x0,
@@ -129,17 +185,29 @@ if __name__ == "__main__":
                                params=params,
                                codegen=False
                                )
-        #data, y_meas, u_meas = boptest.evolve(u=u)
-        """ 
-        For 'fair' baselining of MPC and RL,
-        round to nearest action as in DQN policy.
+        Order:
+        Pbounds = (p_lbx, p_ubx, p_lbu, p_ubu)
+        P = (Pf, P, Pbounds)
+        
+        Note: bounds on u are stored in mpc object.
         """
-        action = [round(u_0["phi_h"], -1)] # -> 21 discrete actions
+        mpc.prepare_forward(
+                               data[0:mpc.N],
+                               x0=x0,
+                               lbx=lbx,
+                               ubx=ubx,
+                               model_params=params,
+                               policy_params=policy_params
+                            )
+        action, add_info, sol = mpc.act_forward(x0) 
+        #actions.loc[k] = action
         # step:
+        #if mpc.nlp_solver.stats()["return_status"] != 'Solve_Succeeded':
+        #    print(action)
         x0, reward, done, _, _ = boptest.step(action)
         # get forecast in separate step:
         data = boptest.forecast()
-        hist.loc[k] = [sol.loc[1].Ti, x0[0]]
+        #hist.loc[k] = [sol.loc[1].Ti, x0[0]]
         # save rewards:
         rewards.append(reward)
         
@@ -150,5 +218,38 @@ if __name__ == "__main__":
                  boptest,
                  rewards
                  )
+    
+    """
+    n_iterations = 25
+    n_trains = 1
+    n_evals = 0
+    n_steps = 50
+    max_len_buffer = 25
+    # experiment init
+    replay_buffer = ReplayBuffer(max_len_buffer, seed)
+    # main loop
+    agent = mpc
+    
+    for it in range(n_iterations):
+        print(f"Iteration: {it}")
+        t_returns, e_returns = [],[]
+
+        # training rollouts
+        for _ in range(n_trains):
+            rollout_return, rollout_buffer = rollout_sample(boptest, agent, mode="train")
+            replay_buffer.push(rollout_buffer.buffer)
+            t_returns.append(rollout_return)
+
+        # agent training
+        agent.train(replay_buffer)
+
+        # training rollouts
+        for _ in range(n_evals):
+            rollout_return, rollout_buffer = rollout_sample(boptest, agent, mode="eval")
+            e_returns.append(rollout_return)
+
+        print(f"Training rollout return: {np.mean(t_returns)}")
+        # print(f"Evaluation rollout return: {np.mean(e_returns)}")
+    """
     
     print(data)

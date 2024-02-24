@@ -1,0 +1,54 @@
+EXPORTS
+  ;***************************************************
+  ;Common Functions
+  ;****************************************************
+  SimpleRoomFourElements_fmiGetTypesPlatform @1
+  SimpleRoomFourElements_fmiGetVersion @2
+  SimpleRoomFourElements_fmiSetDebugLogging @3
+  SimpleRoomFourElements_fmiInstantiate @4
+  SimpleRoomFourElements_fmiFreeInstance @5
+  SimpleRoomFourElements_fmiSetupExperiment @6
+  SimpleRoomFourElements_fmiEnterInitializationMode @7
+  SimpleRoomFourElements_fmiExitInitializationMode @8
+  SimpleRoomFourElements_fmiTerminate @9
+  SimpleRoomFourElements_fmiReset @10
+  SimpleRoomFourElements_fmiGetReal @11
+  SimpleRoomFourElements_fmiGetInteger @12
+  SimpleRoomFourElements_fmiGetBoolean @13
+  SimpleRoomFourElements_fmiGetString @14
+  SimpleRoomFourElements_fmiSetReal @15
+  SimpleRoomFourElements_fmiSetInteger @16
+  SimpleRoomFourElements_fmiSetBoolean @17
+  SimpleRoomFourElements_fmiSetString @18
+  SimpleRoomFourElements_fmiGetFMUstate @19
+  SimpleRoomFourElements_fmiSetFMUstate @20
+  SimpleRoomFourElements_fmiFreeFMUstate @21
+  SimpleRoomFourElements_fmiSerializedFMUstateSize @22
+  SimpleRoomFourElements_fmiSerializeFMUstate @23
+  SimpleRoomFourElements_fmiDeSerializeFMUstate @24
+  SimpleRoomFourElements_fmiGetDirectionalDerivative @25
+  ;***************************************************
+  ;Functions for FMI for Model Exchange
+  ;****************************************************
+  SimpleRoomFourElements_fmiEnterEventMode @26
+  SimpleRoomFourElements_fmiNewDiscreteStates @27
+  SimpleRoomFourElements_fmiEnterContinuousTimeMode @28
+  SimpleRoomFourElements_fmiCompletedIntegratorStep @29
+  SimpleRoomFourElements_fmiSetTime @30
+  SimpleRoomFourElements_fmiSetContinuousStates @31
+  SimpleRoomFourElements_fmiGetDerivatives @32
+  SimpleRoomFourElements_fmiGetEventIndicators @33
+  SimpleRoomFourElements_fmiGetContinuousStates @34
+  SimpleRoomFourElements_fmiGetNominalsOfContinuousStates @35
+  ;***************************************************
+  ;Functions for FMI for Co-Simulation
+  ;****************************************************
+  SimpleRoomFourElements_fmiSetRealInputDerivatives @36
+  SimpleRoomFourElements_fmiGetRealOutputDerivatives @37
+  SimpleRoomFourElements_fmiDoStep @38
+  SimpleRoomFourElements_fmiCancelStep @39
+  SimpleRoomFourElements_fmiGetStatus @40
+  SimpleRoomFourElements_fmiGetRealStatus @41
+  SimpleRoomFourElements_fmiGetIntegerStatus @42
+  SimpleRoomFourElements_fmiGetBooleanStatus @43
+  SimpleRoomFourElements_fmiGetStringStatus @44

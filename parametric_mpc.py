@@ -2,6 +2,10 @@
 import casadi as ca
 from ocp.mpc import MPC
 import numpy as np
+from ocp.shooting import Collocation
+from ocp.q_learning import Qlearning
+import cvxpy as cvx
+import os
 
 class ParametricMPC(MPC):
     """
@@ -9,13 +13,85 @@ class ParametricMPC(MPC):
     RL learning.
     """
     def __init__(self, *args, **kwargs):
+        self.model_params_in_policy = kwargs.pop("model_params_in_policy", False)
         super().__init__(**kwargs)
-        self.split_h_g()
+        self.obs_dim = self.n_x
+        self.action_dim = self.n_u
         """
         Parameters of MPC policy:
         """
-        self.P = ca.MX.sym("P")
+        #self.P = ca.MX.sym("P")
         self.add_terminal_cost()
+        self.add_dynamics_bias()
+        self.add_linear_objective_term()
+        self.add_V0()
+        # add model params as last part to P:
+            
+        """
+        Own function:
+        """
+        
+        self.sigma = ca.MX.sym("sigma", self.obs_dim, self.N)
+        self.nlp["x"] = ca.vertcat(self.nlp["x"], self.sigma.T)
+        dim = self.sigma.shape[0]*self.sigma.shape[1]
+        self.nlp_parser.vars["sl"] = {
+                            "range":
+                                    {
+                                        "a":
+                                        self.nlp_parser["r"]["range"]["b"],
+                                        "b": 
+                                        self.nlp_parser["r"]["range"]["b"] + \
+                                            dim
+                                    },
+                            "dim": dim
+                            }
+        self.n_sl = self.n_x
+        self.slack_names = list(map(lambda x: "sigma_" + str(x+1), range(self.n_sl)))
+        """
+        """
+        self.add_slack_to_objective()
+        self.split_h_g()
+        """
+        TODO:
+            - will encounter processes that are partially observable.
+            
+        Find a good way to handle this.
+        """
+        #self.nPf = self.obs_dim + 2 * self.action_dim
+        self.nPf = self.obs_dim + 2*self.action_dim # one epsilon per action
+        self.Pf = ca.MX.sym("Pf", self.nPf)  # [Initial state x0, action a, eps] ("fixed" params)
+        # consider bounds on x, u  as fixed params?
+        self.nPbounds = self.n_x*2*self.N + self.n_u*2*self.N # two-sided
+        #self.Pbounds = ca.MX.sym("Pbounds", self.nPbounds) # -> instantiate later
+        self.nP = self.P.shape[0]
+        # slack var:
+        
+    def add_slack_to_objective(self):
+        """
+        Add slack terms to objective function.
+        """
+        #R = ca.MX.sym("R", self.n_x, self.n_x)
+        
+        w = 1e1 # should be part of config file 
+        for n in range(self.N):
+            sl = self.get_var_at_stage("sl", n)
+            self.nlp["f"] += sl@w@sl.T
+           
+    def get_p_equals_p_constraint(self):
+        """
+        Add model params to policy.
+        """
+        mxs = []
+        p_names = self.dae.dae.p()
+        for name in p_names:
+            mx = self.dae.dae.var(name)
+            mxs.append(mx)
+        p_orig = ca.vertcat(*mxs) # original model params
+        
+        p = ca.MX.sym("p", self.n_p) # new parameter
+        #self.P = ca.vertcat(self.P, p)
+        #self.nlp.g.append(p_orig - p)
+        return p, p_orig - p/self.p_nom
         
     def split_h_g(self):
         """
@@ -25,7 +101,10 @@ class ParametricMPC(MPC):
         Important for calculating sensitivities
         """
         self.g = []
-        self.h = []
+        self.hu0 = []
+        self.hu = []
+        self.hx = []
+        self.hs = []
         
         for i, (lb, ub) in enumerate(zip(self.lbg, self.ubg)):
             """
@@ -43,18 +122,66 @@ class ParametricMPC(MPC):
         """
         # go through nlp-x for simple box constraints 
         # on x, u:
+        """
         x_info = self.nlp_parser.vars["x"]
         start, stop = x_info["range"]["a"], x_info["range"]["b"]
         ndx = ca.Slice(start, stop)
-        self.h.append(self.nlp["x"][ndx])
+        self.hx.append(self.nlp["x"][ndx])
         
         u_info = self.nlp_parser.vars["u"]
-        start, stop = u_info["range"]["a"], u_info["range"]["b"]
+        start, stop = u_info["range"]["a"], u_info["range"]["a"] + self.n_u
         ndx = ca.Slice(start, stop)
-        self.h.append(self.nlp["x"][ndx])
+        self.hu0.append(self.nlp["x"][ndx])
+        
+        start = stop
+        stop = u_info["range"]["b"]
+        ndx = ca.Slice(start, stop)
+        self.hu.append(self.nlp["x"][ndx])
+        """
+        
+        # define parameters as placeholders for 
+        # numerical values on x,u bounds
+        if isinstance(self.method, Collocation):
+            n_x_skip = self.method.d + 1
+        else:
+            n_x_skip = 1
             
-                
-                
+        x_info = self.nlp_parser.vars["x"]
+        p_lbx = ca.MX.sym("p_lbx", self.n_x, self.N)
+        p_ubx = ca.MX.sym("p_ubx", self.n_x, self.N)
+        for n in range(self.N):
+            start = n*n_x_skip
+            stop = n*n_x_skip + 1
+            x = self.get_var_at_stage("x", n)
+            self.hx.append(p_lbx[:, start:stop] - x - self.sigma[:, n])
+            self.hx.append(x - p_ubx[:, start:stop] - self.sigma[:, n])
+            self.hs.append(-self.sigma[:, n])
+            
+        u_info = self.nlp_parser.vars["u"]
+        p_lbu = ca.MX.sym("p_lbu", self.n_u, self.N-1)
+        p_ubu = ca.MX.sym("p_ubu", self.n_u, self.N-1)
+        
+        start, stop = 0, 1
+        u0 = self.get_var_at_stage("u", 0)
+        self.hu0.append(p_lbu[:, start:stop] - u0)
+        self.hu0.append(u0 - p_ubu[:, start:stop])
+        
+        for n in range(1, self.N-1):
+            start = n
+            stop = n + 1
+            u = self.get_var_at_stage("u", n)
+            self.hu.append(p_lbu[:, start:stop] - u)
+            self.hu.append(u - p_ubu[:, start:stop])
+        
+        # flat parameter vector:    
+        self.Pbounds = ca.veccat(p_lbx, p_ubx, p_lbu, p_ubu)
+        
+        if self.model_params_in_policy: 
+            p, p_constr = self.get_p_equals_p_constraint()
+            self.P = ca.vertcat(self.P, p)
+            self.g.append(p_constr)
+
+            
     def add_terminal_cost(self):
         """
         Add parametric terminal cost
@@ -65,9 +192,53 @@ class ParametricMPC(MPC):
         start = stop - self.n_x
         x_N = self.nlp["x"][start:stop]
         W = ca.MX.sym("W", self.n_x, self.n_x)
-        self.P = ca.vertcat(self.P, W)
+        self.P = W
         self.nlp["f"] += x_N@W@x_N.T
         
+    def add_linear_objective_term(self):
+        """
+        Add parametric terminal cost
+        to nlp objective.
+        """
+        #J = self.nlp["f"]
+        M = self.N-1
+        n_xu = self.n_u + self.n_x
+        f = ca.MX.sym("f", n_xu)
+        for n in range(M):
+            xn = self.get_var_at_stage("x", n)
+            un = self.get_var_at_stage("u", n)
+            self.nlp["f"] += f.T@ca.vertcat(xn, un)
+        # extend parameter MX:
+        self.P = ca.vertcat(self.P, f)
+        
+        
+    def add_dynamics_bias(self):
+        """
+        Add linear bias term in
+        the dynamic model constraints.
+        """
+        #x_info = self.nlp_parser["x"]
+        g = self.nlp_parser.vars["x"]["shooting_gaps"]
+        n_cols, n_rows = g.shape
+        b = ca.MX.sym("b", n_rows) #, n_rows)
+        # modify g by adding b:
+        self.nlp_parser.vars["x"]["shooting_gaps"] = g + b
+        new_shooting_gaps = g + b
+        """
+        TODO: fix below for algebraic, measurement equations:
+        """
+        self.nlp["g"][self.strategy.d::(self.strategy.d+1)] = new_shooting_gaps
+        # extend parameter MX:
+        self.P = ca.vertcat(self.P, b)
+        
+    def add_V0(self):
+        """
+        Add V0, 'bias' to objective function.
+        """
+        V0 = ca.MX.sym("V0", 1)
+        self.nlp["f"] += V0
+        self.P = ca.vertcat(self.P, V0)
+         
     def add_g_bias(self): 
         """
         Add dynamic bias (state-dependant?) to
@@ -79,12 +250,721 @@ class ParametricMPC(MPC):
         return self.nlp["f"]
     
     def equality_constraints(self):
-        return ca.vertcat(*self.g)
+        #return ca.vertcat(*self.g)
+        return self.g
     
     def inequality_constraints(self):
-        return ca.vertcat(*self.h)
+        #return ca.vertcat(*self.hu0), ca.vertcat(*self.hu), ca.vertcat(*self.hx), ca.MX()
+        #return self.hu0, self.hu, self.hx, []
+        return self.hu0, self.hu, self.hx, self.hs
 
 
+class MPCFormulation_ex(ParametricMPC):
+    #def __init__(self, model, opt_params, gamma) -> None:
+    def __init__(self, gamma, **kwargs) -> None:
+        self.gamma = gamma
+        self.etau = 1e-6
+        # instantiate parents:
+        super().__init__(**kwargs)
+        # Define the NLP solver for the optimization problem
+        self.define_nlp_solver()
+        # Define optimization problem for Q function (u0 fixed)
+        self.define_Q_nlp_solver()
+        
+    def define_nlp_solver(self):
+        """
+        Define the NLP solver for the optimization problem.
+        NLP formulation:
+        
+        V(s) = min_{x,u,sigma} J(x,u,sigma)
+            s.t. g(x,u,sigma) = 0
+                 hu0(u0) <= 0
+                 hu(u) <= 0
+                 hx(x,sigma) <= 0
+                 hs(sigma) <= 0
+        """
+        # Objective cost
+        J = self.objective_cost()
+
+        # Dynamics equality constraints
+        g = self.equality_constraints()
+
+        # Inequality constraints
+        """
+        For now, simple bounds.
+        
+        TODO: constraints on x back to 'g'
+        """
+        hu0, hu, hx, hs = self.inequality_constraints()
+
+        # NLP Problem for value function and policy approximation
+        G = ca.vertcat(*g)
+        Hu = ca.vertcat(*hu0, *hu)
+        Hx = ca.vertcat(*hx)
+        Hs = ca.vertcat(*hs)
+        G_vca = ca.vertcat(*g, *hu0, *hu, *hx, *hs)
+        lbg = [0] * G.shape[0] + [-np.inf] * (Hu.shape[0] + Hx.shape[0] + Hs.shape[0])
+        ubg = [0] * G.shape[0] + [0] * (Hu.shape[0] + Hx.shape[0] + Hs.shape[0])
+        self.lbg_vcsd = ca.vertcat(*lbg)
+        self.ubg_vcsd = ca.vertcat(*ubg)
+
+        # NLP Problem for value function and policy approximation
+        self.opts_setting = {
+            "ipopt.max_iter": 500,
+            "ipopt.print_level": 5,
+            "print_time": 0,
+            "bound_consistency": True,
+            "clip_inactive_lam": True,
+            "ipopt.linear_solver": "ma57",
+            "calc_lam_x": False,
+            "calc_lam_p": False,
+            "ipopt.mu_target": self.etau,
+            "ipopt.mu_init": self.etau,
+            "ipopt.acceptable_tol": 1e-6,
+            "ipopt.acceptable_obj_change_tol": 1e-6,
+        }
+        vnlp_prob = {
+            "f": J,
+            "x": self.nlp["x"],
+            "p": ca.vertcat(self.Pf, self.P, self.Pbounds),
+            "g": G_vca
+        }
+        self.nlp_solver = ca.nlpsol(
+                                    "vsolver",
+                                    "ipopt",
+                                    vnlp_prob,
+                                    self.opts_setting
+                                    )
+        (
+            self.Rfun,
+            self.dPi,
+            self.dLagV,
+            self.dRdz,
+            self.dRdp,
+        ) = self.build_sensitivities(J, G, Hu, Hx, Hs)
+
+    def define_Q_nlp_solver(self):
+        """
+        Define the NLP solver for the optimization problem.
+        NLP formulation:
+        
+        Q(s,a) = min_{x,u,sigma} J(x,u,sigma)
+            s.t. g(x,u,sigma) = 0
+                 u0 = a
+                 hu(u) <= 0
+                 hx(x,sigma) <= 0
+                 hs(sigma) <= 0
+        """
+        # Objective cost
+        J = self.objective_cost()
+
+        # Equality constraints
+        g = self.equality_constraints()
+
+        # Inequality constraints
+        _, hu, hx, hs = self.inequality_constraints()
+
+        # NLP problem for Q function approximation
+        # Implement initial action constraint
+        u0 = self.get_var_at_stage("u", 0)
+        action = self.Pf[self.obs_dim : self.obs_dim + self.action_dim]
+        g.append(u0 - action)
+
+        G = ca.vertcat(*g)
+        Hu = ca.vertcat(*hu)  # No box constraint on u0
+        Hx = ca.vertcat(*hx)
+        Hs = ca.vertcat(*hs)
+        G_qca = ca.vertcat(*g, *hu, *hx, *hs)
+        lbg = [0] * G.shape[0] + [-np.inf] * (Hu.shape[0] + Hx.shape[0] + Hs.shape[0])
+        ubg = [0] * G.shape[0] + [0] * (Hu.shape[0] + Hx.shape[0] + Hs.shape[0])
+        self.lbg_qcsd = ca.vertcat(*lbg)
+        self.ubg_qcsd = ca.vertcat(*ubg)
+
+        
+        # define the Q-nlp problem and the corresponding solver
+        """
+        q_opts = dict(
+            qpsol='qrqp',
+            #qpsol='qrqp',
+            qpsol_options=dict(print_iter=False,error_on_fail=False), 
+            print_time=True,
+            #regularize=True,
+            #min_step_size=1E-10
+            )
+        self.qsolver = ca.nlpsol(
+                                 "q_solver",
+                                 "sqpmethod", 
+                                 qnlp_prob,
+                                 q_opts
+                                 )
+        
+        """
+        self.q_opts = {
+            "ipopt.max_iter": 100,
+            "ipopt.print_level": 5,
+            "print_time": 0,
+            "bound_consistency": True,
+            "clip_inactive_lam": True,
+            "ipopt.linear_solver": "ma57",
+            "calc_lam_x": False,
+            "calc_lam_p": False,
+            "ipopt.mu_target": self.etau,
+            "ipopt.mu_init": self.etau,
+            "ipopt.acceptable_tol": 1e-6,
+            "ipopt.acceptable_obj_change_tol": 1e-6,
+        }
+        qnlp_prob = {
+            "f": J,
+            "x": self.nlp["x"],
+            "p": ca.vertcat(self.Pf, self.P, self.Pbounds),
+            "g": G_qca
+        }
+        self.qsolver = ca.nlpsol(
+                                 "q_solver",
+                                 "ipopt", 
+                                 qnlp_prob,
+                                 self.q_opts
+                                 )
+        _, _, self.dLagQ, _, _ = self.build_sensitivities(J, G, Hu, Hx, Hs)
+       
+    @property
+    def Opt_Vars(self): 
+        return self.nlp["x"]
+        
+    def build_sensitivities(self, J, G, Hu, Hx, Hs):
+        """
+        Computes the sensitivity functions for given cost and constraints in
+        J, G, Hu, Hx, Hs
+
+        Parameters
+        ----------
+        J : Cost function
+
+        G : Equality constraints
+
+        Hu : Input Constraints
+
+        Hx : State Constraints
+
+        Hs : Slack constraints
+
+
+        Returns
+        -------
+        Rfun : Casadi function for KKT matrix
+        dPi : Casadi function for nable_pi
+        dLagfunc : Casadi function for nabla_lagrange
+        f_dRdz : Casadi function for derivative of KKT matrix w.r.t. primal-dual variables
+        f_dRdp : Casadi function for derivative of KKT matrix w.r.t. parameters
+
+        """
+        # Vector of Lagrange multipliers for dynamics equality constraints
+        lamb = ca.MX.sym("lambda", G.shape[0])
+
+        # Vector of Lagrange multipliers for input inequality constraints
+        mu_u = ca.MX.sym("muu", Hu.shape[0])
+
+        # Vector of Lagrange multipliers for state inequality constraints
+        mu_x = ca.MX.sym("mux", Hx.shape[0])
+
+        # Vector of Lagrange multipliers for slack inequality constraints
+        mu_s = ca.MX.sym("mus", Hs.shape[0])
+
+        # Vector of Lagrange multipliers
+        mult = ca.vertcat(lamb, mu_u, mu_x, mu_s)
+
+        # Lagrange function
+        Lag = (
+            J + ca.transpose(lamb) @ G + ca.transpose(mu_u) @ Hu + ca.transpose(mu_x) @ Hx + ca.transpose(mu_s) @ Hs
+        )
+        Lagfunc = ca.Function("Lag", [self.Opt_Vars, mult, self.Pf, self.P, self.Pbounds], [Lag])
+
+        # Jacobian of the Lagrangian with respect to the primal decision variables and fixed + learnable parameters
+        dLdw = ca.jacobian(Lag, self.Opt_Vars)
+        dLdP = ca.jacobian(Lag, self.P)
+        f_dLdP = ca.Function("dLdP", [self.Opt_Vars, mult, self.Pf, self.P, self.Pbounds], [dLdP])
+
+        # Build KKT matrix expression
+        R_kkt = ca.vertcat(
+            ca.transpose(dLdw),
+            G,
+            mu_u * Hu + self.etau,
+            mu_x * Hx + self.etau,
+            mu_s * Hs + self.etau,
+        )
+
+        # z contains all variables of the lagrangian
+        z = ca.vertcat(self.Opt_Vars, lamb, mu_u, mu_x, mu_s)
+
+        # KKT matrix function
+        Rfun = ca.Function("Rfun", [z, self.Pf, self.P, self.Pbounds], [R_kkt])
+
+        # Sensitivity of the KKT matrix function with respect to the solution and learnable parameters
+        dR_sensfunc = Rfun.factory("dR", ["i0", "i1", "i2"], ["jac:o0:i0", "jac:o0:i2"])
+
+        # Sensitivity expression of the KKT matrix with respect to the solution
+        [dRdz, dRdP] = dR_sensfunc(z, self.Pf, self.P)
+
+        # Generate sensitivity of the optimal solution
+        dzdP = -ca.inv(dRdz)[: self.action_dim, :] @ dRdP
+
+        # Sensitivity function for the policy
+        dPi = ca.Function("dPi", [z, self.Pf, self.P], [dzdP])
+
+        # Sensitivity function of the KKT matrix with respect to the solution
+        f_dRdz = ca.Function("dRdz", [z, self.Pf, self.P], [dRdz])
+
+        # Sensitivity function of the KKT matrix with respect to the parameters
+        f_dRdp = ca.Function("dRdP", [z, self.Pf, self.P], [dRdP])
+        
+        return Rfun, dPi, f_dLdP, f_dRdz, f_dRdp 
+        
+        
+class MPCfunapprox(MPCFormulation_ex):
+    def __init__(self, agent_params, seed=1, **kwargs):
+        super().__init__(agent_params["gamma"], **kwargs)
+        # Parameters
+        self.learning_params = agent_params.pop("learning_params")
+        self.lr = self.learning_params["lr"]
+        self.tr = self.learning_params["tr"]
+        self._parse_agent_params(**agent_params)
+    
+        # Actor initilizaiton
+        #super().__init__(self.model, self.opt_params, self.gamma)
+
+        # Seeded random number generators
+        self.rng1 = np.random.default_rng(seed)
+        self.rng2 = np.random.default_rng(seed)
+
+        # Parameter values
+        #self.pf_val = 0.1 * self.rng1.random((self.nPf, 1))
+        #self.p_val = 0.1 * self.rng1.random((self.nP, 1))
+
+        """
+        if "cost_wt" in self.opt_params:
+            self.p_val[self.iP_cost[0] : self.iP_cost[1]] = self.cost_model.cost_param_init(self.opt_params["cost_wt"])
+        self.pf_val[self.iP_cost[1] :], self.p_val[self.iP_cost[1] :] = self.model.model_param_init()
+        """
+        
+         # initiate the learning module
+        self.learning_module = Qlearning(self, self.learning_params, seed)
+        
+        # RL update formulation
+        #self.constraint_param_opt(self.learning_module.lr, self.learning_module.tr) 
+        
+    def reset(self, obs):
+        obs = self.model.get_obs(obs)
+        action = np.array(self.action_dim)
+        self.X0 = self.model.get_initial_guess(obs, action, self.N)
+
+    def update_X0(self, opt_var):
+        # "warm starting" for udpating the initial guess given to the solver
+        # based on the last solution
+        x0 = opt_var.copy()
+        N, an, sn = self.N, self.action_dim, self.obs_dim
+        at, st = an * N, sn * N
+
+        x0[: an * (N - 1)] = opt_var[an:at]  # action init
+        x0[at : at + sn * (N - 1)] = opt_var[at + sn : at + st]  # state/obs init
+        x0[at + st : at + st + sn * (N - 1)] = opt_var[at + st + sn : at + 2 * st]  # sigma init
+        return x0    
+
+    def _parse_agent_params(self, eps, opt_params, gamma):
+        self.eps = eps
+        self.opt_params = opt_params
+        self.gamma = gamma
+        #self.learning_params = learning_params
+        
+    def codegen_solvers(self):
+        """
+        Code-generate nlp solver, Q-solver.
+        """
+        nlp_c_code_name = self.get_c_code_name(self.config)
+        Q_c_code_name = nlp_c_code_name.replace("MPC", "Q")
+        # generate c code for nlp solver:
+        so_filename_nlp = self.pregenerate_c_code(
+                                                nlp_c_code_name, 
+                                                solver=self.nlp_solver
+                                                )
+        if not os.path.exists(so_filename_nlp):
+            self.compile_c_code(
+                                nlp_c_code_name, 
+                                so_filename_nlp
+                                )
+        self.nlp_solver = self.init_codegen_solver(
+                                                    so_filename_nlp, 
+                                                    **self.opts_setting
+                                                )
+        so_filename_q = self.pregenerate_c_code(
+                                                Q_c_code_name, 
+                                                solver=self.qsolver
+                                                )
+        if not os.path.exists(so_filename_q):
+            self.compile_c_code(
+                                Q_c_code_name,                                
+                                so_filename_q
+                                )
+        self.qsolver = self.init_codegen_solver(
+                                                so_filename_q, 
+                                                **self.q_opts
+                                                )
+    
         
         
         
+    def prepare_forward(self,
+                data,
+                x0=None,
+                lbx=None,
+                ubx=None,
+                lbu=None,
+                ubu=None,
+                model_params=None, 
+                policy_params=None
+                ):
+        self.data = data
+        # sets disturbances:
+        
+        if self.model_params_in_policy:
+            model_params = policy_params[-self.n_p:]
+        
+        self.separate_data(
+                          data,
+                          lbp=model_params,
+                          ubp=model_params,
+                          p_guess=model_params
+                          )
+        
+        """
+        Scaling needs to be handled also
+        for multiple states, inputs.
+        
+        Idea: set expanded scalings
+        persistently in self.separate_data
+        """
+        
+        lbx = (np.append(x0, lbx).flatten() - self.x_nom_b)/self.x_nom
+        ubx = (np.append(x0, ubx).flatten() - self.x_nom_b)/self.x_nom
+        
+        if lbu is None:
+            #lbu = self.bounds["u"]["lb"][:-1,:].flatten() 
+            lbu = self.bounds["u"]["lb"].flatten() 
+        if ubu is None:
+            #ubu = self.bounds["u"]["ub"][:-1,:].flatten() 
+            ubu = self.bounds["u"]["ub"].flatten() 
+        
+        
+        self.p_bounds = p_bounds = np.concatenate([lbx, ubx, lbu, ubu])
+        
+        # x0 again:
+        x0 = (x0 - self.x_nom_b)/self.x_nom
+        
+        self.pf_val = pf = np.concatenate([x0, np.array([0]), np.array([self.eps])])
+        self.pp_val = policy_params
+        self.p_val = np.concatenate([pf, policy_params, p_bounds])
+        # fix this, but usable for now to set bounds on r:
+        self.set_bounds(skip_u=True) #, slack=True)
+        #self.set_bounds()
+        
+    def prepare_warm_solve(
+                        self,
+                        data,
+                        model_params=None
+                        ):
+        self.data = data
+        # sets disturbances:
+        self.separate_data(
+                          data,
+                          lbp=model_params,
+                          ubp=model_params,
+                          p_guess=model_params
+                          )
+        self.set_bounds(skip_u=True) #, slack=True)
+        
+        
+        
+    def act_forward(self, obs):
+        """
+            Evaluate the policy at the current state
+        """
+        # Forward policy function evaluation for argmin action
+        # Setting Solver params
+        #obs = self.model.get_obs(state)
+        #pf_val = self.pf_val
+        #pf_val[: self.obs_dim, :] = obs[:, None]
+        #pf_val[: self.obs_dim] = obs
+        #p_val = self.p_val
+        #p = np.concatenate([pf_val, p_val])[:, 0]
+        #X0 = self.X0
+
+        # run the nlp solver
+        
+        """
+        Warm-start only x, u 
+        """
+        x0 = self.x0
+        try:
+            x0_prev = self.x0_prev
+            x_info = self.nlp_parser["x"]
+            x_start, x_stop = x_info["range"]["a"], x_info["range"]["b"]
+            u_info = self.nlp_parser["u"]
+            u_start, u_stop = u_info["range"]["a"], u_info["range"]["b"]
+            # warm start:
+            x0[x_start:x_stop] = x0_prev[x_start:x_stop]
+            x0[u_start:u_stop] = x0_prev[u_start:u_stop]
+        except AttributeError:
+            # first iteration
+            pass
+                     
+        soln = self.nlp_solver(
+                               x0=x0,
+                               lbg=self.lbg_vcsd, 
+                               ubg=self.ubg_vcsd,
+                               lbx=self.lbx,
+                               ubx=self.ubx,
+                               p=self.p_val
+                               )
+        fl = self.nlp_solver.stats()
+        if not fl["success"]:
+            print("OCP Solver Unsuccessful")
+
+        # u0 as the MPC policy
+        #opt_var = soln["x"].full()
+        #act0 = opt_var[self.obs_dim : self.obs_dim + self.action_dim]
+        
+        sol_df, self.params = self.parse_solution(soln)
+        
+        act0 = sol_df.loc[0, self.u()]
+        x0 = sol_df.loc[0, self.x()]
+        # bookkeeping
+        #self.X0 = self.update_X0(opt_var[:, 0])
+        #self.X0 = self.update_X0(x0)
+        """
+        Update x0 of nlp for warmstart:
+        """
+        self.x0_prev = np.array(soln["x"]).flatten()
+        
+        info = {
+            "optimal": fl["success"],
+            "soln": soln.copy(),
+            "pf": self.pf_val.copy(),
+            "p": self.p_val.copy(),
+        }
+        return act0, info, sol_df
+    
+    def V_value(self, state):
+        """
+            Evaluate the value function at the current state
+        """
+        # Forward policy function evaluation for argmin action
+        # Solver params
+        
+        state = (state - self.x_nom_b)/self.x_nom
+        
+        obs = state
+        pf_val = self.pf_val
+        pf_val[:self.obs_dim] = obs
+
+        #p_val = self.p_val
+        p_val = np.concatenate([pf_val, self.pp_val, self.p_bounds])
+        # run nlp solver
+        soln = self.nlp_solver(
+            x0=self.x0,
+            #p=np.concatenate([pf_val,p_val])[:,0],
+            lbx=self.lbx,
+            ubx=self.ubx,
+            p=p_val,
+            lbg=self.lbg_vcsd,
+            ubg=self.ubg_vcsd
+        )
+        fl = self.nlp_solver.stats()
+        if not fl["success"]:
+            print("OCP Solver Unsuccessful")
+        
+        v_mpc = soln["f"].full()[0,0]
+        
+        info = {
+            "optimal": fl["success"],
+            "soln": soln.copy(),
+            "pf": pf_val.copy(),
+            "p": p_val.copy(),
+        }
+        return v_mpc, info
+
+    def Q_value(self, state, action):
+        """
+            Evaluate the Q function at the current state and action
+        """
+        # Action-value function evaluation
+        
+        """
+        TODO: enable state estimation.
+        """
+        #obs = self.model.get_obs(state)
+        
+        state = (state - self.x_nom_b)/self.x_nom
+        action = (action - self.u_nom_b)/self.u_nom
+        
+        obs = state
+        pf_val = self.pf_val
+        #pf_val[: self.obs_dim, :] = obs[:, None]
+        pf_val[:self.obs_dim] = obs
+        pf_val[self.obs_dim:(self.obs_dim + self.action_dim)] = action
+        # re-init p_vals:
+        p_val = np.concatenate([pf_val, self.pp_val, self.p_bounds])
+        
+        """
+        fixed intial guess for u0 already set
+        for original solve.
+        X0 = self.x0
+        u_info = self.nlp_parser.vars["u"]
+        start = u_info["range"]["a"]
+        stop = start + self.n_u
+        X0[start:stop] = action
+        """
+
+        # run Q nlp solver
+        qsoln = self.qsolver(
+            x0=self.x0,
+            #p=np.concatenate([pf_val,p_val])[:,0],
+            p=p_val,
+            lbx=self.lbx,
+            ubx=self.ubx,
+            lbg=self.lbg_qcsd,
+            ubg=self.ubg_qcsd
+        )
+        fl = self.qsolver.stats()
+        if not fl["success"]:
+            print("OCP Solver Unsuccessful")
+
+        # Q value from nlp solution
+        q_mpc = qsoln["f"].full()[0,0]
+        
+        info = {
+            "optimal": fl["success"],
+            "soln": qsoln.copy(),
+            "pf": pf_val.copy(),
+            "p": p_val.copy(),
+        }
+        
+        # for debugging purposes, inspect solution frame:
+        sol_df, params = self.parse_solution(qsoln)
+        
+        return q_mpc, info, sol_df
+    
+    def dVdP(self, soln, pf_val, p_val, optimal=True):
+        """
+            Evaluate the gradient of the value function at the current state
+        """
+        x = soln["x"].full()
+        lam_g = soln["lam_g"].full()
+        pf_val = pf_val.copy()
+        p_val = p_val.copy()
+        if optimal:
+            dLdP = self.dLagV(x, lam_g, pf_val[:, 0], p_val[:, 0])
+            dLdP = dLdP.full()
+        else:
+            dLdP = np.zeros((1, self.nP))
+        return dLdP
+    
+    def dQdP(self, soln, pf_val, p_val, p_bounds, optimal=True):
+        """
+            Evaluate the gradient of the Q function at the current state and action
+        """
+        x = soln["x"].full()
+        lam_g = soln["lam_g"].full()
+        pf_val = pf_val.copy()
+        p_val = p_val.copy()
+        p_bounds = p_bounds.copy()
+        if optimal:
+            #dLdP = self.dLagQ(x, lam_g, pf_val[:, 0], p_val[:, 0])
+            dLdP = self.dLagQ(x, lam_g, pf_val, p_val, p_bounds)
+            dLdP = dLdP.full()
+            """
+            Temp fix for missing sensitivities on model params:
+            Get sensitivities from 'lam_x' instead.
+            """
+            if self.model_params_in_policy:
+                p_info = self.nlp_parser["p"]
+                start, stop = p_info["range"]["a"], p_info["range"]["b"]
+                lam_model_p = np.array(soln["lam_x"][start:stop]).flatten()
+                dLdP[:,-self.n_p:] = lam_model_p #*self.p_nom
+        else:
+            dLdP = np.zeros((1, self.nP))
+        return dLdP
+
+    def dPidP(self, soln, pf_val, p_val, optimal=True):
+        """
+            Evaluate the gradient of the policy at the current state
+        """
+        x = soln["x"].full()
+        lam_g = soln["lam_g"].full()
+        z = np.concatenate((x, lam_g), axis=0)
+        pf_val = pf_val.copy()
+        p_val = p_val.copy()
+
+        if optimal:
+            jacob_act = self.dPi(z, pf_val[:, 0], p_val[:, 0]).full()[: self.action_dim, :]
+        else:
+            jacob_act = np.zeros((self.action_dim, self.nP))
+        return jacob_act
+    
+    def train(self, replay_buffer):
+        _ = self.learning_module.train(replay_buffer)
+        #cost_p = self.p_val[self.iP_cost[0] : self.iP_cost[1]]
+        #self.cost_model.print_params(cost_p)
+        return self.pp_val
+    
+    def constraint_param_opt(self, lr, tr):
+        # SDP for param update to ensure stable MPC formulation
+        # l1, l2 = 0.000, 0.000
+        self.dP_th = cvx.Variable((self.nP, 1))
+        self.dJ_th = cvx.Parameter((self.nP, 1))
+        self.P_th = cvx.Parameter((self.nP, 1))
+        P_th_next = self.P_th + self.dP_th
+
+        J_th = 0.5 * cvx.sum_squares(self.dP_th) + lr * self.dJ_th.T @ self.dP_th
+        # J_up += l1 * cvx.norm(P_cost_next, 1) + l2 * cvx.norm(P_cost_next, 2)
+        constraint = [self.dP_th <= tr, self.dP_th >= -tr]
+
+        self.update_step = cvx.Problem(cvx.Minimize(J_th), constraint)
+
+    def constraint_param_update(self, dJ, p_val):
+        # Cost param update
+        P_up = p_val.copy()
+        self.dJ_th.value = dJ.copy()
+        self.P_th.value = P_up.copy().reshape(self.P_th.shape)
+        try:
+            self.update_step.solve()
+        except:
+            print("SDP solver for cost param update failed")
+
+        if self.update_step.status == "optimal":
+            P_up += self.dP_th.value.copy()
+        else:
+            print(f"Problem status: {self.update_step.status}")
+        return P_up
+    
+    def param_update(self, dJ, param_val=None, constrained_updates=True):
+        # Param update scheme
+        param_val = param_val if param_val is not None else self.pp_val
+        self.constraint_param_opt(self.lr, self.learning_params["tr"])
+        if constrained_updates:
+            self.pp_val = self.constraint_param_update(dJ, param_val)
+        else:
+            # skip the cost for now:
+            """
+            dP = -self.lr[0] * dJ[self.iP_cost[0] : self.iP_cost[1], :]
+            self.p_val[self.iP_cost[0] : self.iP_cost[1], :] += dP.clip(
+                -self.tr[0], self.tr[0]
+            )
+            """
+            # simple update:
+            dP = (-self.lr*dJ).flatten().clip(-self.tr, self.tr)
+            #self.pp_val += dP
+            if self.model_params_in_policy:
+                dP[-self.n_p:] *= self.p_nom
+                # no negative model parameters:
+                if any((self.pp_val + dP)[-self.n_p:] < 0):
+                    dP[-self.n_p:] = 0
+            self.pp_val = self.pp_val + dP

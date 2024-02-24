@@ -67,6 +67,7 @@ if __name__ == "__main__":
         #"slack": Trues
         "slack": False
     }
+    kwargs = dict()
     
     mpc = MPC(config=mpc_cfg,
               param_guess=params, 
@@ -116,11 +117,12 @@ if __name__ == "__main__":
     x0 = np.array([293.15])
     
     # sim horizon: 2 days
-    days = 1
+    days = 3
     K = days*24*bounds.t_h
 
     hist = pd.DataFrame(columns=["pred", "act"])
     rewards = []
+    actions = pd.DataFrame(columns=["a"])
     for k in range(K):
         """
         TODO: transform to RL API.
@@ -140,7 +142,9 @@ if __name__ == "__main__":
         For 'fair' baselining of MPC and RL,
         round to nearest action as in DQN policy.
         """
-        action = [round(u_0["phi_h"], -1)] # -> 21 discrete actions
+        #action = [round(u_0["phi_h"], -1)] # -> 21 discrete actions
+        action = u_0
+        actions.loc[k] = action
         # step:
         x0, reward, done, _, _ = boptest.step(action)
         # get forecast in separate step:
