@@ -24,9 +24,10 @@ import os
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 #import matplotlib.dates as mdates
 
-Building_name = 'Gammelbygg'
-cfg_path = os.path.join("configs", "2R2C.json")
-file_name = "{building}_PRBS_46_2024_38_{month}".format(building=Building_name, month=6) + '.csv'
+#Building_name = 'Gammelbygg'
+cfg_path = os.path.join("configs", "2R2C_IG.json")
+#file_name = "{building}_PRBS_46_2024_38_{month}".format(building=Building_name, month=6) + '.csv'
+file_name = "Anneshus_PRBS_internal_gain_2_10min.csv"
 data_path = os.path.join(os.getcwd(), file_name)
 ekf_config = os.path.join(get_opt_config_path(), "2R2C_EKF.json")
 
@@ -60,30 +61,29 @@ else:
     y_data["y1"] = y_data.Ti
     y_data.index = np.arange(0, len(y_data)*dt, dt)
 
-"""
-fig, ax = plt.subplots(2,1)
+
+fig, ax = plt.subplots(2,1, sharex=True)
 (y_data.Ti-273.15).plot(color="k", ax=ax[0])
-y_data.phi_h.plot(color="k", ax=ax[1])
+(y_data.Ta-273.15).plot(color="b", ax=ax[0])
+y_data.phi_h.plot(color="r", ax=ax[1])
 ax[0].set_ylabel(r"Temperature [$^\circ$C]")
 ax[1].set_ylabel(r"Power [W]")
 fig.tight_layout()
 plt.show()
-"""
-
-#y_data = y_data.iloc[0:3]
 
 N = len(y_data)
 dt = y_data.index[1] - y_data.index[0]
 
-param_guess = np.array([1E-03,1E-03,1E+08,1E+08,3E+02])
-lbp = 1*param_guess
-ubp = 1*param_guess
-lbp = np.array([1E-05,1E-05,1E+06,1E+06,1E+02])
-ubp = np.array([1E-02,1E-02,1E+11,1E+11,7E+02])
+param_guess = np.array([1E-03,1E-03,1E+08,1E+09,3E+02])
+lbp = 1e-4*param_guess
+ubp = 1e4*param_guess
 
 """
 First, obtain model:
 """
+
+N = 500
+y_data = y_data[:N]
 
 with ParameterEstimation(config=cfg_path,
                             N=N,
@@ -101,9 +101,16 @@ with ParameterEstimation(config=cfg_path,
                                     covar=ca.veccat(Q, R)
                                     )
 
-    ax = sol_["Ti"].plot(color="r")
-    sol_["y1"].plot(color="k", ax=ax)
-    ax.legend()
+    fig, ax = plt.subplots(1,1, sharex=True)
+    (sol_["Ti"]-273.15).plot(color="k", linewidth=0.75, ax=ax)
+    (sol_["y1"]-273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+    (sol_["Ta"]-273.15).plot(color="b", linestyle="dashed", ax=ax, linewidth=0.75)
+    ax1 = ax.twinx()
+    sol_["phi_h"].plot(color="r", ax=ax1, linewidth=0.75)
+    sol_["phi_gain"].plot(color="y", ax=ax1, linewidth=0.75)
+    ax.legend(["model", "measured", "ambient"], loc="upper right")
+    ax1.legend(["heating [W]", "internal gains [W]"], loc="upper left")
+    fig.tight_layout()
     plt.show()
     print(params)
     
