@@ -116,7 +116,7 @@ class NLPParser(object):
         """
         
         d = {}
-        varnames = ("x", "z", "u", "p", "s", "v", "y", "r", "w")
+        varnames = ("x", "z", "u", "p", "v", "y", "r", "w")
         #varnames = ("x", "z", "p", "w", "v")
         
         prev = 0
@@ -170,8 +170,6 @@ class MultipleShooting(Shooting):
         #self.p_nom = self.scale
         #g_shooting = []
         x = self.get_x()
-        #w = self.get_w()
-        s = self.get_s()
         v = self.get_v()
         y = self.get_y()
         u = self.get_u()
@@ -219,8 +217,8 @@ class MultipleShooting(Shooting):
                                             z=z[:,n]*self.z_nom,
                                             u=u[:,n]*self.u_nom,
                                             p=self.p_nom*p,
-                                            s=s[:,n]*self.s_nom,
                                             r=r[:,n]*self.r_nom)
+                                            #s=s[:,n]*self.s_nom,
                     Xk = Fk["xf"]
                     #Xk = Fk["xf"]/self.x_nom
                     #Zk = Fk["zf"]
@@ -238,21 +236,20 @@ class MultipleShooting(Shooting):
             xn = self.F_map(
                             x0=x[:,:-1]*self.x_nom + self.x_nom_b,
                             z=z[:,:-1]*self.z_nom + self.z_nom_b,
-                            #u=u[:,:-1]*self.u_nom + self.u_nom_b,
                             u=u*self.u_nom + self.u_nom_b,
                             p=self.p_nom*ca.repmat(p, 1, self.N-1) + self.p_nom_b,
-                            s=s[:,:-1]*self.s_nom,
-                            r=r[:,:-1]*self.r_nom + self.r_nom_b,
-                            w=w[:,:-1]
+                            r=r[:,:-1]*self.r_nom + self.r_nom_b
+                            #s=s[:,:-1]*self.s_nom,
+                            #w=w[:,:-1]
                             )["xf"]
             xn_orig = self.F_map(
                                 x0=x[:,:-1],
                                 z=z[:,:-1],
-                                u=u[:,:-1],
+                                u=u,
                                 p=ca.repmat(p, 1, self.N-1),
-                                s=s[:,:-1],
-                                r=r[:,:-1],
-                                w=w[:,:-1]
+                                r=r[:,:-1]
+                                #s=s[:,:-1],
+                                #w=w[:,:-1]
                                 )["xf"]
             x_gaps = xn - (self.x_nom*x[:,1:] + self.x_nom_b)
             x_gaps_orig = xn_orig - x[:,1:]
@@ -299,7 +296,6 @@ class MultipleShooting(Shooting):
                                 p=self.p_nom*ca.repmat(p, 1, self.N),
                                 v=v*self.v_nom + self.v_nom_b,
                                 r=r*self.r_nom + self.r_nom_b,
-                                w=w
                                 )["h"]
             h_gaps_orig = self.h_map(
                                     y=y,
@@ -308,12 +304,10 @@ class MultipleShooting(Shooting):
                                     u=u,
                                     p=ca.repmat(p, 1, self.N),
                                     v=v,
-                                    r=r, 
-                                    w=w
+                                    r=r
                                     )["h"]
-        except AttributeError:
+        except (AttributeError, RuntimeError):
             h_gaps = ca.MX()
-            
         try:
             """
             Discrete-time, difference equation defines w,
@@ -350,23 +344,23 @@ class MultipleShooting(Shooting):
         """
         try:
             g_gaps = self.g_map(
-                                #x=x[:,:-1]*self.x_nom,
                                 x=x*self.x_nom + self.x_nom_b,
-                                #z=z[:,:-1]*self.z_nom,
                                 z=z*self.z_nom + self.z_nom_b,
                                 u=u*self.u_nom + self.u_nom_b,
+                                p=self.p_nom*ca.repmat(p, 1, self.N),
+                                r=r*self.r_nom + self.r_nom_b
+                                #x=x[:,:-1]*self.x_nom,
+                                #z=z[:,:-1]*self.z_nom,
                                 #u=u[:,:-1]*self.u_nom,
                                 #p=ca.repmat(p, 1, self.N),
-                                p=self.p_nom*ca.repmat(p, 1, self.N),
                                 #p=self.p_nom*ca.repmat(p, 1, self.N),
                                 #v=v*self.v_nom,
-                                s=s*self.s_nom,
+                                #s=s*self.s_nom,
                                 #r=r[:,:-1]*self.r_nom
-                                r=r*self.r_nom + self.r_nom_b,
-                                w=w
+                                #w=w
                                 #r=0
                                 )["g"]
-        except AttributeError:
+        except (AttributeError, RuntimeError):
             #g_gaps = zn - z[:,1:]  
             g_gaps = ca.MX()
             #pass
@@ -384,15 +378,15 @@ class MultipleShooting(Shooting):
         
         """
         #V = ca.veccat(x, z, u, p, w, v, y, r)
-        V = ca.veccat(x, z, u, p, s, v, y, r, w)
+        V = ca.veccat(x, z, u, p, v, y, r, w)
         
         #nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
-        nlp_parser = NLPParser((x, z, u, p, s, v, y, r, w))
+        nlp_parser = NLPParser((x, z, u, p, v, y, r, w))
         # keep orig g:
         nlp_parser.set_g(g)  
         nlp_parser.set_x_orig(x)  
         nlp_parser.set_p_orig(p)  
-        nlp_parser.vars["x"]["shooting_gaps"] = x_gaps
+        nlp_parser.vars["x"]["shooting_gaps"] = x_gaps.T
         
         """
         Gaps without noise, scaling for covariance estimation:
@@ -464,12 +458,6 @@ class MultipleShooting(Shooting):
         """ Dep vars. """
         #return ca.MX.sym("w", self.n_w, self.N-1)
         return ca.MX.sym("w", self.n_w, self.N)
-    
-    def get_s(self):
-        """ Process noise. """
-        #return ca.MX.sym("s", self.n_s, self.N-1)
-        return ca.MX.sym("s", self.n_s, self.N)
-        #return ca.MX.sym("w", self.n_w, self.N)
 
     def get_y(self):
         """ Measurements. """
@@ -480,7 +468,7 @@ class MultipleShooting(Shooting):
         """ Controllable inputs. """
         #return ca.MX.sym("u", self.n_u, self.N)*self.u_nom
         #return ca.MX.sym("u", self.n_u, self.N-1)
-        return ca.MX.sym("u", self.n_u, self.N)
+        return ca.MX.sym("u", self.n_u, self.N-1)
 
     def get_z(self):
         """ Alg vars. """
@@ -851,7 +839,7 @@ class Collocation(Shooting):
         v = []
         y = []
         xb = []
-        x_gaps = []
+        #x_gaps = []
         g_shooting = []
         h_gaps = []
         
@@ -865,7 +853,6 @@ class Collocation(Shooting):
         r_nom_b = self.r_nom_b 
         z_nom = self.z_nom 
         z_nom_b = self.z_nom_b 
-        s_nom = self.s_nom 
         y_nom = self.y_nom 
         y_nom_b = self.y_nom_b
         v_nom = self.v_nom
@@ -874,7 +861,6 @@ class Collocation(Shooting):
         n_z = self.n_z
         n_u = self.n_u
         n_p = self.n_p
-        n_w = self.n_w
         n_r = self.n_r
         n_v = self.n_v
         n_y = self.n_y
@@ -897,9 +883,8 @@ class Collocation(Shooting):
         #P = ca.MX.sym('P', n_p)
         P = self.F.p
 
-
         # "Lift" initial conditions
-        X0 = Xk = ca.MX.sym('X0', n_x)
+        X0 = Xk = ca.MX.sym('X_0', n_x)
         #Z0 = Zk = ca.MX.sym('Z0', n_z)
         # X0 as parameter:
         x.append(Xk)
@@ -916,7 +901,7 @@ class Collocation(Shooting):
             # New NLP variable for the control
             Uk = ca.MX.sym('U_' + str(k), n_u)
             Rk = ca.MX.sym('R_' + str(k), n_r)
-            Wk = ca.MX.sym('W_' + str(k), n_w)
+            #Wk = ca.MX.sym('W_' + str(k), n_w)
             Vk = ca.MX.sym('V_' + str(k), n_v)
             #Yk = ca.MX.sym('Y_' + str(k), n_y)
             #Zk = ca.MX.sym('Z_' + str(k), n_z)
@@ -924,7 +909,7 @@ class Collocation(Shooting):
             #y.append(Yk)
             u.append(Uk)
             r.append(Rk)
-            w.append(Wk)
+            #w.append(Wk)
             #z.append(Zk)
 
             # State at collocation points
@@ -952,13 +937,15 @@ class Collocation(Shooting):
                 """
                 TODO: fix n args.
                 """
-                fj = self.f(Xc[j-1]*x_nom + x_nom_b, 
+                fj = self.f(
+                            Xc[j-1]*x_nom + x_nom_b, 
                             Zkj*z_nom + z_nom_b, 
                             Uk*u_nom + u_nom_b,
                             P*p_nom + p_nom_b,
-                            Wk*s_nom,
-                            Rk*r_nom + r_nom_b,
-                            Wk*s_nom)
+                            #Wk*s_nom,
+                            Rk*r_nom + r_nom_b
+                            )
+                            #Wk*s_nom)
                 g.append(h*fj - xp*x_nom)
                 #g.append(h*fj - (xp*x_nom + x_nom_b))
 
@@ -972,24 +959,26 @@ class Collocation(Shooting):
                         Uk*u_nom + u_nom_b,
                         P*p_nom + p_nom_b,
                         Vk*v_nom,
-                        Wk*s_nom,
-                        Rk*r_nom + r_nom_b,
-                        Wk*s_nom)
+                        #Wk*s_nom,
+                        Rk*r_nom + r_nom_b)
+                        #Wk*s_nom)
                 )
                 """
                 TODO: enforce measurement only at k = 0,1,...,N-1,
                 where N is number of measurements.
                 """
-                g.append(self.F.h(
+                g.append(
+                        self.F.h(
                         Ykj*y_nom + y_nom_b,
                         Xc[j-1]*x_nom + x_nom_b, 
                         Zkj*z_nom + z_nom_b,
                         Uk*u_nom + u_nom_b,
                         P*p_nom + p_nom_b,
                         Vk*v_nom,
-                        Rk*r_nom + r_nom_b,
-                        Wk*s_nom)
-                         )
+                        Rk*r_nom + r_nom_b)
+                        )
+                        #Wk*s_nom)
+                        
                 """
                 g.append(self.F.g(
                         Zkj,
@@ -1146,7 +1135,7 @@ class Collocation(Shooting):
         V = ca.veccat(x, z, u, P, w, v, y, r)
         
         #nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
-        nlp_parser = NLPParser((x, z, u, P, w, v, y, r))
+        nlp_parser = NLPParser((x, z, u, P, v, y, r, w))
         
         # set inds for boundary points:
         nlp_parser.vars["x"]["boundary_vars"] = ca.vertcat(*xb)

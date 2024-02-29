@@ -300,6 +300,12 @@ class Boptest(RestApi):
             forecast = pd.DataFrame(index=index,
                             data=vals,
                             columns=self.var["r"])
+        """
+        Save first step, relying on internal time:
+        """
+        #offset = 2
+        N = len(self.forecast_df)
+        self.forecast_df.loc[self.time] = forecast.iloc[0]
         return forecast
     
     @staticmethod

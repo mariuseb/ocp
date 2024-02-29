@@ -139,7 +139,7 @@ class OCP(metaclass=ABCMeta):
         self.r_nom_b = kwargs.pop("r_nom_b", 0)
         self.u_nom = kwargs.pop("u_nom", 1)
         self.u_nom_b = kwargs.pop("u_nom_b", 0)
-        self.s_nom = kwargs.pop("s_nom", 1)
+        self.sl_nom = kwargs.pop("sl_nom", 1)
         self.v_nom = kwargs.pop("v_nom", 1)
         self.v_nom_b = kwargs.pop("v_nom_b", 0)
         self.p_nom = self.scale = kwargs.pop("p_nom", None)
@@ -164,7 +164,7 @@ class OCP(metaclass=ABCMeta):
         self.scale_dict["r_nom_b"] = self.r_nom_b
         self.scale_dict["u_nom"] = self.u_nom
         self.scale_dict["u_nom_b"] = self.u_nom_b
-        self.scale_dict["s_nom"] = self.s_nom
+        self.scale_dict["sl_nom"] = self.sl_nom
         self.scale_dict["u_nom"] = self.u_nom
         self.scale_dict["u_nom_b"] = self.u_nom_b
         self.scale_dict["v_nom"] = self.v_nom
@@ -174,7 +174,7 @@ class OCP(metaclass=ABCMeta):
         
         
         self.use_objective_from_cfg = kwargs.pop("use_objective_from_cfg", True)
-        self.gamma = kwargs.pop("gamma", 1)
+        #self.gamma = kwargs.pop("gamma", 1)
        
         if isinstance(config, str) or isinstance(config, os.PathLike):
             with open(config, "r") as f:
@@ -200,7 +200,7 @@ class OCP(metaclass=ABCMeta):
         ## objective:
         self.obj_string = config.pop("objective", None)
         
-        assert self.gamma <= 1 and self.gamma > 0
+        #assert self.gamma <= 1 and self.gamma > 0
         ##
         self.dae = dae = DAE(config["model"])
         # mainly on 
@@ -353,7 +353,7 @@ class OCP(metaclass=ABCMeta):
                                                 "r_nom_b": self.r_nom_b,
                                                 "u_nom": self.u_nom,
                                                 "u_nom_b": self.u_nom_b,
-                                                "s_nom": self.s_nom,
+                                                #"s_nom": self.s_nom,
                                                 "v_nom": self.v_nom, 
                                                 "v_nom_b": self.v_nom_b, 
                                                 "map_eval": map_eval
@@ -370,7 +370,7 @@ class OCP(metaclass=ABCMeta):
                                                 "p_nom": self.p_nom,
                                                 "r_nom": self.r_nom,
                                                 "u_nom": self.u_nom,
-                                                "s_nom": self.s_nom,
+                                                #"s_nom": self.s_nom,
                                                 "v_nom": self.v_nom
                                               }
                                             )
@@ -394,7 +394,7 @@ class OCP(metaclass=ABCMeta):
                                             "z_nom": self.z_nom,
                                             "z_nom_b": self.z_nom_b,
                                             "u_nom": self.u_nom,
-                                            "s_nom": self.s_nom,
+                                            #"s_nom": self.s_nom,
                                             "v_nom": self.v_nom
                                             }
                                         )
@@ -561,7 +561,7 @@ class OCP(metaclass=ABCMeta):
         TODO: name collision with slack variable.
         Fix
         """
-        s = bounds.pop("s")
+        #s = bounds.pop("s")
         
         v = bounds.pop("v")
         y = bounds.pop("y")
@@ -573,7 +573,7 @@ class OCP(metaclass=ABCMeta):
         ubx = np.array([])
         x0 = np.array([])
         
-        for bound_dict, (k, v) in zip((x, z, u, p, s, v, y, r, w), self.nlp_parser.vars.items()):
+        for bound_dict, (k, v) in zip((x, z, u, p, v, y, r, w), self.nlp_parser.vars.items()):
         #for arr, (k, v) in zip((x, z, p, w, v), self.nlp_parser.vars.items()):
             # TODO: check also lb
             #if bound_dict["ub"] is None:
@@ -637,10 +637,6 @@ class OCP(metaclass=ABCMeta):
         # slack: 
         if self.slack or slack:
             dim = self.nlp_parser.vars["sl"]["dim"]
-            #self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.nlp_parser.vars["sl"]["dim"]))
-            #self.lbx = np.append(self.lbx, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
-            #self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["sl"]["dim"]))
-            #self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
             self.lbx = np.append(self.lbx, np.repeat([0], dim))
             self.ubx = np.append(self.ubx, np.repeat([np.inf], dim))
             self.x0 = np.append(self.x0, np.repeat([0], dim))
@@ -827,6 +823,7 @@ class OCP(metaclass=ABCMeta):
     
     def init_codegen_solver(self,
                             so_filename,
+                            solver="ipopt",
                             **opts):
         """
         TODO: solver name
@@ -834,12 +831,12 @@ class OCP(metaclass=ABCMeta):
         #self.opt.pop("verbose", False)
         #self.opt.pop("ipopt.hessian_approximation")
         solver_opts = copy.deepcopy(opts)
-        opts["ipopt"] = dict()
+        opts[solver] = dict()
         for k, v in solver_opts.items():
-            opts["ipopt"][k.replace("ipopt.", "")] = v
+            opts[solver][k.replace(solver + ".", "")] = v
         # re-init solver object:
         return ca.nlpsol("solver", 
-                        "ipopt",
+                        solver,
                         so_filename,
                         opts)
 
@@ -938,8 +935,9 @@ class OCP(metaclass=ABCMeta):
         """
         var = self.get_nlp_var(name)
         n_ocp_var = getattr(self, "n_" + name)
-        if isinstance(self.method, Collocation) and name == "x":
-            n_skip = self.method.d + 1
+        #if isinstance(self.strategy, Collocation) and name == "x":
+        if self.method == "collocation" and name == "x":
+            n_skip = self.strategy.d + 1
         else:
             n_skip = 1
         start = n_skip*stage
@@ -1260,8 +1258,8 @@ class OCP(metaclass=ABCMeta):
                  
         for varname in varnames:
             
-            if varname == "x":
-               print("yes")
+            #if varname == "x":
+            #   print("yes")
                 
             bounds[varname] = {}
             names = getattr(self, varname + "_names")
@@ -1278,6 +1276,10 @@ class OCP(metaclass=ABCMeta):
                 try:    
                     try:
                         # these should be passed as python lists:
+                        
+                        if varname == "x":
+                            print("yes")
+                        
                         scale = getattr(self, varname + "_nom")
                         bias = getattr(self, varname + "_nom_b")
                         
@@ -1555,12 +1557,17 @@ class OCP(metaclass=ABCMeta):
                 if name == "x":
                     if self.method == "multiple_shooting":
                         
-                        if not isinstance(bias, (float, int)):
-                            bias = self.x_nom_b.reshape((self.N, getattr(self, attr_name)))
+                        #if not isinstance(bias, (float, int)):
+                        #bias = self.x_nom_b.reshape((self.N, getattr(self, attr_name)))
+                        """
+                        TODO: fix
+                        """
+                        #bias = np.array(bias)
+                        #bias = bias.reshape((self.N, getattr(self, attr_name)))
                         _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name))) + \
                             bias
-                        if not isinstance(scale, (float, int)):
-                            scale = self.x_nom.reshape((self.N, getattr(self, attr_name)))
+                        #if not isinstance(scale, (float, int)):
+                        #    scale = self.x_nom.reshape((self.N, getattr(self, attr_name)))
                             
                 #if self.method == "multiple_shooting" or name != "x":
                     elif self.method == "single_shooting":
@@ -1629,7 +1636,10 @@ class OCP(metaclass=ABCMeta):
                         """
                         _vals = _vals.reshape((self.N-1, getattr(self, attr_name)))
                         newrow = np.repeat(np.nan, getattr(self, attr_name))
-                        _vals = np.vstack([_vals, newrow])
+                        if name == "sl":
+                            _vals = np.vstack([newrow, _vals])
+                        else:
+                            _vals = np.vstack([_vals, newrow])
                     # Temporary fix:
                         
                     _vals *= scale

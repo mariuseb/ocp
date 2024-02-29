@@ -1,7 +1,6 @@
 # %%
 #from ast import Param
 from ocp.parametric_mpc import ParametricMPC, MPCfunapprox
-from ocp.mpc import MPC
 import numpy as np
 import json
 import casadi as ca
@@ -57,10 +56,9 @@ if __name__ == "__main__":
     mpc_cfg = os.path.join("configs", "1R1C_MPC.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     # start off with 'very' wrong params:
-    #params = [3.2e-2, 2.5e6]
+    params = [3.2e-2, 2.5e6]
     #params = [0.7e-2, 1.3e6]
     #params = [1e-2, 1e6]
-    #params = [2e-2, 2e6]
     params = [2e-2, 2e6]
     
     """
@@ -73,23 +71,18 @@ if __name__ == "__main__":
     """
     
     kwargs = {
-        "x_nom": [30],
-        "x_nom_b": [280.15],
-        "u_nom": [10000],
-        #"u_nom_b": 10000,
-        "r_nom": [30],
-        "r_nom_b": [280.15],
-        "sl_nom": [30],
-        #"sl_nom_b": [280.15],
-        #"p_nom": [1,1],
+        "x_nom": 30,
+        "x_nom_b": 280.15,
+        "u_nom": 10000,
+        "r_nom": 30,
+        "r_nom_b": 280.15,
         #"slack": Trues
         "slack": False
     }
-    #kwargs = dict()
 
     seed = 1
     agent_params= {
-            "gamma": 1,
+            "gamma": .9,
             "opt_params": {
                 "cost_defn": ["fullW", "fullR"],
                 "cost_wt": [[1.0, 1.0, 1.0, 1.0], [0.1, 0.1]],
@@ -98,13 +91,11 @@ if __name__ == "__main__":
             "eps": 0.25,
             "learning_params": {
                 "lr": 1e-4,
-                #"lr": 1e-6,
                 #"lr": 5e-2,
-                #"lr": 5e-3,
                 "tr": 0.2,
                 "train_params": {
                     "iterations": 1,
-                    "batch_size": 64
+                    "batch_size": 1
                 },
                 "constrained_updates": False
             }
@@ -119,6 +110,7 @@ if __name__ == "__main__":
                         model_params_in_policy=True,
                         **deepcopy(kwargs)
                         )  # to remove, replace with N
+    
     
     url = 'http://bacssaas_boptest:5000'
     # Use gym env from Javiers code instead:
@@ -154,8 +146,8 @@ if __name__ == "__main__":
                     lb_day=lb_day,
                     ub_day=ub_day)
 
-    obs = state = x0 = np.array([293.15])
-    days = 90
+    obs = state = np.array([293.15])
+    days = 360
     K = days*24*bounds.t_h # tot timesteps
     rewards = []
     np.random.seed(0)
@@ -192,7 +184,7 @@ if __name__ == "__main__":
     so we can calculate both q and v_+
     """
     
-    max_len_buffer = int(1e5)
+    max_len_buffer = 1
     # to store experiences:
     replay_buffer = ReplayBuffer(max_len_buffer, seed)
     rollout_return = 0
@@ -202,7 +194,7 @@ if __name__ == "__main__":
     update policy parameters
     every B timesteps.
     """
-    B = 96
+    B = 1
     rollout_buffer = BasicBuffer()
     t_returns = []
     
@@ -239,8 +231,6 @@ if __name__ == "__main__":
     
     mpc.codegen_solvers()
     mpc.learning_module.grad_q_history.columns = policy_history.columns
-    mpc.learning_module.grad_v_history.columns = policy_history.columns
-    mpc.learning_module.grad_q_history_ipopt.columns = policy_history.columns
     
     for k in range(K):
         policy_history.loc[k] = policy_params
@@ -262,17 +252,18 @@ if __name__ == "__main__":
         """
         
         mpc.prepare_forward(
-                            data[0:mpc.N],
-                            x0=obs,
-                            lbx=lbx,
-                            ubx=ubx,
-                            model_params=params,
-                            policy_params=policy_params
+                               data[0:mpc.N],
+                               x0=obs,
+                               lbx=lbx,
+                               ubx=ubx,
+                               model_params=params,
+                               policy_params=policy_params
                             )
         
         """
         TODO: duplicate handling of x0:
         """
+        
         action, add_info, sol, raw_sol = mpc.act_forward(obs)   
         next_obs, reward, done, _, _ = boptest.step(action)
         # simple case, no estimation, i.e. x == s:
@@ -300,11 +291,6 @@ if __name__ == "__main__":
             print(action)
         
         if (k+1) % B == 0:
-            
-            """
-            TODO: solve for value function in next state.
-            """
-            
             replay_buffer.push(rollout_buffer.buffer)
             t_returns.append(rollout_return)
             policy_params = mpc.train(replay_buffer)

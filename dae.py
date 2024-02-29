@@ -261,7 +261,7 @@ class DAE(object):
     
     @property
     def order(self):
-        return ("x", "z", "u", "p", "s", "v", "y", "r", "w")
+        return ("x", "z", "u", "p", "v", "y", "r", "w")
     
     @property
     def all_names(self):

@@ -1,7 +1,6 @@
 # %%
 #from ast import Param
 from ocp.parametric_mpc import ParametricMPC, MPCfunapprox
-from ocp.mpc import MPC
 import numpy as np
 import json
 import casadi as ca
@@ -57,11 +56,7 @@ if __name__ == "__main__":
     mpc_cfg = os.path.join("configs", "1R1C_MPC.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     # start off with 'very' wrong params:
-    #params = [3.2e-2, 2.5e6]
-    #params = [0.7e-2, 1.3e6]
-    #params = [1e-2, 1e6]
-    #params = [2e-2, 2e6]
-    params = [2e-2, 2e6]
+    params = [1e-2,1e6]
     
     """
     No state observer needed for this example.
@@ -73,23 +68,19 @@ if __name__ == "__main__":
     """
     
     kwargs = {
-        "x_nom": [30],
-        "x_nom_b": [280.15],
-        "u_nom": [10000],
-        #"u_nom_b": 10000,
-        "r_nom": [30],
-        "r_nom_b": [280.15],
-        "sl_nom": [30],
-        #"sl_nom_b": [280.15],
-        #"p_nom": [1,1],
+        "x_nom": 30,
+        "x_nom_b": 280.15,
+        "u_nom": 10000,
+        "r_nom": 30,
+        "r_nom_b": 280.15,
+        #"p_nom": [1e-3,1e7],
         #"slack": Trues
         "slack": False
     }
-    #kwargs = dict()
 
     seed = 1
     agent_params= {
-            "gamma": 1,
+            "gamma": 0.9,
             "opt_params": {
                 "cost_defn": ["fullW", "fullR"],
                 "cost_wt": [[1.0, 1.0, 1.0, 1.0], [0.1, 0.1]],
@@ -97,14 +88,12 @@ if __name__ == "__main__":
             },
             "eps": 0.25,
             "learning_params": {
-                "lr": 1e-4,
-                #"lr": 1e-6,
+                "lr": 5e-3,
                 #"lr": 5e-2,
-                #"lr": 5e-3,
                 "tr": 0.2,
                 "train_params": {
                     "iterations": 1,
-                    "batch_size": 64
+                    "batch_size": 128
                 },
                 "constrained_updates": False
             }
@@ -119,6 +108,7 @@ if __name__ == "__main__":
                         model_params_in_policy=True,
                         **deepcopy(kwargs)
                         )  # to remove, replace with N
+    
     
     url = 'http://bacssaas_boptest:5000'
     # Use gym env from Javiers code instead:
@@ -154,20 +144,15 @@ if __name__ == "__main__":
                     lb_day=lb_day,
                     ub_day=ub_day)
 
-    obs = state = x0 = np.array([293.15])
-    days = 90
-    K = days*24*bounds.t_h # tot timesteps
-    rewards = []
-    np.random.seed(0)
-    #policy_params = np.array([0]*mpc.P.shape[0])
-    policy_params = np.zeros(
-                            shape=(mpc.P.shape[0] - mpc.n_p)
-                            )
+    obs = state = np.array([293.15])
     policy_params = np.random.normal(
                                      loc=0.01,
                                      scale=1e-2,
                                      size=(mpc.P.shape[0] - mpc.n_p)
                                      )
+    policy_params = np.zeros(
+                            shape=(mpc.P.shape[0] - mpc.n_p)
+                            )
     policy_params = np.append(policy_params, np.array(params))
     # slack weight:
     #policy_params[-1] = 1e4
@@ -223,44 +208,50 @@ if __name__ == "__main__":
                         )
                 )
     W_labs = create_labels("W", mpc.n_x**2)
-    S_labs = create_labels("S", mpc.n_x**2)
     b_labs = create_labels("b", mpc.n_x)
     f_labs = create_labels("f", mpc.n_x + mpc.n_u)
     #R_labs = create_labels("R", mpc.n_x)
     cols = W_labs
-    cols.extend(S_labs)
+    cols.extend(b_labs)
     cols.extend(f_labs)
     cols.extend(["V0"])
-    cols.extend(b_labs)
     cols.extend(["x_below", "x_above"])
     cols.extend(["R", "C"])
     #cols.extend(R_labs)
     policy_history = pd.DataFrame(columns=cols)
     
-    mpc.codegen_solvers()
-    mpc.learning_module.grad_q_history.columns = policy_history.columns
-    mpc.learning_module.grad_v_history.columns = policy_history.columns
-    mpc.learning_module.grad_q_history_ipopt.columns = policy_history.columns
+    #mpc.codegen_solvers()
+    lbx, ubx, ref = bounds.get_bounds(0, mpc.N) 
+    """
+    Solve MPC problem with R = [1-3, ... , 1E-1]
+    """
     
-    for k in range(K):
-        policy_history.loc[k] = policy_params
-        lbx, ubx, ref = bounds.get_bounds(k, mpc.N) 
-        """
-        sol, u_0, x0 = mpc.solve(
-                               data[0:mpc.N],
-                               x0=x0,
-                               lbx=lbx,
-                               ubx=ubx,
-                               params=params,
-                               codegen=False
-                               )
-        Order:
-        Pbounds = (p_lbx, p_ubx, p_lbu, p_ubu)
-        P = (Pf, P, Pbounds)
-        
-        Note: bounds on u are stored in mpc object.
-        """
-        
+    sqp_opts = dict(
+                    qpsol='qrqp',
+                    #qpsol='qrqp',
+                    qpsol_options=dict(print_iter=False,error_on_fail=False), 
+                    print_time=True,
+                    #regularize=True,
+                    min_step_size=1E-8,
+                    bound_consistency=True,
+                    #clip_inactive_lam=True,
+                    calc_lam_p=True
+                    )
+    sqp_sol = ca.nlpsol("sqpsolver",
+                        "sqpmethod",
+                        mpc.vnlp_prob,
+                        sqp_opts
+                        )
+    
+    
+    R = np.arange(10, 1100, step=10)*1E-3
+    f = []
+    lam_R = []
+    #mpc.codegen_solvers()
+    lam_p = pd.DataFrame(columns=["R", "C", "f"])
+    for r in R:
+        params[0] = r
+        policy_params[-2] = r
         mpc.prepare_forward(
                             data[0:mpc.N],
                             x0=obs,
@@ -269,74 +260,28 @@ if __name__ == "__main__":
                             model_params=params,
                             policy_params=policy_params
                             )
-        
+        action, add_info, sol, raw_sol = mpc.act_forward(obs)  
+        dVdP_from_sol = raw_sol["lam_p"][mpc.nPf:-mpc.nPbounds].full().flatten()
+        dVdP = mpc.dVdP(
+                        add_info["soln"],
+                        mpc.pf_val,
+                        mpc.pp_val,
+                        mpc.p_bounds
+                        )
         """
-        TODO: duplicate handling of x0:
+        sqp_sol = sqp_sol(x0=raw_sol["x"],
+                          lbx=mpc.lbx, 
+                          ubx=mpc.ubx,
+                          lbg=mpc.lbg_vcsd,
+                          ubg=mpc.ubg_vcsd 
+                          )
         """
-        action, add_info, sol, raw_sol = mpc.act_forward(obs)   
-        next_obs, reward, done, _, _ = boptest.step(action)
-        # simple case, no estimation, i.e. x == s:
-        next_state = next_obs
-        # modify action to fit in buffer:
-        action = action.values.flatten()
-        rollout_buffer.push(
-                state,
-                obs,
-                action,
-                reward,
-                next_state,
-                next_obs,
-                data,
-                add_info,
-                raw_sol,
-                sol
-            )
-        rollout_return += reward
-        state = next_state.copy()
-        obs = next_obs.copy()
-        
-        # in trouble:
-        if mpc.nlp_solver.stats()["return_status"] != 'Solve_Succeeded':
-            print(action)
-        
-        if (k+1) % B == 0:
-            
-            """
-            TODO: solve for value function in next state.
-            """
-            
-            replay_buffer.push(rollout_buffer.buffer)
-            t_returns.append(rollout_return)
-            policy_params = mpc.train(replay_buffer)
-            rollout_buffer = BasicBuffer()
-            rollout_return = 0
-        
-        # get forecast in separate step:
-        data = boptest.forecast()
-        # save rewards for easy plotting:
-        rewards.append(reward)
-        
-    plt.rcParams.update({'font.size': 12})
-    data = boptest.get_data(tf=K*mpc.dt)
-    
-    plot_results(
-                 boptest,
-                 rewards
-                 )
-    
-    from math import sqrt, ceil
-    n = ceil(sqrt(mpc.nP))
-    fig, axes = plt.subplots(n,n)
-    cols = policy_history.columns
-    for i, ax in enumerate(axes.flatten()):
-        try:
-            ser = policy_history[cols[i]]
-            ser.plot(ax=ax)
-            ax.set_title(cols[i])
-        except IndexError:
-            pass
-    fig.tight_layout()
-    plt.show()
-    
+        #f.append(raw_sol["f"])
+        print(sqp_sol)
+        lam_p.loc[r] = np.concatenate([dVdP_from_sol[-2:], np.array(raw_sol["f"]).flatten()])
+      
+    """
+    Projected solution from p.
+    """  
     
     print(data)

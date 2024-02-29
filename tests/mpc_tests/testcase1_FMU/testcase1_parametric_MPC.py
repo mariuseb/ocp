@@ -29,26 +29,6 @@ rc('mathtext', default='regular')
 import matplotlib.dates as mdates
 
 
-# Additional functions
-def rollout_sample(env, agent, n_steps = 50, mode="train"):
-    state, obs = env.reset()
-    agent.reset(obs)
-    rollout_return = 0
-    rollout_buffer = BasicBuffer()
-
-    for _ in range(n_steps):
-        action, add_info = agent.act_forward(obs, mode=mode)
-        next_state, next_obs, reward, _ = env.step(action)
-        if mode == "train":
-            rollout_buffer.push(
-                state, obs, action, reward, next_state, next_obs, add_info
-            )
-        rollout_return += reward
-        state = next_state.copy()
-        obs = next_obs.copy()
-    return rollout_return, rollout_buffer
- 
-
 if __name__ == "__main__":
     
     bop_config_base = get_boptest_config_path()
@@ -57,11 +37,11 @@ if __name__ == "__main__":
     mpc_cfg = os.path.join("configs", "1R1C_MPC.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     # start off with 'very' wrong params:
-    #params = [3.2e-2, 2.5e6]
+    params = [3.2e-2, 2.5e6]
     #params = [0.7e-2, 1.3e6]
-    #params = [1e-2, 1e6]
+    params = [1e-2, 1e6]
     #params = [2e-2, 2e6]
-    params = [2e-2, 2e6]
+    #params = [1e-2, 1e6]
     
     """
     No state observer needed for this example.
@@ -97,14 +77,14 @@ if __name__ == "__main__":
             },
             "eps": 0.25,
             "learning_params": {
-                "lr": 1e-4,
+                "lr": 5e-3,
                 #"lr": 1e-6,
                 #"lr": 5e-2,
                 #"lr": 5e-3,
                 "tr": 0.2,
                 "train_params": {
                     "iterations": 1,
-                    "batch_size": 64
+                    "batch_size": 128
                 },
                 "constrained_updates": False
             }
@@ -119,7 +99,16 @@ if __name__ == "__main__":
                         model_params_in_policy=True,
                         **deepcopy(kwargs)
                         )  # to remove, replace with N
-    
+    kwargs["slack"] = True
+    cfg = deepcopy(mpc.config)
+    cfg["objective"] = "dot(phi_h, phi_h) + 1E2*dot(sl, sl)"
+    mpc_orig = MPC(
+                    config=cfg,
+                    param_guess=params, 
+                    functions=functions,
+                    **deepcopy(kwargs)
+                    )  # to remove, replace with N
+
     url = 'http://bacssaas_boptest:5000'
     # Use gym env from Javiers code instead:
     boptest = BoptestGymEnv(boptest_cfg,
@@ -155,19 +144,13 @@ if __name__ == "__main__":
                     ub_day=ub_day)
 
     obs = state = x0 = np.array([293.15])
-    days = 90
+    days = 3
     K = days*24*bounds.t_h # tot timesteps
     rewards = []
     np.random.seed(0)
-    #policy_params = np.array([0]*mpc.P.shape[0])
     policy_params = np.zeros(
                             shape=(mpc.P.shape[0] - mpc.n_p)
                             )
-    policy_params = np.random.normal(
-                                     loc=0.01,
-                                     scale=1e-2,
-                                     size=(mpc.P.shape[0] - mpc.n_p)
-                                     )
     policy_params = np.append(policy_params, np.array(params))
     # slack weight:
     #policy_params[-1] = 1e4
@@ -191,59 +174,9 @@ if __name__ == "__main__":
     Make sure forecast is length N+1,
     so we can calculate both q and v_+
     """
-    
-    max_len_buffer = int(1e5)
-    # to store experiences:
-    replay_buffer = ReplayBuffer(max_len_buffer, seed)
-    rollout_return = 0
-    
-    """
-    Batch-mode training,
-    update policy parameters
-    every B timesteps.
-    """
-    B = 96
-    rollout_buffer = BasicBuffer()
-    t_returns = []
-    
-    """
-    Main loop:
-    cols = list(
-                map(
-                    lambda x: "theta" + str(x), 
-                    range(mpc.P.shape[0])
-                    )
-                )
-    """
-    def create_labels(prefix, num):
-        return list(
-                    map(
-                        lambda x: prefix + str(x), 
-                        range(num)
-                        )
-                )
-    W_labs = create_labels("W", mpc.n_x**2)
-    S_labs = create_labels("S", mpc.n_x**2)
-    b_labs = create_labels("b", mpc.n_x)
-    f_labs = create_labels("f", mpc.n_x + mpc.n_u)
-    #R_labs = create_labels("R", mpc.n_x)
-    cols = W_labs
-    cols.extend(S_labs)
-    cols.extend(f_labs)
-    cols.extend(["V0"])
-    cols.extend(b_labs)
-    cols.extend(["x_below", "x_above"])
-    cols.extend(["R", "C"])
-    #cols.extend(R_labs)
-    policy_history = pd.DataFrame(columns=cols)
-    
-    mpc.codegen_solvers()
-    mpc.learning_module.grad_q_history.columns = policy_history.columns
-    mpc.learning_module.grad_v_history.columns = policy_history.columns
-    mpc.learning_module.grad_q_history_ipopt.columns = policy_history.columns
+
     
     for k in range(K):
-        policy_history.loc[k] = policy_params
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N) 
         """
         sol, u_0, x0 = mpc.solve(
@@ -269,47 +202,32 @@ if __name__ == "__main__":
                             model_params=params,
                             policy_params=policy_params
                             )
-        
+
         """
         TODO: duplicate handling of x0:
         """
+        
         action, add_info, sol, raw_sol = mpc.act_forward(obs)   
         next_obs, reward, done, _, _ = boptest.step(action)
         # simple case, no estimation, i.e. x == s:
-        next_state = next_obs
-        # modify action to fit in buffer:
-        action = action.values.flatten()
-        rollout_buffer.push(
-                state,
-                obs,
-                action,
-                reward,
-                next_state,
-                next_obs,
-                data,
-                add_info,
-                raw_sol,
-                sol
-            )
-        rollout_return += reward
-        state = next_state.copy()
+        if not all(sol["Ti"][0] == obs):
+            print("help")
+        if k == 15:
+            sol_orig, u_0, x0 = mpc_orig.solve(
+                                    data[0:mpc.N],
+                                    x0=obs,
+                                    lbx=lbx,
+                                    ubx=ubx,
+                                    params=params,
+                                    codegen=False
+                                    )
+            print("yes")
+            
         obs = next_obs.copy()
-        
+          
         # in trouble:
         if mpc.nlp_solver.stats()["return_status"] != 'Solve_Succeeded':
             print(action)
-        
-        if (k+1) % B == 0:
-            
-            """
-            TODO: solve for value function in next state.
-            """
-            
-            replay_buffer.push(rollout_buffer.buffer)
-            t_returns.append(rollout_return)
-            policy_params = mpc.train(replay_buffer)
-            rollout_buffer = BasicBuffer()
-            rollout_return = 0
         
         # get forecast in separate step:
         data = boptest.forecast()
@@ -323,20 +241,6 @@ if __name__ == "__main__":
                  boptest,
                  rewards
                  )
-    
-    from math import sqrt, ceil
-    n = ceil(sqrt(mpc.nP))
-    fig, axes = plt.subplots(n,n)
-    cols = policy_history.columns
-    for i, ax in enumerate(axes.flatten()):
-        try:
-            ser = policy_history[cols[i]]
-            ser.plot(ax=ax)
-            ax.set_title(cols[i])
-        except IndexError:
-            pass
-    fig.tight_layout()
-    plt.show()
     
     
     print(data)

@@ -513,9 +513,9 @@ class IRK(Integrator):
     
     def set_h(self):
         self.h = ca.Function('h',
-                          [self.y, self.x, self.z, self.u, self.p, self.v, self.r, self.w],
+                          [self.y, self.x, self.z, self.u, self.p, self.v, self.r],
                           [self.h_expr],
-                          ["y", "x", "z", "u", "p", "v", "r", "w"],
+                          ["y", "x", "z", "u", "p", "v", "r"],
                           ["h"])
     
     def set_w(self):
@@ -543,9 +543,9 @@ class IRK(Integrator):
         
     def set_g(self):
         self.g = ca.Function('g',
-                          [self.z, self.x, self.u, self.p, self.v, self.s, self.r, self.w],
+                          [self.z, self.x, self.u, self.p, self.v, self.r],
                           [self.g_expr],
-                          ["z", "x", "u", "p", "v", "s", "r", "w"],
+                          ["z", "x", "u", "p", "v", "r"],
                           ["g"])
         
     def set_G(self):
@@ -564,19 +564,17 @@ class IRK(Integrator):
         nx = self.nx
         nu = self.nu
         nz = self.nz
-        np = self.np
-        ns = self.ns
+        np = self.np        
         nr = self.nr
-        nw = self.nw
-        
+
         # x0, p, u, r, z, w, v:
         X = ca.MX.sym('X',nx)
         P = ca.MX.sym('P',np)
         U = ca.MX.sym('U',nu)
         R = ca.MX.sym('U',nr)
         Z = ca.MX.sym('Z',nz)
-        S = ca.MX.sym('S',ns)
-        W = ca.MX.sym('W',nw)
+        #S = ca.MX.sym('S',ns)
+        #W = ca.MX.sym('W',nw)
         #V = MX.sym('V', d*nx)
         
         """        
@@ -633,9 +631,9 @@ class IRK(Integrator):
         
     def set_ode_func(self):
         self.f = ca.Function('f',
-                          [self.x, self.z, self.u, self.p, self.s, self.r, self.w],
+                          [self.x, self.z, self.u, self.p, self.r],
                           [self.ode],
-                          ["x", "z", "u", "p", "s", "r", "w"],
+                          ["x", "z", "u", "p", "r"],
                           ["f"])
         
     def set_coll_coeffs(self):
@@ -696,9 +694,9 @@ class IRK(Integrator):
         nu = self.nu
         nz = self.nz
         np = self.np
-        ns = self.ns
+        #ns = self.ns
         nr = self.nr
-        nw = self.nw
+        #nw = self.nw
         
         # x0, p, u, r, z, w, v:
         X0 = ca.MX.sym('X0',nx)
@@ -707,8 +705,8 @@ class IRK(Integrator):
         R = ca.MX.sym('U',nr)
         #_Z = ca.MX.sym('Z',d*nz)
         Z = ca.MX.sym('Z',nz)
-        S = ca.MX.sym('S',ns)
-        W = ca.MX.sym('W',nw)
+        #S = ca.MX.sym('S',ns)
+        #W = ca.MX.sym('W',nw)
         V = ca.MX.sym('V', d*nx)
         
         # try to add meas noise:
@@ -729,7 +727,8 @@ class IRK(Integrator):
 
 
             # TODO: needs re-formulation, algebraic variables only defined on collocation points
-            f_j = f(X[j], Z, U, P, S, R, W)
+            #f_j = f(X[j], Z, U, P, S, R, W)
+            f_j = f(X[j], Z, U, P, R)
             #g_j = g(X[j], Z, U, P, S, R)
             #f_j = f(X[j], Z[j-1], U, P, S, R)
             #g_j = g(X[j], Z[j-1], U, P, S, R)
@@ -746,7 +745,7 @@ class IRK(Integrator):
         # Root-finding function, implicitly defines V as a function of X0 and P
         vfcn = ca.Function(
                         'vfcn',
-                        [V, X0, Z, U, P, S, R, W],
+                        [V, X0, Z, U, P, R],
                         #[V, X0, _Z, U, P, S, R],
                         #[ca.vertcat(V, _Z), X0, U, P, S, R],
                         [V_eq]
@@ -770,7 +769,7 @@ class IRK(Integrator):
         ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
 
         
-        V = ifcn(ca.MX(), X0, Z, U, P, S, R, W)
+        V = ifcn(ca.MX(), X0, Z, U, P, R)
         
         #V = ifcn(ca.MX(), X0, U, P, S, R)
         X = [X0 if r==0 else V[(r-1)*nx:r*nx] for r in range(d+1)]
@@ -788,7 +787,7 @@ class IRK(Integrator):
                 
 
         # Get the discrete time dynamics
-        F = ca.Function('F', [X0, Z, U, P, S, R, W], [XF])
+        F = ca.Function('F', [X0, Z, U, P, R], [XF])
         #F = ca.Function('F', [X0, _Z, U, P, S, R], [XF])
         #F = ca.Function('F', [X0, U, P, S, R], [XF])
         #F_Z = ca.Function('F_Z', [X0, U, P, S, R], [ZF])
@@ -796,18 +795,18 @@ class IRK(Integrator):
         # Do this iteratively for all finite elements
         X = X0
         for i in range(n):
-            X = F(X, Z, U, P, S, R, W)       
+            X = F(X, Z, U, P, R)       
             #X = F(X, U, P, S, R)       
             #Z = F_Z(X, U, P, S, R)       
         
         self.one_sample = ca.Function(
                                    'irk_integrator',
-                                   [X0, Z, U, P, S, R, W],
+                                   [X0, Z, U, P, R],
                                    #[X0, _Z, U, P, S, R],
                                    #[X0, U, P, S, R],
                                    #[X, Z],
                                    [X],
-                                   ["x0", "z", "u", "p", "s", "r", "w"],
+                                   ["x0", "z", "u", "p", "r",],
                                    #["x", "u", "p", "s", "r"],
                                    ["xf"]
                                    )
@@ -834,7 +833,7 @@ class IRK(Integrator):
 
         all_samples = self.one_sample.mapaccum("all_samples", int(N))
         #return all_samples(x0, 0, U, ca.repmat(params,1,N), 0, 0) # -> empty z 
-        return all_samples(x0,0,u,p,0,r,0)
+        return all_samples(x0,0,u,p,r)
     
     
 """

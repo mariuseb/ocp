@@ -377,8 +377,13 @@ class MPC(OCP):
             start = stop
             stop = x_info["range"]["b"]
             
-            self.lbx[start:stop] = lbx
-            self.ubx[start:stop] = ubx
+            if self.strategy.name == "Collocation":
+                n_x_skip = self.strategy.d + 1
+            else:
+                n_x_skip = 1
+            
+            self.lbx[start:stop:n_x_skip] = lbx
+            self.ubx[start:stop:n_x_skip] = ubx
             
         #elif isinstance(self.strategy, SingleShooting):
         elif self.strategy.name == "SingleShooting":
@@ -555,7 +560,12 @@ class MPC(OCP):
         #################################################################################
         if not return_raw_sol:
             #return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values
-            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[1, self.x_names].values
+            return sol_df, \
+                   sol_df.loc[0, self.u_names], \
+                   sol_df.loc[1, self.x_names].values
         else:
             #return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values, sol
-            return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[1, self.x_names].values, sol
+            return sol_df, \
+                   sol_df.loc[0, self.u_names], \
+                   sol_df.loc[1, self.x_names].values, \
+                   sol
