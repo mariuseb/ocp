@@ -51,38 +51,26 @@ Temperature:
 
 if __name__ == "__main__":
 
-    if TEST_MODE:
-        now = pd.Timestamp("01-26-2024 14:30:00").tz_localize("Europe/Oslo")
-        #now = pd.Timestamp.now().tz_localize("Europe/Oslo")
-        #now = now.tz_convert('Europe/Oslo')
-    else:
-        now = pd.Timestamp.now().tz_localize("Europe/Oslo")
-        #now = now.tz_convert('Europe/Oslo')
-        #now = now.tz_localize(None)
+    now = pd.Timestamp("01-26-2024 14:30:00").tz_localize("Europe/Oslo")
 
     five_today = pd.Timestamp(str(now.date()) + " 17:00").tz_localize("Europe/Oslo")
+    # retrieve historical data up to this point:
+    stop = pd.Timestamp(str(now.date()) + " 14:02").tz_localize("Europe/Oslo")
 
-    # NOTE: you have to modify this to current date
-    # to fetch 'real-time' compliant data. 
-    # (i.e., if you want to generate optimal set-points
-    #  for today)
-    #stop = pd.Timestamp("01-26-2024 14:00:00").tz_localize("Europe/Oslo")
-    stop = now
-
-    try:
-        assert (now <= stop <= five_today)
-        print("Script is running in real-time mode.")
-    except AssertionError:
-        print(
-            "Script must be run between 14:00 and 17:00 " + 
-            "on a given day to generate weather data " +
-            "that is real-time compliant. Furthermore, " + 
-            "it is the responsibility of the user to set"
-            "the correct stop point for data retrieval." +
-            " Currently it is set to %s, " % (str(stop), ) +
-            "which means that the script is generating test data."
-            )
-        
+    if not TEST_MODE:
+        actual_now = pd.Timestamp.now().tz_localize("Europe/Oslo")
+        assert \
+        (stop <= now <= five_today) \
+            and \
+        (stop <= actual_now <= five_today), \
+        "Script must be run between 14:00 and 17:00 " + \
+        "on a given day to generate problem data " + \
+        "that is real-time compliant. Furthermore, " + \
+        "it is the responsibility of the user to set" + \
+        "the correct stop point for data retrieval." + \
+        " Currently it is set to %s, " % (str(stop), ) + \
+        "which means that the script should only " + \
+        "be generating test data."
 
     """
     Read historical measurement data from SAUTER.
@@ -181,7 +169,7 @@ if __name__ == "__main__":
     spot.index = pd.date_range(
                             start=start, 
                             end=end,
-                            freq="1H"
+                            freq="1h"
                             )
     spot.price = spot.price.apply(lambda x: x.replace(",", ".")).astype(float)
 
@@ -216,6 +204,7 @@ if __name__ == "__main__":
             %
             (date_string,)
             )
+    print("Data successfully generated.")
     
     
 

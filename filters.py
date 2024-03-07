@@ -118,17 +118,17 @@ class EKF(Filter):
     
     def init_jac_f_x(self):
         self.jac_f = ca.Function('jac_f',
-                                self.integrator.all_vars,
+                                [self.x, self.z, self.u, self.p, self.r],
                                 [self.jac_f_x],
-                                self.order,
+                                ["x", "z", "u", "p", "r"],
                                 ['jac_f']) 
         
 
     def init_jac_h_x(self):
         self.jac_h = ca.Function('jac_h',
-                                self.integrator.all_vars,
+                                [self.y, self.x, self.z, self.u, self.p, self.v, self.r],
                                 [self.jac_h_x],
-                                self.order,
+                                ["y", "x", "z", "u", "p", "v", "r"],
                                 ['jac_h']) 
 
     # rethink this inteface
@@ -828,8 +828,8 @@ class KalmanDAE(Filter):
                  p=None,
                  z=ca.DM(),
                  v=ca.DM(),
-                 s=ca.DM(),
-                 w=ca.DM()
+                 s=ca.DM() #,
+                 #w=ca.DM()
                  ):
         ''' 
         Assume general non-linear structure.
@@ -852,11 +852,11 @@ class KalmanDAE(Filter):
             #    y_pad = np.append(y_pad, 0)
          
         #A11 = self.jac_f_x(x_pred,z,u,self.p,s,v,y,r,w)
-        A11 = self.jac_f_x(x_pred,z,u,p,r,s,y,w,v)
-        A12 = self.jac_f_z(x_pred,z,u,p,r,s,y,w,v)
+        A11 = self.jac_f_x(x_pred,z,u,p,r,s,y,v)
+        A12 = self.jac_f_z(x_pred,z,u,p,r,s,y,v)
         
-        dGdx = self.jac_g_x(x_pred,z,u,p,r,s,y,w,v)
-        dGdz = self.jac_g_z(x_pred,z,u,p,r,s,y,w,v)
+        dGdx = self.jac_g_x(x_pred,z,u,p,r,s,y,v)
+        dGdz = self.jac_g_z(x_pred,z,u,p,r,s,y,v)
         
         """
         Numerical inversion, 
@@ -883,7 +883,7 @@ class KalmanDAE(Filter):
             
         Ad = expm(A*self.dt)
         #C = self.jac_h(x_pred, z, u, self.p if p is None else p, s, v, y_pad, r, w)
-        C = self.jac_h(x_pred,z,u,p,r,s,y,w,v)
+        C = self.jac_h(x_pred,z,u,p,r,s,y,v)
         #h_x = self.h(y, x_pred, z, u, self.p if p is None else p, v, r)
         h_x = self.h(x_pred, z)
         try:

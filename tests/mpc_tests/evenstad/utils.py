@@ -134,8 +134,8 @@ def prepare_data(file1, file2):
     data2 = pd.read_csv(file2, sep=sep, skiprows=[1,2,3], header=0, index_col=0)
     meas = pd.merge(data1, data2, left_index=True, right_index=True)
 
-    for name in meas.columns:
-        print(name)
+    #for name in meas.columns:
+    #    print(name)
     
     # ordered:
     cols = list(meas.columns)
@@ -182,8 +182,8 @@ def prepare_data(file1, file2):
     meas["Tsup_air"] += 273.15
     # 'filter' out circulation loss:
     #meas.P_water[meas.P_water < 5] = 0
-    phi_h = meas["P_water"].resample(rule="1H").mean()
-    meas = meas.resample(rule="1H").asfreq()
+    phi_h = meas["P_water"].resample(rule="1h").mean()
+    meas = meas.resample(rule="1h").asfreq()
     meas["phi_h"] = phi_h # to Watts
     meas["Tsup"] = meas["Tsup_water_west"]
     meas["Tret"] = meas["Tret_water_west"]

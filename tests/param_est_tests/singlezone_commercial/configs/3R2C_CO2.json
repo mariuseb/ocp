@@ -1,0 +1,93 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*UA_nom_air*(Tsup_air - Ti)*ahu_pump_sup + (1/Ci)*Prad",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "CO2_in": "n_air*c*(CO2_out - CO2_in) + c_occ*n_occ"
+        },
+        "alg": {
+            "n_air": "n_air - (n_mech + n_nat + n_inf)",
+            "n_mech": "n_mech - ahu_reaFloExtAir",
+            "n_nat": "n_nat - (ahu_reaFloSupAir - ahu_reaFloExtAir)"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v2": "CO2_in - y2"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "UA_nom_air",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai",
+            "c",
+            "CO2_out",
+            "n_inf",
+            "c_occ"
+        ],
+        "u": [
+            "Pvent",
+            "Prad",
+            "Tsup_air",
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir",
+            "n_occ"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "CO2_in"
+        ],
+        "z": [
+            "n_air",
+            "n_mech",
+            "n_nat"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "CO2_in"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [-100,-100,-100],
+            "ubz": [100,100,100]
+        },
+        "x": {
+            "lbx": [280,280,0],
+            "ubx": [340,340,1000]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false,
+    "map_eval": true
+}

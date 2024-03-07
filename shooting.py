@@ -236,7 +236,7 @@ class MultipleShooting(Shooting):
             xn = self.F_map(
                             x0=x[:,:-1]*self.x_nom + self.x_nom_b,
                             z=z[:,:-1]*self.z_nom + self.z_nom_b,
-                            u=u*self.u_nom + self.u_nom_b,
+                            u=u[:,:-1]*self.u_nom + self.u_nom_b,
                             p=self.p_nom*ca.repmat(p, 1, self.N-1) + self.p_nom_b,
                             r=r[:,:-1]*self.r_nom + self.r_nom_b
                             #s=s[:,:-1]*self.s_nom,
@@ -245,7 +245,7 @@ class MultipleShooting(Shooting):
             xn_orig = self.F_map(
                                 x0=x[:,:-1],
                                 z=z[:,:-1],
-                                u=u,
+                                u=u[:,:-1],
                                 p=ca.repmat(p, 1, self.N-1),
                                 r=r[:,:-1]
                                 #s=s[:,:-1],
@@ -468,7 +468,7 @@ class MultipleShooting(Shooting):
         """ Controllable inputs. """
         #return ca.MX.sym("u", self.n_u, self.N)*self.u_nom
         #return ca.MX.sym("u", self.n_u, self.N-1)
-        return ca.MX.sym("u", self.n_u, self.N-1)
+        return ca.MX.sym("u", self.n_u, self.N)
 
     def get_z(self):
         """ Alg vars. """

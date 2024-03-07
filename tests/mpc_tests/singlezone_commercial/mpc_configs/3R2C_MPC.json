@@ -1,0 +1,136 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*Pvent_to_env + (1/Ci)*Prad",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Tret": "(Tret_set - Tret)/tau"
+        },
+        "alg": {
+            "Tsup_air": "Tsup_air - ahu_reaTHeaRec - Rsr*Pvent*(1/(k + ahu_pump_sup)) - (oveTSupSet - ahu_reaTHeaRec)*(1-ahu_pump_sup)",
+            "Pvent": "Pvent - coi_flo*eta_hex_ahu*cp_water*(dh_Tsup - Tret_coi)",
+            "Prad": "Prad - rad_flo*cp_water*(dh_Tsup - Tret)*eta_hex_rad",
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)",
+            "coi_flo": "coi_flo - coi_flo_nom*regNonZeroPower(coi_val, n2, 1E-6)",
+            "coi_flo_nom": "coi_flo_nom - (coi_flo_nom_b + coi_flo_nom_a*(1 - rad_val))",
+            "tot_flo": "tot_flo - (rad_flo + coi_flo)",
+            "Tret_coi": "Tret_coi - (ahu_reaTHeaRec + Tret_coi_b)",
+            "Tret_set": "Tret_set - (Tret_b + Tret_a*rad_flo)",
+            "ahu_reaTRetAir": "ahu_reaTRetAir - Ti",
+            "ahu_reaTHeaRec": "(Ta + (ahu_reaTRetAir - Ta)*eta_hex2)*ahu_pump_sup_on + (1-ahu_pump_sup_on)*Trec_off - ahu_reaTHeaRec",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*regNonZeroPower(ahu_pump_sup, n, 0.01)",
+            "ahu_pump_sup_on": "ahu_pump_sup_on - (1/(1 + ca.exp(-(ahu_pump_sup - ahu_pump_sup_thres)/k1)))",
+            "Pvent_to_env": "Pvent_to_env - UA_nom_air*(Tsup_air - Ti)*ahu_pump_sup"
+        },
+        "p": [
+            "Rsr",
+            "Tsup_air_b",
+            "cp_water",
+            "eta_hex_ahu",
+            "eta_hex_rad",
+            "k",
+            "m_flow_air_nom",
+            "n",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2",
+            "eta_hex2_below",
+            "eff_threshold",
+            "Trec_off",
+            "k1",
+            "ahu_pump_sup_thres",
+            "n1",
+            "n2",
+            "Tret_b",
+            "Tret_a",
+            "tau",
+            "rad_flo_nom",
+            "coi_flo_nom_b",
+            "coi_flo_nom_a",
+            "Tret_coi_b",
+            "dh_Tsup",
+            "Rie",
+            "Rea",
+            "Ria",
+            "UA_nom_air",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai"
+        ],
+        "u": [
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "coi_val",
+            "rad_val",
+            "oveTSupSet"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Tret"
+        ],
+        "z": [
+            "Tsup_air",
+            "Prad",
+            "Pvent",
+            "rad_flo",
+            "coi_flo",
+            "coi_flo_nom",
+            "tot_flo",
+            "Tret_coi",
+            "Tret_set",
+            "ahu_reaTRetAir",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir",
+            "ahu_pump_sup_on",
+            "Pvent_to_env"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0,0,0,0,288.15],
+            "ubu": [1,1,1,1,313.15]
+        },
+        "z": {
+            "lbz": [280,0,0,0,0,0,0,280,280,280,280,0,0,0],
+            "ubz": [340,1E7,1E7,10,10,10,10,340,340,340,340,40,1,1E7]
+        }
+    },
+    "objective": "dot(Pvent, Pvent) + dot(Prad, Prad)",
+    "ocp": {
+        "h": [
+            "-0.05 <= ahu_pump_sup - ahu_pump_ret <= 0.05",
+            "0 <= Tsup_air - Ti"
+        ]
+    },
+    "N": 96,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

@@ -1,0 +1,92 @@
+{
+    "model": {
+        "ode": {
+            "Tsup": "(Tsup_set - Tsup)/tau_sup",
+            "Tret": "(Tsup_set - Tret)/tau_sup",
+            "flo": "(rad_flo - flo)/tau_flo"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_scale*NN(ca.veccat(rad_val, coi_val))[0]",
+            "rad_val_on": "rad_val_on - (1/(1 + ca.exp(-(rad_val - rad_val_th)/k)))",
+            "Tsup_set": "Tsup_set - (Tsup_b + rad_val_on*Tsup_a)",
+            "tau_sup": "tau_sup - (tau_sup_b + tau_sup_a*flo)"
+        },
+        "w": {
+            "v6": "y6 - rad_flo",
+            "v8": "y8 - Tsup",
+            "v9": "y9 - Tret"
+        },
+        "p": [
+            "cp_water",
+            "eta_hex3",
+            "eta_hex1",
+            "cp_air",
+            "tau_sup_a",
+            "tau_sup_b",
+            "rad_val_th",
+            "k",
+            "n1",
+            "tau_flo",
+            "Tsup_b",
+            "Tsup_a",
+            "rad_flo_scale",
+            "coi_flo_scale"
+        ],
+        "u": [
+            "rad_val",
+            "coi_val"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Tsup",
+            "Tret",
+            "flo"
+        ],
+        "z": [
+            "rad_flo",
+            "rad_val_on",
+            "Tsup_set",
+            "tau_sup"
+        ],
+        "y": [
+            ["y6", "rad_flo"],
+            ["y8", "Tsup"],
+            ["y9", "Tret"]
+            
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [0,0,330,100],
+            "ubz": [10,1,337,10000]
+        },
+        "x": {
+            "lbx": [325,280,0],
+            "ubx": [340,340,10]
+        }
+    },
+    "objective": "dot(v6, v6)@R[0,0] + dot(rad_val_on*v8, rad_val_on*v8)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

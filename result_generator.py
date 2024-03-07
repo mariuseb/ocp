@@ -266,12 +266,13 @@ class ResultGenerator(object):
             """
             
             # z_k-1|k-1:
-            if not G.is_null():
-                z_pred = G(z_guess,x0, u, p, v, 0, 0, 0)
+            #if not G.is_null():
+            if G.nnz_out() > 0:
+                z_pred = G(z_guess,x0, u, p, 0)
             else:
                 z_pred = np.array([])
             # x_k|k-1:
-            x_pred = I(x0,z_pred,u,p,0,r,0)
+            x_pred = I(x0,z_pred,u,p,r)
             
             xs = np.append(xs, np.array(x_pred))    
             zs = np.append(zs, np.array(z_pred))

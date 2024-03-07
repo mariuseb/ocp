@@ -48,26 +48,18 @@ TODO:
 """
 
 PLOT = True
-TEST_MODE = True
+setpoint_file = "To_SAUTER.csv"
 
 if __name__ == "__main__":
 
-    if TEST_MODE:
-        now = pd.Timestamp("01-26-2024 14:30:00").tz_localize("Europe/Oslo")
-        #now = pd.Timestamp.now().tz_localize("Europe/Oslo")
-        #now = now.tz_convert('Europe/Oslo')
-    else:
-        now = pd.Timestamp.now().tz_localize("Europe/Oslo")
-        #now = now.tz_convert('Europe/Oslo')
-        #now = now.tz_localize(None)
-
+    now = pd.Timestamp("01-26-2024 14:30:00").tz_localize("Europe/Oslo")
     five_today = pd.Timestamp(str(now.date()) + " 17:00").tz_localize("Europe/Oslo")
 
     # NOTE: you have to modify this to current date
     # to fetch 'real-time' compliant data. 
     # (i.e., if you want to generate optimal set-points
     #  for today)
-    #stop = pd.Timestamp("01-26-2024 14:00:00").tz_localize("Europe/Oslo")
+    
     stop = now
 
     try:
@@ -226,7 +218,7 @@ if __name__ == "__main__":
                             index_col=0
                            )
     mpc_data.index = pd.to_datetime(mpc_data.index)
-    start = now.floor("1H").tz_localize("Europe/Oslo")
+    start = now.floor("1h").tz_localize("Europe/Oslo")
     mpc_data = mpc_data[start:]
     k = 16 # hr*dt
     lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
@@ -244,7 +236,7 @@ if __name__ == "__main__":
     mpc_data["V_flow_sup_air"] = 0
 
     # solve for Ti, phi_h:
-    sol, u, x0  = mpc.solve(
+    sol, u, _x0  = mpc.solve(
                         mpc_data,
                         x0=x0,
                         lbx=lbx,
@@ -254,10 +246,12 @@ if __name__ == "__main__":
                         )
     sol.index = pd.date_range(start=mpc_data.index[0],
                               end=mpc_data.index[-1],
-                              freq="1H")
-    ax = sol.Ti.plot(color="r")
-    data.Ti.plot(ax=ax, color="k")
-    ax.legend(["Optimal set-point", "Original"])
+                              freq="1h")
+    data.index = weather.index
+    ax = sol.Ti.plot(color="r", linewidth=0.8)
+    one_step.Ti.plot(ax=ax, color="k", linewidth=0.8)
+    data.Ti.plot(ax=ax, color="g", linestyle="dashed", linewidth=0.8)
+    ax.legend(["Optimal set-point", "Kalman estimation of proxy Ti", "Measured proxy Ti"])
     plt.show()
 
     sol.index = sol.index.tz_localize(None)
@@ -265,12 +259,33 @@ if __name__ == "__main__":
     start = pd.Timestamp("%s 18:00" % (str(now.date()), ))
     stop = pd.Timestamp("%s 17:00" % (str((now + pd.Timedelta(days=1)).date()), ))
     #stop = pd.Timestamp("2023-02-09 17:00")
-    Tset = (sol["Ti"].loc[start:stop] - 273.15)
-    dt_index = Tset.index.to_series()
-    hr_index = dt_index.apply(lambda x: str(x.time()))
-    Tset.index = hr_index
-    Tset.name = "Tset"
-    Tset.to_csv("To_SAUTER_test.csv", index=True)
+    Tset = (sol[["Ti"]].loc[start:stop] - 273.15)
+    
+    """
+    Perform operations on the set-points:
+        - rounding 0.5 degrees.
+        - compress table to only changes
+        - midnight +1 minute OR every timestep +1 minute
+    """
+    
+    # index +1min
+    Tset.index += pd.Timedelta("1min")
+    # to nearest 0.5:
+    Tset = Tset.apply(lambda x: round(x*2)/2)
+    Tset["change"] = Tset.shift(1) - Tset
+    # First set-point is change by default:
+    Tset.loc[Tset.index[0], "change"] = 1
+    Tset["change"] = Tset["change"].astype(bool).astype(int)
+    Tset_write = Tset[Tset.change == 1][["Ti"]]
+    Tset_write.columns = ["Tset"]
+    # cleaner index:
+    dt_index = Tset_write.index.to_series()
+    hr_index = dt_index.apply(lambda x: str(x).split(" ")[1])
+    Tset_write.index = hr_index
+    
+    Tset_write.to_csv(setpoint_file, index=True)
+    print("Set-points successfully generated, written to %s" % \
+        setpoint_file)
     
     
     

@@ -254,8 +254,8 @@
     "singlezone_commercial":
     {
       "misc": {
-        "h": 60,
-        "N": 48,
+        "h": 900,
+        "N": 97,
         "start_time": 0,
         "warmup_period": 604800
       },
@@ -283,13 +283,14 @@
               "reaPFan_y": "reaPFan_y",
               "reaPPum_y": "reaPPum_y",
               "ahu_reaTCoiSup": "ahu_reaTCoiSup_y",
-              "ahu_reaTCoiRet": "reaTCoiRet_y",
+              "Tret_coi": "reaTCoiRet_y",
               "ahu_reaTHeaRec": "ahu_reaTHeaRec_y",
               "ahu_reaTRetAir": "ahu_reaTRetAir_y",
               "Tsup_air": "ahu_reaTSupAir_y",
               "ahu_reaFloSupAir": "ahu_reaFloSupAir_y",
               "CO2_in": "reaCO2Zon_y",
               "n_occ": "reaOcc_y",
+              "ahu_reaFloExtAir": "ahu_reaFloExtAir_y", 
               "Tret": "reaTRadOut_y",
               "Tsup": "reaTRadIn_y",
               "rad_flo": "reaValFlo_y",
@@ -300,11 +301,12 @@
                           "reaPFan_y": "reaPFan_y",
                           "reaPPum_y": "reaPPum_y",
                           "ahu_reaTCoiSup": "ahu_reaTCoiSup_y",
-                          "ahu_reaTCoiRet": "reaTCoiRet_y",
+                          "Tret_coi": "reaTCoiRet_y",
                           "ahu_reaTHeaRec": "ahu_reaTHeaRec_y",
                           "ahu_reaTRetAir": "ahu_reaTRetAir_y",
                           "Tsup_air": "ahu_reaTSupAir_y",
                           "ahu_reaFloSupAir": "ahu_reaFloSupAir_y",
+                          "ahu_reaFloExtAir": "ahu_reaFloExtAir_y", 
                           "ahu_pump_sup": "ahu_oveFanSup_u",
                           "ahu_pump_ret": "ahu_oveFanRet_u",
                           "CO2_in": "reaCO2Zon_y",
@@ -323,7 +325,7 @@
                           "coi_flo": "reaCoiFlo_y"
                           },
         "sampling": {
-                     "integrate": ["Ph","reaPPum_y","reaPFan_y"],
+                     "integrate": ["Ph","Prad","Pvent","rad_flo","coi_flo","reaPPum_y","reaPFan_y"],
                      "point": ["Ta", "phi_s", "Ti", "Tsup"]
                     }
       }

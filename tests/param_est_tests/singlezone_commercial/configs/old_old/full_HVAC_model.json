@@ -1,0 +1,112 @@
+{
+    "model": {
+        "alg": {
+            "ahu_reaTRetAir": "ahu_reaTRetAir - Ti",
+            "rad_flo": "rad_flo - NN_rad(rad_val, coi_val)",
+            "coi_flo": "coi_flo_max*coi_flo - NN_coi(rad_val, coi_val)",
+            "Tsup_air": "Tsup_air - ((ahu_reaTHeaRec + Rsr*Pvent)*ahu_pump_sup_high + (oveTSupSet + Rsr*Pvent)*ahu_pump_sup_low + Tsup_air_ss*(1 - ahu_pump_sup_on))",
+            "Rsr": "Rsr - ca.if_else(ahu_pump_sup > high_limit, (Rsr_b + Rsr_a*regNonZeroPower((1-ahu_pump_sup), n2, 0.01)), Rs_low)",
+            "ahu_pump_sup_on": "ahu_pump_sup_on - ca.if_else(ahu_pump_sup > 1E-4, 1, 0)",
+            "ahu_pump_sup_low": "ahu_pump_sup_low - ca.if_else(ca.logic_and(ahu_pump_sup > 1E-4, ahu_pump_sup < high_limit) , 1, 0)",
+            "ahu_pump_sup_high": "ahu_pump_sup_high - ca.if_else(ahu_pump_sup >= high_limit, 1, 0)",
+            "Prad": "Prad - rad_flo*cp_water*(Tsup - Tret)*eta_hex3",
+            "Pvent": "Pvent - ahu_reaFloSupAir*cp_air*(Tsup_air-ahu_reaTHeaRec)*eta_hex1",
+            "ahu_reaTHeaRec": "(Ta + (ahu_reaTRetAir - Ta)*eta_hex2)*ahu_pump_sup_on + (1-ahu_pump_sup_on)*Trec_off - ahu_reaTHeaRec",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*regNonZeroPower(ahu_pump_sup, n, 0.01)",
+            "eta_hex2": "eta_hex2 - ca.if_else(ahu_pump_sup > eff_threshold, eta_hex2_above*(1-regNonZeroPower(ahu_pump_sup, n1, 0.01)), eta_hex2_below)"
+
+        },
+        "w": {
+            "v1": "y1 - Prad",
+            "v2": "y2 - Pvent",
+            "v3": "m_flow_weight*(y3 - ahu_reaTHeaRec)",
+            "v4": "y4 - ahu_reaFloSupAir",
+            "v5": "y5 - ahu_reaTRetAir",
+            "v6": "y6 - rad_flo",
+            "v7": "y7 - coi_flo",
+            "v8": "y8 - Tsup_air"
+        },
+        "p": [
+            "m_flow_air_nom",
+            "n",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2_above",
+            "eta_hex2_below",
+            "eff_threshold",
+            "Trec_off",
+            "n1",
+            "n2",
+            "m_flow_water_nom",
+            "cp_water",
+            "eta_hex3",
+            "Rs",
+            "Rsr_b",
+            "Rsr_a",
+            "Rsr_b1",
+            "Rsr_a1",
+            "Rs_low",
+            "high_limit",
+            "Ti_sup_dev_b",
+            "Ti_sup_dev_a",
+            "n2",
+            "n1",
+            "Tsup_air_ss"
+        ],
+        "u": [
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "oveTSupSet",
+            "m_flow_weight",
+            "Tsup_air",
+            "Ti",
+            "Tsup",
+            "Tret",
+            "rad_val"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "z": [
+            "ahu_reaTRetAir",
+            "rad_flo",
+            "Prad",
+            "Pvent",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir",
+            "ahu_pump_sup_on",
+            "eta_hex2"
+        ],
+        "y": [
+            ["y1", "Prad"],
+            ["y2", "Pvent"],
+            ["y3", "ahu_reaTHeaRec"],
+            ["y4", "ahu_reaFloSupAir"],
+            ["y5", "ahu_reaTRetAir"],
+            ["y6", "rad_flo"]
+            
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(v4, v4)@R[3,3] + dot(v5, v5)@R[4,4] + dot(v6, v6)@R[5,5]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

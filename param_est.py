@@ -180,7 +180,9 @@ class ParameterEstimation(OCP):
         self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
         self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
         
-        symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
+        #symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
+        all_names = sorted(self.dae.all_names, reverse=True)
+        symbols = re.findall("|".join(all_names), self.obj_string)
         vals = dict()
         for symbol in symbols:
             vals[symbol] = self.get(symbol)

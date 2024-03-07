@@ -623,11 +623,10 @@ class OCP(metaclass=ABCMeta):
                 #    bound_dict["x0"] = (bound_dict["lb"] + bound_dict["ub"])/200000
                     
                 x0 = np.append(x0, bound_dict["x0"])
-        # nan issue:
-        
-        #lbx = np.nan_to_num(lbx, nan=0)
-        #ubx = np.nan_to_num(ubx, nan=0)
-        #x0 = np.nan_to_num(x0, nan=0)
+        # nan issue
+        lbx = np.nan_to_num(lbx, nan=0)
+        ubx = np.nan_to_num(ubx, nan=0)
+        x0 = np.nan_to_num(x0, nan=0)
         
         # rounding issue
         self.lbx = lbx       
@@ -744,7 +743,7 @@ class OCP(metaclass=ABCMeta):
     
     def __del__(self):
         pass
-        """W
+        """
         for file in self.c_files:
             print("Deleting %s..." % file)
             os.remove(file)
@@ -848,13 +847,20 @@ class OCP(metaclass=ABCMeta):
             self._init_solver()
         opts = kwargs.pop("opts", dict())
         gen_code_filename = self.get_c_code_name(self.config)
+        so_filename = gen_code_filename.replace(".c", ".so")
 
         if codegen:
             if not os.path.exists(gen_code_filename):
-                self.pregenerate_c_code(gen_code_filename, **kwargs)
-            if not os.path.exists(self.so_filename):
-                self.compile_c_code()
-            self.init_codegen_solver(**opts)    
+                self.pregenerate_c_code(gen_code_filename,
+                                        solver=self.solver,
+                                        **kwargs)
+            #if not os.path.exists(self.so_filename):
+            if not os.path.exists(so_filename):
+                self.compile_c_code(
+                    gen_code_filename,
+                    so_filename
+                )
+            self.init_codegen_solver(so_filename, **opts)    
     
       
     def get_nlp_var(self, varname):
@@ -1564,8 +1570,10 @@ class OCP(metaclass=ABCMeta):
                         """
                         #bias = np.array(bias)
                         #bias = bias.reshape((self.N, getattr(self, attr_name)))
-                        _vals = np.array(sol_x[start:stop]*scale).reshape((self.N, getattr(self, attr_name))) + \
-                            bias
+                        #_vals = np.array(sol_x[start:stop]).reshape((self.N, getattr(self, attr_name)))*scale + \
+                        #    bias
+                        _vals = (np.array(sol_x[start:stop])*scale + bias).reshape((self.N, getattr(self, attr_name)))
+    
                         #if not isinstance(scale, (float, int)):
                         #    scale = self.x_nom.reshape((self.N, getattr(self, attr_name)))
                             
@@ -1656,15 +1664,16 @@ class OCP(metaclass=ABCMeta):
                     """
                     
             # reverse scaling again:
-            _scaled_vals = (_vals - bias)/scale
+            #_scaled_vals = (_vals - bias)/scale
+            #_scaled_vals = ((_vals.flatten() - bias)/scale).reshape((self.N, getattr(self, attr_name)))
                 
             #all_vals = np.append(all_vals, vals)
             try:
                 vals = np.hstack((vals, _vals))
-                scaled_vals = np.hstack((scaled_vals, _scaled_vals))
+                #scaled_vals = np.hstack((scaled_vals, _scaled_vals))
             except UnboundLocalError:
                 vals = _vals
-                scaled_vals = _scaled_vals
+                #scaled_vals = _scaled_vals
                 
           
         #all_names = self.dae.all_names + ["us1", "us2", "ls1", "ls2"]
@@ -1677,11 +1686,13 @@ class OCP(metaclass=ABCMeta):
                               all_names, 
                               data = vals
                              )
+        """
         self.scaled_sol_df = pd.DataFrame(
                                             columns = 
                                             all_names, 
                                             data = scaled_vals
                                          )
+        """
         # return time-series, params  
         #sol_df.index = self.data.index 
         """

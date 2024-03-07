@@ -1,0 +1,46 @@
+{
+    "model": {
+        "alg": {
+            "rad_flo": "rad_flo - m_flow_nom*((K/(C + Q*ca.exp(-B*rad_val))**(1/rho))-(K/(C + Q*ca.exp(0))**(1/rho)))"
+        },
+        "w": {
+            "v6": "y6 - rad_flo"
+        },
+        "p": [
+            "A",
+            "K",
+            "B",
+            "rho",
+            "Q",
+            "C",
+            "m_flow_nom"
+        ],
+        "u": [
+            "rad_val"
+        ],
+        "z": [
+          "rad_flo"
+        ],
+        "y": [
+            ["y6", "rad_flo"]
+        ]
+    },
+    "objective": "dot(v6, v6)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

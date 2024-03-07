@@ -39,10 +39,11 @@ class ParamDataset(Dataset):
 
 class NN(nn.Module):
     """ A simple neural network."""
-    def __init__(self, state_dim, action_dim, x_scale=1, y_scale=None, hidden_dim=20):
+    def __init__(self, state_dim, action_dim, x_scale=1, y_scale=None, max_flow=1, hidden_dim=20):
         super(NN, self).__init__()
         self.x_scale = x_scale
         self.y_scale = y_scale
+        self.max_flow = max_flow
         self.fc1 = nn.Linear(state_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, action_dim)
@@ -215,12 +216,16 @@ class Trainer:
             #logits, self.loss = model(x, y)
             output = model(x)
             #max_mass_flow = model.max_mass_flow
-            max_mass_flow = model.y_scale
+            #max_mass_flow = model.y_scale
             """
             Create the constraints:
             """
+            rad_flo_max = 9.17
+            coi_flo_max = 9.04
             
-            """
+            rad_flo_max_reg_op = model.y_scale[0]
+            coi_flo_max_reg_op = model.y_scale[1]
+            
             zero_tensor = torch.tensor([[0,0]]*config.batch_size, dtype=torch.float64)
             first_one_tensor = torch.tensor([[1,0]]*config.batch_size, dtype=torch.float64)
             second_one_tensor = torch.tensor([[0,1]]*config.batch_size, dtype=torch.float64)
@@ -229,10 +234,14 @@ class Trainer:
             first_54_perc_tensor = torch.tensor([[0.5376,0]]*config.batch_size, dtype=torch.float64)
             
             
-            first_mass_flow = torch.tensor([[max_mass_flow,0]]*config.batch_size, dtype=torch.float64)
-            second_mass_flow = torch.tensor([[0,max_mass_flow]]*config.batch_size, dtype=torch.float64)
+            first_mass_flow = torch.tensor([[rad_flo_max, 0]]*config.batch_size, dtype=torch.float64)
+            second_mass_flow = torch.tensor([[0, coi_flo_max]]*config.batch_size, dtype=torch.float64)
             #both_ones_mass_flow = torch.tensor([[max_mass_flow]]*config.batch_size, dtype=torch.float64)
-            both_ones_mass_flow = torch.tensor([[7/9,2/9]]*config.batch_size, dtype=torch.float64)
+            both_ones_mass_flow = torch.tensor([[
+                                                rad_flo_max_reg_op, 
+                                                coi_flo_max_reg_op]]*config.batch_size,
+                                               dtype=torch.float64
+                                               )
             perc_rad_mass_flow = torch.tensor([[6.85/9,0]]*config.batch_size, dtype=torch.float64)
             perc_coi_mass_flow = torch.tensor([[0,1.688/9]]*config.batch_size, dtype=torch.float64)
             
@@ -292,22 +301,46 @@ class Trainer:
                                              perc_coi_residual.flatten(),
                                              perc_coi_residual.flatten()
                                              )
-            """
+            
+            linear_first_residual = (x[:,0]*output[:, 0]**0.2 - y[:,0])
+            linear_second_residual = (x[:,1]*output[:, 1] - y[:,1])
+            linear_first = torch.dot(
+                linear_first_residual, linear_first_residual
+            )
+            linear_second = torch.dot(
+                linear_second_residual, linear_second_residual
+            )**0.3
             
             """
             TODO:
                 - normalize regularization objectives.
                 (boundary conditions)
             """
-            
-            self.loss = self.criterion(output, y) 
-                        #+ \
-                        #1E-1*zero_together_constraint + \
-                        #1E-1*zero_first_constraint + \
-                        #1E-1*zero_second_constraint + \
+            rad_out = output[:,0]
+            coi_out = output[:,1]
+            rad_max = self.model.y_scale[0]
+            coi_max = self.model.y_scale[1]
+            gamma = (coi_max/rad_max)
+            """
+            self.loss = self.criterion(rad_out, y[:,0]) + \
+                self.criterion(coi_out, y[:,1]) + \
+                1E-4*linear_first + \
+                1E-4*zero_together_constraint + \
+                1E-4*zero_first_constraint + \
+                1E-4*zero_second_constraint # + \
+            """
+            self.loss = 5e-2*self.criterion(rad_out, y[:,0]) + \
+                5e-2*self.criterion(coi_out, y[:,1]) + \
+            3e-4*linear_first
+                #1E-4*linear_second
+            # + \              
+            #self.loss = self.criterion(output, y) # + \
+                        #1E-2*zero_together_constraint + \
+                        #1E-2*zero_first_constraint + \
+                        #1E-2*zero_second_constraint # + \
                         #1E-1*first_constraint + \
                         #1E-1*second_constraint + \
-                        #1E-1*both_ones_constraint + \
+                        #1E-1*both_ones_constraint # + \
                         #1E-1*perc_rad_constraint + \
                         #1E-1*perc_coi_constraint
 
@@ -330,7 +363,8 @@ class Trainer:
             """
             try with loss tolerance 1E-3:
             """
-            if self.loss < 1E-4:
+            if self.loss < 1e-4:
+            #if self.loss < 2E-2:
                 break
 
 
