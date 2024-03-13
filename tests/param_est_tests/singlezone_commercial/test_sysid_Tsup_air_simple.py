@@ -54,13 +54,21 @@ if __name__ == "__main__":
                             "data_bestest_hydronic_normal_op_60s_test_rad.csv"
                             )    
     data_path = os.path.join(
-                            get_data_path(), 
-                            "data_bestest_hydronic_prbs_op.csv"
-                            )     
+                        get_data_path(), 
+                        "data_bestest_hydronic_normal_op_60s.csv"
+                        )    
     data_path = os.path.join(
                             get_data_path(), 
                             "data_bestest_hydronic_normal_op.csv"
                             )    
+    data_path = os.path.join(
+                        get_data_path(), 
+                        "data_bestest_air_normal_op.csv"
+                        )       
+    data_path = os.path.join(
+                            get_data_path(), 
+                            "data_bestest_air_prbs_op.csv"
+                            )   
     
     if GENERATE_DATA_NORMAL_OP:
         
@@ -211,9 +219,11 @@ if __name__ == "__main__":
     #y_data = y_data.loc[[ndx for ndx in y_data.index if ndx % 900 == 0]]
     
     
-    #y_data = y_data[:2]
+    M = 2*24*4
+    #y_data = y_data[M:-1]
     N = len(y_data)
-    cfg_path = "configs/Tsup_air_simple_ODE.json"
+    #cfg_path = "configs/Tsup_air_simple_ODE.json"
+    cfg_path = "configs/Tsup_air_simple_ODE_mod.json"
     param_guess = np.array([
                             1E-5,
                             1E-5,
@@ -224,11 +234,10 @@ if __name__ == "__main__":
                             300.15
                           ]) 
     param_guess = np.array([
-                            1e-2,
+                            3e4,
                             1e4,
-                            100,
-                            1e-2,
-                            1
+                            3e4,
+                            1.83
                           ]) 
     """
     param_guess = np.array([
@@ -237,18 +246,56 @@ if __name__ == "__main__":
                             1e-4
                           ]) 
     """
-    lbp = param_guess*1e-3
-    ubp = param_guess*1e3
-    len_p = param_guess.shape[0]
+
+    param_guess = {
+            "UA_nom_air": 
+            {
+                "init": 1E-5,
+                #"lb": 43500.780921,
+                #"ub": 43500.780921
+            },
+            "UA_sup_nom": 
+            {
+                "init": 3000,
+                #"lb": 43500.780921,
+                #"ub": 43500.780921
+            },
+            "Csup_nom":
+            {
+                "init": 1e6
+            },
+            "n":
+            {
+                "init": 1,
+                "lb": 0.33,
+                "ub": 3
+            },
+            "cp_air":
+            {
+                "init": 1000, 
+                "lb": 1000,
+                "ub": 1000
+            },
+            "alpha_vent":
+            {
+                "init": 0.5, 
+                "lb": 1e-6,
+                "ub": 1
+            }
+            }
+
+    #lbp = param_guess*1e-3
+    #ubp = param_guess*1e3
+    #len_p = param_guess.shape[0]
     
     #lbp[2] = 1E1
     #ubp[2] = 1E7
     #lbp[len_p-2] = 285.15
     #ubp[len_p-2] = 295.15
-    lbp[len_p-2] = 1e-8
-    ubp[len_p-2] = 1
-    lbp[len_p-1] = 1
-    ubp[len_p-1] = 3
+    #lbp[len_p-2] = 1e-8
+    #ubp[len_p-2] = 1
+    #lbp[len_p-1] = 1
+    #ubp[len_p-1] = 3
     
     x_guess = y_data["Tsup_air"].values
     kwargs = dict()
@@ -265,6 +312,8 @@ if __name__ == "__main__":
         #R[0,0] =2 1E-9
         #R[0,0] = 1E-9
         #param_est.res = ca.vertcat(ca.sqrt(R[0,0])*v1, ca.sqrt(R[1,1])*v2)
+        lbp = param_est.get_lbp(1e-3)
+        ubp = param_est.get_ubp(1e3)
         sol, params = param_est.solve(
                                       y_data,
                                       param_guess,

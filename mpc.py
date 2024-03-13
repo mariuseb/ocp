@@ -488,10 +488,43 @@ class MPC(OCP):
                                             ubx=(ubx - self.x_nom_b)/self.x_nom,
                                             )
         """
+        
+        """
+        TODO: improve upon this, 
+        only do once:
+        """
+        if isinstance(self.x_nom_b, list):
+            """
+            self.x_nom_b = np.tile(
+                              np.array(self.x_nom_b), 
+                              self.N
+                              )
+            assert isinstance(self.x_nom, list)
+            self.x_nom = np.tile(
+                            np.array(self.x_nom), 
+                            self.N
+                            )
+            """
+            x_nom_b = np.tile(
+                              np.array(self.x_nom_b), 
+                              self.N
+                              )
+            assert isinstance(self.x_nom, list)
+            x_nom = np.tile(
+                            np.array(self.x_nom), 
+                            self.N
+                            )
+            x0_nom_b = x_nom_b[:self.n_x]
+            x0_nom = x_nom[:self.n_x]
+            bx_nom_b = x_nom_b[self.n_x:]
+            bx_nom = x_nom[self.n_x:]
+        
         self.add_path_constraints(
-                                 x0=(x0 - self.x_nom_b)/self.x_nom,
-                                 lbx=(lbx - self.x_nom_b)/self.x_nom,
-                                 ubx=(ubx - self.x_nom_b)/self.x_nom,
+                                 x0=(x0 - x0_nom_b)/x0_nom,
+                                 #lbx=(lbx - self.x_nom_b)/self.x_nom,
+                                 #ubx=(ubx - self.x_nom_b)/self.x_nom,
+                                 lbx=(lbx - bx_nom_b)/bx_nom,
+                                 ubx=(ubx - bx_nom_b)/bx_nom,
                                 )
         # large number -> inf/-inf
         #self.lbx = np.array([val if abs(val) < 1e8 else -np.inf for val in self.lbx])

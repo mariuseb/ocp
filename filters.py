@@ -599,8 +599,6 @@ class KalmanDAE(Filter):
             with open(cfg, "r") as f:
                 cfg = json.load(f)
         
-        self.Q = ca.DM(np.diag(cfg["Q"]))
-        self.R = ca.DM(np.diag(cfg["R"]))
         
         self.dt = cfg["dt"]
         
@@ -609,6 +607,10 @@ class KalmanDAE(Filter):
         cfg["model"]["functions"] = functions
         self.dae = dae = DAE(cfg["model"])
         
+        Q = cfg.pop("Q", ca.DM.eye(dae.n_x + dae.n_z))
+        R = cfg.pop("R", ca.DM.eye(dae.n_y))
+        self.Q = ca.DM(Q)
+        self.R = ca.DM(R)
         # easy access for y:
         
         P_prev = cfg.pop("P0", None)
@@ -852,11 +854,11 @@ class KalmanDAE(Filter):
             #    y_pad = np.append(y_pad, 0)
          
         #A11 = self.jac_f_x(x_pred,z,u,self.p,s,v,y,r,w)
-        A11 = self.jac_f_x(x_pred,z,u,p,r,s,y,v)
-        A12 = self.jac_f_z(x_pred,z,u,p,r,s,y,v)
+        A11 = self.jac_f_x(x_pred,z,u,p,r,y,0,v)
+        A12 = self.jac_f_z(x_pred,z,u,p,r,y,0,v)
         
-        dGdx = self.jac_g_x(x_pred,z,u,p,r,s,y,v)
-        dGdz = self.jac_g_z(x_pred,z,u,p,r,s,y,v)
+        dGdx = self.jac_g_x(x_pred,z,u,p,r,y,0,v)
+        dGdz = self.jac_g_z(x_pred,z,u,p,r,y,0,v)
         
         """
         Numerical inversion, 
@@ -883,7 +885,7 @@ class KalmanDAE(Filter):
             
         Ad = expm(A*self.dt)
         #C = self.jac_h(x_pred, z, u, self.p if p is None else p, s, v, y_pad, r, w)
-        C = self.jac_h(x_pred,z,u,p,r,s,y,v)
+        C = self.jac_h(x_pred,z,u,p,r,y,0,v)
         #h_x = self.h(y, x_pred, z, u, self.p if p is None else p, v, r)
         h_x = self.h(x_pred, z)
         try:

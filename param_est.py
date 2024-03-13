@@ -809,71 +809,11 @@ class ParameterEstimation(OCP):
         """
         self.data = data
         
-        #x_guess = repmat(self.Y, 1, self.n_x)
-        
-        # TODO: logic for generating guesses of unmeasured states? 
-        
-        # this is for the spring mass damper:
-        
-        ''' if self.Y.shape[1] != self.integrator.dae.n_x:
-            # do this ( n_x - n_y) times:
-            yd = np.diff(self.Y,axis=0)*1/self.dt
-            x_guess = horzcat(self.Y, vertcat(yd, yd[-1])).T
+        if isinstance(param_guess, dict):
+            p0 = self.param_guess.get_param_guess()
         else:
-            x_guess = self.Y.T '''
-            
-        #if self.Y.shape[1] != self.integrator.dae.n_x:
-            # do this ( n_x - n_y) times:
-            
-        #self.nlp["f"], self.nlp["p"] = self.get_nlp_obj(self.nlp_v,
-        #                                        self.nlp_w) 
+            p0 = param_guess
         
-        #self.set_hess_obj()
-        
-        #self.nlp["f"] = self.alt_obj
-        
-        # set Q, R on nlp x
-        #self.nlp["x"] = ca.vertcat(
-        #                          self.nlp["x"],
-        #                          ca.veccat(ca.vec(self.Q), 
-        #                                    self.R)
-        #                          )
-        
-        #self.x0 = np.append(self.x0, covar)
-        
-        # generate x guess: two methods: repeat or freq-based
-        # -> own method
-        #y_info = self.bounds["y"]["lb"]
-        #y = self.bounds["y"]["lb"]
-        
-        ####################### method ###########################
-        
-        #y = self.data[self.y_names].values.flatten()
-        
-        # check overlap:
-        """
-        try:
-            y_x_overlap = [name for name in self.y_names if self.dae.y[name].name() in self.dae.x]
-            y = self.data[y_x_overlap].values.flatten()
-            x_guess = y
-            
-            # TODO: handle edge-cases, e.g. n_y = 2 and n_x = 3
-            #diff = self.integrator.dae.n_x - self.integrator.dae.n_y
-            if self.strategy.name == "Collocation":
-                _x_guess = np.ones((self.n_x, ((self.N-1)*(self.strategy.d+1)+1)))     
-                # if direct collocation, fill between
-                for n in range(self.N-1):
-                    _x_guess[:, n:(n + self.strategy.d+1)] = x_guess[n]
-                last = (self.N-1)*(self.strategy.d+1)
-                _x_guess[:,last:last+1] = x_guess[-1]
-                x_guess = _x_guess
-            else:        
-                diff = int(self.integrator.dae.n_x/len(y_x_overlap)) - 1
-                for n in range(diff):
-                    x_guess = ca.horzcat(x_guess, y)
-        except ZeroDivisionError:
-            x_guess = None
-        """
         # TODO: fix extending x_guess for the case of collocation
         if x_guess is None:        
             x_guess = self.generate_x_guess()
@@ -887,7 +827,7 @@ class ParameterEstimation(OCP):
                           lbx=lbx,
                           ubx=ubx,
                           x_guess=x_guess,
-                          param_guess=param_guess
+                          param_guess=p0
                           )
         
         self.set_bounds()

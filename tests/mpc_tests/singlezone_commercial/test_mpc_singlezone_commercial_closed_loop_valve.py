@@ -31,47 +31,18 @@ if __name__ == "__main__":
     mpc_cfg = os.path.join("mpc_configs", "3R2C_MPC.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     ekf_cfg = os.path.join("ekf_configs", "3R2C_EKF.json")
-
-    params = np.array([1.25311678e-04,
-                       1.45089509e+04, 
-                       4.20000000e+03,
-                       9.99000000e-01,
-                       1.00000001e+00,
-                       2.38176957e+00,
-                       3.67901473e+01,
-                       1.65120613e+00,
-                       1.00000000e+03,
-                       9.50000000e-01,
-                       7.37731935e-01,
-                       8.75000000e-01,
-                       5.00000000e-01,
-                       2.91632649e+02,
-                       1.00000000e-04,
-                       1.00000000e-06,
-                       1.02520072e+00,
-                       1.45307535e+00,
-                       3.09999997e+02,
-                       1.71071500e+00,
-                       1.87171959e+02, 
-                       6.57952230e+00,
-                       2.00000002e+00, 
-                       7.99999975e+00,
-                       7.64359965e-01,
-                       3.30759451e+02, 
-                       4.25691748e-05, 
-                       4.73998100e-04, 
-                       4.54157104e-04,
-                       2.92505112e+04,
-                       1.25239773e-01,
-                       8.02741952e+07,
-                       3.38215281e+09, 
-                       2.78795629e+02])
+    
+    #params_hvac = pd.read_csv("HVAC_model_latest.csv", index_col=0)
+    #params_env = pd.read_csv("envelope_model_latest.csv", index_col=0)
+    #params = np.concatenate([params_hvac.values, params_env.values]).flatten()
+    params = pd.read_csv("full_model_latest.csv", index_col=0)
+    params = params.values.flatten()
 
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
-        "z_nom": [12,1E6,1E6,1,1,1,1,12,12,12,12,1,1,1E6],
-        "z_nom_b": [289.15,0,0,0,0,0,0,289.15,289.15,289.15,289.15,0,0,0],
+        "z_nom": [1E6,1E6,1,1,1,1,12,12,12,12,1,1,1E6,1E6],
+        "z_nom_b": [0,0,0,0,0,0,289.15,289.15,289.15,289.15,0,0,0,0],
         "r_nom": [12,300,1E5,1E5,1E5],
         "r_nom_b": [289.15,0,0,0,0],
         "u_nom": [1,1,1,1,12],
@@ -81,7 +52,7 @@ if __name__ == "__main__":
         #"slack": True
         "slack": False
     }
-    kwargs = dict()
+    #kwargs = dict()
 
     mpc = MPC(config=mpc_cfg,
               functions=deepcopy(functions),
@@ -119,7 +90,7 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0 = np.array([293.15, 293.15, 293.15])
+    x0 = np.array([293.15, 293.15, 293.15, 293.15])
     
     # sim horizon: 2 days
     days = 2
@@ -130,7 +101,8 @@ if __name__ == "__main__":
     for k in range(K):
         
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
-        
+        lbx[3:-1:4] = 288.15
+        ubx[3:-1:4] = 313.15
         sol, u, x0  = mpc.solve(
                                data[0:mpc.N],
                                x0=x0,
@@ -145,13 +117,6 @@ if __name__ == "__main__":
         """
         if k == 16:
             print(sol)
-        
-        # turn off ventilation:
-        #u["ahu_pump_sup"] = 0.03
-        #u["ahu_pump_ret"] = 0.03
-        #u["ahu_Tsup"] = 288.15
-        #u["rad_val"] = 1
-        #u["dh_pump"] = 1
         
         if mpc.solver.stats()["return_status"] != "Solve_Succeeded":
             print(sol)

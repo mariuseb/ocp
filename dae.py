@@ -36,6 +36,19 @@ class DAE(object):
         self.add_odes()
         self.add_algs()
 
+    def vars(self, names):
+        mxs = []
+        for name in names:
+            #mxs.append(self.dae.dae.var(name))
+            #mxs.append(getattr(self.dae, "var")(name)) # get mx by name
+            mxs.append(getattr(self, name)) # get mx by name
+        return ca.vertcat(*mxs)
+    
+    def var(self, var: str):
+        if var in ("r", "w", "v"): 
+            return self.vars(getattr(self, var + "_names"))
+        else:
+            return self.vars(getattr(self, var))
 
     def add_params(self):
         """ Add param names..."""
@@ -289,7 +302,7 @@ class DAE(object):
         #    if is_symbolic(eq):
         #        eqs.appe
 
-        return [eq for eq in self.dae.alg if not eq.is_zero()]
+        return [eq for eq in self.dae.alg() if not eq.is_zero()]
                 
 
     """

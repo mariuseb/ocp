@@ -30,6 +30,58 @@ import scipy
 import typing
 import copy
 
+class ParamGuess(object):
+    """
+    Convenience wrapper for:
+        - intial guesses,
+        - lower, upper bounds
+    """
+    def __init__(self, d, p_order):
+        #self.d = d
+        self.p_order = p_order
+        self.d = {k: d[k] for k in p_order}
+        self.p0 = np.array([v["init"] for v in self.d.values()])
+        self.get_nonscaled_indices()
+    #def sort_d_by_dae_order(self, p_order):
+    #    self.d = {k: self.d[k] for k in p_order}
+        
+    def get_param_guess(self):
+        return self.p0
+        
+    def get_nonscaled_indices(self):
+        """
+        Indices with pre-defined bounds,
+        with corresponding values:
+        """
+        lb_inds = []
+        ub_inds = []
+        lb_vals = []
+        ub_vals = []
+        for i, (k, v) in enumerate(self.d.items()):
+            if "lb" in v:
+                lb_inds.append(i)
+                lb_vals.append(v["lb"])
+            if "ub" in v:
+                ub_inds.append(i)
+                ub_vals.append(v["ub"])
+        self.lb_inds = np.array(lb_inds)
+        self.lb_vals = np.array(lb_vals)
+        self.ub_inds = np.array(ub_inds)
+        self.ub_vals = np.array(ub_vals)
+          
+    def get_lb(self, scale):
+        assert scale <= 1
+        lbp = scale*self.p0
+        lbp[self.lb_inds] = self.lb_vals
+        return lbp
+    
+    def get_ub(self, scale):
+        assert scale >= 1
+        ubp = scale*self.p0
+        ubp[self.ub_inds] = self.ub_vals
+        return ubp
+        
+        
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -120,58 +172,6 @@ class OCP(metaclass=ABCMeta):
         self.slack_names = []
         self.c_files = []
         
-        # mostly for sysid:
-        param_guess = kwargs.pop("param_guess", None)    
-        #scale_nlp = kwargs.pop("scale_nlp", False)
-            
-        # TODO: include all entities
-        #if scale_nlp:
-        
-        self.scale_dict = OrderedDict()
-        
-        self.x_nom = kwargs.pop("x_nom", 1)
-        self.x_nom_b = kwargs.pop("x_nom_b", 0)
-        self.z_nom = kwargs.pop("z_nom", 1)
-        self.z_nom_b = kwargs.pop("z_nom_b", 0)
-        self.y_nom = kwargs.pop("y_nom", 1)
-        self.y_nom_b = kwargs.pop("y_nom_b", 0)
-        self.r_nom = kwargs.pop("r_nom", 1)
-        self.r_nom_b = kwargs.pop("r_nom_b", 0)
-        self.u_nom = kwargs.pop("u_nom", 1)
-        self.u_nom_b = kwargs.pop("u_nom_b", 0)
-        self.sl_nom = kwargs.pop("sl_nom", 1)
-        self.v_nom = kwargs.pop("v_nom", 1)
-        self.v_nom_b = kwargs.pop("v_nom_b", 0)
-        self.p_nom = self.scale = kwargs.pop("p_nom", None)
-        self.p_nom_b = kwargs.pop("p_nom_b", 0)
-        # special:
-        #if param_guess is not None:
-        #if self.p_nom is None:
-        #    self.p_nom = self.scale = self.get_scale(param_guess)
-        if param_guess is not None and self.p_nom is None:
-            self.p_nom = self.scale = self.get_scale(param_guess)
-        elif param_guess is None:
-            #self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
-            self.p_nom = self.scale = [1]
-        
-        self.scale_dict["x_nom"] = self.x_nom
-        self.scale_dict["x_nom_b"] = self.x_nom_b
-        self.scale_dict["z_nom"] = self.z_nom
-        self.scale_dict["z_nom_b"] = self.z_nom_b
-        self.scale_dict["y_nom"] = self.y_nom
-        self.scale_dict["y_nom_b"] = self.y_nom_b
-        self.scale_dict["r_nom"] = self.r_nom
-        self.scale_dict["r_nom_b"] = self.r_nom_b
-        self.scale_dict["u_nom"] = self.u_nom
-        self.scale_dict["u_nom_b"] = self.u_nom_b
-        self.scale_dict["sl_nom"] = self.sl_nom
-        self.scale_dict["u_nom"] = self.u_nom
-        self.scale_dict["u_nom_b"] = self.u_nom_b
-        self.scale_dict["v_nom"] = self.v_nom
-        self.scale_dict["v_nom_b"] = self.v_nom_b
-        self.scale_dict["p_nom"] = list(self.p_nom)
-        self.scale_dict["p_nom_b"] = self.p_nom_b
-        
         
         self.use_objective_from_cfg = kwargs.pop("use_objective_from_cfg", True)
         #self.gamma = kwargs.pop("gamma", 1)
@@ -203,6 +203,84 @@ class OCP(metaclass=ABCMeta):
         #assert self.gamma <= 1 and self.gamma > 0
         ##
         self.dae = dae = DAE(config["model"])
+        
+        # To own method:        
+        # mostly for sysid:
+        param_guess = kwargs.pop("param_guess", None)
+        param_guess_ordered = kwargs.pop("param_guess_ordered", True)
+        
+        p_order = self.dae.p
+        if not isinstance(param_guess, dict):
+            assert param_guess_ordered, "If param_guess is not " + \
+                "not a dictionary, then it must be ordered."
+            if isinstance(param_guess, ca.DM):
+                param_guess = np.array(param_guess).flatten()
+            param_guess = {k: 
+                {"init": v}
+                 for k, v in zip(p_order, param_guess)
+                 }    
+        self.param_guess = ParamGuess(param_guess, p_order)
+        p0 = self.param_guess.get_param_guess()
+        
+        """
+        if isinstance(param_guess, ParamGuess):
+            p_order = self.dae.p
+            param_guess.sort_d_by_dae_order(p_order)
+            p0 = param_guess.get_param_guess()
+        else:
+            p0 = param_guess
+        """
+               
+        self.scale_dict = OrderedDict()
+        
+        self.x_nom = kwargs.pop("x_nom", 1)
+        self.x_nom_b = kwargs.pop("x_nom_b", 0)
+        self.z_nom = kwargs.pop("z_nom", 1)
+        self.z_nom_b = kwargs.pop("z_nom_b", 0)
+        self.y_nom = kwargs.pop("y_nom", 1)
+        self.y_nom_b = kwargs.pop("y_nom_b", 0)
+        self.r_nom = kwargs.pop("r_nom", 1)
+        self.r_nom_b = kwargs.pop("r_nom_b", 0)
+        self.u_nom = kwargs.pop("u_nom", 1)
+        self.u_nom_b = kwargs.pop("u_nom_b", 0)
+        self.sl_nom = kwargs.pop("sl_nom", 1)
+        self.v_nom = kwargs.pop("v_nom", 1)
+        self.v_nom_b = kwargs.pop("v_nom_b", 0)
+        self.p_nom = self.scale = kwargs.pop("p_nom", None)
+        self.p_nom_b = kwargs.pop("p_nom_b", 0)
+
+        """
+        if param_guess is not None and self.p_nom is None:
+            self.p_nom = self.scale = self.get_scale(param_guess)
+        elif param_guess is None:
+            #self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
+            self.p_nom = self.scale = [1]
+        """ 
+        if p0 is not None and self.p_nom is None:
+            self.p_nom = self.scale = self.get_scale(p0)
+        elif param_guess is None:
+            #self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
+            self.p_nom = self.scale = [1]
+        
+        self.scale_dict["x_nom"] = self.x_nom
+        self.scale_dict["x_nom_b"] = self.x_nom_b
+        self.scale_dict["z_nom"] = self.z_nom
+        self.scale_dict["z_nom_b"] = self.z_nom_b
+        self.scale_dict["y_nom"] = self.y_nom
+        self.scale_dict["y_nom_b"] = self.y_nom_b
+        self.scale_dict["r_nom"] = self.r_nom
+        self.scale_dict["r_nom_b"] = self.r_nom_b
+        self.scale_dict["u_nom"] = self.u_nom
+        self.scale_dict["u_nom_b"] = self.u_nom_b
+        self.scale_dict["sl_nom"] = self.sl_nom
+        self.scale_dict["u_nom"] = self.u_nom
+        self.scale_dict["u_nom_b"] = self.u_nom_b
+        self.scale_dict["v_nom"] = self.v_nom
+        self.scale_dict["v_nom_b"] = self.v_nom_b
+        self.scale_dict["p_nom"] = list(self.p_nom)
+        self.scale_dict["p_nom_b"] = self.p_nom_b
+        
+        
         # mainly on 
         self.bounds_cfg = config.pop("bounds", None)
         #self.data = data
@@ -949,6 +1027,12 @@ class OCP(metaclass=ABCMeta):
         start = n_skip*stage
         return var[start:(start+n_ocp_var)]
          
+    def get_lbp(self, scale):
+        return self.param_guess.get_lb(scale)
+    
+    def get_ubp(self, scale):
+        return self.param_guess.get_ub(scale)
+               
     @property
     def nlp_v(self):
         return self.get_nlp_var("v")
@@ -1572,6 +1656,9 @@ class OCP(metaclass=ABCMeta):
                         #bias = bias.reshape((self.N, getattr(self, attr_name)))
                         #_vals = np.array(sol_x[start:stop]).reshape((self.N, getattr(self, attr_name)))*scale + \
                         #    bias
+                        #if not len(scale) == sol_x[start:stop].shape[0]:
+                        #    scale = scale*int(sol_x[start:stop].shape[0]/self.n_x)
+                        #    bias = bias*int(sol_x[start:stop].shape[0]/self.n_x)
                         _vals = (np.array(sol_x[start:stop])*scale + bias).reshape((self.N, getattr(self, attr_name)))
     
                         #if not isinstance(scale, (float, int)):

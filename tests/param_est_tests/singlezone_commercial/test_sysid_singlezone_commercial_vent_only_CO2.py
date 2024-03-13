@@ -237,3 +237,5 @@ if __name__ == "__main__":
     ax1 = ax.twinx()
     plt.show()
     print(params)
+    
+params.to_csv("CO2_model.csv", index=True) 

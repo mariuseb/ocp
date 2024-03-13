@@ -55,8 +55,9 @@ if __name__ == "__main__":
                             )    
     data_path = os.path.join(
                             get_data_path(), 
-                            "data_bestest_hydronic_normal_op.csv"
+                            "data_bestest_hydronic_normal_op_60s.csv"
                             )    
+    #N = 24*7*60*3
     N = 24*7*60*3
     #N = 24
     
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     data["ahu_pump_ret"] = data["ahu_pump_ret"].shift(-1) 
     data["ahu_reaTCoiSup"] = data["ahu_reaTCoiSup"].shift(-1) 
     #data["ahu_reaTCoiRet"] = data["ahu_reaTCoiRet"].shift(-1) 
-    data["Tsup_air"] = data["Tsup_air"].shift(-1) 
+    #data["Tsup_air"] = data["Tsup_air"].shift(-1) 
     data["oveTSupSet"] = data["oveTSupSet"].shift(-1) 
     
     """
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     """
     dt = (y_data.index[1] - y_data.index[0]).seconds
     M = 24*7*4
-    train = y_data[M:2*M]
+    train = y_data[0:2*M]
     test = y_data[2*M:3*M]
     #y_data = y_data[M:M+10]
     y_data = train
@@ -275,10 +276,10 @@ if __name__ == "__main__":
 
 
     kwargs = {
-        "x_nom": 12,
-        "x_nom_b": 289.15,
-        "z_nom": [12,1E6,1E6,1,1,1,1,12,12,12,12,1,1],
-        "z_nom_b": [289.15,0,0,0,0,0,0,289.15,289.15,289.15,289.15,0,0],
+        "x_nom": [12,12],
+        "x_nom_b": [289.15,289.15],
+        "z_nom": [1E6,1E6,1,1,1,1,12,12,12,12,1,1],
+        "z_nom_b": [0,0,0,0,0,0,289.15,289.15,289.15,289.15,0,0],
         "r_nom": [12,300,1E5,1E5,1E5],
         "r_nom_b": [289.15,0,0,0,0],
         "u_nom": [12,1,1,1,12,12],
@@ -303,7 +304,7 @@ if __name__ == "__main__":
                             300.15
                           ]) 
     param_guess = np.array([
-                            1E-5,
+                            1000,
                             290.15,
                             4200,
                             0.999,
@@ -319,6 +320,9 @@ if __name__ == "__main__":
                             290,
                             1e-4,
                             1e-6,
+                            1e1,
+                            1e-2,
+                            1,
                             1.2,
                             1.2,
                             310,
@@ -376,6 +380,13 @@ if __name__ == "__main__":
     ubp[8+j] = 1e-4  
     lbp[9+j] = 1e-6
     ubp[9+j] = 1e-6  
+    # Tsup air stuff:
+    lbp[10+j] = 1e2
+    ubp[10+j] = 1e6
+    lbp[11+j] = 1e-6
+    ubp[11+j] = 1  
+    lbp[12+j] = 1
+    ubp[12+j] = 3
     
     
     lbp[len_p-1] = 330.15
@@ -401,7 +412,7 @@ if __name__ == "__main__":
     #lbp[len_p-8] = 1
     #ubp[len_p-8] = 2
     
-    x_guess = y_data["Tret"].values
+    x_guess = y_data[["Tret", "Tsup_air"]].values.flatten()
     
     with ParameterEstimation(config=cfg_path,
                              N=N,
@@ -410,7 +421,7 @@ if __name__ == "__main__":
                              param_guess=param_guess,
                              **kwargs) as param_est:
                              #as param_est:
-        Q = ca.DM.eye(1)
+        Q = ca.DM.eye(2)
         R = ca.DM.eye(11)
         #R[0,0] =2 1E-9
         R[0,0] = 1E-9
@@ -469,7 +480,7 @@ if __name__ == "__main__":
                              param_guess=param_guess,
                              **kwargs) as param_est:
                              #as param_est:
-        Q = ca.DM.eye(1)
+        Q = ca.DM.eye(2)
         R = ca.DM.eye(11)
         #R[0,0] =2 1E-9
         R[0,0] = 1E-9

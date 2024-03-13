@@ -1,7 +1,7 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*UA_nom_air*(Tsup_air - Ti)*ahu_pump_sup + (1/Ci)*Prad",
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti)*ahu_pump_sup + (1/Ci)*Prad",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "w": {
@@ -13,6 +13,8 @@
             "Ria",
             "UA_nom_air",
             "rho_int",
+            "alpha_vent",
+            "cp_air",
             "Ci",
             "Ce",
             "Ai"
@@ -21,7 +23,8 @@
             "Pvent",
             "Prad",
             "Tsup_air",
-            "ahu_pump_sup"
+            "ahu_pump_sup",
+            "ahu_reaFloSupAir"
         ],
         "r": [
             "Ta",

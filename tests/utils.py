@@ -28,8 +28,8 @@ class Bounds(object):
                 ub_night=None,
                 lb_day=None,
                 ub_day=None,
-                day_begin=7,
-                day_end=22
+                day_begin=8,
+                day_end=16
                 ):
         
         self.dt = dt

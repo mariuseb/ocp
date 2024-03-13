@@ -26,6 +26,7 @@ import matplotlib.dates as mdates
 from ocp.functions import functions
 from ocp.nn import ParamDataset, NN
 import torch
+from ocp.ocp import ParamGuess
 #import l4casadi as l4c
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path, get_data_path
     
@@ -169,14 +170,19 @@ if __name__ == "__main__":
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
-        "u_nom": [1E6,1E6,12,1],
-        "u_nom_b": [0,0,289.15,0],
+        "u_nom": [1E6,1E6,12,1,1],
+        "u_nom_b": [0,0,289.15,0,0],
         "r_nom": [12,300,1E6,1E6,1E6],
         "r_nom_b": [289.15,0,0,0,0],
         "y_nom": [12],
         "y_nom_b": [289.15]
     }
 
+    """
+    lbp = 1e-2*param_guess
+    ubp = 1e2*param_guess
+    """
+    
     param_guess = ca.DM([
                     4.222012e-05,
                     1.757842e-04,
@@ -187,11 +193,60 @@ if __name__ == "__main__":
                     2.732098e+09,
                     2.800931e+02
                     ])
-    lbp = 1e-2*param_guess
-    ubp = 1e2*param_guess
-
-    x_guess = y_data[["Ti", "Ti"]].values.T
     
+    param_guess = {"Rie": 
+                    {
+                        "init": 4.222012e-05
+                    },
+                    "Rea": 
+                    {
+                        "init": 1.757842e-04
+                    },
+                    "Ria":
+                    {
+                        "init": 1e-3
+                    },
+                    "UA_nom_air": 
+                    {
+                        "init": 2879.686857,
+                        #"ub": 2879.686857,
+                        #"lb": 2879.686857
+                    },
+                    "Ci":
+                    {
+                        "init": 8.126425e+07
+                    },
+                    "rho_int":
+                    {
+                        "init": 0.25, 
+                        "lb": 1e-3,
+                        "ub": 1
+                    },
+                    "alpha_vent":
+                    {
+                        "init": 0.5, 
+                        "lb": 1e-6,
+                        "ub": 1
+                    },
+                    "cp_air":
+                    {
+                        "init": 1000, 
+                        "lb": 1000,
+                        "ub": 1000
+                    },
+                    "Ce":
+                    {
+                        "init": 2.732098e+09
+                    },
+                    "Ai":
+                    {
+                        "init": 2.800931e+02
+                    }
+                    }
+    
+    x_guess = y_data[["Ti", "Ti"]].values.T
+    #param_guess = ParamGuess(_param_guess)    
+
     with ParameterEstimation(config=cfg_path,
                              N=N,
                              dt=dt,
@@ -201,6 +256,11 @@ if __name__ == "__main__":
                              #as param_est:
         Q = ca.DM.eye(2)
         R = ca.DM.eye(1)
+        
+        #lbp = 1e-2*param_guess
+        #ubp = 1e2*param_guess
+        lbp = param_est.get_lbp(1e-2)
+        ubp = param_est.get_ubp(1e2)
         
         sol, params = param_est.solve(
                                       y_data,
@@ -224,3 +284,5 @@ if __name__ == "__main__":
         ax.legend()
         plt.show()
         print(params)
+        
+    params.to_csv("envelope_model_latest.csv", index=True)  

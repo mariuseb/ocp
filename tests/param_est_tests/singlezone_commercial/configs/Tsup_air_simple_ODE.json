@@ -1,16 +1,15 @@
 {
     "model": {
         "ode": {
-            "Tsup_air": "UA_sup_nom*regNonZeroPower(ahu_pump_sup, n, 1E-6)*(ahu_reaTHeaRec - Tsup_air)/(Csup_nom) + (Ti - Tsup_air)/(Rsupi*Csup_nom)  + (1/Csup_nom)*Pvent"
+            "Tsup_air": "UA_sup_nom*regNonZeroPower(ahu_pump_sup, n, 1E-6)*(ahu_reaTHeaRec - Tsup_air)/(Csup_nom) + UA_nom_air*(ahu_pump_sup + 0.01)*(Ti - Tsup_air)/(Csup_nom)  + (1/Csup_nom)*Pvent"
         },
         "w": {
             "v11": "y11 - Tsup_air"
         },
         "p": [
-            "Rsupi",
+            "UA_nom_air",
             "Csup_nom",
             "UA_sup_nom",
-            "k",
             "n"
         ],
         "u": [

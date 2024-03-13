@@ -766,7 +766,8 @@ class IRK(Integrator):
             pass
         #zfcn_sx = zfcn.expand()
         #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
-        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn)
+        opts = {"error_on_fail": False}
+        ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn, opts)
 
         
         V = ifcn(ca.MX(), X0, Z, U, P, R)

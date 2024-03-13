@@ -256,7 +256,7 @@
       "misc": {
         "h": 900,
         "N": 97,
-        "start_time": 0,
+        "start_time": 172800,
         "warmup_period": 604800
       },
       "maps" : {
@@ -280,7 +280,7 @@
         "y": {"Ti": "reaTZon_y",
               "Pvent": "reaQHea_y",
               "Prad": "reaPRad_y",
-              "reaPFan_y": "reaPFan_y",
+              "Pfan": "reaPFan_y",
               "reaPPum_y": "reaPPum_y",
               "ahu_reaTCoiSup": "ahu_reaTCoiSup_y",
               "Tret_coi": "reaTCoiRet_y",
@@ -298,7 +298,7 @@
             },
             "boptest_to_ocp": {
                           "Ti": "reaTZon_y",
-                          "reaPFan_y": "reaPFan_y",
+                          "Pfan": "reaPFan_y",
                           "reaPPum_y": "reaPPum_y",
                           "ahu_reaTCoiSup": "ahu_reaTCoiSup_y",
                           "Tret_coi": "reaTCoiRet_y",
@@ -325,7 +325,7 @@
                           "coi_flo": "reaCoiFlo_y"
                           },
         "sampling": {
-                     "integrate": ["Ph","Prad","Pvent","rad_flo","coi_flo","reaPPum_y","reaPFan_y"],
+                     "integrate": ["Ph","Prad","Pfan", "Pvent","rad_flo","coi_flo","reaPPum_y","reaPFan_y"],
                      "point": ["Ta", "phi_s", "Ti", "Tsup"]
                     }
       }
