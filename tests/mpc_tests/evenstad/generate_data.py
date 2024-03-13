@@ -131,9 +131,9 @@ if __name__ == "__main__":
     weather.index = weather.index.tz_convert("Europe/Oslo")
     # Keep weather file:
     weather.to_csv(
-                "historical_weather_data/%s-%s.csv" 
+                "historical_weather_data/%s_%s.csv" 
                 %
-                (start_str, stop_str)
+                (start_str.split("T")[0], stop_str.split("T")[0])
                 )
     
     """
