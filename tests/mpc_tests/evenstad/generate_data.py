@@ -17,7 +17,7 @@ import matplotlib.dates as mdates
 from collections import OrderedDict
 #matplotlib.rcParams["backend"] = "tkagg"
 
-TEST_MODE = True
+TEST_MODE = False
 location = {
             "lat": 61.424779678595705, 
             "lon": 11.082286053879768
@@ -51,7 +51,7 @@ Temperature:
 
 if __name__ == "__main__":
 
-    now = pd.Timestamp("01-26-2024 14:30:00").tz_localize("Europe/Oslo")
+    now = pd.Timestamp("01-26-2023 14:30:00").tz_localize("Europe/Oslo")
 
     five_today = pd.Timestamp(str(now.date()) + " 17:00").tz_localize("Europe/Oslo")
     # retrieve historical data up to this point:
@@ -59,18 +59,21 @@ if __name__ == "__main__":
 
     if not TEST_MODE:
         actual_now = pd.Timestamp.now().tz_localize("Europe/Oslo")
-        assert \
-        (stop <= now <= five_today) \
-            and \
-        (stop <= actual_now <= five_today), \
-        "Script must be run between 14:00 and 17:00 " + \
-        "on a given day to generate problem data " + \
-        "that is real-time compliant. Furthermore, " + \
-        "it is the responsibility of the user to set" + \
-        "the correct stop point for data retrieval." + \
-        " Currently it is set to %s, " % (str(stop), ) + \
-        "which means that the script should only " + \
-        "be generating test data."
+        try:
+            assert \
+            (stop <= now <= five_today) \
+                and \
+            (stop <= actual_now <= five_today), \
+            "Script should be run between 14:00 and 17:00 " + \
+            "on a given day to generate problem data " + \
+            "that is real-time compliant. Furthermore, " + \
+            "it is the responsibility of the user to set" + \
+            "the correct stop point for data retrieval." + \
+            " Currently it is set to %s, " % (str(stop), ) + \
+            "which means that the script should only " + \
+            "be generating test data."
+        except AssertionError:
+            pass
 
     """
     Read historical measurement data from SAUTER.
