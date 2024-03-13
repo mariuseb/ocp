@@ -151,7 +151,7 @@ if __name__ == "__main__":
     forecast.to_csv(
                 "weather_forecasts/%s.csv" 
                 %
-                (str(now),)
+                (str(now).split(" ")[0],)
                 )
     
     """
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     mpc_data.to_csv(
             "mpc_data/%s.csv" 
             %
-            (date_string,)
+            (date_string.replace(" ", "_"),)
             )
     
     """
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     kalman_data.to_csv(
             "kalman_data/%s.csv" 
             %
-            (date_string,)
+            (date_string.replace(" ", "_"),)
             )
     print("Data successfully generated.")
     
