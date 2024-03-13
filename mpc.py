@@ -518,6 +518,9 @@ class MPC(OCP):
             x0_nom = x_nom[:self.n_x]
             bx_nom_b = x_nom_b[self.n_x:]
             bx_nom = x_nom[self.n_x:]
+        else:
+            x0_nom_b = bx_nom_b = self.x_nom_b
+            x0_nom = bx_nom = self.x_nom
         
         self.add_path_constraints(
                                  x0=(x0 - x0_nom_b)/x0_nom,

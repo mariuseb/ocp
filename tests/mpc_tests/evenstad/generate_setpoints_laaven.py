@@ -86,7 +86,7 @@ if __name__ == "__main__":
     """
     
     now = now.tz_localize(None)
-    date_string = str(now).replace(":", "-")
+    date_string = str(now).replace(":", "-").replace(" ", "_")
 
     weather = pd.read_csv(
                           "kalman_data/%s.csv" % (date_string, ), 
