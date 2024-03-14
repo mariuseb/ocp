@@ -18,6 +18,7 @@ rc('mathtext', default='regular')
 #import matplotlib.dates as mdates
 from ocp.result_generator import ResultGenerator
 from ocp.tests.utils import Bounds
+from collections import OrderedDict
 
 """
 
@@ -52,7 +53,8 @@ setpoint_file = "To_SAUTER.csv"
 
 if __name__ == "__main__":
 
-    now = pd.Timestamp("01-26-2024 14:30:00").tz_localize("Europe/Oslo")
+    #now = pd.Timestamp("01-26-2024 14:30:00").tz_localize("Europe/Oslo")
+    now = pd.Timestamp("03-13-2024 23:30:00").tz_localize("Europe/Oslo")
     five_today = pd.Timestamp(str(now.date()) + " 17:00").tz_localize("Europe/Oslo")
 
     # NOTE: you have to modify this to current date
@@ -158,11 +160,11 @@ if __name__ == "__main__":
         ekf_config=ekf_path,
         tvp=True,
         cond_series=weather.weekend,
-        p_base=params,
-        p_mod=p_mod,
+        p_base=params.values,
+        p_mod=p_mod.values,
         switch=
-            lambda x, p, p_mod: 
-            p + p_mod
+            lambda x, p, _p_mod: 
+            _p_mod
             if x == 1
             else
             p
@@ -194,25 +196,7 @@ if __name__ == "__main__":
         "slack": False
     }
     params = params.values.flatten()
-    
-    mpc = MPC(config=mpc_path,
-            param_guess=params, 
-            **kwargs)  # to remove, replace with N
-    
-    #dt = mpc.dt
-    lb_night = {"Ti": 289.15}
-    ub_night = {"Ti": 301.15}
-    lb_day = {"Ti": 294.15}
-    ub_day = {"Ti": 297.15}
-    
-    bounds = Bounds(mpc.dt,
-                    mpc.dae.x,
-                    ["Ti"],
-                    lb_night=lb_night,
-                    ub_night=ub_night,
-                    lb_day=lb_day,
-                    ub_day=ub_day)
-    
+
     mpc_data = pd.read_csv(
                             "mpc_data/%s.csv" % (date_string, ), 
                             index_col=0
@@ -220,6 +204,34 @@ if __name__ == "__main__":
     mpc_data.index = pd.to_datetime(mpc_data.index)
     start = now.floor("1h").tz_localize("Europe/Oslo")
     mpc_data = mpc_data[start:]
+    
+    with open(mpc_path, "r") as f:
+        config = json.load(f, object_pairs_hook=OrderedDict)
+        # adjust horizon depending on starting hour of data:
+        config["N"] -= (start.hour - 14)
+    
+    mpc = MPC(config=config,
+            param_guess=params, 
+            **kwargs)  # to remove, replace with N
+    
+    #dt = mpc.dt
+    lb_night = {"Ti": 289.15}
+    ub_night = {"Ti": 301.15}
+    lb_day = {"Ti": 295.15}
+    ub_day = {"Ti": 297.15}
+    
+    bounds = Bounds(
+                    mpc.dt,
+                    mpc.dae.x,
+                    ["Ti"],
+                    lb_night=lb_night,
+                    ub_night=ub_night,
+                    lb_day=lb_day,
+                    ub_day=ub_day,
+                    day_begin=8,
+                    day_end=16
+                    )
+    
     k = 16 # hr*dt
     lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
 
@@ -231,9 +243,16 @@ if __name__ == "__main__":
 
     """
     TODO: figure out ventilation.
+
+    Tsup -> 20 degrees all the time. 
+    V_flow -> 60000/3600 in operating hours.
     """
-    mpc_data["T_sup_air"] = 294.15 
+    mpc_data["T_sup_air"] = 293.15
     mpc_data["V_flow_sup_air"] = 0
+
+    working_hrs = [ndx for ndx in mpc_data.index
+                   if ndx.hour in range(8,16)]
+    mpc_data.loc[working_hrs, "V_flow_sup_air"] += 60000/3600
 
     # solve for Ti, phi_h:
     sol, u, _x0  = mpc.solve(
@@ -276,8 +295,16 @@ if __name__ == "__main__":
     # First set-point is change by default:
     Tset.loc[Tset.index[0], "change"] = 1
     Tset["change"] = Tset["change"].astype(bool).astype(int)
+
+    midnight_ndx = [ndx for ndx in Tset.index if ndx.hour == 0]
+    assert len(midnight_ndx) == 1
+    midnight_ndx = midnight_ndx[0]
+    
+    Tset.loc[midnight_ndx, "change"] = 1
+    
     Tset_write = Tset[Tset.change == 1][["Ti"]]
     Tset_write.columns = ["Tset"]
+    #Tset_write.loc[midnight_ndx, "Tset"] = Tset.loc[midnight_ndx, "Ti"]
     # cleaner index:
     dt_index = Tset_write.index.to_series()
     hr_index = dt_index.apply(lambda x: str(x).split(" ")[1])

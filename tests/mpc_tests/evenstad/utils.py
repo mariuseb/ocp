@@ -155,7 +155,7 @@ def prepare_data(file1, file2):
             meas[col] = meas[col].apply(lambda x: str(x).replace(" ", "")).astype(float)       
 
     # Datetime-index
-    meas.index = pd.to_datetime(meas.index)
+    meas.index = pd.to_datetime(meas.index, format="%d.%m.%Y %H:%M")
 
     """
     Take out only model-relevant quantities:

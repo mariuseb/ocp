@@ -51,11 +51,12 @@ Temperature:
 
 if __name__ == "__main__":
 
-    now = pd.Timestamp("01-26-2023 14:30:00").tz_localize("Europe/Oslo")
+    now = pd.Timestamp("03-13-2024 23:30:00").tz_localize("Europe/Oslo")
 
     five_today = pd.Timestamp(str(now.date()) + " 17:00").tz_localize("Europe/Oslo")
     # retrieve historical data up to this point:
-    stop = pd.Timestamp(str(now.date()) + " 14:02").tz_localize("Europe/Oslo")
+    # stop = pd.Timestamp(str(now.date()) + " 14:02").tz_localize("Europe/Oslo")
+    stop = now
 
     if not TEST_MODE:
         actual_now = pd.Timestamp.now().tz_localize("Europe/Oslo")
@@ -85,10 +86,13 @@ if __name__ == "__main__":
     the correct filenames:
     """
 
-    file1 = "Evenstad-20230130T002331-1.csv"
-    file2 = "Evenstad-20230130T002331-2.csv"
+    #file1 = "Evenstad-20230130T002331-1.csv"
+    #file2 = "Evenstad-20230130T002331-2.csv"
+    file1 = "Evenstad-measurements_dummy-1.csv"
+    file2 = "Evenstad-measurements_dummy-2.csv"
 
     meas = prepare_data(file1, file2)
+    meas.index = meas.index.tz_localize("Europe/Oslo")
 
     if TEST_MODE: # convert index 2023 -> 2024:
         meas["dt_index"] = meas.index
@@ -97,7 +101,7 @@ if __name__ == "__main__":
         meas.index = meas.index.tz_localize("Europe/Oslo")
 
     #start = stop - pd.Timedelta(days=14) # - pd.Timedelta(hours=1)
-    start = meas.index[0]
+    start = meas.index[0] #.tz_localize("Europe/Oslo")
 
     start_str = str(start).replace(" ", "T")
     #stop_str = str(stop + pd.Timedelta(hours=1)).replace(" ", "T")
@@ -116,6 +120,7 @@ if __name__ == "__main__":
                             client_id
                             )
     weather.columns = ["Ta"] 
+    weather = weather.fillna(method="ffill")
     # convert to Kelvin:
     weather["Ta"] += 273.15
     # Get historical solar radiation:
@@ -126,6 +131,7 @@ if __name__ == "__main__":
                                 stop_str,
                                 client_id
                                 )
+    solar_hist = solar_hist.fillna(0)
     weather["phi_s"] = solar_hist.values
     weather.index = pd.to_datetime(weather.index)
     # Timestamps are UTC+0, convert 1 hours ahead.
@@ -147,7 +153,7 @@ if __name__ == "__main__":
                             now,
                             location,
                             forecast_map,
-                            test=TEST_MODE
+                            test=True if ((actual_now - now).seconds > 3600) else False
                             )
     #forecast.index = forecast.index.tz_convert("Europe/Oslo")
     #forecast.index = forecast.index.tz_localize(None)
@@ -202,6 +208,9 @@ if __name__ == "__main__":
     """
     meas[["Ta", "phi_s"]] = weather    
     kalman_data = meas.loc[~meas.isna().sum(axis=1).astype(bool)]
+    if kalman_data.empty:
+        raise ValueError("Something went wrong with data generation, " + \
+                         "kalman filter data is empty.")
     kalman_data.to_csv(
             "kalman_data/%s.csv" 
             %
