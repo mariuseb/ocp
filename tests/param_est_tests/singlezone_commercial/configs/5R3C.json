@@ -3,7 +3,7 @@
         "ode": {
             "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti) + (Trad - Ti)/(Rirad*Ci)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
-            "Trad": "rad_flo*cp_water*(Tsup - Trad)/Crad + (Ti - Trad)/(Rirad*Crad)"
+            "Trad": "rad_flo*cp_water*(Tsup - Tret)/Crad + (Ti - Trad)/(Rirad*Crad)"
         },
         "w": {
             "v1": "Ti - y1"
@@ -30,6 +30,7 @@
             "rad_flo",
             "ahu_reaFloSupAir",
             "Tsup",
+            "Tret",
             "rad_flo_on"
         ],
         "r": [

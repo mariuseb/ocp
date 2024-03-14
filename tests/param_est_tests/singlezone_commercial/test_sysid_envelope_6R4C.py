@@ -215,7 +215,7 @@ if __name__ == "__main__":
                     },
                     "Rrr":
                     {
-                        "init": 1e-3
+                        "init": 1e-1
                     },
                     "Rsr":
                     {

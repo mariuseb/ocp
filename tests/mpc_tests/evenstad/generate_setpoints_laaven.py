@@ -96,6 +96,14 @@ if __name__ == "__main__":
                           )
     weather.index = pd.to_datetime(weather.index)
     
+    upper_lim_now = now.minute*60 + now.second
+    diff_now_weather = (now - weather.index[-1].tz_localize(None)).seconds
+    assert (0 <= diff_now_weather) and (diff_now_weather <= upper_lim_now), \
+        "The difference between the weather " + \
+        "data and 'now' has to be between 0 and " + \
+        "%s seconds." % (upper_lim_now, )
+    
+    
     def filter_weekend(ndx):
         if ndx.dayofweek == 4:
             if ndx.hour >= 18:

@@ -167,7 +167,8 @@ if __name__ == "__main__":
     y_data.Pvent.plot(color="y", linewidth=0.75)
     plt.show()
 
-    cfg_path = "configs/5R3C_ODE.json"
+    #cfg_path = "configs/5R3C_ODE.json"
+    cfg_path = "configs/5R3C.json"
 
     kwargs = {
         "x_nom": 12,
