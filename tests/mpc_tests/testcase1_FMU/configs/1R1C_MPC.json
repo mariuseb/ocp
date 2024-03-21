@@ -24,14 +24,14 @@
         }
     },
     "objective": "dot(phi_h, phi_h)",
-    "N": 12,
+    "N": 13,
     "dt": 900,
     "method": "collocation",
     "integrator": 
         {
         "name": "IRK",
         "method": "radau",
-        "degree": 3,
+        "degree": 1,
         "n_steps": 1
         }
     ,

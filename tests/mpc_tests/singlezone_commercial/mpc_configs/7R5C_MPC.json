@@ -1,0 +1,161 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent1*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti) + (Trad - Ti)/(Rirad*Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "rad_flo*cp_water*(dh_Tsup - Trad)/Crad + (Ti - Trad)/(Rirad*Crad)",
+            "Tret": "(Trad - Tret)/(Rrr*Cret)*rad_flo_on + (dh_Tsup - Tret_offset - Tret)/(Rsr*Cret)*(1-rad_flo_on)",
+            "Tsup_air": "ahu_reaFloSupAir*cp_air*(ahu_reaTHeaRec - Tsup_air)/(Csup_nom) + ahu_reaFloSupAir*alpha_vent2*cp_air*(Ti - Tsup_air)/(Csup_nom)  + (1/Csup_nom)*Pvent",
+            "CO2_in": "n_air*c*(CO2_out - CO2_in) + c_occ*n_occ"
+        },
+        "alg": {
+            "Prad": "Prad - rad_flo*cp_water*eta_hex_rad*(dh_Tsup - Tret)",
+            "Pvent": "Pvent - coi_flo*eta_hex_ahu*cp_water*(dh_Tsup - Tret_coi)",
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)",
+            "coi_flo": "coi_flo - coi_flo_nom*regNonZeroPower(coi_val, n2, 1E-6)",
+            "coi_flo_nom": "coi_flo_nom - (coi_flo_nom_b + coi_flo_nom_a*(1 - rad_val))",
+            "tot_flo": "tot_flo - (rad_flo + coi_flo)",
+            "Tret_coi": "Tret_coi - (ahu_reaTHeaRec + Tret_coi_b)",
+            "ahu_reaTRetAir": "ahu_reaTRetAir - Ti",
+            "ahu_reaTHeaRec": "(Ta + (ahu_reaTRetAir - Ta)*eta_hex1)*ahu_pump_sup_on + (1-ahu_pump_sup_on)*Trec_off - ahu_reaTHeaRec",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*regNonZeroPower(ahu_pump_sup, n, 1e-6)",
+            "ahu_reaFloExtAir": "ahu_reaFloExtAir - m_flow_air_nom_ext*regNonZeroPower(ahu_pump_ret, n, 1e-6)",
+            "ahu_pump_sup_on": "ahu_pump_sup_on - (1/(1 + ca.exp(-(ahu_pump_sup - ahu_pump_sup_thres)/k)))",
+            "Pfan": "Pfan - a*ahu_pump_sup**3 - b*ahu_pump_sup**2 - c*ahu_pump_sup - d",
+            "n_air": "n_air - (n_mech + n_nat + n_inf)",
+            "n_mech": "n_mech - ahu_reaFloExtAir",
+            "n_nat": "n_nat - (ahu_reaFloSupAir - ahu_reaFloExtAir)",
+            "rad_flo_on": "rad_flo_on - (1/(1 + ca.exp(-(rad_flo - 1E-6)/1E-6)))"
+        },
+        "p": [
+            "cp_water",
+            "eta_hex_ahu",
+            "eta_hex_rad",
+            "m_flow_air_nom",
+            "m_flow_air_nom_ext",
+            "cp_air",
+            "eta_hex1",
+            "Trec_off",
+            "k",
+            "ahu_pump_sup_thres",
+            "n",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "rad_flo_nom",
+            "coi_flo_nom_b",
+            "coi_flo_nom_a",
+            "Tret_coi_b",
+            "dh_Tsup",
+            "a",
+            "b",
+            "c",
+            "d",
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Rrr",
+            "Rsr",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Cret",
+            "Csup_nom",
+            "Ai",
+            "alpha_vent1",
+            "alpha_vent2",
+            "Tret_offset",
+            "c1",
+            "CO2_out",
+            "n_inf",
+            "c_occ"
+        ],
+        "u": [
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "coi_val",
+            "rad_val"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad",
+            "n_occ"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad",
+            "Tret",
+            "Tsup_air",
+            "CO2_in"
+        ],
+        "z": [
+            "Prad",
+            "Pvent",
+            "rad_flo",
+            "coi_flo",
+            "coi_flo_nom",
+            "tot_flo",
+            "Tret_coi",
+            "ahu_reaTRetAir",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir",
+            "ahu_pump_sup_on",
+            "Pfan",
+            "n_air", 
+            "n_mech", 
+            "n_nat",
+            "rad_flo_on"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0,0,0,0],
+            "ubu": [1,1,1,1]
+        },
+        "x": {
+            "lbx": [280,280,280,280,280.15,0],
+            "ubx": [340,340,340,280,330.15,1000]
+        },
+        "z": {
+            "lbz": [-1E7,-1E7,0,0,0,0,280,280,280,0,0,0,-1E6,0,0,0,0],
+            "ubz": [1E7,1E7,10,10,10,10,340,340,340,40,40,1,1E7,40,40,40,1]
+        }
+    },
+    "objective": "dot(Pvent, Pvent) + dot(Prad, Prad) + dot(Pfan, Pfan)",
+    "ocp": {
+        "h": [
+            "-0.05 <= ahu_pump_sup - ahu_pump_ret <= 0.05"
+        ]
+    },
+    "N": 6,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

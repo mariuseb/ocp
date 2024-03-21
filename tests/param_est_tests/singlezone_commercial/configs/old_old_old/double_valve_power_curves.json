@@ -1,0 +1,61 @@
+{
+    "model": {
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)",
+            "coi_flo": "coi_flo - coi_flo_nom*regNonZeroPower(coi_val, n2, 1E-6)",
+            "tot_flo": "tot_flo - (rad_flo + coi_flo)",
+            "coi_flo_nom": "coi_flo_nom - (coi_flo_nom_b + coi_flo_nom_a*(1 - rad_val))"
+        },
+        "w": {
+            "v6": "y6 - rad_flo",
+            "v7": "y7 - coi_flo",
+            "v8": "y8 - tot_flo"
+        },
+        "p": [
+            "n1",
+            "n2",
+            "rad_flo_nom",
+            "coi_flo_nom_b",
+            "coi_flo_nom_a"
+        ],
+        "u": [
+            "rad_val",
+            "coi_val"
+        ],
+        "z": [
+          "rad_flo",
+          "coi_flo",
+          "tot_flo",
+          "coi_flo_nom"
+        ],
+        "y": [
+            ["y6", "rad_flo"],
+            ["y7", "coi_flo"],
+            ["y8", "tot_flo"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [0,0,0,0],
+            "ubz": [10,10,10,10]
+        }
+    },
+    "objective": "dot(v6, v6)@R[0,0] + dot(v7, v7)@R[1,1] + dot(v8, v8)@R[2,2]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

@@ -497,8 +497,9 @@ class OCP(metaclass=ABCMeta):
         self.opt = config["opt"]
         try:
             self.set_A()
+            self.set_B()
         except RuntimeError:
-            print("Fix setting df/dx for DAE-models.")
+            print("Fix setting df/dx, df/du for DAE-models.")
             pass
         # get duals:
         #self.opt["calc_multipliers"] = True
@@ -1185,7 +1186,7 @@ class OCP(metaclass=ABCMeta):
     
     def set_A(self):
         """
-        Set casadi-Function that retrieves A.
+        Set casadi-Function to get cont.-time A.
         """
         self._A = _A = ca.jacobian(self.integrator.ode, self.integrator.x)
         #x =  ca.vertsplit(self.integrator.x)
@@ -1196,6 +1197,22 @@ class OCP(metaclass=ABCMeta):
                              [_A],
                              ["x", "p"], 
                              ["A"]
+                             )
+        
+    def set_B(self):
+        """
+        Set casadi-Function to get cont.-time B.
+        """
+        u = ca.vertcat(self.integrator.u, self.integrator.r)
+        self._B = _B = ca.jacobian(self.integrator.ode, u)
+        #x =  ca.vertsplit(self.integrator.x)
+        # should be state independant:
+    
+        self.B = ca.Function("B",
+                             [u, self.integrator.p],
+                             [_B],
+                             ["u","p"], 
+                             ["B"]
                              )
         
     def get_Ad(self,
@@ -1213,6 +1230,28 @@ class OCP(metaclass=ABCMeta):
         if dt is None:
             dt = self.dt
         return scipy.linalg.expm(A*dt)
+    
+    def get_Bd(self,
+               dt: typing.Union[int, None] = None,
+               **kwargs
+               ):
+        """
+        Get discrete-time B:
+        A^-1*(Ad − I)*B
+        """
+        x = kwargs.pop("x", np.ones(self.dae.n_x)*293.15) 
+        u = kwargs.pop("u", np.zeros(self.dae.n_u + self.dae.n_r))
+        p = kwargs.pop("p", None) 
+        
+        if dt is None:
+            dt = self.dt
+
+        A = self.A(x=x,
+                   p=p)["A"]
+        B = self.B(u=u,
+                   p=p)["B"]
+        Ad = self.get_Ad(dt, p=p)
+        return np.array(np.linalg.inv(A)@(Ad - np.eye(self.dae.dae.nx()))@B)
           
     def get_taus(self, 
                  **kwargs
@@ -1656,9 +1695,13 @@ class OCP(metaclass=ABCMeta):
                         #bias = bias.reshape((self.N, getattr(self, attr_name)))
                         #_vals = np.array(sol_x[start:stop]).reshape((self.N, getattr(self, attr_name)))*scale + \
                         #    bias
-                        #if not len(scale) == sol_x[start:stop].shape[0]:
-                        #    scale = scale*int(sol_x[start:stop].shape[0]/self.n_x)
-                        #    bias = bias*int(sol_x[start:stop].shape[0]/self.n_x)
+                        try:
+                            len_scale = len(len_scale)
+                            if not len(scale) == sol_x[start:stop].shape[0]:
+                                scale = scale*int(sol_x[start:stop].shape[0]/self.n_x)
+                                bias = bias*int(sol_x[start:stop].shape[0]/self.n_x)
+                        except: # scalar
+                            pass
                         _vals = (np.array(sol_x[start:stop])*scale + bias).reshape((self.N, getattr(self, attr_name)))
     
                         #if not isinstance(scale, (float, int)):

@@ -18,7 +18,7 @@ class BasicBuffer:
     def __init__(self):
         self.buffer = []
 
-    def push(self, state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df):
+    def push(self, state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df, p_val):
         experience = (
             state,
             obs,
@@ -29,14 +29,15 @@ class BasicBuffer:
             data,
             info,
             sol,
-            sol_df
+            sol_df,
+            p_val
         )
         self.buffer.append(experience)
 
     def sample(self):
         transition = random.sample(self.buffer, 1)
-        state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df = transition
-        return (state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df)
+        state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df, p_val = transition
+        return (state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df, p_val)
 
 
 class ReplayBuffer:
@@ -107,6 +108,7 @@ class ReplayBuffer:
         info_batch = []
         sol_batch = []
         sol_df_batch = []
+        p_val_batch = []
 
         for _ in range(batch_size):
             rollout = random.sample(self.buffer, 1)[0]
@@ -120,7 +122,8 @@ class ReplayBuffer:
                 data,
                 info,
                 sol,
-                sol_df
+                sol_df,
+                p_val
             ) = random.sample(rollout, 1)[0]
             state_batch.append(state)
             obs_batch.append(obs)
@@ -132,6 +135,7 @@ class ReplayBuffer:
             info_batch.append(info)
             sol_batch.append(sol)
             sol_df_batch.append(sol_df)
+            p_val_batch.append(p_val)
         return (
             state_batch,
             obs_batch,
@@ -142,7 +146,8 @@ class ReplayBuffer:
             data_batch,
             info_batch,
             sol_batch,
-            sol_df_batch
+            sol_df_batch,
+            p_val_batch
         )
 
     def flatten_buffer(self):
@@ -156,6 +161,7 @@ class ReplayBuffer:
         info_batch = []
         sol_batch = []
         sol_df_batch = []
+        p_val_batch = []
 
         for i in range(len(self.buffer)):
             for j in range(len(self.buffer[i])):
@@ -169,7 +175,8 @@ class ReplayBuffer:
                     data,
                     info,
                     sol,
-                    sol_df
+                    sol_df,
+                    p_val
                 ) = self.buffer[i][j]
                 state_batch.append(state)
                 obs_batch.append(obs)
@@ -181,6 +188,7 @@ class ReplayBuffer:
                 info_batch.append(info)
                 sol_batch.append(sol)
                 sol_df_batch.append(sol_df)
+                p_val_batch.append(p_val)
         return (
             state_batch,
             obs_batch,
@@ -191,6 +199,7 @@ class ReplayBuffer:
             data_batch,
             info_batch,
             sol_batch,
-            sol_df_batch
+            sol_df_batch,
+            p_val_batch
         )
 

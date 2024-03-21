@@ -1,0 +1,67 @@
+{
+    "model": {
+        "alg": {
+            "Tsup_air": "Tsup_air - (ahu_reaTHeaRec + UA_rec_nom*regNonZeroPower(ahu_pump_sup, n, 1E-6)*Pvent)*ahu_pump_sup - Ti*(1 - ahu_pump_sup)",
+            "UA_rec": "UA_rec - UA_rec_nom*(1 - (1/(1 + ca.exp(-(ahu_pump_sup - ahu_pump_sup_thres)/k))))"
+        },
+        "w": {
+            "v11": "y11 - Tsup_air"
+        },
+        "p": [
+            "UA_rec_nom",
+            "n",
+            "k",
+            "ahu_pump_sup_thres"
+        ],
+        "u": [
+            "Tsup",
+            "Tret",
+            "rad_val",
+            "coi_val",
+            "ahu_reaTHeaRec",
+            "ahu_pump_sup",
+            "ahu_pump_sup_on",
+            "Pvent",
+            "Ti",
+            "oveTSupSet"  
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "z": [
+          "Tsup_air",
+          "UA_rec"
+        ],
+        "y": [
+            ["y11", "Tsup_air"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [280,0],
+            "ubz": [320,1]
+        }
+    },
+    "objective": "dot(ahu_pump_sup_on*v11, ahu_pump_sup_on*v11)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

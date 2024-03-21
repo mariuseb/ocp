@@ -61,7 +61,7 @@ if __name__ == "__main__":
     #params = [0.7e-2, 1.3e6]
     #params = [1e-2, 1e6]
     #params = [2e-2, 2e6]
-    params = [2e-2, 2e6]
+    params = [3e-2, 3e6]
     
     """
     No state observer needed for this example.
@@ -97,11 +97,11 @@ if __name__ == "__main__":
             },
             "eps": 0.25,
             "learning_params": {
-                "lr": 1e-4,
+                "lr": 1e-5,
                 #"lr": 1e-6,
                 #"lr": 5e-2,
                 #"lr": 5e-3,
-                "tr": 0.2,
+                "tr": 1e-2,
                 "train_params": {
                     "iterations": 1,
                     "batch_size": 64
@@ -121,7 +121,7 @@ if __name__ == "__main__":
                         )  # to remove, replace with N
     
     url = 'http://bacssaas_boptest:5000'
-    # Use gym env from Javiers code instead:
+    # Use gym env:
     boptest = BoptestGymEnv(boptest_cfg,
                             name                  = "testcase1",
                             url                   = url,
@@ -155,19 +155,19 @@ if __name__ == "__main__":
                     ub_day=ub_day)
 
     obs = state = x0 = np.array([293.15])
-    days = 90
+    days = 365
     K = days*24*bounds.t_h # tot timesteps
     rewards = []
     np.random.seed(0)
     #policy_params = np.array([0]*mpc.P.shape[0])
-    policy_params = np.zeros(
-                            shape=(mpc.P.shape[0] - mpc.n_p)
-                            )
     policy_params = np.random.normal(
                                      loc=0.01,
                                      scale=1e-2,
                                      size=(mpc.P.shape[0] - mpc.n_p)
                                      )
+    policy_params = np.zeros(
+                            shape=(mpc.P.shape[0] - mpc.n_p)
+                            )
     policy_params = np.append(policy_params, np.array(params))
     # slack weight:
     #policy_params[-1] = 1e4
@@ -189,10 +189,11 @@ if __name__ == "__main__":
         
     TODO: add data to buffer
     Make sure forecast is length N+1,
-    so we can calculate both q and v_+
+    so we can calculate both q(s,a) and v(s+)
     """
     
-    max_len_buffer = int(1e5)
+    #max_len_buffer = int(1e5)
+    max_len_buffer = int(1)
     # to store experiences:
     replay_buffer = ReplayBuffer(max_len_buffer, seed)
     rollout_return = 0
@@ -202,7 +203,7 @@ if __name__ == "__main__":
     update policy parameters
     every B timesteps.
     """
-    B = 96
+    B = 1
     rollout_buffer = BasicBuffer()
     t_returns = []
     
@@ -242,6 +243,7 @@ if __name__ == "__main__":
     mpc.learning_module.grad_v_history.columns = policy_history.columns
     mpc.learning_module.grad_q_history_ipopt.columns = policy_history.columns
     
+    raw_sol = None
     for k in range(K):
         policy_history.loc[k] = policy_params
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N) 
@@ -263,6 +265,7 @@ if __name__ == "__main__":
         
         mpc.prepare_forward(
                             data[0:mpc.N],
+                            prev_sol=raw_sol,
                             x0=obs,
                             lbx=lbx,
                             ubx=ubx,
@@ -289,7 +292,8 @@ if __name__ == "__main__":
                 data,
                 add_info,
                 raw_sol,
-                sol
+                sol,
+                mpc.p_val
             )
         rollout_return += reward
         state = next_state.copy()

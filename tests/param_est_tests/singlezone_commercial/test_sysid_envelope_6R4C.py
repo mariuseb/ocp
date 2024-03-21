@@ -127,7 +127,7 @@ if __name__ == "__main__":
     data["ahu_pump_ret"] = data["ahu_pump_ret"].shift(-1) 
     data["ahu_reaTCoiSup"] = data["ahu_reaTCoiSup"].shift(-1) 
     #data["ahu_reaTCoiRet"] = data["ahu_reaTCoiRet"].shift(-1) 
-    data["Tsup_air"] = data["Tsup_air"].shift(-1) 
+    #data["Tsup_air"] = data["Tsup_air"].shift(-1) 
     data["oveTSupSet"] = data["oveTSupSet"].shift(-1) 
     
     """
@@ -151,6 +151,7 @@ if __name__ == "__main__":
         y_data[name] = data[name].resample(rule="15min").mean()
     y_data["y1"] = y_data["Ti"]
     y_data["y2"] = y_data["Tret"]
+    y_data["y3"] = y_data["Tsup_air"]
     
     #M = 24*7*4
     #y_data = y_data.iloc[M:(2*M-1)]
@@ -173,8 +174,8 @@ if __name__ == "__main__":
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
-        "u_nom": [1E6,1E6,12,1,1,1,12,1],
-        "u_nom_b": [0,0,289.15,0,0,0,289.15,0],
+        "u_nom": [1E6,1E6,1,1,1,12,1,12,12],
+        "u_nom_b": [0,0,0,0,0,289.15,0,289.15,289.15],
         "r_nom": [12,300,1E6,1E6,1E6],
         "r_nom_b": [289.15,0,0,0,0],
         "y_nom": [12,12],
@@ -243,6 +244,10 @@ if __name__ == "__main__":
                     {
                         "init": 2.732098e+04
                     },
+                    "Csup_nom":
+                    {
+                        "init": 2.732098e+04
+                    },
                     "Ai":
                     {
                         "init": 2.800931e+02
@@ -255,11 +260,17 @@ if __name__ == "__main__":
                     },
                     "cp_air":
                     {
-                        "init": 1000,
+                        "init": 900,
                         "lb": 1000,
-                        "ub": 1000
+                        "ub": 1100
                     },
-                    "alpha_vent":
+                    "alpha_vent1":
+                    {
+                        "init": 0.5,
+                        "lb": 1E-6,
+                        "ub": 1
+                    },
+                    "alpha_vent2":
                     {
                         "init": 0.5,
                         "lb": 1E-6,
@@ -273,7 +284,7 @@ if __name__ == "__main__":
                     }
                     }
     
-    x_guess = y_data[["Ti", "Ti", "Tret", "Tret"]].values.T
+    x_guess = y_data[["Ti", "Ti", "Tret","Tsup_air"]].values.T
     #param_guess = ParamGuess(_param_guess)    
 
     with ParameterEstimation(config=cfg_path,
@@ -286,6 +297,7 @@ if __name__ == "__main__":
         Q = ca.DM.eye(4)
         R = ca.DM.eye(2)
         R[1,1] = 1e-1
+        #R[2,2] = 1e-1
         #lbp = 1e-2*param_guess
         #ubp = 1e2*param_guess
         lbp = param_est.get_lbp(1e-2)
@@ -312,12 +324,11 @@ if __name__ == "__main__":
         y_data["ahu_pump_sup"].plot(ax=ax1, color="b", linewidth=0.75, drawstyle="steps-post")
         ax.legend()
         plt.show()
-        
-        ax = sol["y2"].plot(color="k", linewidth=0.75)
-        sol["Tret"].plot(ax=ax, color="r", linestyle="dashed", linewidth=0.75)
-        sol["Trad"].plot(ax=ax, color="g", linestyle="dashed", linewidth=0.75)
+    
+        ax = sol["y3"].plot(color="k", linewidth=0.75)
+        sol["Tsup_air"].plot(ax=ax, color="r", linestyle="dashed", linewidth=0.75)
         plt.show()
         
         print(params)
         
-    params.to_csv("envelope_model_latest.csv", index=True)  
+    params.to_csv("envelope_model_latest_6R4C.csv", index=True)  

@@ -27,7 +27,7 @@ if __name__ == "__main__":
     
     mpc_cfg = os.path.join("configs", "1R1C_MPC.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    params = [2E-2,1.5E6]
+    params = [1E-2,1E6]
     kwargs = dict()
 
     mpc = MPC(config=mpc_cfg,

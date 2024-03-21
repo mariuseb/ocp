@@ -7,6 +7,7 @@ class Qlearning:
         self.mpc = mpc
         self._parse_agent_params(**learning_params)
         self.q_failures = 0
+        self.n_eps = 0
         self.delJ_history = pd.DataFrame(columns=list(
                 map(
                     lambda x: "theta" + str(x), 
@@ -58,7 +59,6 @@ class Qlearning:
         train_it = min(self.iterations, int(3.0 * replay_buffer.size / batch_size))
         #train_it = 1
 
-        #del_J = 0.0
         for it in range(train_it):
             (
                 states,
@@ -70,7 +70,8 @@ class Qlearning:
                 datas,
                 infos,
                 raw_sols,
-                sol_df
+                sol_dfs,
+                p_vals
             ) = replay_buffer.sample(batch_size)
 
             del_J = 0.0
@@ -80,29 +81,42 @@ class Qlearning:
                 reward = rewards[j]
                 data = datas[j]
                 raw_sol = raw_sols[j]
+                p_val = p_vals[j]
+                sol_df = sol_dfs[j]
                 
                 # Q value of the state-action pair
                 """
                 TODO: what if bounds are not fixed?
                 Then must store bounds as parameters.
+                
+                TODO: store theta-, resolve for that
+                value -> batch update.
                 """
                 self.mpc.prepare_warm_solve(
                         data[0:self.mpc.N],
                         model_params=self.mpc.params,
                         raw_sol=raw_sol
                     )
-                q, info, sol = self.mpc.Q_value(state, action)
+                q, info, qsol_df, qsol = self.mpc.Q_value(
+                        state, 
+                        action,
+                        p_val,
+                        raw_sol
+                        )
                 # Hint: we found the Q value for state and action in exercise 11
                 if not self.mpc.qsolver.stats()["success"]:
                     self.q_failures += 1
                 # V value of the next state
-                #v_next, info_next = self.mpc.V_value(next_state, mode="update")
+                #v_next, info_next = sellf.mpc.V_value(next_state, mode="update")
                 self.mpc.prepare_warm_solve(
                         data[1:self.mpc.N+1],
                         model_params=self.mpc.params,
                         raw_sol=raw_sol
                     )
-                v_next, info_next = self.mpc.V_value(next_state)
+                # modify p-fixed:
+                next_state_scaled = (next_state - self.mpc.x_nom_b)/self.mpc.x_nom
+                p_val[:self.mpc.obs_dim] = next_state_scaled
+                v_next, info_next, vsol_df, vsol = self.mpc.V_value(next_state, p_val)
 
                 # TD error
                 td_target = reward + self.mpc.gamma*v_next - q
@@ -130,15 +144,20 @@ class Qlearning:
                 self.grad_q_history.loc[len(self.grad_q_history), :] = grad_q.flatten()
                 self.grad_q_history_ipopt.loc[len(self.grad_q_history), :] = -info["soln"]["lam_p"].full()[self.mpc.nPf:-self.mpc.nPbounds].flatten()
                 self.grad_v_history.loc[len(self.grad_v_history), :] = grad_v.flatten()
-                del_J -= td_target * grad_q.T
+                #del_J -= td_target*grad_q.T
+                del_J += td_target*grad_q.T
                 td_avg += td_target
                 # save all iterations:
+                if abs(td_target) > 1: 
+                    print(td_target)
                 self.td_error.loc[len(self.td_error), :] = td_target
                 del_J = del_J/batch_size
                 
             self.delJ_history.loc[len(self.delJ_history), :] = del_J.flatten()
             # RL update step
             self.mpc.param_update(del_J, constrained_updates=self.constrained_updates)
+            self.n_eps += 1
+            #self.lr = self.lr - 0.01*self.lr
         self.td_avg_error.loc[len(self.td_avg_error), :] = td_avg / train_it
         print(f"Averaged TD error: {td_avg / train_it}")
 

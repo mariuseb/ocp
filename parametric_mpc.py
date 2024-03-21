@@ -6,6 +6,7 @@ from ocp.shooting import Collocation
 from ocp.q_learning import Qlearning
 import cvxpy as cvx
 import os
+import pandas as pd
 
 class ParametricMPC(MPC):
     """
@@ -32,7 +33,7 @@ class ParametricMPC(MPC):
         #self.f = ca.MX()
         self.add_dynamics_bias()
         # add model params as last part to P:
-            
+           
         """
         Own function:
         """
@@ -86,7 +87,7 @@ class ParametricMPC(MPC):
         """
         #R = ca.MX.sym("R", self.n_x, self.n_x)
         
-        w = 1e1 #*self.sl_nom # should be part of config file 
+        w = 1e0 #*self.sl_nom # should be part of config file 
         for n in range(self.N-1):
             sl = self.get_var_at_stage("sl", n)
             self.nlp["f"] += sl@w@sl.T
@@ -174,13 +175,13 @@ class ParametricMPC(MPC):
         
         x_0 is given by estimation/observation only,
         i.e. no slack on first state.
-        """
         n = 0
         start = n*n_x_skip
         stop = n*n_x_skip + 1
         x = self.get_var_at_stage("x", 0)
         self.hx.append(p_lbx[:, start:stop] - x)
         self.hx.append(x - p_ubx[:, start:stop])
+        """
         sl_nom = self.sl_nom
         
         for n in range(1, self.N):
@@ -341,6 +342,10 @@ class MPCFormulation_ex(ParametricMPC):
 
         # Dynamics equality constraints
         g = self.equality_constraints()
+        # Add fixed x0:
+        x0 = self.get_var_at_stage("x", 0)
+        state = self.Pf[:self.obs_dim]
+        g.append(x0 - state)
 
         # Inequality constraints
         """
@@ -365,12 +370,13 @@ class MPCFormulation_ex(ParametricMPC):
         self.opts_setting = {
             "ipopt.max_iter": 5000,
             "ipopt.print_level": 5,
+            #"ipopt.sb": True,
             "print_time": 0,
             "bound_consistency": True,
             "clip_inactive_lam": True,
             "ipopt.linear_solver": "ma57",
             "calc_lam_x": True,
-            "calc_lam_p": True,
+            "calc_lam_p": False,
             #"ipopt.mu_target": self.etau,
             #"ipopt.mu_init": self.etau,
             #"ipopt.acceptable_tol": 1e-8,
@@ -419,9 +425,12 @@ class MPCFormulation_ex(ParametricMPC):
         _, hu, hx, hs = self.inequality_constraints()
 
         # NLP problem for Q function approximation
+        x0 = self.get_var_at_stage("x", 0)
+        state = self.Pf[:self.obs_dim]
+        g.append(x0 - state)
         # Implement initial action constraint
         u0 = self.get_var_at_stage("u", 0)
-        action = self.Pf[self.obs_dim : self.obs_dim + self.action_dim]
+        action = self.Pf[self.obs_dim:(self.obs_dim + self.action_dim)]
         g.append(u0 - action)
 
         G = ca.vertcat(*g)
@@ -432,9 +441,7 @@ class MPCFormulation_ex(ParametricMPC):
         lbg = [0] * G.shape[0] + [-np.inf] * (Hu.shape[0] + Hx.shape[0] + Hs.shape[0])
         ubg = [0] * G.shape[0] + [0] * (Hu.shape[0] + Hx.shape[0] + Hs.shape[0])
         self.lbg_qcsd = ca.vertcat(*lbg)
-        self.ubg_qcsd = ca.vertcat(*ubg)
-
-        
+        self.ubg_qcsd = ca.vertcat(*ubg)        
         # define the Q-nlp problem and the corresponding solver
         """
         self.qsolver = ca.nlpsol(
@@ -457,15 +464,16 @@ class MPCFormulation_ex(ParametricMPC):
             "ipopt.max_iter": 100,
             "ipopt.print_level": 5,
             "print_time": 0,
+            #"ipopt.sb": True,
             "bound_consistency": True,
             "clip_inactive_lam": True,
             "ipopt.linear_solver": "ma57",
             "calc_lam_x": True,
-            "calc_lam_p": True,
+            "calc_lam_p": False,
             #"ipopt.mu_target": self.etau,
             #"ipopt.mu_init": self.etau,
-           # "ipopt.acceptable_tol": 1e-4,
-           # "ipopt.acceptable_obj_change_tol": 1e-4,
+            #"ipopt.acceptable_tol": 1e-8,
+            #"ipopt.acceptable_obj_change_tol": 1e-8,
         }
           
         qnlp_prob = {
@@ -585,6 +593,13 @@ class MPCfunapprox(MPCFormulation_ex):
         self.tr = self.learning_params["tr"]
         self._parse_agent_params(**agent_params)
     
+        self.dP_df = pd.DataFrame(columns=list(
+                                map(
+                                    lambda x: "theta" + str(x), 
+                                    range(self.P.shape[0])
+                                    )
+                                    )
+                                  )
         # Actor initilizaiton
         #super().__init__(self.model, self.opt_params, self.gamma)
 
@@ -674,6 +689,7 @@ class MPCfunapprox(MPCFormulation_ex):
         
     def prepare_forward(self,
                 data,
+                prev_sol=None,
                 x0=None,
                 lbx=None,
                 ubx=None,
@@ -687,15 +703,16 @@ class MPCfunapprox(MPCFormulation_ex):
         
         if self.model_params_in_policy:
             model_params = policy_params[-self.n_p:]
-            lbp = 1e-6*model_params
-            ubp = 1e6*model_params
-            #lbp = model_params
-            #ubp = model_params
+            #lbp = 1e-6*model_params
+            #ubp = 1e6*model_params
+            lbp = model_params
+            ubp = model_params
         else:
             lbp = model_params
             ubp = model_params
             
-
+        #if prev_sol is not None:
+        #    self.x0 = prev_sol["x"]
         self.separate_data(
                           data,
                           #lbp=model_params,
@@ -713,7 +730,6 @@ class MPCfunapprox(MPCFormulation_ex):
         persistently in self.separate_data
         """
         self.set_bounds(skip_u=True, slack=True)
-        
         
         """
         self.add_path_constraints(
@@ -738,7 +754,6 @@ class MPCfunapprox(MPCFormulation_ex):
         self.p_bounds = p_bounds = np.concatenate([lbx, ubx, lbu, ubu])
         # x0 again:
         x0 = (x0 - self.x_nom_b)/self.x_nom
-        
         # fixed parameters:
         self.pf_val = pf = np.concatenate([x0, np.array([0]), np.array([self.eps])])
         # policy parameters:
@@ -765,10 +780,23 @@ class MPCfunapprox(MPCFormulation_ex):
                           )
         #self.set_bounds(skip_u=True, slack=True)
         # need this for disturbances:
-        self.x0 = raw_sol["x"]
         self.set_bounds(skip_u=True, slack=True)
+        self.x0 = self.get_warm_sol_x_u(raw_sol["x"])
         
-        
+    def get_warm_sol_x_u(self, x0):
+        """
+        Warm-up nlp x0 on x, u.
+        """
+        x_info = self.nlp_parser["x"]
+        u_info = self.nlp_parser["u"]
+        x_start, x_stop = x_info["range"]["a"], x_info["range"]["b"]
+        u_start, u_stop = u_info["range"]["a"], u_info["range"]["b"]
+        # fetch prev solution:
+        x0_prev = self.x0_prev
+        # warm start:
+        x0[x_start:x_stop] = x0_prev[x_start:x_stop]
+        x0[u_start:u_stop] = x0_prev[u_start:u_stop]
+        return x0
         
     def act_forward(self, obs):
         """
@@ -791,14 +819,7 @@ class MPCfunapprox(MPCFormulation_ex):
         """
         x0 = self.x0
         try:
-            x0_prev = self.x0_prev
-            x_info = self.nlp_parser["x"]
-            x_start, x_stop = x_info["range"]["a"], x_info["range"]["b"]
-            u_info = self.nlp_parser["u"]
-            u_start, u_stop = u_info["range"]["a"], u_info["range"]["b"]
-            # warm start:
-            x0[x_start:x_stop] = x0_prev[x_start:x_stop]
-            x0[u_start:u_stop] = x0_prev[u_start:u_stop]
+            x0 = self.get_warm_sol_x_u(x0)
         except AttributeError:
             # first iteration
             pass
@@ -818,6 +839,12 @@ class MPCfunapprox(MPCFormulation_ex):
         # u0 as the MPC policy
         #opt_var = soln["x"].full()
         #act0 = opt_var[self.obs_dim : self.obs_dim + self.action_dim]
+        
+        # set action on p-fixed
+        # (correct value to buffer):
+        start = self.nlp_parser["u"]["range"]["a"]
+        stop = start + self.n_u
+        self.p_val[self.obs_dim:(self.obs_dim + self.action_dim)] = soln["x"][start:stop]
         
         sol_df, self.params = self.parse_solution(soln)
         
@@ -839,7 +866,7 @@ class MPCfunapprox(MPCFormulation_ex):
         }
         return act0, info, sol_df, soln
     
-    def V_value(self, state):
+    def V_value(self, state, p_val):
         """
             Evaluate the value function at the current state
         """
@@ -848,12 +875,14 @@ class MPCfunapprox(MPCFormulation_ex):
         
         state = (state - self.x_nom_b)/self.x_nom
         
+        """
         obs = state
         pf_val = self.pf_val
         pf_val[:self.obs_dim] = obs
-
         #p_val = self.p_val
         p_val = np.concatenate([pf_val, self.pp_val, self.p_bounds])
+        """
+        
         # run nlp solver
         soln = self.nlp_solver(
             x0=self.x0,
@@ -869,16 +898,18 @@ class MPCfunapprox(MPCFormulation_ex):
             print("OCP Solver Unsuccessful")
         
         v_mpc = soln["f"].full()[0,0]
+        # for debugging purposes, inspect solution frame:
+        sol_df, params = self.parse_solution(soln)        
         
         info = {
             "optimal": fl["success"],
             "soln": soln.copy(),
-            "pf": pf_val.copy(),
+            #"pf": pf_val.copy(),
             "p": p_val.copy(),
         }
-        return v_mpc, info
+        return v_mpc, info, sol_df, soln
 
-    def Q_value(self, state, action):
+    def Q_value(self, state, action, p_val, sol):
         """
             Evaluate the Q function at the current state and action
         """
@@ -891,7 +922,8 @@ class MPCfunapprox(MPCFormulation_ex):
         
         state = (state - self.x_nom_b)/self.x_nom
         action = (action - self.u_nom_b)/self.u_nom
-        
+         
+        """
         obs = state
         pf_val = self.pf_val
         #pf_val[: self.obs_dim, :] = obs[:, None]
@@ -899,6 +931,8 @@ class MPCfunapprox(MPCFormulation_ex):
         pf_val[self.obs_dim:(self.obs_dim + self.action_dim)] = action
         # re-init p_vals:
         p_val = np.concatenate([pf_val, self.pp_val, self.p_bounds])
+        
+        """
         
         """
         fixed intial guess for u0 already set
@@ -911,8 +945,18 @@ class MPCfunapprox(MPCFormulation_ex):
         """
         # set x0:
         x_info = self.nlp_parser.vars["x"]
-        start, stop = x_info["range"]["a"], x_info["range"]["b"]
+        start = x_info["range"]["a"]
+        stop = start + self.n_x
         self.x0[start:stop] = state
+        # set u0:
+        u_info = self.nlp_parser.vars["u"]
+        start = u_info["range"]["a"]
+        stop = start + self.n_u
+        self.x0[start:stop] = action
+        #self.lbx[start:stop] = action
+        #self.ubx[start:stop] = action
+
+        #x0 = self.get_warm_sol_x_u(sol["x"])
 
         # run Q nlp solver
         qsoln = self.qsolver(
@@ -934,14 +978,14 @@ class MPCfunapprox(MPCFormulation_ex):
         info = {
             "optimal": fl["success"],
             "soln": qsoln.copy(),
-            "pf": pf_val.copy(),
+            #"pf": pf_val.copy(),
             "p": p_val.copy(),
         }
         
         # for debugging purposes, inspect solution frame:
         sol_df, params = self.parse_solution(qsoln)
         
-        return q_mpc, info, sol_df
+        return q_mpc, info, sol_df, qsoln
     
     def dVdP(self, soln, pf_val, p_val, p_bounds, optimal=True):
         """
@@ -1065,8 +1109,9 @@ class MPCfunapprox(MPCFormulation_ex):
             """
             # simple update:
             dP = (self.lr*dJ).flatten().clip(-self.tr, self.tr)
+            self.dP_df.loc[len(self.dP_df), :] = dP
             # check if any steps create possibility of indefinite stage cost:
-                                       
+            self.lr = self.lr - 1e-4*self.lr                           
             """
             W, f, S, V0 = self.W, self.f, self.S, self.V0
             stage_cost_param_len = self.W.shape[0] + \

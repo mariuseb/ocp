@@ -1,0 +1,83 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti) + alpha_rad_i*(Trad - Ti)/(Rirad*Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) +  alpha_rad_e*(Trad - Te)/(Rerad*Crad)",
+            "Trad": "rad_flo*cp_water*(Tsup - Trad)/Crad + alpha_rad_i*(Ti - Trad)/(Rirad*Crad) + alpha_rad_e*(Te - Trad)/(Rerad*Crad)"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Rerad",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Ai",
+            "cp_water",
+            "cp_air",
+            "alpha_vent",
+            "alpha_rad_i",
+            "alpha_rad_e"
+        ],
+        "u": [
+            "Pvent",
+            "Prad",
+            "Tsup_air",
+            "ahu_pump_sup",
+            "rad_flo",
+            "ahu_reaFloSupAir",
+            "Tsup",
+            "rad_flo_on"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        }
+    },
+    "ocp": {
+        "h": [
+            "0 == alpha_rad_i + alpha_rad_e - 1"
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

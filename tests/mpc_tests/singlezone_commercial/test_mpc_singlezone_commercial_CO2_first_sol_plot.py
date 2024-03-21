@@ -28,26 +28,30 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("mpc_configs", "3R2C_MPC_CO2_ext.json")
+    #mpc_cfg = os.path.join("mpc_configs", "3R2C_MPC_CO2_ext.json")
+    mpc_cfg = os.path.join("mpc_configs", "7R5C_MPC_long.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join("ekf_configs", "3R2C_EKF.json")
+    ekf_cfg = os.path.join("ekf_configs", "7R5C_EKF.json")
     
-    #params_hvac = pd.read_csv("HVAC_model_latest.csv", index_col=0)
-    #params_env = pd.read_csv("envelope_model_latest.csv", index_col=0)
-    #params = np.concatenate([params_hvac.values, params_env.values]).flatten()
-    params = pd.read_csv("full_model_latest.csv", index_col=0)
+    params_hvac = pd.read_csv("HVAC_model_latest.csv", index_col=0)
+    params_env = pd.read_csv("envelope_model_latest.csv", index_col=0)
     params_CO2 = pd.read_csv("CO2_model.csv", index_col=0)
-    params = np.concatenate([params.values, params_CO2.values]).flatten()
+    params_CO2.rename(index={"c": "c1"}, inplace=True)
+    params = pd.concat([params_hvac, params_env, params_CO2])
+    params = params.drop_duplicates(keep="first")
+    params = params.values.flatten()
+    #params = params.to_dict()["0"]
+    #params = {k: {"init": v} for k, v in params.items()}
 
     kwargs = {
-        "x_nom": [12,12,12,12,1000],
-        "x_nom_b": [289.15,289.15,289.15,289.15,0],
-        "z_nom": [1E6,1E6,1,1,1,1,12,12,12,12,1,1,1,1E6,1E6,1,1,1],
-        "z_nom_b": [0,0,0,0,0,0,289.15,289.15,289.15,289.15,0,0,0,0,0,0,0,0],
-        "r_nom": [12,300,1E5,1E5,1E5,1E3],
+        "x_nom": [12,12,12,12,12,1000],
+        "x_nom_b": [289.15,289.15,289.15,289.15,289.15,0],
+        "z_nom": [1E6,1E6,1,1,1,1,12,12,12,1,1,1,1E6,1,1,1,1],
+        "z_nom_b": [0,0,0,0,0,0,289.15,289.15,289.15,0,0,0,0,0,0,0,0],
+        "r_nom": [12,300,1E6,1E6,1E6,1E3],
         "r_nom_b": [289.15,0,0,0,0,0],
-        "u_nom": [1,1,1,1,12],
-        "u_nom_b ": [0,0,0,0,289.15],
+        "u_nom": [1,1,1,1],
+        "u_nom_b ": [0,0,0,0],
         #"y_nom": [1E6,1E6,12,12,1,1,1,1,12,12,12,12],
         #"y_nom_b": [0,0,289.15,289.15,0,0,0,0,289.15,289.15,289.15,289.15],
         #"slack": True
@@ -64,7 +68,28 @@ if __name__ == "__main__":
                      functions=deepcopy(functions)
                      )
     # set params:
+    R = ca.DM.eye(15)
+    #R[0,0] =2 1E-9
+    R[0,0] = 1/1E-2
+    R[1,1] = 1/1E-2
+    R[2,2] = 1/1E-2
+    R[3,3] = 1/1E-9
+    R[4,4] = 1/1E-9
+    R[5,5] = 1/1E-2
+    R[6,6] = 1/1E-2
+    R[7,7] = 1
+    R[8,8] = 1
+    R[9,9] = 1
+    R[10,10] = 1
+    R[11,11] = 1/1E-2
+    R[12,12] = 1/1E-9
+    R[13,13] = 1
+    #R = np.linalg.inv(R)
+    #R = np.array(R)
+    Q = ca.DM.eye(mpc.n_x + mpc.n_z)*1E6
     ekf.set_params(params)
+    ekf.set_R(R)
+    ekf.set_Q(Q)
     
     boptest = Boptest(
                       boptest_cfg,
@@ -93,7 +118,7 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0 = np.array([293.15, 293.15, 293.15, 293.15, 420])
+    x0 = np.array([293.15,293.15,293.15,293.15,293.15,420])
     
     # sim horizon: 2 days
     days = 2
@@ -104,10 +129,10 @@ if __name__ == "__main__":
     for k in range(K):
         
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
-        lbx[3:-1:5] = 288.15
-        ubx[3:-1:5] = 313.15
-        lbx[4:-1:5] = 0
-        ubx[4:-1:5] = 800
+        lbx[4:-1:6] = 288.15
+        ubx[4:-1:6] = 313.15
+        lbx[5:-1:6] = 0
+        ubx[5:-1:6] = 800
         #Pvent = mpc.get("Pvent")
         #Prad = mpc.get("Prad")
         #Pfan = mpc.get("Pfan")
@@ -131,11 +156,11 @@ if __name__ == "__main__":
         ax = axes[0]
         sol.Prad.plot(ax=ax, color="r", drawstyle="steps-post", linewidth=0.75)
         sol.Pvent.plot(color="y", ax=ax, linewidth=0.75)
-        sol.Pvent_to_env.plot(color="b", ax=ax, linewidth=0.75)
+        #sol.Pvent_to_env.plot(color="b", ax=ax, linewidth=0.75)
         ax1 = ax.twinx()
         sol.Tsup_air.plot(ax=ax1, color="k", drawstyle="steps-post", linestyle="dashed", linewidth=0.75)
         sol.Ti.plot(ax=ax1, linewidth=0.75, color="g")
-        ax.legend(["P_radiator", "Pvent_from_coil", "Pvent_to_indoor_air"], loc="upper left")
+        ax.legend(["P_radiator", "Pvent_from_coil"], loc="upper left")
         ax1.legend(["T_sup_air", "T_i"], loc="upper right")
         ax1.set_ylabel("Temperature [K]")
         ax.set_ylabel("Power [W]")
@@ -159,7 +184,7 @@ if __name__ == "__main__":
         data, y_meas, u_meas = boptest.evolve(u=u,
                                               y_as_array=False,
                                               u_as_array=False)
-        
+        y_meas["tot_flo"] = y_meas["rad_flo"] + y_meas["coi_flo"]
         u_hist.loc[k*mpc.dt, "model"] = sol[ekf.dae.z].iloc[0].values[0]
         u_hist.loc[k*mpc.dt, "actual"] = y_meas["Prad"]
         #y_hist.loc[mpc.dt*k] = [y_meas[name] for name in ekf.y]   
@@ -172,6 +197,7 @@ if __name__ == "__main__":
         x0 = ekf.estimate(
                           x0, 
                           z=z_model,
+                          p=params,
                           y=y_z_meas, 
                           u=u_model, 
                           r=r_pred

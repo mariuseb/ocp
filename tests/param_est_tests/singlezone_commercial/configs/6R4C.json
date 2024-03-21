@@ -1,14 +1,14 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti) + (Trad - Ti)/(Rirad*Ci)",
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent1*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti) + (Trad - Ti)/(Rirad*Ci)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
-            "Trad": "rad_flo*cp_water*(Tsup - Trad)/Crad + (Ti - Trad)/(Rirad*Crad)",
-            "Tret": "(Trad - Tret)/(Rrr*Cret)*rad_flo_on + (Tsup - Tret_offset - Tret)/(Rsr*Cret)*(1-rad_flo_on)"
+            "Trad": "rad_flo*cp_water*(Tsup - Tret)/Crad + (Ti - Trad)/(Rirad*Crad)",
+            "Tsup_air": "ahu_reaFloSupAir*cp_air*(ahu_reaTHeaRec - Tsup_air)/(Csup_nom) + ahu_reaFloSupAir*alpha_vent2*cp_air*(Ti - Tsup_air)/(Csup_nom)  + (1/Csup_nom)*Pvent"
         },
         "w": {
             "v1": "Ti - y1",
-            "v2": "Tret - y2"
+            "v3": "Tsup_air - y3"
         },
         "p": [
             "Rie",
@@ -22,21 +22,24 @@
             "Ce",
             "Crad",
             "Cret",
+            "Csup_nom",
             "Ai",
             "cp_water",
             "cp_air",
-            "alpha_vent",
+            "alpha_vent1",
+            "alpha_vent2",
             "Tret_offset"
         ],
         "u": [
             "Pvent",
             "Prad",
-            "Tsup_air",
             "ahu_pump_sup",
             "rad_flo",
             "ahu_reaFloSupAir",
             "Tsup",
-            "rad_flo_on"
+            "rad_flo_on",
+            "ahu_reaTHeaRec", 
+            "Tret"
         ],
         "r": [
             "Ta",
@@ -49,11 +52,11 @@
             "Ti",
             "Te",
             "Trad",
-            "Tret"
+            "Tsup_air"
         ],
         "y": [
             ["y1", "Ti"],
-            ["y2", "Tret"]
+            ["y3", "Tsup_air"]
         ]
     },
     "bounds": {
@@ -62,7 +65,7 @@
             "ubx": [340,340,340,340]
         }
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "objective": "dot(v1, v1)@R[0,0] + dot(v3, v3)@R[1,1]",
     "method": "multiple_shooting",
     "integrator": 
         {

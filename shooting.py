@@ -958,7 +958,7 @@ class Collocation(Shooting):
                         Xc[j-1]*x_nom + x_nom_b, 
                         Uk*u_nom + u_nom_b,
                         P*p_nom + p_nom_b,
-                        Vk*v_nom,
+                        #Vk*v_nom,
                         #Wk*s_nom,
                         Rk*r_nom + r_nom_b)
                         #Wk*s_nom)
