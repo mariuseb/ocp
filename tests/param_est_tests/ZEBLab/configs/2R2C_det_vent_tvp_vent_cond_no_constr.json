@@ -38,12 +38,12 @@
             "Ta",
             "V_sup_air",
             "T_sup_air",
-            "vent_on",
-            "weeknd",
             "T_207",
             "T_121",
             "T_321",
-            "T_320"
+            "T_320",
+            "vent_on",
+            "weeknd"
         ],
         "z": [
             "Rie_TVP",

@@ -1,0 +1,78 @@
+{
+    "model": {
+        "ode": {
+            "Tsup": "((Tset_sup - Tsup)/(Rsup*Csup))*rise + ((Tset_sup - Tsup)/(Rsup_hold*Csup_hold))*(1-rise)",
+            "u_val": "(u_val_set - u_val)*(1/tau)"
+        },
+        "alg": {
+            "Tset_sup": "Tset_sup - (T_set_sup_b - T_set_sup_a*(Ta - Ta_dim))*m_flow_bool - Ti*(1 - m_flow_bool)",
+            "Prad": "Prad - m_flow*cp_water*(Tsup - Tret)"
+        },
+        "w": {
+            "v1": "Tsup - y1",
+            "v2": "m_flow - y2",
+            "v3": "Prad - y3"
+        },
+        "p": [
+            "Ta_dim",
+            "T_set_sup_b",
+            "T_set_sup_a",
+            "Ta_max",
+            "Rsup",
+            "Csup",
+            "Rsup_hold",
+            "Csup_hold",
+            "tau",
+            "m_flow_nom",
+            "cp_water"
+        ],
+        "u": [
+            "u_val_set",
+            "Ta",
+            "Ti",
+            "m_flow_bool",
+            "m_flow_weight",
+            "delta_m_flow",
+            "rise",
+            "m_flow",
+            "Tret"
+        ],
+        "z": [
+          "Tset_sup",
+          "Prad"
+        ],
+        "x": [
+          "Tsup",
+          "u_val"
+        ],
+        "y": [
+            ["y1", "Tsup"],
+            ["y2", "m_flow"],
+            ["y3", "Prad"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [280,-1000],
+            "ubz": [400,3000]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

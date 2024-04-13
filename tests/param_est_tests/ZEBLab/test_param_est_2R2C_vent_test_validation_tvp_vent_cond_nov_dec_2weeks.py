@@ -109,8 +109,28 @@ if __name__ == "__main__":
                     1E-1,
                     1E-1])
     
-    lbp = 0.001*param_guess
-    ubp = 1000*param_guess
+    param_guess = np.array([
+                        0.0034386028710360578,
+                        -0.0007839966071162144,
+                        0.05470369872270893,
+                        -0.03787554503264528,
+                        10976347.421861785,
+                        2524850.3819319685,
+                        23152204.231900185,
+                        -23052204.183144476,
+                        3.7348667225948384,
+                        0.009999905100061376,
+                        10.541674646868394,
+                        0.0886791484315843,
+                        999.791946700401,
+                        999.8799757697058,
+                        99.99698524894364,
+                        0.016777024488645723,
+                        99.99926170953142
+                        ])
+    
+    lbp = 1*param_guess
+    ubp = 1*param_guess
     #lbp[1] = -1
     #ubp[1] = 1
     # constrain Rih to force Ch down:
@@ -267,9 +287,9 @@ if __name__ == "__main__":
         
         #z = sol[I.dae.z].iloc[n].values
         # separate root-finding problem for values of z:
-        z = G(z_guess, x0, u, p, v, 0, 0, 0)
+        z = G(z_guess, x0, u, p, v)
         zs = np.append(zs, np.array(z))
-        x0 = I.one_sample(x0,z,u,p,0,r,0)
+        x0 = I.one_sample(x0,z,u,p,r)
         z_guess = z
         
     res = pd.DataFrame(data=xs.reshape(N, 2), columns=["Ti", "Te"])

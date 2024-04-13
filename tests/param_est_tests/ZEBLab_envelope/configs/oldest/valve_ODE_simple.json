@@ -1,0 +1,48 @@
+{
+    "model": {
+        "ode": {
+            "u_val": "(u_val_set - u_val)*(1/tau)"
+        },
+        "alg": {
+            "m_flow": "m_flow - m_flow_nom*u_val"
+        },
+        "w": {
+            "v1": "m_flow - y1"
+        },
+        "p": [
+            "tau",
+            "m_flow_nom"
+        ],
+        "u": [
+            "u_val_set",
+            "m_flow_bool"
+        ],
+        "z": [
+          "m_flow"
+        ],
+        "x": [
+          "u_val"
+        ],
+        "y": [
+            ["y1", "m_flow"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma86",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

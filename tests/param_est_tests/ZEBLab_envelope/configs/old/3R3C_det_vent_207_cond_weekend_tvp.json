@@ -1,0 +1,93 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie_TVP*Ci_TVP) + (Th - Ti)/(Rih*Ci_TVP) + Ai*(phi_s/Ci_TVP) + (1/Ci_TVP)*alpha_vent*V_sup_air*(T_sup_air - Ti) + (Ta - Ti)/(Ria*Ci_TVP) +  vent_on*(T_207 - Ti)/(Rig*Ci)",
+            "Te": "(Ti - Te)/(Rie_TVP*Ce_TVP) + (Ta - Te)/(Rea_TVP*Ce_TVP) + Ae*(phi_s/Ce)",
+            "Th": "(Ti - Th)/(Rih*Ch) + (1/Ch)*phi_h"
+        },
+        "alg": {
+            "Ce_TVP": "Ce + Ce_a*ca.if_else(weeknd > 0, 1, 0) - Ce_TVP",
+            "Ci_TVP": "Ci + Ci_a*ca.if_else(weeknd > 0, 1, 0) - Ci_TVP",
+            "Rie_TVP": "Rie + Rie_a*ca.if_else(weeknd > 0, 1, 0) - Rie_TVP",
+            "Rea_TVP": "Rea + Rea_a*ca.if_else(weeknd > 0, 1, 0) - Rea_TVP"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rie_a",
+            "Rea",
+            "Rea_a",
+            "Rih",
+            "Ria",
+            "Rig",
+            "Ci",
+            "Ci_a",
+            "Ce",
+            "Ce_a",
+            "Ch",
+            "Ai",
+            "Ae",
+            "alpha_vent"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s",
+            "Ta",
+            "V_sup_air",
+            "T_sup_air",
+            "vent_on",
+            "weeknd",
+            "T_207",
+            "T_211",
+            "T_213",
+            "T_217"
+        ],
+        "z": [
+            "Ce_TVP",
+            "Ci_TVP",
+            "Rie_TVP",
+            "Rea_TVP"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 <= Ce - Ci",
+            "0 <= Ce - Ch"
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [1E6,1E6,1E-5,1E-5],
+            "ubz": [1E10,1E9,1000,1000]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

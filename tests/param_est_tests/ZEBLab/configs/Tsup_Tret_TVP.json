@@ -1,0 +1,90 @@
+{
+    "model": {
+        "ode": {
+            "Tsup": "((Tset_sup - Tsup)/(Rsup*Csup) + (Th - Tsup)/(Rsh*Csup))*m_flow_bool + ((Tset_sup - Tsup)/(Rsup_hold*Csup_hold) + (Th - Tsup)/(Rsh*Csup_hold))*(1-m_flow_bool)",
+            "Tret": "(Th - Tret)/(Rrh*Cret) + (Ti + deltaT_ret - Tret)/(Rret*Cret)",
+            "Th": "Prad/Ch + ((Ti - deltaT_h) - Th)/(Rih*Ch)"
+        },
+        "alg": {
+            "Tset_sup": "Tset_sup - (T_set_sup_b - T_set_sup_a*(Ta - Ta_dim))*m_flow_bool - (Ti - deltaT_sup)*(1 - m_flow_bool)"
+        },
+        "w": {
+            "v2": "Tret - y2",
+            "v3": "Tsup - y3"
+        },
+        "p": [
+            "Ta_dim",
+            "T_set_sup_b",
+            "T_set_sup_a",
+            "Rsup",
+            "Csup",
+            "Rih",
+            "Rrh",
+            "Rsh",
+            "Rir",
+            "Ch",
+            "Rsup_hold",
+            "Csup_hold",
+            "Rret",
+            "Cret",
+            "deltaT_h",
+            "deltaT_sup",
+            "deltaT_ret",
+            "tau",
+            "m_flow_nom",
+            "cp_water"
+        ],
+        "u": [
+            "Ta",
+            "Ti",
+            "m_flow_bool",
+            "flow_weight",
+            "delta_m_flow",
+            "u_val_set",
+            "Prad"
+            
+        ],
+        "z": [
+            "Tset_sup"
+        ],
+        "x": [
+          "Tsup",
+          "Tret",
+          "Th"
+        ],
+        "y": [
+            ["y2", "Tret"],
+            ["y3", "Tsup"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [280],
+            "ubz": [340]
+        },
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        }
+    },
+    "objective": "dot(v2*flow_weight, v2*flow_weight)@R[0,0] + dot(v3, v3)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_iter": 30000,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

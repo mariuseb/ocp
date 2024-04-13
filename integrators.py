@@ -625,8 +625,11 @@ class IRK(Integrator):
         #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
         #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
         #ifcn = ca.rootfinder('g_rootfinder', 'fast_newton', self.g)
-        ifcn = ca.rootfinder('g_rf', 'newton', self.g)
-        self.G = ifcn
+        try:
+            ifcn = ca.rootfinder('g_rf', 'newton', self.g)
+            self.G = ifcn
+        except:
+            self.G = self.g
         
         
     def set_ode_func(self):

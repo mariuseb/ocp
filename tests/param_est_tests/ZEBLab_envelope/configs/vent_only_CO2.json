@@ -1,0 +1,67 @@
+{
+    "model": {
+        "ode": {
+            "CO2_in": "n_air*c*(CO2_out - CO2_in) + c_occ*n_occ"
+        },
+        "alg": {
+            "n_air": "n_air - (n_mech + n_nat + n_inf)",
+            "n_mech": "n_mech - ahu_reaFloExtAir",
+            "n_nat": "n_nat - (ahu_reaFloSupAir - ahu_reaFloExtAir)",
+            "n_occ": "n_occ - n_occ"
+        },
+        "w": {
+            "v1": "CO2_in - y6",
+            "v2": "n_occ - y7"
+        },
+        "p": [
+            "c",
+            "CO2_out",
+            "n_inf",
+            "c_occ"
+        ],
+        "u": [
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir"
+        ],
+        "r": [
+            "occ_weight"
+        ],
+        "x": [
+            "CO2_in"
+        ],
+        "z": [
+            "n_air",
+            "n_mech",
+            "n_nat",
+            "n_occ"
+        ],
+        "y": [
+            ["y6", "CO2_in"],
+            ["y7", "n_occ"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [0,0,0,0],
+            "ubz": [10,10,10,10]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(occ_weight*v2, occ_weight*v2)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}
