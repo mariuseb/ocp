@@ -483,12 +483,17 @@ def save_journal_plot(data, name):
     """
     Make a nicely formatted plot of
     simulation result, boundary conditions.
+    
+    TODO: handling unit C or K
+    
     """
     fig, axes = plt.subplots(3,1, sharex=True, figsize=(14,10 ))
     # plot training fit:
     ax = axes[0]
-    (data["Ti"]- 273.15).plot(color="r", linestyle="dashed", ax=ax, linewidth=0.75)
-    (data["y1"] - 273.15).plot(color="k", ax=ax, linewidth=0.75)
+    #(data["Ti"]- 273.15).plot(color="r", linestyle="dashed", ax=ax, linewidth=0.75)
+    #(data["y1"] - 273.15).plot(color="k", ax=ax, linewidth=0.75)
+    (data["Ti"]).plot(color="r", linestyle="dashed", ax=ax, linewidth=0.75)
+    (data["y1"]).plot(color="k", ax=ax, linewidth=0.75)
     ax.set_ylabel("Temperature $[^\circ C]$")
     ax.legend(["$T_i$", "$T_{i}^{meas}$"], loc="upper left", ncols=2)
     ylim = ax.get_ylim()
@@ -513,9 +518,12 @@ def save_journal_plot(data, name):
     ax.set_ylabel("Power $[kW]$")
     ax1 = ax.twinx()
     ax = ax1
-    (data["T_sup_air"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
-    (data["T_321"] - 273.15).plot(color="b", ax=ax, linewidth=0.75)
-    (data["T_320"] - 273.15).plot(color="y", ax=ax, linewidth=0.75)
+    #(data["T_sup_air"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+    #(data["T_321"] - 273.15).plot(color="b", ax=ax, linewidth=0.75)
+    #(data["T_320"] - 273.15).plot(color="y", ax=ax, linewidth=0.75)
+    (data["T_sup_air"]).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+    (data["T_321"]).plot(color="b", ax=ax, linewidth=0.75)
+    (data["T_320"]).plot(color="y", ax=ax, linewidth=0.75)
     ax.legend(["$T_{sup}^{v}$", "$T_{321}$", "$T_{320}$"], loc="upper right", ncols=3)
     ax.set_xlabel("")
     ylim = ax.get_ylim()
@@ -534,7 +542,8 @@ def save_journal_plot(data, name):
     ax.set_xlabel("")
     ax1 = ax.twinx()
     ax = ax1
-    (data["Ta"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+    #(data["Ta"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+    (data["Ta"]).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
     #data["T_321"].plot(color="b", ax=ax, linewidth=0.75)
     #sol["T_320"].plot(color="y", ax=ax, linewidth=0.75)
     ax.legend(["$T_{a}$"], loc="upper right", ncols=1)

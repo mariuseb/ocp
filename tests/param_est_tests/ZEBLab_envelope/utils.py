@@ -210,9 +210,9 @@ def prepare_data(data):
     except:
         pass
     
-    for col in y_data.columns:
-        if col.startswith("T"):
-            y_data[col] += 273.15
+    #for col in y_data.columns:
+    #    if col.startswith("T"):
+    #        y_data[col] += 273.15
     
     # set measurements:
     y_data["y1"] = y_data["Ti"]

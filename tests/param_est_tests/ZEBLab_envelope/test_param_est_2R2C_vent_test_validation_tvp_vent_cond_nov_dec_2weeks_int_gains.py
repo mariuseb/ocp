@@ -37,7 +37,7 @@ if __name__ == "__main__":
     Use room 219 first.
     """
 
-    cfg_path = os.path.join("configs", "2R2C_det_vent_tvp_vent_cond.json")
+    cfg_path = os.path.join("configs", "2R2C_det_vent_tvp_vent_cond_int_gains.json")
     #cfg_path = os.path.join("configs", "2R2C_det_vent_tvp_vent_cond_no_constr.json")
     #data_path = os.path.join("ZEBLab_2years_60m.csv")
     data_path = os.path.join("ZEBLab_nov23_1m.csv")
@@ -100,7 +100,8 @@ if __name__ == "__main__":
                     1E-0,
                     1E-1,
                     1E-1,
-                    1E-1])
+                    1E-1,
+                    0.5])
     
     lbp = 1e-3*param_guess
     ubp = 1e3*param_guess
@@ -125,7 +126,8 @@ if __name__ == "__main__":
     lbp[7] = -1E8
     ubp[7] = 1E8
     
-    len_p = param_guess.shape[0]
+    # alpha_int:
+    ubp[-1] = 1
     
     # constrain in particular Th to physically meaningful values:
     x_guess = np.array([
@@ -174,10 +176,10 @@ if __name__ == "__main__":
         sol["y1"].plot(color="k", ax=ax)
         ax.legend(["model", "measured"])
         plt.show()
-        params.to_csv("results/params_envelope_tvp_2R2C_vent.csv", index=True)
+        params.to_csv("results/params_envelope_tvp_2R2C_vent_int_gains.csv", index=True)
         print(params)
     # dump for plots:
-    sol.to_csv("results/tvp_in_training_traj_2R2C_vent.csv", index=True)
+    sol.to_csv("results/tvp_in_training_traj_2R2C_vent_int_gains.csv", index=True)
     
     """
     For time-varying EKF:
@@ -194,7 +196,8 @@ if __name__ == "__main__":
                         "R_320_e",
                         "R_121_i",
                         "R_321_i",
-                        "R_320_i"
+                        "R_320_i",
+                        "alpha_int"
                         ]]
     
     p_mod = params.loc[["Rie_a",
@@ -209,10 +212,11 @@ if __name__ == "__main__":
                         "R_320_e",
                         "R_121_i",
                         "R_321_i",
-                        "R_320_i"
+                        "R_320_i",
+                        "alpha_int"
                         ]]
     # set last three to zero:
     p_mod[4:] = 0
-    p_base.to_csv("results/tvp_params_base_2R2C_vent.csv", index=True)
-    p_mod.to_csv("results/tvp_params_mod_2R2C_vent.csv", index=True)
+    p_base.to_csv("results/tvp_params_base_2R2C_vent_int_gains.csv", index=True)
+    p_mod.to_csv("results/tvp_params_mod_2R2C_vent_int_gains.csv", index=True)
     print(params)
