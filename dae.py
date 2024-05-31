@@ -58,7 +58,8 @@ class DAE(object):
 
         self.__setattr__("p", self.config["p"])
     
-    """
+    
+    """      
     def add_process_noise(self): # s
 
         try:
@@ -73,9 +74,8 @@ class DAE(object):
         except KeyError:
             self.__setattr__("s_names", [])
             
-        
     def add_meas_noise(self):
-
+    
         try:
             for name in self.config["v"]:
                 # can't add to dae:
@@ -91,8 +91,8 @@ class DAE(object):
             #self.z.extend(self.v_names)
         except KeyError:
             self.__setattr__("v_names", [])
-    """   
-         
+    """
+     
     def add_refs(self):
         """
         Add:

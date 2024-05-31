@@ -293,7 +293,7 @@ class MultipleShooting(Shooting):
                                 x=x*self.x_nom + self.x_nom_b,
                                 z=z*self.z_nom + self.z_nom_b,
                                 u=u*self.u_nom + self.u_nom_b,
-                                p=self.p_nom*ca.repmat(p, 1, self.N),
+                                p=self.p_nom*ca.repmat(p, 1, self.N) + self.p_nom_b,
                                 v=v*self.v_nom + self.v_nom_b,
                                 r=r*self.r_nom + self.r_nom_b,
                                 )["h"]
@@ -347,7 +347,7 @@ class MultipleShooting(Shooting):
                                 x=x*self.x_nom + self.x_nom_b,
                                 z=z*self.z_nom + self.z_nom_b,
                                 u=u*self.u_nom + self.u_nom_b,
-                                p=self.p_nom*ca.repmat(p, 1, self.N),
+                                p=self.p_nom*ca.repmat(p, 1, self.N) + self.p_nom_b,
                                 r=r*self.r_nom + self.r_nom_b
                                 #x=x[:,:-1]*self.x_nom,
                                 #z=z[:,:-1]*self.z_nom,
@@ -387,6 +387,7 @@ class MultipleShooting(Shooting):
         nlp_parser.set_x_orig(x)  
         nlp_parser.set_p_orig(p)  
         nlp_parser.vars["x"]["shooting_gaps"] = x_gaps.T
+        nlp_parser.vars["z"]["alg_gaps"] = g_gaps[:,:-1].T # cut last (time-step N)
         
         """
         Gaps without noise, scaling for covariance estimation:

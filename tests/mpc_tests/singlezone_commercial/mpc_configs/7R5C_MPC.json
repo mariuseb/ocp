@@ -135,7 +135,7 @@
             "-0.05 <= ahu_pump_sup - ahu_pump_ret <= 0.05"
         ]
     },
-    "N": 6,
+    "N": 24,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 

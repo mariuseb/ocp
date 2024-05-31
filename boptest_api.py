@@ -19,6 +19,7 @@ import json
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
 from functools import reduce
+from ocp.ocp import NumpyEncoder
     
 
 class Forecaster(object):

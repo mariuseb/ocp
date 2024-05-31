@@ -220,7 +220,7 @@ class OCP(metaclass=ABCMeta):
                  for k, v in zip(p_order, param_guess)
                  }    
         self.param_guess = ParamGuess(param_guess, p_order)
-        p0 = self.param_guess.get_param_guess()
+        self.p0 = p0 = self.param_guess.get_param_guess()
         
         """
         if isinstance(param_guess, ParamGuess):
@@ -1022,9 +1022,10 @@ class OCP(metaclass=ABCMeta):
         n_ocp_var = getattr(self, "n_" + name)
         #if isinstance(self.strategy, Collocation) and name == "x":
         if self.method == "collocation" and name == "x":
-            n_skip = self.strategy.d + 1
+            # TODO: finite elems * polynomial degree
+            n_skip = (self.strategy.d + 1)*n_ocp_var
         else:
-            n_skip = 1
+            n_skip = n_ocp_var
         start = n_skip*stage
         return var[start:(start+n_ocp_var)]
          
@@ -1409,6 +1410,9 @@ class OCP(metaclass=ABCMeta):
                         if varname == "x":
                             print("yes")
                         
+                        if varname == "r":
+                            print("yes")
+                        
                         scale = getattr(self, varname + "_nom")
                         bias = getattr(self, varname + "_nom_b")
                         
@@ -1690,14 +1694,14 @@ class OCP(metaclass=ABCMeta):
                         #if not isinstance(bias, (float, int)):
                         #bias = self.x_nom_b.reshape((self.N, getattr(self, attr_name)))
                         """
-                        TODO: fix
+                        TODO: fix, more efficient.
                         """
                         #bias = np.array(bias)
                         #bias = bias.reshape((self.N, getattr(self, attr_name)))
                         #_vals = np.array(sol_x[start:stop]).reshape((self.N, getattr(self, attr_name)))*scale + \
                         #    bias
                         try:
-                            len_scale = len(len_scale)
+                            len_scale = len(scale)
                             if not len(scale) == sol_x[start:stop].shape[0]:
                                 scale = scale*int(sol_x[start:stop].shape[0]/self.n_x)
                                 bias = bias*int(sol_x[start:stop].shape[0]/self.n_x)

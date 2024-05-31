@@ -669,6 +669,7 @@ class KalmanDAE(Filter):
         self.df = pd.DataFrame(columns=self.dae.x)
         # for state covariance:
         self.P = {0: P_prev}
+        self.P_aprioris = dict()
         
 
     def init_identity(self):
@@ -686,6 +687,14 @@ class KalmanDAE(Filter):
         
     def init_f(self):
         self.f = self.integrator.f 
+        
+    @property
+    def n_y(self):
+        return self.integrator.ny
+    
+    @property
+    def n_x(self):
+        return self.integrator.nx
     
     def init_h(self):
         """
@@ -839,8 +848,6 @@ class KalmanDAE(Filter):
         at each step.
         
         NOTE: x_pred from mpc.
-         '''
-         
         ##### pad 'y' with zeros #####
         y_pad = np.array([])
         i = 0
@@ -852,6 +859,8 @@ class KalmanDAE(Filter):
                 i += 1
             #else: # non-measured
             #    y_pad = np.append(y_pad, 0)
+         '''
+         
          
         #A11 = self.jac_f_x(x_pred,z,u,self.p,s,v,y,r,w)
         A11 = self.jac_f_x(x_pred,z,u,p,r,y,0,v)
@@ -899,16 +908,21 @@ class KalmanDAE(Filter):
         P_apriori = A*P_prev*A.T + Q
         """
         P_apriori = Ad@P_prev@Ad.T + self.Q
+        self.P_aprioris[self.k-1] = P_apriori
 
         #K = ca.mtimes(ca.mtimes(P_apriori, ca.transpose(C)), ca.inv(ca.mtimes([C, P_apriori, ca.transpose(C)]) + self.R))
         V_k = C@P_apriori@(C.T) + self.R
         K = P_apriori@(C.T)@np.linalg.inv(V_k)
         #x_post = x_pred + ca.mtimes(K, (y - h_x))  
         x_pred = np.append(x_pred, z)
-        x_post = x_pred + K@(y_pad - h_x)
+        #x_post = x_pred + K@(y_pad - h_x)
+        x_post = x_pred + K@(y - h_x)
         x_post = np.array(x_post).reshape(-1)
         # store estimation result. TODO: check ordering of states.
-        self.df.loc[self.k*self.dt, self.dae.x + self.dae.z] = x_post
+        z_post = x_post[nx:]
+        x_post = x_post[:nx]
+        self.df.loc[(self.k+1)*self.dt, self.dae.x] = x_post
+        self.df.loc[self.k*self.dt, self.dae.z] = z_post
         self.P_prev = ca.mtimes((self.I - ca.mtimes(K, C)), P_apriori)
         self.k += 1
         # keep P a posteriori:

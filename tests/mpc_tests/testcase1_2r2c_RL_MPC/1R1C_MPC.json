@@ -1,0 +1,49 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Ta - Ti)/(R*C) + phi_h/C"
+        },
+        "p": [
+            "R",
+            "C"
+        ],
+        "u": [
+            "phi_h"
+        ],
+        "r": [
+            "Ta"
+        ],
+        "x": [
+            "Ti"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [-10000],
+            "ubu": [10000]
+        }
+    },
+    "objective": "dot(phi_h, phi_h)",
+    "N": 24,
+    "dt": 900,
+    "method": "collocation",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "no",
+        "ipopt.max_cpu_time": 1,
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false,
+    "map_eval": true
+}

@@ -134,7 +134,7 @@
     {
       "misc": {
         "h": 900,
-        "N": 97,
+        "N": 24,
         "start_time": 0,
         "warmup_period": 604800
       },
@@ -254,9 +254,9 @@
     "singlezone_commercial":
     {
       "misc": {
-        "h": 900,
+        "h": 60,
         "N": 97,
-        "start_time": 0,
+        "start_time": 172800,
         "warmup_period": 604800
       },
       "maps" : {
@@ -280,6 +280,7 @@
         "y": {"Ti": "reaTZon_y",
               "Pvent": "reaQHea_y",
               "Prad": "reaPRad_y",
+              "Qrad": "reaQhRad_y",
               "Pfan": "reaPFan_y",
               "reaPPum_y": "reaPPum_y",
               "ahu_reaTCoiSup": "ahu_reaTCoiSup_y",
@@ -293,6 +294,8 @@
               "ahu_reaFloExtAir": "ahu_reaFloExtAir_y", 
               "Tret": "reaTRadOut_y",
               "Tsup": "reaTRadIn_y",
+              "Trad": "reaTrad_y",
+              "Prad_to_env": "reaPradtoEnv_y",
               "rad_flo": "reaValFlo_y",
               "coi_flo": "reaCoiFlo_y"
             },
@@ -319,7 +322,10 @@
                           "n_occ": "reaOcc_y",
                           "Pvent": "reaQHea_y",
                           "Prad": "reaPRad_y",
+                          "Qrad": "reaQhRad_y",
                           "Tret": "reaTRadOut_y",
+                          "Trad": "reaTrad_y",
+                          "Prad_to_env": "reaPradtoEnv_y",
                           "Tsup": "reaTRadIn_y",
                           "rad_flo": "reaValFlo_y",
                           "coi_flo": "reaCoiFlo_y"

@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF, KalmanBucy
+from ocp.filters import EKF, KalmanDAE
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
@@ -28,136 +28,38 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("mpc_configs", "4R2C_MPC_inf_pump.json")
+    mpc_cfg = os.path.join("mpc_configs", "3R2C_MPC.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join("ekf_configs", "4R2C_EKF_inf_pump.json")
+    ekf_cfg = os.path.join("ekf_configs", "3R2C_EKF.json")
+    
+    #params_hvac = pd.read_csv("HVAC_model_latest.csv", index_col=0)
+    #params_env = pd.read_csv("envelope_model_latest.csv", index_col=0)
+    #params = np.concatenate([params_hvac.values, params_env.values]).flatten()
+    params = pd.read_csv("full_model_latest.csv", index_col=0)
+    params = params.values.flatten()
 
-    # pass in config?
-    """
-    Rie       4.537097e-05
-    Rea       1.350598e-03
-    Ria       3.155923e-04
-    Ci        6.664602e+07
-    Ce        3.017397e+09
-    Ai        2.025661e+02
-    n         1.439245e+00
-    UA_nom    1.395614e+03
-    eta       8.635318e-01
-    delta     5.000000e-02
-    
-    Rie        4.448056e-05
-    Rea        3.808951e-04
-    Ria        6.425573e-04
-    Tsup       3.400000e+02
-    rho_int    3.807622e-01
-    Ci         8.097878e+07
-    Ce         2.895566e+09
-    Ai         1.733774e+02
-    n          1.430411e+00
-    UA_nom     1.742356e+03
-    eta        8.686290e-01
-    
-    params = ca.DM(
-                   [
-                4.079293e-05,
-                2.628968e-04,
-                1.370427e-03,
-                3.400000e+02,
-                3.569021e-01,
-                7.902190e+07,
-                3.266704e+09,
-                1.821768e+02,
-                1.068268e+00,
-                6.288996e+03,
-                8.703736e-01
-                    ]
-                   )
-    """
-    params = ca.DM(
-                   [
-                    3.913113e-05,
-                    1.868912e-04,
-                    6.666102e+07,
-                    3.095777e+09,
-                    2.125277e+02,
-                    1.443879e+00,
-                    1.384494e+03,
-                    8.705821e-01
-                    ]
-                   )
-    
-    params = ca.DM(
-                   [
-                    3.567234e-05,
-                    2.415617e-04,
-                    1.000000e-03,
-                    4.103551e-01,
-                    9.087888e+07,
-                    3.700653e+09,
-                    2.085650e+02,
-                    3.410576e+02,
-                    1.092991e+00,
-                    6.400912e+03,
-                    1.000000e+00
-                    ]
-                   )
-    
-    
     kwargs = {
-        "x_nom": 300,
-        "z_nom": 5000,
-        "u_nom": 300,
-        "r_nom": 300,
-        "p_nom": [1E-3,1E-3,1E6,1E7,1,1,10,1,300],
-        "y_nom": 300,
-        #"slack": Trues
-        "slack": False
-    }
-    kwargs = {
-        "x_nom": 1,
-        "u_nom": 1,
-        "z_nom": [300000],
-        "z_nom_b": [0],
-        "r_nom": 1,
-        "y_nom": 1,
-        #"slack": Trues
-        "slack": True
-    }
-    kwargs = {
-        "x_nom": 1,
-        "u_nom": 1,
-        "z_nom": 1,
-        "r_nom": 1,
-        "y_nom": 1,
-        "p_nom": [1E-5,1E-4,1E-5,1E8,1E9,1E2,1,1E3,1,1],
-        #"slack": Trues
-        "slack": True
-    }
-    kwargs = {
-        "x_nom": 1,
-        "u_nom": 1,
-        "z_nom": 1,
-        "r_nom": 1,
-        "slack": False
-    }
-    kwargs = {
-        "x_nom": 300,
-        "u_nom": [1],
-        "z_nom": [1E6],
-        "r_nom": [300,300,1E6,1E6,1E6],
-        #"p_nom": [1E-5,1E-4,1E-5,1E8,1E9,1E2,1,1E3,1,1],
-        #"p_nom_b": [0,0,0,0,0,0,0,0,289.15],
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "z_nom": [1E6,1E6,1,1,1,1,12,12,12,12,1,1,1E6,1E6],
+        "z_nom_b": [0,0,0,0,0,0,289.15,289.15,289.15,289.15,0,0,0,0],
+        "r_nom": [12,300,1E5,1E5,1E5],
+        "r_nom_b": [289.15,0,0,0,0],
+        "u_nom": [1,1,1,1,12],
+        "u_nom_b ": [0,0,0,0,289.15],
+        #"y_nom": [1E6,1E6,12,12,1,1,1,1,12,12,12,12],
+        #"y_nom_b": [0,0,289.15,289.15,0,0,0,0,289.15,289.15,289.15,289.15],
         #"slack": True
         "slack": False
     }
-    
+    #kwargs = dict()
+
     mpc = MPC(config=mpc_cfg,
               functions=deepcopy(functions),
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
     
-    
-    ekf = KalmanBucy(ekf_cfg,
+    ekf = KalmanDAE(ekf_cfg,
                      functions=deepcopy(functions)
                      )
     # set params:
@@ -188,7 +90,7 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0 = np.array([293.15, 293.15])
+    x0 = np.array([293.15, 293.15, 293.15, 293.15])
     
     # sim horizon: 2 days
     days = 2
@@ -199,7 +101,8 @@ if __name__ == "__main__":
     for k in range(K):
         
         lbx, ubx, ref = bounds.get_bounds(k, mpc.N)
-        
+        lbx[3:-1:4] = 288.15
+        ubx[3:-1:4] = 313.15
         sol, u, x0  = mpc.solve(
                                data[0:mpc.N],
                                x0=x0,
@@ -214,13 +117,6 @@ if __name__ == "__main__":
         """
         if k == 16:
             print(sol)
-        
-        # turn off ventilation:
-        u["ahu_pump_sup"] = 0.03
-        u["ahu_pump_ret"] = 0.03
-        #u["ahu_Tsup"] = 288.15
-        u["rad_val"] = 1
-        #u["dh_pump"] = 1
         
         if mpc.solver.stats()["return_status"] != "Solve_Succeeded":
             print(sol)

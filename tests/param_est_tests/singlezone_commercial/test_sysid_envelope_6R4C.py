@@ -328,6 +328,10 @@ if __name__ == "__main__":
         ax = sol["y3"].plot(color="k", linewidth=0.75)
         sol["Tsup_air"].plot(ax=ax, color="r", linestyle="dashed", linewidth=0.75)
         plt.show()
+  
+        ax = sol["y2"].plot(color="k", linewidth=0.75)
+        sol["Tret"].plot(ax=ax, color="r", linestyle="dashed", linewidth=0.75)
+        plt.show()
         
         print(params)
         

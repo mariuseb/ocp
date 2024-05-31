@@ -1,0 +1,89 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*m_flow_air_nom*ahu_pump_sup*cp_air*(oveTSupSet - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "ahu_reaTRetAir": "(ahu_reaTRetAir - Ti)",
+            "Pvent": "Pvent*eta_hex1 - (m_flow_air_nom*ahu_pump_sup*cp_air*(oveTSupSet-ahu_reaTHeaRec))",
+            "ahu_reaTHeaRec": "(Ta + (ahu_reaTRetAir - Ta)*eta_hex2 - ahu_reaTHeaRec)",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*ahu_pump_sup"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai",
+            "m_flow_air_nom",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2"
+        ],
+        "z": [
+            "ahu_reaTRetAir",
+            "Pvent",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "u": [
+             "ahu_pump_ret",
+             "ahu_pump_sup",
+             "oveTSupSet"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0,0,288.15],
+            "ubu": [1,1,313.15]
+        },
+        "z": {
+            "lbz": [285.15,0,273.15,0],
+            "ubz": [310,1E7,338.15,40]
+        }
+    },
+    "objective": "dot(Pvent, Pvent)",
+    "ocp": {
+        "h": [
+            "0 <= ahu_reaTRetAir - Ti",
+            "-0.01 <= ahu_pump_sup - ahu_pump_ret <= 0.01"
+        ]
+    },
+    "N": 12,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.constr_viol_tol": 1E-4,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

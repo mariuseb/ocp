@@ -1,0 +1,128 @@
+{
+    "model": {
+        "ode": {
+            "Trad": "rad_flo*cp_water*(dh_Tsup - Trad)/Crad + (Ti - Trad)/(Rirad*Crad)",
+            "Tret": "(rad_val*(Trad - Tret))/(Rrr*Cret) + ((1-rad_val)*(Ti + Tret_offset - Tret))/(Riret*Cret)"
+        },
+        "alg": {
+            "Prad": "Prad - rad_flo*cp_water*eta_hex_rad*(dh_Tsup - Tret)",
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)"
+        },
+        "w": {
+            "v1": "Tret - y2",
+            "v3": "y4 - Prad",
+            "v4": "y9 - rad_flo"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Rrr",
+            "Rsr",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Cret",
+            "Csup_nom",
+            "Riret",
+            "Ai",
+            "cp_water",
+            "cp_air",
+            "alpha_vent1",
+            "alpha_vent2",
+            "Tret_offset",
+            "eta_hex_ahu",
+            "eta_hex_rad",
+            "m_flow_air_nom",
+            "m_flow_air_nom_ext",
+            "eta_hex1",
+            "Trec_off",
+            "k",
+            "ahu_pump_sup_thres",
+            "n",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "rad_flo_nom",
+            "coi_flo_nom_b",
+            "coi_flo_nom_a",
+            "Tret_coi_b",
+            "dh_Tsup",
+            "a",
+            "b",
+            "c",
+            "d"
+        ],
+        "u": [
+            "rad_val",
+            "coi_val",
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "rad_flo_on",
+            "Ti"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Trad",
+            "Tret",
+            "Tsup_air"
+        ],
+        "z": [
+          "Prad",
+          "rad_flo"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Tret"],
+            ["y3", "Tsup_air"],
+            ["y4", "Prad"],
+            ["y5", "Pvent"],
+            ["y6", "ahu_reaTHeaRec"],
+            ["y7", "ahu_reaTRetAir"],
+            ["y8", "ahu_reaFloSupAir"],
+            ["y9", "rad_flo"],
+            ["y10", "coi_flo"],
+            ["y11", "tot_flo"],
+            ["y12", "Tret_coi"],
+            ["y13", "Pfan"],
+            ["y14", "ahu_reaFloExtAir"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        },
+        "z": {
+            "lbz": [0,0,0,0,0,0,280,280,280,0,0,0,0],
+            "ubz": [1E7,1E7,10,10,10,10,340,340,340,40,40,1,1E6]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(ahu_pump_sup_on*v3, ahu_pump_sup_on*v3)@R[2,2] + dot(v4, v4)@R[3,3] + dot(v5, v5)@R[4,4] + dot(ahu_pump_sup_on*v6, ahu_pump_sup_on*v6)@R[5,5] + dot(v7, v7)@R[6,6] + dot(v8, v8)@R[7,7] + dot(v9, v9)@R[8,8] + dot(v10, v10)@R[9,9] + dot(v11, v11)@R[10,10] + dot(ahu_pump_sup_on*v12, ahu_pump_sup_on*v12)@R[11,11] + dot(ahu_pump_sup_on*v13, ahu_pump_sup_on*v13)@R[12,12] + dot(ahu_pump_sup_on*v14, ahu_pump_sup_on*v14)@R[13,13]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

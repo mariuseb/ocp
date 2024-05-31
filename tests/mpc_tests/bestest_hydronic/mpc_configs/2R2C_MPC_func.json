@@ -47,7 +47,7 @@
     },
     "N": 12,
     "dt": 900,
-    "method": "collocation",
+    "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",

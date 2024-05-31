@@ -471,6 +471,11 @@ class MPC(OCP):
                     ubx=None,
                     params=None,
                     ):
+        """
+        TODO: avoid if 
+        """
+        #if isinstance(params, (pd.Series, ))
+        
         self.data = data
         self.separate_data(
                           data,

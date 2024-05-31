@@ -1,8 +1,8 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + alpha_rad*(1/Ci)*phi_h + Ai*(phi_s/Ci) + alpha_sup*(1/Ci)*m_in*cp_air*(Tsup_air - Ti) + alpha_ret*(1/Ci)*m_out*cp_air*(Ti - Tret_air)",
-            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + (1/Ci)*alpha_vent*V_flow_sup_air*(T_sup_air - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + Ae*(phi_s/Ce)"
         },
         "w": {
             "v1": "Ti - y1"
@@ -10,22 +10,21 @@
         "p": [
             "Rie",
             "Rea",
+            "Ria",
             "Ci",
             "Ce",
             "Ai",
-            "alpha_rad",
-            "alpha_sup",
-            "alpha_ret",
-            "cp_air"
+            "Ae",
+            "alpha_vent"
         ],
         "u": [
             "phi_h",
             "phi_s",
             "Ta",
-            "m_in",
-            "m_out",
-            "Tsup_air",
-            "Tret_air"
+            "V_flow_sup_air",
+            "T_sup_air",
+            "weeknd",
+            "vent_on"
         ],
         "x": [
             "Ti",
@@ -33,6 +32,12 @@
         ],
         "y": [
             ["y1", "Ti"]
+        ]
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 <= Ti - Te"
         ]
     },
     "objective": "dot(v1, v1)@R[0,0]",
@@ -52,5 +57,5 @@
         "ipopt.ma57_pre_alloc": 10,
         "ipopt.ma57_automatic_scaling" : "yes"
     },
-    "codegen": true
+    "codegen": false
 }

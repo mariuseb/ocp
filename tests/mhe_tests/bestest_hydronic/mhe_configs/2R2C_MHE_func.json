@@ -1,8 +1,8 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*UA_nom*regNonZeroPower((Tsup - Ti), n, 0.05)  + Ai*(phi_s/Ci) + s1",
-            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + s2"
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*UA_nom*regNonZeroPower((Tsup - Ti), n, 0.05)  + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "w": {
             "v1": "Ti - y1", 
@@ -19,28 +19,24 @@
             "eta"
         ],
         "u": [
-            "Tsup"
+            "Tsup",
+            "Ph"
         ],
         "r": [
             "Ta",
-            "phi_s",
-            "Ph"
+            "phi_s"
         ],
         "x": [
             "Ti",
             "Te"
-        ],
-        "s": [
-            "s1",
-            "s2"
         ],
         "y": [
             ["y1", "Ti"],
             ["y2", "Ph"]
         ]
     },
-    "objective": "dot(v1, v1)@R[0,0] + (dot(v2/eta, v2/eta))@R[1,1] + dot(s1, s1)@Q[0,0] + (dot(s2, s2))@Q[1,1]",
-    "N": 24,
+    "objective": "dot(v1, v1)@R[0,0] + (dot(v2, v2))@R[1,1] + dot(s1, s1)@Q[0,0] + (dot(s2, s2))@Q[1,1]",
+    "N": 96,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 

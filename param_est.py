@@ -23,6 +23,7 @@ import numpy as np
 from ocp.ocp import OCP
 from ocp.filters import EKF, KalmanBucy
 import re
+from typing import Union
 
 class ParameterEstimation(OCP):
     """
@@ -190,6 +191,14 @@ class ParameterEstimation(OCP):
         vals["ca"] = ca
         vals["R"] = self.R
         vals["Q"] = self.Q
+    
+        """
+        s1, s2, ... , s_{nx} are aliases for sigma[:,0] , ... , sigma[:,nx-1]
+        """
+        if self.slack:
+            sigma = self.sigma.reshape((self.N-1, self.n_x + self.n_z))
+            for n in range(self.n_x + self.n_z):
+                vals["s" + str(n+1)] = sigma[:,n]
     
         exec(f'obj_expr =' + obj_string, vals)
         
@@ -783,7 +792,60 @@ class ParameterEstimation(OCP):
             
         return result
                 
+    def write_tvp_kalman_files(
+                               self, 
+                               config_name: str,
+                               params: Union[pd.Series, pd.DataFrame], 
+                               switches: list
+                               ):
+        """
+        Write files with parameters for Kalman filter,
+        where switches indicate on which input
+        parameters are switched.
         
+        NB: must be in correct order,
+        i.e. a1 corresponding to first element
+        in switches, a2 the second etc.
+        """
+        n_switches = len(switches)
+        params_switched = [
+                           ndx for ndx in params.index
+                           if "_a" in ndx
+                           and ndx[-1].isdigit()
+                           and int(ndx[-1]) <= n_switches
+                           ]
+        params_base = params.loc[[
+                                  ndx for ndx in params.index 
+                                  if ndx not in params_switched
+                                 ]]
+        params_base.to_csv(
+                           "results/params_" + \
+                            config_name + \
+                            "_base.csv"
+                           )
+        for i, switch in enumerate(switches):
+            suffix = "a" + str(i+1)
+            params_mod = params.loc[[
+                                     name for name in params_switched 
+                                     if name.endswith(suffix)
+                                     ]]
+            name_map = {
+                        k: k.removesuffix("_" + suffix)
+                        for k in params_mod.index
+                        }
+            params_mod.rename(name_map, inplace=True)
+            params_mod = params_mod.reindex(params_base.index, fill_value=0)
+            params_mod = params_base + params_mod
+            params_mod.to_csv(
+                            "results/params_" + \
+                                config_name + \
+                                "_mod_%s.csv" % \
+                                    (switch, )
+                            )
+            
+            
+        
+      
                             
     def solve(
               self,
@@ -917,7 +979,7 @@ class ParameterEstimation(OCP):
             Th = self.get("Th")
             constr = Th[0] - Th[self.N-1]
             self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
-            slack = 4
+            slack = 2
             self.lbg = np.concatenate([self.lbg,
                                        np.array([-slack]*constr.shape[0])])
             self.ubg = np.concatenate([self.ubg,
@@ -931,7 +993,7 @@ class ParameterEstimation(OCP):
             Te = self.get("Te")
             constr = Te[0] - Te[self.N-1]
             self.nlp["g"] = ca.vertcat(self.nlp["g"], constr)
-            slack = 1
+            slack = 2
             self.lbg = np.concatenate([self.lbg,
                                        np.array([-slack]*constr.shape[0])])
             self.ubg = np.concatenate([self.ubg,

@@ -4,7 +4,7 @@
             "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent1*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti) + (Trad - Ti)/(Rirad*Ci)",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
             "Trad": "rad_flo*cp_water*(Tsup - Trad)/Crad + (Ti - Trad)/(Rirad*Crad)",
-            "Tret": "(Trad - Tret)/(Rrr*Cret)*rad_flo_on + (Tsup - Tret_offset - Tret)/(Rsr*Cret)*(1-rad_flo_on)",
+            "Tret": "(Trad - Tret)/(Rrr*Cret)*rad_val + ((1-rad_val)*(Tsup - Tret_offset - Tret))/(Rsr*Cret)",
             "Tsup_air": "ahu_reaFloSupAir*cp_air*(ahu_reaTHeaRec - Tsup_air)/(Csup_nom) + ahu_reaFloSupAir*alpha_vent2*cp_air*(Ti - Tsup_air)/(Csup_nom)  + (1/Csup_nom)*Pvent"
         },
         "w": {
@@ -40,7 +40,8 @@
             "ahu_reaFloSupAir",
             "Tsup",
             "rad_flo_on",
-            "ahu_reaTHeaRec"
+            "ahu_reaTHeaRec",
+            "rad_val"
         ],
         "r": [
             "Ta",

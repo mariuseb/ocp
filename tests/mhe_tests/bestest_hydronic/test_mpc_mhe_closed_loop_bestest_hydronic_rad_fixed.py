@@ -15,7 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import KalmanBucy
+from ocp.filters import KalmanBucy, KalmanDAE
 from ocp.functions import functions
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join(opt_config_base, "2R2C_MPC_func.json")
-    mhe_cfg = os.path.join(opt_config_base, "2R2C_MHE_func.json")
+    mpc_cfg = os.path.join("mpc_configs", "2R2C_MPC_func.json")
+    mhe_cfg = os.path.join("mhe_configs", "2R2C_MHE_func.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
-    ekf_cfg = os.path.join(opt_config_base, "2R2C_EKF_func.json")
+    ekf_cfg = os.path.join("ekf_configs", "2R2C_EKF_func.json")
 
     # pass in config?
     """
@@ -90,19 +90,39 @@ if __name__ == "__main__":
         #"slack": Trues
         "slack": False
     }
-    
+    kwargs = {
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": 12,
+        "z_nom": 5000,
+        "u_nom_b": 289.15,
+        "r_nom": [12, 300],
+        "r_nom_b": [289.15, 0],
+        #"slack": True
+        "slack": False
+    }   
     mpc = MPC(config=mpc_cfg,
               functions=deepcopy(functions),
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
-    
+    #kwargs["slack"] = True
+    kwargs = {
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": [12, 5000],
+        "u_nom_b": [289.15, 0],
+        "r_nom": [12, 300],
+        "r_nom_b": [289.15, 0],
+        #"slack": True
+        "slack": True
+    }
     mhe = MHE(config=mhe_cfg,
               functions=deepcopy(functions),
               param_guess=params, 
               **deepcopy(kwargs))  # to remove, replace with N
     
     
-    ekf = KalmanBucy(ekf_cfg,
+    ekf = KalmanDAE(ekf_cfg,
                      functions=deepcopy(functions)
                      )
     # set params:
@@ -136,22 +156,19 @@ if __name__ == "__main__":
     P0[:mhe.n_p, :mhe.n_p] *= 0
     P0[mhe.n_p:, mhe.n_p:] *= 0
     # P0 *= 1E-32
-    params_lb = params
-    params_ub = params
-    params_lb[:-3] *= 0.7
-    params_ub[:-3] *= 1.3
     Q = ca.DM.eye(mpc.n_x)
-    Q[0,0] = 0
-    Q[1,1] = 0
+    #Q[0,0] = 0
+    #Q[1,1] = 0
     R = ca.DM.eye(mhe.n_y)
-    #R[1,1] = 1E-8
-    R[1,1] = 0
-
+    R[1,1] = 1E-8
+    #R[1,1] = 0
+    ekf.set_Q(ca.inv(Q))
+    ekf.set_R(ca.inv(ca.DM.eye(1)))
     fishers = pd.DataFrame(columns=(mpc.p_names + mpc.x_names))
-    days = 2
+    days = 5
     K = days*24*bounds.t_h
 
-    x0 = np.array([294.05, 293.15])
+    x0 = np.array([293.15, 293.15])
     us = pd.DataFrame(columns=["calc_mpc", "act"])
     
     for k in range(K):
@@ -171,12 +188,14 @@ if __name__ == "__main__":
         # keep u's:
         us.loc[k, "calc_mpc"] = sol["Ph"].iloc[0]
         us.loc[k, "act"] = y_meas[1]
+        y_meas = [y_meas[0]]
 
         if k >= (mhe.N - 1):
             # get labelled data:
             stop_time = (k+1)*boptest.h
             start_time = stop_time - (mhe.N - 1)*boptest.h
             y_data = boptest.get_data(ts=start_time, tf=stop_time)
+            y_data["Ph"] = y_data["Ph"].shift(-1)
             y_data["y1"] = y_data.Ti
             y_data["y2"] = y_data.Ph
 
@@ -205,6 +224,14 @@ if __name__ == "__main__":
                 # set df for estimation history:
                 mhe.df = df
             """ 
+            params_lb = 1*params
+            params_ub = 1*params
+            #if k % 96 == 0: # envelope reidentification
+            
+            if k < 3*96: # env re-iden
+                params_lb[:-3] *= 0.8
+                params_ub[:-3] *= 1.2
+            
             sol_mhe, params = mhe.solve(
                 y_data,
                 params,
@@ -224,10 +251,10 @@ if __name__ == "__main__":
             """
                   
             params = params.values
-            #params_lb = params
-            #params_ub = params
-            params_lb[:-3] *= 0.7
-            params_ub[:-3] *= 1.3
+            #params_lb = 1*params
+            #params_ub = 1*params
+            #params_lb[:-3] *= 0.7
+            #params_ub[:-3] *= 1.3
             #params_lb = params*0.99
             #params_ub = params*1.01
             x0 = sol_mhe.iloc[-1][mhe.x_names].values
@@ -236,10 +263,11 @@ if __name__ == "__main__":
         else: # TODO: issue: ekf warmup
             z_model = sol[ekf.dae.z].iloc[1].values
             r_pred = data[ekf.dae.r_names].iloc[0].values
-            x0 = ekf.estimate(
+            x0, _, _ = ekf.estimate(
                             x0, 
-                            z=z_model,
+                            #z=z_model,
                             y=y_meas, 
+                            p=params,
                             u=u_meas, 
                             r=r_pred
                             )
@@ -250,7 +278,7 @@ if __name__ == "__main__":
     plt.show()  
 
     plt.rcParams.update({'font.size': 12})
-    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds)
+    fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds, heat_key="Ph")
     fig.tight_layout()
     plt.show()
     # plot diff_Q, which drives the learning:

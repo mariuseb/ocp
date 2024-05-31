@@ -196,7 +196,7 @@ class CovarianceSolver(object):
             self.R.value = kwargs.pop("R", np.diag([1]*self.ny))
         
         self.problem.solve(solver=cp.SCS,
-                           max_iters=int(1e4),
+                           max_iters=int(1e6),
                            use_indirect=True,
                            warm_start=warmstart,
                            verbose = True)
@@ -232,7 +232,7 @@ class CovarianceSolver(object):
             self.R.value = kwargs.pop("R", np.diag([1]*self.ny))
         
         self.problem.solve(solver=cp.SCS,
-                           max_iters=int(1e4),
+                           max_iters=int(1e6),
                            use_indirect=True,
                            warm_start=warmstart,
                            verbose = True)

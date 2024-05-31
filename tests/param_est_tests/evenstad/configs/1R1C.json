@@ -1,0 +1,47 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "Ai*(phi_s/Ci) + (Ta - Ti)/(Ria*Ci) + (1/Ci)*phi_h + (1/Ci)*alpha_vent*V_flow_sup_air*(T_sup_air - Ti)"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Ria",
+            "Ci",
+            "Ai",
+	        "alpha_vent"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s",
+            "Ta",
+            "V_flow_sup_air",
+            "T_sup_air"
+        ],
+        "x": [
+            "Ti"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

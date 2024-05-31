@@ -1,0 +1,49 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Th - Ti)/(Rih*Ci) + Ai*(phi_s/Ci) + (Ta - Ti)/(Ria*Ci) + (1/Ci)*alpha_vent*V_flow_sup_air*(T_sup_air - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + Ae*(phi_s/Ce)",
+            "Th": "(Ti - Th)/(Rih*Ch) + (1/Ch)*phi_h"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Rih",
+            "Ria",
+            "Ci",
+            "Ce",
+            "Ch",
+            "Ai",
+            "Ae",
+	        "alpha_vent"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s",
+            "Ta",
+            "V_flow_sup_air",
+            "T_sup_air"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Th"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 3600,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [10,10,10],
+    "R": [1]
+}

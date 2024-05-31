@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import time
 from collections import OrderedDict
+from typing import Optional, Union
 #Create a format to change the data with a for loop
 WEB_latest = u'https://thredds.met.no/thredds/dodsC/metpplatest/met_forecast_1_0km_nordic_latest.nc'
 #WEB_latest_hist = u'https://thredds.met.no/thredds/dodsC/metpparchive/2021/08/01/met_analysis_1_0km_nordic_20210801T12Z.nc'
@@ -75,7 +76,10 @@ def get_forecast(index, location, forecast_map, forecasts=['Ta', 'phi_s'], test=
         return None
     
 
-def prepare_data(file1, file2):
+def prepare_data(
+                file1: Union[str, pd.DataFrame], 
+                file2: Optional[str] = None
+                 ):
     """
     Necessary operations on data to conform with model.
     """  
@@ -129,22 +133,20 @@ def prepare_data(file1, file2):
     "Ta"
     ]
     
-    sep = ","
-    data1 = pd.read_csv(file1, sep=sep, skiprows=[1,2,3], header=0, index_col=0)
-    data2 = pd.read_csv(file2, sep=sep, skiprows=[1,2,3], header=0, index_col=0)
-    meas = pd.merge(data1, data2, left_index=True, right_index=True)
-
-    #for name in meas.columns:
-    #    print(name)
-    
-    # ordered:
-    cols = list(meas.columns)
-    name_pairs = []
-    for i, col in enumerate(cols):
-        name_pairs.append((col, names[i]))
-    name_map = OrderedDict(name_pairs)
-    meas = meas.rename(columns=name_map)
-
+    if file2 is not None: # two files are passed, do some cleaning
+        sep = ","
+        data1 = pd.read_csv(file1, sep=sep, skiprows=[1,2,3], header=0, index_col=0)
+        data2 = pd.read_csv(file2, sep=sep, skiprows=[1,2,3], header=0, index_col=0)
+        meas = pd.merge(data1, data2, left_index=True, right_index=True)
+        # ordered:
+        cols = list(meas.columns)
+        name_pairs = []
+        for i, col in enumerate(cols):
+            name_pairs.append((col, names[i]))
+        name_map = OrderedDict(name_pairs)
+        meas = meas.rename(columns=name_map)
+    else:
+        meas = file1       
     """
     Convert str -> float:
     """
@@ -155,43 +157,70 @@ def prepare_data(file1, file2):
             meas[col] = meas[col].apply(lambda x: str(x).replace(" ", "")).astype(float)       
 
     # Datetime-index
-    meas.index = pd.to_datetime(meas.index, format="%d.%m.%Y %H:%M")
-
+    meas.index = pd.to_datetime(meas.index, format="%d.%m.%Y %H:%M").round("5min")
+    #meas.index = pd.to_datetime(meas.index, format="dayfirst").round("5min")
     """
     Take out only model-relevant quantities:
-    """
+    
+    113 - gymsal
+    101 - hallway (unsure whether to include or not)
+    office - offices 2nd floor
     temp_cols = [col for col in meas.columns if "Ti_" in col 
                 and "office" not in col
                 and "113" not in col
                 and "101" not in col]
-    meas["Ti"] = meas["Ti_117"]
+    """
+    temp_cols = [
+                col for col in meas.columns if "Ti_" in col 
+                 and 
+                 (
+                  "116" in col
+                  or "119" in col
+                  or "117" in col
+                  or "122" in col
+                  or "123" in col
+                  or "124" in col
+                  or "125" in col
+                  )
+                 ]
+    #meas["Ti"] = meas["Ti_117"]
     
     rho_air = 1.204 # [kg/m^3]
     cp_air = 1000 # [J/kg*K]
 
-    vent_in = (meas["Tsup_air"] - meas["Ti"])*(meas.V_flow_sup_air/3600)*rho_air*cp_air
-    vent_out = (meas["Ti"] - meas["Tsup_air"])*(meas.V_flow_exh_air/3600)*rho_air*cp_air
-    vent_net = vent_in + vent_out
-    meas["P_vent"] = vent_net
+    #vent_in = (meas["Tsup_air"] - meas["Ti"])*(meas.V_flow_sup_air/3600)*rho_air*cp_air
+    #vent_out = (meas["Ti"] - meas["Tsup_air"])*(meas.V_flow_exh_air/3600)*rho_air*cp_air
+    #vent_net = vent_in + vent_out
+    #meas["P_vent"] = vent_net
     
     # resample to 1H:
     
     # set names:
     meas["P_water"] *= 1000
-    meas["Ti"] += 273.15
-    meas["Tsup_air"] += 273.15
+    #meas["Ti"] += 273.15
+    #meas["Tsup_air"] += 273.15
     # 'filter' out circulation loss:
     #meas.P_water[meas.P_water < 5] = 0
-    phi_h = meas["P_water"].resample(rule="1h").mean()
-    meas = meas.resample(rule="1h").asfreq()
-    meas["phi_h"] = phi_h # to Watts
-    meas["Tsup"] = meas["Tsup_water_west"]
-    meas["Tret"] = meas["Tret_water_west"]
-    meas["m_flow_water"] = (meas["Tsup"] - meas["Tret"])*4200/(meas["phi_h"])
-    meas["T_sup_air"] = meas["Tsup_air"]
-    meas["y1"] = meas["Ti"]
-    meas["y2"] = meas["phi_h"]
+    phi_h = meas["P_water"].resample(rule="5min").mean()
+    _meas = meas.resample(rule="5min").asfreq()
+    _meas = pd.DataFrame(phi_h)
+    _meas.columns = ["phi_h"]
+    _meas["Ti"] = meas[temp_cols].mean(axis=1)
+    _meas[temp_cols] = meas[temp_cols]
+    _meas["phi_h"] = phi_h # to Watts
+    _meas["Tsup"] = meas["Tsup_water_west"]
+    _meas["Tret"] = meas["Tret_water_west"]
+    #_meas["m_flow_water"] = (_meas["Tsup"] - _meas["Tret"])*4200/(meas["phi_h"])
+    _meas["T_sup_air"] = meas["Tsup_air"]
+    _meas["V_flow_sup_air"] = meas["V_flow_sup_air"]
+    try:
+        _meas["Ta"] = meas["Ta"]
+        _meas["phi_s"] = meas["phi_s"]
+    except:
+        pass
+    _meas["y1"] = _meas["Ti"]
+    _meas["y2"] = _meas["phi_h"]
     
-    meas = meas.bfill()
+    _meas = _meas.bfill()
 
-    return meas
+    return _meas, temp_cols

@@ -2,6 +2,11 @@ import random
 import numpy as np
 from collections import deque
 
+"""
+A general buffer that stores
+everything needed for both
+value-based and policy gradient methods.
+"""
 
 class BasicBuffer:
     """
@@ -18,26 +23,37 @@ class BasicBuffer:
     def __init__(self):
         self.buffer = []
 
-    def push(self, state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df, p_val):
+    def push(
+             self, 
+             state,
+             action,
+             R,
+             next_state,
+             V_next,
+             Q_curr,
+             dQdP,
+             dPidP,
+             action_mean,
+             next_action=None
+            ):
         experience = (
-            state,
-            obs,
-            action,
-            np.array([reward]),
-            next_state,
-            next_obs,
-            data,
-            info,
-            sol,
-            sol_df,
-            p_val
+             state,
+             action,
+             R,
+             next_state,
+             V_next,
+             Q_curr,
+             dQdP,
+             dPidP,
+             action_mean,
+             next_action
         )
         self.buffer.append(experience)
 
     def sample(self):
         transition = random.sample(self.buffer, 1)
-        state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df, p_val = transition
-        return (state, obs, action, reward, next_state, next_obs, data, info, sol, sol_df, p_val)
+        state, action, R, next_state, V_next, Q_curr, dQdP, dPidP, action_mean, next_action = transition
+        return state, action, R, next_state, V_next, Q_curr, dQdP, dPidP, action_mean, next_action
 
 
 class ReplayBuffer:
@@ -98,108 +114,102 @@ class ReplayBuffer:
         list of tuples, each a randomly sampled experience
 
         """
+    
         state_batch = []
-        obs_batch = []
         action_batch = []
-        reward_batch = []
+        R_batch = []
         next_state_batch = []
-        next_obs_batch = []
-        data_batch = []
-        info_batch = []
-        sol_batch = []
-        sol_df_batch = []
-        p_val_batch = []
+        V_next_batch = []
+        Q_curr_batch = []
+        dQdP_batch = []
+        dPidP_batch = []
+        action_mean_batch = []
+        next_action_batch = []
 
         for _ in range(batch_size):
             rollout = random.sample(self.buffer, 1)[0]
             (
                 state,
-                obs,
                 action,
-                reward,
+                R,
                 next_state,
-                next_obs,
-                data,
-                info,
-                sol,
-                sol_df,
-                p_val
+                V_next,
+                Q_curr,
+                dQdP,
+                dPidP,
+                action_mean,
+                next_action
             ) = random.sample(rollout, 1)[0]
             state_batch.append(state)
-            obs_batch.append(obs)
             action_batch.append(action)
-            reward_batch.append(reward)
+            R_batch.append(R)
             next_state_batch.append(next_state)
-            next_obs_batch.append(next_obs)
-            data_batch.append(data)
-            info_batch.append(info)
-            sol_batch.append(sol)
-            sol_df_batch.append(sol_df)
-            p_val_batch.append(p_val)
+            V_next_batch.append(V_next)
+            Q_curr_batch.append(Q_curr)
+            dQdP_batch.append(dQdP)
+            dPidP_batch.append(dPidP)
+            action_mean_batch.append(action_mean)
+            next_action_batch.append(next_action)
         return (
-            state_batch,
-            obs_batch,
-            action_batch,
-            reward_batch,
-            next_state_batch,
-            next_obs_batch,
-            data_batch,
-            info_batch,
-            sol_batch,
-            sol_df_batch,
-            p_val_batch
+                state_batch,
+                action_batch,
+                R_batch,
+                next_state_batch,
+                V_next_batch,
+                Q_curr_batch,
+                dQdP_batch,
+                dPidP_batch,
+                action_mean_batch,
+                next_action_batch
         )
 
     def flatten_buffer(self):
         state_batch = []
-        obs_batch = []
         action_batch = []
-        reward_batch = []
+        R_batch = []
         next_state_batch = []
-        next_obs_batch = []
-        data_batch = []
-        info_batch = []
-        sol_batch = []
-        sol_df_batch = []
-        p_val_batch = []
+        V_next_batch = []
+        action_batch = []
+        Q_curr_batch = []
+        dQdP_batch = []
+        dPidP_batch = []
+        action_mean_batch = []
+        next_action_batch = []
 
         for i in range(len(self.buffer)):
             for j in range(len(self.buffer[i])):
                 (
-                    state,
-                    obs,
-                    action,
-                    reward,
-                    next_state,
-                    next_obs,
-                    data,
-                    info,
-                    sol,
-                    sol_df,
-                    p_val
+                state,
+                action,
+                R,
+                next_state,
+                V_next,
+                Q_curr,
+                dQdP,
+                dPidP,
+                action_mean,
+                next_action
                 ) = self.buffer[i][j]
                 state_batch.append(state)
-                obs_batch.append(obs)
                 action_batch.append(action)
-                reward_batch.append(reward)
+                R_batch.append(R)
                 next_state_batch.append(next_state)
-                next_obs_batch.append(next_obs)
-                data_batch.append(data)
-                info_batch.append(info)
-                sol_batch.append(sol)
-                sol_df_batch.append(sol_df)
-                p_val_batch.append(p_val)
+                V_next_batch.append(V_next)
+                Q_curr_batch.append(Q_curr)
+                dQdP_batch.append(dQdP)
+                dPidP_batch.append(dPidP)
+                action_mean_batch.append(action_mean)
+                next_action_batch.append(next_action)
         return (
             state_batch,
-            obs_batch,
             action_batch,
-            reward_batch,
+            R_batch,
             next_state_batch,
-            next_obs_batch,
-            data_batch,
-            info_batch,
-            sol_batch,
-            sol_df_batch,
-            p_val_batch
+            V_next_batch,
+            Q_curr_batch,
+            dQdP_batch,
+            dPidP_batch,
+            action_mean_batch,
+            next_action_batch
         )
 

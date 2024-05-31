@@ -29,13 +29,6 @@ class Qlearning:
                     )
                 )
         )
-        self.grad_v_history = pd.DataFrame(columns=list(
-                map(
-                    lambda x: "theta" + str(x), 
-                    range(self.mpc.P.shape[0])
-                    )
-                )
-        )
         self.td_avg_error = pd.DataFrame(columns=["td_avg_error"])
         self.td_error = pd.DataFrame(columns=["td_error"])
 
@@ -62,90 +55,38 @@ class Qlearning:
         for it in range(train_it):
             (
                 states,
-                _,
                 actions,
-                rewards,
+                Rs,
                 next_states,
-                _,
-                datas,
-                infos,
-                raw_sols,
-                sol_dfs,
-                p_vals
+                V_nexts,
+                Q_currs,
+                dQdPs,
+                dPidPs,
+                action_means,
+                _
             ) = replay_buffer.sample(batch_size)
 
             del_J = 0.0
             for j, state in enumerate(states):
+                state = states[j]
                 action = actions[j]
+                R = Rs[j]
                 next_state = next_states[j]
-                reward = rewards[j]
-                data = datas[j]
-                raw_sol = raw_sols[j]
-                p_val = p_vals[j]
-                sol_df = sol_dfs[j]
+                V_next = V_nexts[j]
+                Q_curr = Q_currs[j]
+                dQdP = dQdPs[j]
+                dPidP = dPidPs[j]
                 
-                # Q value of the state-action pair
-                """
-                TODO: what if bounds are not fixed?
-                Then must store bounds as parameters.
-                
-                TODO: store theta-, resolve for that
-                value -> batch update.
-                """
-                self.mpc.prepare_warm_solve(
-                        data[0:self.mpc.N],
-                        model_params=self.mpc.params,
-                        raw_sol=raw_sol
-                    )
-                q, info, qsol_df, qsol = self.mpc.Q_value(
-                        state, 
-                        action,
-                        p_val,
-                        raw_sol
-                        )
-                # Hint: we found the Q value for state and action in exercise 11
-                if not self.mpc.qsolver.stats()["success"]:
-                    self.q_failures += 1
-                # V value of the next state
-                #v_next, info_next = sellf.mpc.V_value(next_state, mode="update")
-                self.mpc.prepare_warm_solve(
-                        data[1:self.mpc.N+1],
-                        model_params=self.mpc.params,
-                        raw_sol=raw_sol
-                    )
-                # modify p-fixed:
-                next_state_scaled = (next_state - self.mpc.x_nom_b)/self.mpc.x_nom
-                p_val[:self.mpc.obs_dim] = next_state_scaled
-                v_next, info_next, vsol_df, vsol = self.mpc.V_value(next_state, p_val)
-
                 # TD error
-                td_target = reward + self.mpc.gamma*v_next - q
-                
-                # sensitivity of V(s):
-                grad_v = self.mpc.dVdP(
-                                       raw_sol,
-                                       self.mpc.pf_val,
-                                       self.mpc.pp_val,
-                                       self.mpc.p_bounds,
-                                       optimal=True
-                                       )
-                # sensitivity of Q(s,a):
-                grad_q = self.mpc.dQdP(
-                                       info["soln"],
-                                       self.mpc.pf_val,
-                                       self.mpc.pp_val,
-                                       self.mpc.p_bounds,
-                                       optimal=True
-                                       )
-                if (abs(grad_q[:,-self.mpc.n_p:]) > 1).any():
+                td_target = R + self.mpc.gamma*V_next - Q_curr
+                #if (abs(grad_q[:,-self.mpc.n_p:]) > 1).any():
                     # reject model parameter gradient if bigger than 1
-                    grad_q[:,-self.mpc.n_p:] = 0
+                #    grad_q[:,-self.mpc.n_p:] = 0
                 # estimate of dJ
-                self.grad_q_history.loc[len(self.grad_q_history), :] = grad_q.flatten()
-                self.grad_q_history_ipopt.loc[len(self.grad_q_history), :] = -info["soln"]["lam_p"].full()[self.mpc.nPf:-self.mpc.nPbounds].flatten()
-                self.grad_v_history.loc[len(self.grad_v_history), :] = grad_v.flatten()
+                #dQdP = dQdP.clip(min=-1E3, max=1E3)
+                self.grad_q_history.loc[len(self.grad_q_history), :] = dQdP.flatten()
                 #del_J -= td_target*grad_q.T
-                del_J += td_target*grad_q.T
+                del_J += td_target*dQdP.T
                 td_avg += td_target
                 # save all iterations:
                 if abs(td_target) > 1: 

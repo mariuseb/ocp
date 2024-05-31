@@ -1,0 +1,86 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie_TVP*Ci_TVP) + (Ta - Ti)/(Ria_TVP*Ci_TVP) + (1/Ci_TVP)*phi_h + Ai*(phi_s/Ci_TVP) + (1/Ci_TVP)*alpha_vent*V_flow_sup_air*(T_sup_air - Ti)",
+            "Te": "(Ti - Te)/(Rie_TVP*Ce_TVP) + (Ta - Te)/(Rea_TVP*Ce_TVP) + Ae*(phi_s/Ce_TVP)"
+        },
+        "alg": {
+            "Ci_TVP": "Ci + Ci_a1*vent_on - Ci_TVP",
+            "Ce_TVP": "Ce + Ce_a1*vent_on  - Ce_TVP",
+            "Rie_TVP": "Rie + Rie_a1*vent_on - Rie_TVP",
+            "Rea_TVP": "Rea + Rea_a1*vent_on - Rea_TVP",
+            "Ria_TVP": "Ria + Ria_a1*vent_on - Ria_TVP"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rie_a1",
+            "Rea",
+            "Rea_a1",
+            "Ria",
+            "Ria_a1",
+            "Ci",
+            "Ci_a1",
+            "Ce",
+            "Ce_a1",
+            "Ai",
+            "Ae",
+            "alpha_vent"
+        ],
+        "u": [
+            "phi_h",
+            "phi_s",
+            "Ta",
+            "V_flow_sup_air",
+            "T_sup_air",
+            "weeknd",
+            "vent_on"
+        ],
+        "z": [
+            "Ce_TVP",
+            "Ci_TVP",
+            "Rie_TVP",
+            "Rea_TVP",
+            "Ria_TVP"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 <= Ti - Te"
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [1E6,1E6,1E-5,1E-5,1E-5],
+            "ubz": [1E10,1E10,100,100,100]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

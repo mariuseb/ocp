@@ -19,7 +19,7 @@ from matplotlib import rc
 from ocp.boptest_api import Boptest
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
-from ocp.filters import KalmanBucy
+from ocp.filters import KalmanBucy, KalmanDAE
 from ocp.covar_solver import CovarianceSolver
 import scipy
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path, get_data_path
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     
     sampling_time = "60min"
       
-    data_path = os.path.join(get_data_path(), "data_bestest_hydronic.csv")
+    data_path = os.path.join(get_data_path(), "data_testcase3.csv")
     
     if GENERATE_DATA:
         
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         data.phi_h_nor.plot(ax=ax1, color="r", drawstyle="steps-post")
         plt.show()
     
-    y_data = data[:-1]
+    y_data = data.iloc[1:-1]
     N = len(y_data)
     dt = y_data.index[1] - y_data.index[0]
     y_data["y1"] = y_data.Ti_sou
@@ -118,7 +118,8 @@ if __name__ == "__main__":
                                     dt=dt,
                                     param_guess=param_guess)
     # create the filter:
-    ekf = KalmanBucy(ekf_config)
+    #ekf = KalmanBucy(ekf_config)
+    ekf = KalmanDAE(ekf_config)
 
     Q = ca.DM.eye(2)
     R = ca.DM.eye(2)
@@ -135,12 +136,12 @@ if __name__ == "__main__":
     ax = axes[0]
     sol["Ti_sou"].plot(ax=ax, color="r")
     sol["y1"].plot(color="k", ax=ax, linestyle="dashed")
-    ax.legend(["model", "true"])
+    ax.legend(["model", "measured"])
     ax = axes[1]
     sol["Ti_nor"].plot(ax=ax, color="r")
-    sol["Ti_nor"].plot(ax=ax, color="y", linestyle="dashed")
+    #sol["Ti_nor"].plot(ax=ax, color="y", linestyle="dashed")
     sol["y2"].plot(color="k", ax=ax, linestyle="dashed")
-    ax.legend(["model", "true"])
+    ax.legend(["model", "measured"])
     plt.show()
     print(params)
     
@@ -173,7 +174,7 @@ if __name__ == "__main__":
 
     x = [293.15, 293.15]
     p = params.values
-    A = scipy.linalg.expm(ekf.jac_f(x,0,0,p,0,0,0,0)*dt)
+    A = scipy.linalg.expm(ekf.jac_f_x(x,0,0,p,0,0,0,0)*dt)
     C = np.array(ekf.jac_h(x,0,0,p,0,0,0,0))
     x = sol[["Ti_sou", "Ti_nor"]]
     y = sol[["y1", "y2"]]
@@ -185,7 +186,7 @@ if __name__ == "__main__":
     covar_solver = CovarianceSolver(param_est.N,
                                     A, 
                                     C.T,
-                                    e.T,
+                                    #e.T,
                                     parametric=True
                                     )
     R, Q = covar_solver.solve(e=e)
@@ -200,7 +201,7 @@ if __name__ == "__main__":
     #R = ca.DM(np.linalg.inv(R))
     R = ca.DM(R)
     # normalize:
-    R = R/sum(np.diag(R))
+    #R = R/sum(np.diag(R))
     
     lbp = 1E-2*params
     ubp = 1E2*params

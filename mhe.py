@@ -35,10 +35,10 @@ class MHE(OCP):
         Almost equal to regular sysid,
         though we drop statistics for now.
         """
-        #self.gamma = kwargs.pop("gamma", 1)
+        self.gamma = kwargs.pop("gamma", 1)
         self.arrival_cost = kwargs.pop("arrival_cost", False)
         super(MHE, self).__init__(**kwargs)
-        self.df = pd.DataFrame(columns=self.dae.p + self.dae.x)
+        self.df = pd.DataFrame(columns=self.dae.p + self.dae.x + self.dae.z)
         # covariance matrices:
         #self.R = ca.MX.sym("R", ca.Sparsity.diag(self.n_y))
         #self.Q = ca.MX.sym("Q", ca.Sparsity.diag(self.n_x))
@@ -46,11 +46,84 @@ class MHE(OCP):
         #self.R = ca.MX.sym("R", 1, 1)
         self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
         #self.set_hess_obj()
+        
+        """
+        Possibly include slack variables
+        in shooting gaps.
+        """
+        if self.slack:
+            self.add_slack_to_shooting_gaps()
+        
         if "f" not in self.nlp:
             self.set_nlp_obj(arrival_cost=self.arrival_cost)
-
+            
+        self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
+        self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
+        self.add_h() 
         self.prepare_solver()
         
+       
+    def add_slack_to_shooting_gaps(self):
+        """
+        Write:  
+            F(x, u) - x+ = s
+        instead of:
+            F(x, u) - x+ = 0
+        
+        TODO:
+            - should also be accessible
+            from ParameterEstimation.
+           
+        Only for multiple shooting for now.
+        """
+        shooting_gaps = self.nlp_parser.vars["x"]["shooting_gaps"]
+        alg_gaps = self.nlp_parser.vars["z"]["alg_gaps"]
+        sigma_shape = (self.N-1, self.n_x + self.n_z)
+        self.sigma = sigma = ca.MX.sym("sigma", sigma_shape)
+        """
+        Differential part:
+        """
+        diff_sigma = sigma[:,:self.n_x]
+        new_x_gaps = shooting_gaps + diff_sigma
+        """
+        Algebraic part:
+        """
+        alg_sigma = sigma[:,self.n_x:(self.n_x + self.n_z)]
+        new_z_gaps = alg_gaps + alg_sigma
+        """
+        Flatten, add new differential gaps back to NLP:
+        """
+        new_x_gaps = ca.veccat(new_x_gaps)
+        self.nlp["g"][0:new_x_gaps.shape[0]] = new_x_gaps
+        """
+        Same for algebraic gaps:
+        """
+        new_z_gaps = ca.veccat(new_z_gaps)
+        start = new_x_gaps.shape[0]
+        stop = start + new_z_gaps.shape[0]
+        self.nlp["g"][start:stop] = new_z_gaps
+        
+        """
+        Add slack variable to problem definition:
+        """
+        self.nlp["x"] = ca.vertcat(self.nlp["x"], ca.veccat(self.sigma))
+        dim = self.sigma.shape[0]*self.sigma.shape[1]
+        self.nlp_parser.vars["sl"] = {
+                            "range":
+                                    {
+                                        "a":
+                                        self.nlp_parser["r"]["range"]["b"],
+                                        "b": 
+                                        self.nlp_parser["r"]["range"]["b"] + \
+                                            dim
+                                    },
+                            "dim": dim
+                            }
+        self.n_sl = self.n_x + self.n_z
+        self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_sl)))
+        """
+        MHE is now discrete-time stochastic.
+        """
         
     # skip this:
     def set_hess_obj(self):
@@ -716,13 +789,16 @@ class MHE(OCP):
         # initialize the parameters needed for the objective:
         self.Q = ca.MX.sym("Q", self.n_x + self.n_z, self.n_x + self.n_z)
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
-        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
-        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
+        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_z + self.n_p))
+        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_z + self.n_p)
         
         symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
         vals = dict()
         for symbol in symbols:
-            vals[symbol] = self.get(symbol)
+            try:
+                vals[symbol] = self.get(symbol)
+            except KeyError:
+                assert symbol.startswith("s")
             
         # here, multiply gamma in:
         #gamma = 0.99
@@ -735,6 +811,16 @@ class MHE(OCP):
         vals["ca"] = ca
         vals["R"] = self.R
         vals["Q"] = self.Q
+        
+        """
+        s1, s2, ... , s_{nx} are aliases for sigma[:,0] , ... , sigma[:,nx-1]
+        """
+        if self.slack:
+            sigma = self.sigma.reshape((self.N-1, self.n_x + self.n_z))
+            for n in range(self.n_x + self.n_z):
+                vals["s" + str(n+1)] = sigma[:,n]
+        
+        
         vals["gamma_v"] = np.sqrt(gamma_vec)
         if self.strategy.name == "Collocation":
             vals["gamma_s"] = np.sqrt(gamma_vec[0:(self.N-1)])
@@ -754,21 +840,22 @@ class MHE(OCP):
             #vals["s6"] = vals["s6"][:-1] 
             #vals["s3"] = vals["s3"][:-1] 
             
-            
-    
         exec(f'obj_expr =' + obj_string, vals)
         
         self.nlp["f"] = vals["obj_expr"]
         #self.nlp["p"] = ca.veccat(self.R, self.Q)
         #if self.arrival_cost:
         #    self.nlp["p"] = ca.veccat(self.nlp["p"], self.P0)
-            
         
         # TODO: reshuffle ordering of MHE parameters ...
         if arrival_cost:
             last_x = self.nlp_x[0:self.n_x]
+            """
+            This might be the second last:
+            """
+            last_z = self.nlp_z[0:self.n_z]
             p = self.strategy.F.p
-            costate = ca.vertcat(p, last_x)
+            costate = ca.vertcat(p, last_x, last_z)
             arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
             self.nlp["f"] += arrival_cost
             self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
@@ -781,6 +868,9 @@ class MHE(OCP):
             print("Deleting %s..." % file)
             os.remove(file)
     """      
+    
+    def store_param_and_state(self, params, state, z, k):
+        self.df.loc[k*self.dt, :] = np.concatenate([params, state, z])
         
     def solve(
               self,
@@ -793,6 +883,7 @@ class MHE(OCP):
               ubx=None,
               P0=None,
               x_N=None,
+              z_N=np.array([]),
               x_guess=None,
               arrival_cost=False,
               return_raw_sol=False,
@@ -805,6 +896,7 @@ class MHE(OCP):
 
         if x_guess is None:  
             x_guess = self.generate_x_guess()
+            x_guess = x_guess.reshape((x_guess.shape[0]*x_guess.shape[1], 1))
         self.separate_data(
                           data,
                           lbp=lbp,
@@ -822,9 +914,10 @@ class MHE(OCP):
         if arrival_cost:        
             p0 = param_guess/self.p_nom
             x_N = (x_N - self.x_nom_b)/self.x_nom
+            z_N = (z_N - self.z_nom_b)/self.z_nom
             #p0 = param_guess
             #x_N = x_N
-            costate_prior = ca.vertcat(p0, x_N)
+            costate_prior = ca.vertcat(p0, x_N, z_N)
             p = ca.veccat(P0, covar, costate_prior)       
         else:
             p = ca.veccat(covar)
@@ -849,12 +942,16 @@ class MHE(OCP):
             pprint(self.x0[v["range"]["a"]:v["range"]["b"]])
         """
         # TODO:
-        self.lbx = self.lbx.round(8)
-        self.ubx = self.ubx.round(8)
+        try:
+            self.lbx = self.lbx.round(8)
+            self.ubx = self.ubx.round(8)
+        except:
+            pass
+    
         solution = self.solver(
                             x0=self.x0,
-                            lbg=0, # option for path-constraints?
-                            ubg=0, # --"--
+                            lbg=self.lbg, # option for path-constraints?
+                            ubg=self.ubg, # --"--
                             lbx=self.lbx,
                             ubx=self.ubx,
                             #p=ca.veccat(_P0, covar, ca.vertcat(param_guess, x_N))
@@ -864,9 +961,17 @@ class MHE(OCP):
         
         self.sol_df, params = self.parse_solution(solution)
         
+        # k given by history thus far:
         k = len(self.df) + self.N - 1
-        self.df.loc[k*self.dt, :] = np.append(params.values, self.sol_df[self.x_names].iloc[-1])
+        #self.df.loc[k*self.dt, :] = np.append(params.values, self.sol_df[self.x_names].iloc[-1])
+        self.store_param_and_state(
+                                   params.values, 
+                                   self.sol_df[self.x_names].iloc[-1].values,
+                                   self.sol_df[self.z_names].iloc[-2].values,
+                                   k + 1
+                                   )
                 
+        self.sol_df.index = np.arange(k*self.dt, (k + self.N)*self.dt, self.dt)
         if not return_raw_sol:
             return self.sol_df, params
         else:
