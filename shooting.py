@@ -925,6 +925,7 @@ class Collocation(Shooting):
             for j in range(1,d+1):
                 # Expression for the state derivative at the collocation point
                 xp = C[0,j]*Xk
+                
                 for i in range(d): xp = xp + C[i+1,j]*Xc[i]
 
                 # Algebraic states from second collocation point onwards:

@@ -42,7 +42,7 @@
     "bounds": {
         "u": {
             "lbu": [0],
-            "ubu": [1E7]
+            "ubu": [1E8]
         },
         "x": {
             "lbx": [280,280],
@@ -50,14 +50,14 @@
         }
     },
     "objective": "dot(Prad_to_env, Prad_to_env)",
-    "N": 24,
+    "N": 12,
     "dt": 3600,
     "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",
         "method": "legendre",
-        "degree": 3,
+        "degree": 1,
         "n_steps": 1
         }
     ,

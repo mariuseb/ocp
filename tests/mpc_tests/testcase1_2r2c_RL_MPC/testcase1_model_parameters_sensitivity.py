@@ -33,6 +33,7 @@ from csnlp import Solution, multistart, scaling, wrappers
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from gymnasium.wrappers import TimeLimit
 from pprint import pprint
+from math import floor, log10
 
 # text:
 rc('mathtext', default='regular')
@@ -50,9 +51,8 @@ days = 1000
 F = 96
 t = np.linspace(0, 1, 96)
 signal = np.sin(2*np.pi*F*t)
-_r_forecast = signal*10 + 280.15
-r_forecast = np.tile(_r_forecast[1:], days)
-r_forecast = np.concatenate([_r_forecast, r_forecast])
+r_forecast = signal*10 + 290.15
+r_forecast = np.tile(r_forecast, days)
 #plt.plot(t, signal)
 #plt.show()
 
@@ -140,15 +140,14 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
         """Computes the stage cost `L(s,a)`."""
         lb, ub = self.x_bnd
         return float(
-            #0.5 * 1E2 * np.square((state[0] - kwargs["x_nom_b"])/kwargs["x_nom"] - 0.75).sum()
-            + 0.5 * (action/kwargs["u_nom"])**2
-            + np.maximum(0, lb - state) @ self.w.T @ np.maximum(0, lb - state)
-            + np.maximum(0, state - ub) @ self.w.T @ np.maximum(0, state - ub)
-
+            0.5 * 1E2 * np.square((state[0] - kwargs["x_nom_b"])/kwargs["x_nom"] - 0.75).sum()
+            + 0.5 * 1E-2 * (action/kwargs["u_nom"])**2
+            + self.w.T @ np.maximum(0, lb - state)
+            + self.w.T @ np.maximum(0, state - ub)
         )
         
     def set_state(self):
-        self.x = np.asarray([293.15]).reshape(self.nx, 1)
+        self.x = np.asarray([293.65]).reshape(self.nx, 1)
         self.k = 0
         return self.x, {}
         
@@ -177,17 +176,15 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("1R1C_MPC_Q_learning.json")
+    mpc_cfg = os.path.join("1R1C_MPC_sens_test.json")
     perturb = 1.0
-    days = 20
-    params = np.array([1e-2,1E6])*perturb
-    #params[0] *= 1.5
+    params = np.array([1e-3,1e6])*perturb
+    #params[-1] = 1e6
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
     seed = 1
     agent_params= {
             "gamma": 1,
-            "beta": 0.003,
             "opt_params": {
                 "cost_defn": ["fullW", "fullR"],
                 "cost_wt": [[1.0, 1.0, 1.0, 1.0], [0.1, 0.1]],
@@ -195,7 +192,7 @@ if __name__ == "__main__":
             },
             "eps": 0.25,
             "learning_params": {
-                "lr": 1e-6 ,
+                "lr": 1e-6,
                 #"lr": 0,
                 #"lr": 1e-6,
                 #"lr": 5e-2,
@@ -223,9 +220,8 @@ if __name__ == "__main__":
                 #"u_nom_b": 3000,
                 "r_nom": [20],
                 "r_nom_b": [280.15],
-                #"p_nom": [1e-2,1e6],
+                "p_nom": [1e-3,1e6],
                 #"p_nom": [1]*5,
-                "p_nom": [1e-2,1E6],
                 "sl_nom": 20,
               }
     mpc = MPCfunapprox(
@@ -280,8 +276,7 @@ if __name__ == "__main__":
     
     x_ref_val = (293.15 - kwargs["x_nom_b"])/kwargs["x_nom"]
     policy_params[-1] = x_ref_val
-    #policy_params = np.append(policy_params, np.array(params))
-    policy_params = np.append(policy_params, np.array(params)/np.array(kwargs["p_nom"]))
+    policy_params = np.append(policy_params, np.array(params))
     
     """
     """
@@ -302,7 +297,7 @@ if __name__ == "__main__":
     cols.extend(S_labs)
     cols.extend(f_labs)
     cols.extend(["V0"])
-    #cols.extend(b_labs)
+    cols.extend(b_labs)
     cols.extend(["x_below[0]", "x_above[0]"])
     cols.extend(ref_labs)
     cols.extend(["R", "C"])
@@ -331,210 +326,68 @@ if __name__ == "__main__":
     """
     #decay = 0.999
     decay = 1
-    sigma = 50
+    sigma = 25
     
     lbx, ubx, ref = bounds.get_bounds(0, mpc.N) 
     k = 0
-    v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
-                                                        state, 
-                                                        params,
-                                                        policy_params,
-                                                        all_data[k:(k+mpc.N)],
-                                                        lbx, 
-                                                        ubx,
-                                                        ) # state value, gives the action
+    
     x_model = pd.DataFrame(columns=["model", "act"])
-    model_sens = pd.DataFrame(columns=["dQdR", "dQdC"])
-    for k in range(K):
-        policy_history.loc[k] = policy_params
-        #lbx, ubx, ref = bounds.get_bounds(k, mpc.N) 
-        """
-        TODO: duplicate handling of x0:
-        """
-        #action, add_info, sol, raw_sol = mpc.act_forward(obs)   
-        """
-        Get Q(s,a) and ∇Q.
-        Only change from V(s) is fixed u0.
-        """
-        q_mpc, add_info, qsol, raw_q_sol = mpc.Q_value(
-                                                    state, 
-                                                    action
-                                                    ) # state value, gives the action
-        dQdP = mpc.dQdP(
-                        raw_q_sol,
-                        optimal=add_info["optimal"]
-                        )
-        
-        """
-        Scale last two elements of dQdP,
-        sensitivity of model params, 
-        explictly:
-        """
-        dQdP[:,-2:] = dQdP[:,-2:]/np.array(kwargs["p_nom"])
-        model_sens.loc[k, :] = dQdP[:,-2:]
-        # normal-centered pert. on action:
-        #action = action + np.random.normal(0, sigma*(decay**k))
-        # step with perturbed action:
-        next_obs, reward, done, _, _ = env.step(float(action))
-        # simple case, no estimation, i.e. x == s:
-        next_state = next_obs
-        """
-        Save model prediction:
-        """
-        x_model.loc[k, :] = [vsol.loc[1, "Ti"], next_state[0][0]]
-        
-        # modify action to fit in buffer:
-        action = action.values.flatten()
-        """
-        TODO: rewrite buffer to only take:  
-            - Q(s,a)
-            - V(s+)
-            - ∇Q(s,a)
-            - R
-        Then we do the Q-learning update:
-            tau <- -R + gamma*V(s+) - Q(s,a)
-            theta_new <- theta_old + tau*∇Q(s,a)
-        rollout_return += reward
-        state = next_state.copy()
-        """
-        """
-        Get V(s+).
-        """
-        lbx, ubx, ref = bounds.get_bounds(k+1, mpc.N) 
-        v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
-                                                                next_state, 
+    
+    #r = 1e-3
+    #C = 1e6
+    #params = [r, C]
+    #policy_history[-2] = r
+    v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
+                                                                state, 
                                                                 params,
                                                                 policy_params,
-                                                                all_data[(k+1):(k+1+mpc.N)],
+                                                                all_data[k:(k+mpc.N)],
                                                                 lbx, 
                                                                 ubx,
-                                                                ) # state value, gives the action 
-        rollout_buffer.push(
-                state,
-                action,
-                reward,
-                next_state,
-                v_mpc,
-                q_mpc,
-                dQdP,
-                0, # no policy gradient yet, ignore dPi
-                action
-            )  
-        
+                                                                ) # state value, gives the action                    
+    q_mpc, add_info, qsol, raw_q_sol = mpc.Q_value(
+                                                state, 
+                                                action
+                                                ) # state value, gives the action    
+    
+    dQdP = mpc.dQdP(
+                    raw_q_sol,
+                    optimal=add_info["optimal"]
+                    )
+    
+    eps = 1e-4
+    r = params[0]
+    Rs = np.arange(r - eps, r + 2*eps, eps)
+    
+    res = pd.DataFrame(columns=["v_mpc"])
+    for r in Rs:
         """
-        Shift: t <- t + 1
+        Solve explicitly with given R.
+        
+        Compare to sensitivity obtained at
+        R = 0.01
+        
+        If no match, iterate on sensitivity
+        calculation until match.
         """
+        policy_params[-2] = r
+        params[0] = r  
+        (
+            v_mpc, 
+            add_info,
+            vsol,
+            raw_v_sol,
+            action,
+            x0
+        ) = mpc.V_value(
+                        state, 
+                        params,
+                        policy_params,
+                        all_data[k:(k+mpc.N)],
+                        lbx, 
+                        ubx,
+                        ) # state value, gives the action
+        res.loc[round(r, 4)] = v_mpc
         
-        rollout_return += reward
-        state = next_state.copy()
-        
-        # in trouble:
-        if mpc.nlp_solver.stats()["return_status"] != 'Solve_Succeeded':
-            print(action)
-        """
-        Possible batch update:
-        """
-        
-        if k == 1440:
-            print("head")
-        
-        if (k+1) % B == 0:
-            """
-            TODO: solve for value function in next state.
-            """
-            replay_buffer.push(rollout_buffer.buffer)
-            t_returns.append(rollout_return)
-            policy_params = mpc.train(replay_buffer)
-            """
-            Set entries not belonging to b to zero:
-            """
-            policy_params[:-3] = 0
-            policy_params[-3] = x_ref_val
-            rollout_buffer = BasicBuffer()
-            rollout_return = 0
-            params = policy_params[-2:]*np.array(kwargs["p_nom"])
-            """
-            New replay buffer:
-            """
-            replay_buffer = ReplayBuffer(max_len_buffer, seed)
+    print(res)
 
-        if (k+1) % max_ep_len == 0:
-            env.reset()
-    
-        # get forecast in separate step:
-        #data = boptest.forecast()
-        # save rewards for easy plotting:
-        rewards.append(reward)
-    
-    plt.rcParams.update({'font.size': 12})
-    #data = boptest.get_data(tf=K*mpc.dt)
-    
-    X = np.array(env.observations).squeeze()
-    X = X.flatten()
-    U = np.array(env.actions).flatten()
-    R = np.array(env.rewards).flatten()
-
-    _, axs = plt.subplots(2, 1, constrained_layout=True, sharex=True)
-    X_set = np.repeat(np.array([295.15]),K)
-    axs[0].plot(X_set, color="r", linestyle="dashed")
-    #axs[1].plot(X[1])
-    for i in range(2):
-        axs[0].axhline(env.x_bnd[i][0], color="r")
-        #axs[1].axhline(env.x_bnd[i][1], color="r")
-        axs[1].axhline(env.a_bnd[i], color="r")
-    axs[0].plot(X, linestyle="dashed")
-    axs[1].plot(U, color="b", linestyle="dashed")
-    axs[0].set_ylabel("$s_1$")
-    #axs[1].set_ylabel("$s_2$")
-    axs[1].set_ylabel("$a$")
-    
-    """
-    Plot some vital drivers of learning:
-    """
-    _, axs = plt.subplots(1, 1, constrained_layout=True, sharex=True)
-    axs.plot(mpc.learning_module.td_error)
-    axs.plot(mpc.learning_module.rewards, "x", linestyle="dashed")
-    axs.plot(mpc.learning_module.v_q_errors)
- 
-    ax = policy_history.R.plot()
-    X_set = np.repeat(np.array([1]),K)
-    ax.plot(X_set, color="r", linestyle="dashed")
-    plt.show()
-    
- 
-    _, axs = plt.subplots(2, 1, constrained_layout=True, sharex=True)
-    axs[0].plot(mpc.learning_module.td_error, "o", markersize=1)
-    axs[1].semilogy(rewards, "o", markersize=1)
-    axs[0].set_ylabel(r"$\tau$")
-    axs[1].set_ylabel("$L$")
-            
-    from math import sqrt, ceil
-    n = ceil(sqrt(mpc.nP))
-    fig, axes = plt.subplots(n,n)
-    cols = policy_history.columns
-    for i, ax in enumerate(axes.flatten()):
-        try:
-            ser = policy_history[cols[i]]
-            ser.plot(ax=ax)
-            ax.set_title(cols[i])
-        except IndexError:
-            pass
-    #fig.tight_layout()
-    plt.show()
-    
-    from math import sqrt, ceil
-    n = ceil(sqrt(mpc.nP))
-    fig, axes = plt.subplots(n,n)
-    cols = mpc.learning_module.grad_q_history.columns
-    for i, ax in enumerate(axes.flatten()):
-        try:
-            col = cols[i]
-            ser = mpc.learning_module.grad_q_history[col]
-            ser.plot(ax=ax)
-            ax.set_title(cols[i])
-        except IndexError:
-            pass
-    fig.tight_layout()
-    plt.show()
-    
-    print(all_data)

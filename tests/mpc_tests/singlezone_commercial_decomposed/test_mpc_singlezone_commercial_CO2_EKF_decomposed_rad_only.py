@@ -165,7 +165,7 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0_env = np.array([293.15,291.15])
+    x0_env = np.array([293.15,293.15])
     #x0_hvac = np.array([293.15,293.15,293.15,420])
     x0_hvac = np.array([293.15,293.15])
     

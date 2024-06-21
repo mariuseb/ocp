@@ -38,7 +38,7 @@ class ParametricMPC(MPC):
         self.add_linear_objective_term()
         # empty:
         #self.f = ca.MX()
-        self.add_dynamics_bias()
+        #self.add_dynamics_bias()
         # add model params as last part to P:
            
         """
@@ -46,8 +46,8 @@ class ParametricMPC(MPC):
         """
         if self.slack:
             #self.sigma = ca.MX.sym("sigma", self.obs_dim, self.N-1)
-            #self.sigma = ca.MX.sym("sigma", self.obs_dim*(self.N-1))
-            self.sigma = ca.MX.sym("sigma", self.obs_dim*(self.N))
+            self.sigma = ca.MX.sym("sigma", self.obs_dim*(self.N-1))
+            #self.sigma = ca.MX.sym("sigma", self.obs_dim*(self.N))
             #self.nlp["x"] = ca.vertcat(self.nlp["x"], ca.vertcat(self.sigma.T))
             #self.nlp["x"] = ca.vertcat(self.nlp["x"], ca.veccat(self.sigma.T))
             self.nlp["x"] = ca.vertcat(self.nlp["x"], ca.vertcat(self.sigma))
@@ -69,12 +69,21 @@ class ParametricMPC(MPC):
             
         self.split_h_g()
         self.add_ref_tracking()
-        #self.add_sinusoidal_dist_to_objective()
         
         if self.model_params_in_policy: 
             p, p_constr = self.get_p_equals_p_constraint()
             self.P = ca.vertcat(self.P, p)
             self.g.append(p_constr)
+            """
+            Release variable constraints to 
+            see if constraint works:
+            """
+            self.p_start, self.p_stop = self.nlp_parser["p"]["range"]["a"], self.nlp_parser["p"]["range"]["b"]
+            
+            #self.nlp["g"] = ca.vertcat(self.nlp["g"], p_constr)
+            
+        #self.add_sinusoidal_dist_to_objective()
+        
         
         """
         TODO:
@@ -127,8 +136,9 @@ class ParametricMPC(MPC):
         J = 0
         for n in range(self.N-1):
             u_k = self.get_var_at_stage("u", n)
-            J += (self.gamma**n)*u_k.T@u_k
-        self.nlp["f"] = 1E-2*(1/2)*J
+            #J += (self.gamma**n)*1e-2*u_k.T@u_k
+            J += (self.gamma**n)*1*u_k.T@u_k
+        self.nlp["f"] = (1/2)*J
 
     def add_ref_tracking(self):
         """
@@ -138,12 +148,12 @@ class ParametricMPC(MPC):
         # on both states: 
         x_ref = ca.MX.sym("x_ref", 1)
         #x_ref = 0.75
-        for n in range(1, self.N):
+        for n in range(0, self.N):
             x_k = self.get_var_at_stage("x", n)
             """
             Get DAE-var stage-wise, e.g. Ti
             """
-            J += (1/2)*(self.gamma**n)*(x_k[0] - x_ref).T@1E2@(x_k[0] - x_ref)
+            J += (1/2)*(self.gamma**n)*(x_k[0] - x_ref).T@0@(x_k[0] - x_ref)
         self.nlp["f"] = J
         self.P = ca.vertcat(self.P, x_ref)
             
@@ -154,10 +164,10 @@ class ParametricMPC(MPC):
         """
         #R = ca.MX.sym("R", self.n_x, self.n_x)
         
-        w = 1e2 #*self.sl_nom # should be part of config file 
-        for n in range(self.N):
+        w = 1e2 #*self.sl_nom # should be part of config files
+        for n in range(self.N-1):
             sl = self.get_var_at_stage("sl", n)
-            self.nlp["f"] += sl.T@w@sl
+            self.nlp["f"] += (1/2)*sl.T@w@sl
            
     def get_p_equals_p_constraint(self):
         """
@@ -173,7 +183,7 @@ class ParametricMPC(MPC):
         p = ca.MX.sym("p", self.n_p) # new parameter
         #self.P = ca.vertcat(self.P, p)
         #self.nlp.g.append(p_orig - p)
-        return p, p_orig - p/self.p_nom
+        return p, p_orig - p
         #return p, p_orig - p
         
     def split_h_g(self):
@@ -191,9 +201,15 @@ class ParametricMPC(MPC):
         
         #for i, (lb, ub) in enumerate(zip(self.lbg, self.ubg)):
         """
-        Only for multiple shooting:
+        Try for both multiple shooting and
+        collocation:
         """
-        for i in range(self.N-1):
+        N = self.nlp["g"].shape[0]
+        """
+        TODO: fix for n_x > 1
+        """
+        #for i in range(self.N-1):
+        for i in range(N):
             start = i*self.n_x
             stop = start + self.n_x
             lb = self.lbg[start:stop]
@@ -235,20 +251,23 @@ class ParametricMPC(MPC):
         # define parameters as placeholders for 
         # numerical values on x,u bounds
         if self.method == "collocation":
-            n_x_skip = (self.strategy.d + 1)*self.n_x
+            #n_x_skip = (self.strategy.d + 1)*self.n_x
             #n_x_skip = self.strategy.d*self.n_x
+            p_lbx = ca.MX.sym("p_lbx", (self.N-1)*self.n_x)
+            p_ubx = ca.MX.sym("p_ubx", (self.N-1)*self.n_x)
         else:
-            n_x_skip = self.n_x
+            #n_x_skip = self.n_x
+            p_lbx = ca.MX.sym("p_lbx", self.n_x, self.N)
+            p_ubx = ca.MX.sym("p_ubx", self.n_x, self.N)
             
-        x_info = self.nlp_parser.vars["x"]
         p_lbx = ca.MX.sym("p_lbx", self.n_x, self.N)
         p_ubx = ca.MX.sym("p_ubx", self.n_x, self.N)
-        #p_lbx = ca.MX.sym("p_lbx", (self.N-1)*self.n_x)
-        #p_ubx = ca.MX.sym("p_ubx", (self.N-1)*self.n_x)
+            
+        n_x_skip = self.n_x
+        x_info = self.nlp_parser.vars["x"]
         
         x_below = ca.MX.sym("x_below", self.n_x)
         x_above = ca.MX.sym("x_above", self.n_x)
-        
         
         sl_nom = self.sl_nom
         
@@ -256,14 +275,20 @@ class ParametricMPC(MPC):
         First timestep,
         avoid bound modification.
         """
-        
         n = 0
         start = n*n_x_skip
         stop = n*n_x_skip + 1
         x = self.get_var_at_stage("x", 0)
+        """
+        if self.slack:
+            self.hx.append(p_lbx[:, start:stop] - x - self.sigma[start:stop]/sl_nom)
+            self.hx.append(x - p_ubx[:, start:stop] - self.sigma[start:stop]/sl_nom)
+            self.hs.append(-self.sigma[start:stop])
+        else:
+        """
         self.hx.append(p_lbx[:, start:stop] - x)
         self.hx.append(x - p_ubx[:, start:stop])
-        self.hs.append(-self.sigma[start:stop])
+            
         
         """
         TODO:
@@ -274,6 +299,8 @@ class ParametricMPC(MPC):
         for n in range(1, self.N):
             #start = (n-1)*n_x_skip
             #stop = start + self.n_x
+            slack_start = start
+            slack_stop = stop
             start = n*n_x_skip
             stop = start + self.n_x
             x = self.get_var_at_stage("x", n)
@@ -281,10 +308,16 @@ class ParametricMPC(MPC):
             #self.hx.append(x - p_ubx[:, start:stop] + x_above - self.sigma[:, n-1]/sl_nom)
             #self.hx.append(p_lbx[start:stop] + x_below - x - self.sigma[start:stop]/sl_nom)
             #self.hx.append(x - p_ubx[start:stop] + x_above - self.sigma[start:stop]/sl_nom)
-            self.hx.append(p_lbx[start:stop] + x_below - x)
-            self.hx.append(x - p_ubx[start:stop] + x_above)
-            #self.hs.append(-self.sigma[:, n-1])
-            self.hs.append(-self.sigma[start:stop])
+            if self.slack:
+                self.hx.append(p_lbx[start:stop] + x_below - x - self.sigma[slack_start:slack_stop]/sl_nom)
+                self.hx.append(x - p_ubx[start:stop] + x_above - self.sigma[slack_start:slack_stop]/sl_nom)
+                #self.hx.append(p_lbx[start:stop] + x_below - x)
+                #self.hx.append(x - p_ubx[start:stop] + x_above)
+                #self.hs.append(-self.sigma[:, n-1])
+                self.hs.append(-self.sigma[slack_start:slack_stop])
+            else:
+                self.hx.append(p_lbx[:, start:stop] - x)
+                self.hx.append(x - p_ubx[:, start:stop])
             
         #u_info = self.nlp_parser.vars["u"]
         """
@@ -661,6 +694,11 @@ class MPCFormulation_ex(ParametricMPC):
         # Jacobian of the Lagrangian with respect to the primal decision variables and fixed + learnable parameters
         dLdw = ca.jacobian(Lag, self.Opt_Vars)
         dLdP = ca.jacobian(Lag, self.P)
+        """
+        TODO: 
+        get contiguous scaling vector for
+        'Opt_Vars'
+        """
         f_dLdP = ca.Function("dLdP", [self.Opt_Vars, mult, self.Pf, self.P, self.Pbounds], [dLdP])
 
         # Build KKT matrix expression
@@ -775,10 +813,11 @@ class MPCfunapprox(MPCFormulation_ex):
         x0[at + st : at + st + sn * (N - 1)] = opt_var[at + st + sn : at + 2 * st]  # sigma init
         return x0    
 
-    def _parse_agent_params(self, eps, opt_params, gamma):
+    def _parse_agent_params(self, eps, opt_params, gamma, beta):
         self.eps = eps
         self.opt_params = opt_params
         self.gamma = gamma
+        self.beta = beta
         #self.learning_params = learning_params
         
     def codegen_solvers(self):
@@ -835,6 +874,7 @@ class MPCfunapprox(MPCFormulation_ex):
         
         if self.model_params_in_policy:
             model_params = policy_params[-self.n_p:]
+            #policy_params[-self.n_p:] /= self.p_nom
             #lbp = 1e-6*model_params
             #ubp = 1e6*model_params
             lbp = model_params
@@ -1028,6 +1068,13 @@ class MPCfunapprox(MPCFormulation_ex):
                     )
           
         # run nlp solver
+        
+        """
+        'Release' p:
+        """
+        self.lbx[self.p_start:self.p_stop] = -np.inf
+        self.ubx[self.p_start:self.p_stop] = np.inf
+        
         soln = self.nlp_solver(
             x0=self.x0,
             #p=np.concatenate([pf_val,p_val])[:,0],
@@ -1056,7 +1103,7 @@ class MPCfunapprox(MPCFormulation_ex):
             #"pf": pf_val.copy(),
             "p": self.p_val.copy(),
         }
-        return v_mpc, info, sol_df, soln, act0, x0
+        return round(v_mpc, 6), info, sol_df, soln, act0, x0
 
     def Q_value(self, state, action):
         """
@@ -1113,6 +1160,12 @@ class MPCfunapprox(MPCFormulation_ex):
         self.pf_val[self.obs_dim:(self.obs_dim + self.action_dim)] = action
         self.p_val = np.concatenate([self.pf_val, self.pp_val, self.p_bounds])
 
+        """
+        'Release' p:
+        """
+        self.lbx[self.p_start:self.p_stop] = -np.inf
+        self.ubx[self.p_start:self.p_stop] = np.inf
+
         # run Q nlp solver
         qsoln = self.qsolver(
             x0=self.x0,
@@ -1140,7 +1193,8 @@ class MPCfunapprox(MPCFormulation_ex):
         # for debugging purposes, inspect solution frame:
         sol_df, params = self.parse_solution(qsoln)
         
-        return q_mpc, info, sol_df, qsoln
+        #return q_mpc, info, sol_df, qsoln
+        return round(q_mpc, 6), info, sol_df, qsoln
     
     def dVdP(self, soln, optimal=True):
         """
@@ -1186,12 +1240,12 @@ class MPCfunapprox(MPCFormulation_ex):
             """
             Temp fix for missing sensitivities on model params:
             Get sensitivities from 'lam_x' instead.
-            """
             if self.model_params_in_policy:
                 p_info = self.nlp_parser["p"]
                 start, stop = p_info["range"]["a"], p_info["range"]["b"]
                 lam_model_p = np.array(soln["lam_x"][start:stop]).flatten()
                 dLdP[:,-self.n_p:] = lam_model_p #*self.p_nom
+            """
         else:
             dLdP = np.zeros((1, self.nP))
         return dLdP
@@ -1345,6 +1399,7 @@ class MPCfunapprox(MPCFormulation_ex):
             """
             # simple update:
             dP = -(self.lr*dJ).flatten().clip(-self.tr, self.tr)
+            #dP = (self.lr*dJ).flatten().clip(-self.tr, self.tr)
             self.dP_df.loc[len(self.dP_df), :] = dP
             # check if any steps create possibility of indefinite stage cost:
             #self.lr = self.lr - 1e-4*self.lr                           
@@ -1374,8 +1429,14 @@ class MPCfunapprox(MPCFormulation_ex):
             If so, reject step on them.
             """
             if self.model_params_in_policy:
-                dP[-self.n_p:] *= self.p_nom
+                #dP[-self.n_p:] *= self.p_nom
                 # no negative model parameters:
-                if any((self.pp_val + dP)[-self.n_p:] < 0):
+                bool_inds = (self.pp_val + dP)[-self.n_p:] < 0
+                if any(bool_inds):
                     dP[-self.n_p:] = 0
+                    #offset = self.nP - self.n_p # physical params + total_params
+                    #inds = [i + offset for i, _bool in enumerate(bool_inds) if _bool]
+                    # set relevant parameter very small, but not zero:
+                    #dP[inds] = -(self.pp_val[inds] - 1E-8)
+                    
             self.pp_val = self.pp_val + dP

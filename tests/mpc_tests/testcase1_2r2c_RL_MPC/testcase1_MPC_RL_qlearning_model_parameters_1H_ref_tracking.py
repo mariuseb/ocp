@@ -47,8 +47,8 @@ import matplotlib.pyplot as plt
 Creating the sinusoidal dist:
 """
 days = 1000
-F = 96
-t = np.linspace(0, 1, 96)
+F = 24
+t = np.linspace(0, 1, F)
 signal = np.sin(2*np.pi*F*t)
 _r_forecast = signal*10 + 280.15
 r_forecast = np.tile(_r_forecast[1:], days)
@@ -139,16 +139,21 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
     def get_stage_cost(self, state: npt.NDArray[np.floating], action: float) -> float:
         """Computes the stage cost `L(s,a)`."""
         lb, ub = self.x_bnd
+        state = (state[0] - kwargs["x_nom_b"])/kwargs["x_nom"]
+        lb_scaled = (lb - kwargs["x_nom_b"])/kwargs["x_nom"]
+        ub_scaled = (ub - kwargs["x_nom_b"])/kwargs["x_nom"]
+        slack_lower = np.maximum(0, lb_scaled - state)/kwargs["x_nom"]
+        slack_upper = np.maximum(0, state - ub_scaled)/kwargs["x_nom"]
         return float(
-            #0.5 * 1E2 * np.square((state[0] - kwargs["x_nom_b"])/kwargs["x_nom"] - 0.75).sum()
-            + 0.5 * (action/kwargs["u_nom"])**2
-            + np.maximum(0, lb - state) @ self.w.T @ np.maximum(0, lb - state)
-            + np.maximum(0, state - ub) @ self.w.T @ np.maximum(0, state - ub)
+            0.5 * 1E3 * np.square(state - (293.15 - kwargs["x_nom_b"])/kwargs["x_nom"]).sum()
+            #+ 0.5 * 1e-2 * (action/kwargs["u_nom"])**2
+            #+ slack_lower @ self.w.T @ slack_lower
+            #+ slack_upper @ self.w.T @ slack_upper
 
         )
         
     def set_state(self):
-        self.x = np.asarray([293.15]).reshape(self.nx, 1)
+        self.x = np.asarray([293.65]).reshape(self.nx, 1)
         self.k = 0
         return self.x, {}
         
@@ -177,11 +182,11 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("1R1C_MPC_Q_learning.json")
-    perturb = 1.0
-    days = 20
-    params = np.array([1e-2,1E6])*perturb
-    #params[0] *= 1.5
+    mpc_cfg = os.path.join("1R1C_MPC_Q_learning_1H.json")
+    perturb = 1.1
+    days = 365
+    params = np.array([1e-2,1E6])*1.0
+    params[0] *= perturb
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
     seed = 1
@@ -195,15 +200,16 @@ if __name__ == "__main__":
             },
             "eps": 0.25,
             "learning_params": {
-                "lr": 1e-6 ,
+                #"lr": 1e-6 ,
                 #"lr": 0,
-                #"lr": 1e-6,
+                #"lr": 1e-2,
+                "lr": 1e-2,
                 #"lr": 5e-2,
                 #"lr": 5e-3,
-                "tr": 1,
+                "tr": 1e-2,
                 "train_params": {
                     "iterations": 1,
-                    "batch_size": 96
+                    "batch_size": 24
                 },
                 "constrained_updates": False
             }
@@ -226,6 +232,7 @@ if __name__ == "__main__":
                 #"p_nom": [1e-2,1e6],
                 #"p_nom": [1]*5,
                 "p_nom": [1e-2,1E6],
+                #"p_nom": [1,1],
                 "sl_nom": 20,
               }
     mpc = MPCfunapprox(
@@ -240,7 +247,7 @@ if __name__ == "__main__":
     
     #url = 'http://bacssaas_boptest:5000'
     # Use gym env:
-    B = 96
+    B = 24
     max_ep_len = int(B)
     env = MonitorEpisodes(
                           TimeLimit(
@@ -253,9 +260,9 @@ if __name__ == "__main__":
     N = mpc.N
     #dt = mpc.dt
     lb_night = {"Ti": 293.15}
-    ub_night = {"Ti": 296.15}
+    ub_night = {"Ti": 293.15}
     lb_day = {"Ti": 293.15}
-    ub_day = {"Ti": 296.15}
+    ub_day = {"Ti": 293.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -401,16 +408,39 @@ if __name__ == "__main__":
         Get V(s+).
         """
         lbx, ubx, ref = bounds.get_bounds(k+1, mpc.N) 
+        v_prev = v_mpc
         v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
-                                                                next_state, 
-                                                                params,
-                                                                policy_params,
-                                                                all_data[(k+1):(k+1+mpc.N)],
-                                                                lbx, 
-                                                                ubx,
-                                                                ) # state value, gives the action 
+                                                                    next_state, 
+                                                                    params,
+                                                                    policy_params,
+                                                                    all_data[(k+1):(k+1+mpc.N)],
+                                                                    lbx,                     
+                                                                    ubx,
+                                                                    ) # state value, gives the action 
+        """
+        Modify v_mpc by subtracting stage cost at t=0
+        """
+        state = vsol["Ti"].iloc[0]
+        state = (state - kwargs["x_nom_b"])/kwargs["x_nom"]
+        ref_dev = abs(state - x_ref_val)
+        lb, ub = env.x_bnd
+        lb_scaled = (lb - kwargs["x_nom_b"])/kwargs["x_nom"]
+        ub_scaled = (ub - kwargs["x_nom_b"])/kwargs["x_nom"]
+        slack_lower = np.maximum(0, lb_scaled - state)/kwargs["x_nom"]
+        slack_upper = np.maximum(0, state - ub_scaled)/kwargs["x_nom"]
+        slack =  slack_lower @ env.w.T @ slack_lower + \
+            slack_upper @ env.w.T @ slack_upper
+        
+        v_next = v_prev - reward
+        """
+            (
+                1e-2*0.5*((qsol["phi_h"]/3000).iloc[0])**2 + \
+                1E2*(slack**2) + \
+                1E3*0.5*(ref_dev)**2
+            )
+        """           
         rollout_buffer.push(
-                state,
+                state, 
                 action,
                 reward,
                 next_state,
@@ -444,6 +474,10 @@ if __name__ == "__main__":
             """
             replay_buffer.push(rollout_buffer.buffer)
             t_returns.append(rollout_return)
+            
+            if policy_history["R"].iloc[-1] < 1:
+                print("k")
+            
             policy_params = mpc.train(replay_buffer)
             """
             Set entries not belonging to b to zero:
@@ -457,6 +491,17 @@ if __name__ == "__main__":
             New replay buffer:
             """
             replay_buffer = ReplayBuffer(max_len_buffer, seed)
+            """
+            Recalculate with new params:
+            """
+            v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
+                                                                next_state, 
+                                                                params,
+                                                                policy_params,
+                                                                all_data[(k+1):(k+1+mpc.N)],
+                                                                lbx, 
+                                                                ubx,
+                                                                ) # state value, gives the action 
 
         if (k+1) % max_ep_len == 0:
             env.reset()
@@ -475,7 +520,7 @@ if __name__ == "__main__":
     R = np.array(env.rewards).flatten()
 
     _, axs = plt.subplots(2, 1, constrained_layout=True, sharex=True)
-    X_set = np.repeat(np.array([295.15]),K)
+    X_set = np.repeat(np.array([293.15]),K)
     axs[0].plot(X_set, color="r", linestyle="dashed")
     #axs[1].plot(X[1])
     for i in range(2):

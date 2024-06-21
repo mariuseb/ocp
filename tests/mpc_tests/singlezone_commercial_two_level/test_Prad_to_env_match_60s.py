@@ -105,7 +105,8 @@ if __name__ == "__main__":
     
     params_hvac = mpc_hvac.p0
     #params_hvac[-1] = 194972.42237174
-    params_hvac[-1] = 131703.52980613
+    #params_hvac[-1] = 131703.52980613
+    params_hvac[-1] = 0
     
     """
     Test rad_val on grey-box model

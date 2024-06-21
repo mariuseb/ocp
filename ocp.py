@@ -1024,6 +1024,9 @@ class OCP(metaclass=ABCMeta):
         if self.method == "collocation" and name == "x":
             # TODO: finite elems * polynomial degree
             n_skip = (self.strategy.d + 1)*n_ocp_var
+            start = stage*n_skip
+            #stop = start + n_ocp_var
+            return self.nlp_parser.x_orig[start]
         else:
             n_skip = n_ocp_var
         start = n_skip*stage
@@ -1311,21 +1314,23 @@ class OCP(metaclass=ABCMeta):
             bounds["p"] = {}
     
             if lbp is not None:
-                bounds["p"]["lb"] = lbp/self.scale
-                #bounds["p"]["lb"] = lbp
+                #bounds["p"]["lb"] = lbp/self.scale
+                bounds["p"]["lb"] = lbp
             else:
                 bounds["p"]["lb"] = None
                 
             if ubp is not None:
-                bounds["p"]["ub"] = ubp/self.scale
-                #bounds["p"]["ub"] = ubp
+                #bounds["p"]["ub"] = ubp/self.scale
+                bounds["p"]["ub"] = ubp
             else:
                 bounds["p"]["ub"] = None
                 
             if p_init is None:
-                bounds["p"]["x0"] = lbp/self.scale
+                #bounds["p"]["x0"] = lbp/self.scale
+                bounds["p"]["x0"] = lbp
             else:
-                bounds["p"]["x0"] = p_init/self.scale
+                #bounds["p"]["x0"] = p_init/self.scale
+                bounds["p"]["x0"] = p_init
                 
             # what if 0 in self.scale? replace here.
             #print(bounds["p"]["x0"])

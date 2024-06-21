@@ -47,12 +47,29 @@ import matplotlib.pyplot as plt
 Creating the sinusoidal dist:
 """
 days = 1000
-F = 96
-t = np.linspace(0, 1, 96)
+F = 25
+t = np.linspace(0, 1, F)
 signal = np.sin(2*np.pi*F*t)
-_r_forecast = signal*10 + 280.15
-r_forecast = np.tile(_r_forecast[1:], days)
-r_forecast = np.concatenate([_r_forecast, r_forecast])
+_r_forecast = signal*5 + 280.15
+r_forecast = np.tile(_r_forecast[:-1], days)
+#r_forecast = np.tile(_r_forecast, days)
+#r_forecast = np.concatenate([_r_forecast, r_forecast])
+
+_lb_per = np.array([289.15]*24)
+_lb_per[8:16] += 4
+#__lb_per = np.array([289.15]*23)
+#__lb_per[7:15] += 4
+lb_per = np.tile(_lb_per, days)
+#lb_per = np.concatenate([_lb_per, lb_per])
+
+_ub_per = np.array([301.15]*24)
+_ub_per[8:16] -= 5
+#__ub_per = np.array([301.15]*23)
+#__ub_per[8:15] -= 5
+ub_per = np.tile(_ub_per, days)
+#ub_per = np.concatenate([_ub_per, ub_per])
+
+#ub_per = np.concatenate([_ub_per, ub_per])
 #plt.plot(t, signal)
 #plt.show()
 
@@ -103,7 +120,7 @@ From this, we can get
 properly scaled A, B
 matrices.
 """
-dt = 900
+dt = 3600
 Ad = _mpc.get_Ad(dt, p=params)
 Bd = _mpc.get_Bd(dt, p=params)
 
@@ -119,10 +136,13 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
     A = Ad
     B = Bd[:,:1]
     R = Bd[:,1:]
+    #x_bnd = (np.asarray([[293.15]]), np.asarray([[296.15]]))  # bounds of state
     x_bnd = (np.asarray([[293.15]]), np.asarray([[296.15]]))  # bounds of state
+    #x_bnd = (lb_per, ub_per)  # bounds of state
     a_bnd = (-3000, 3000)  # bounds of control input
     w = np.asarray([[1e2]])  # penalty weight for bound violations
     e_bnd = (-0.1, 0.1 )  # uniform noise bounds
+    F = _mpc.integrator.one_sample
 
     def reset(
         self,
@@ -136,9 +156,11 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
         #self.df = pd.DataFrame(columns=["phi_h", "Ta", "phi_s"])
         return self.x.T, {}
 
-    def get_stage_cost(self, state: npt.NDArray[np.floating], action: float) -> float:
+    def get_stage_cost(self, state: npt.NDArray[np.floating], action: float, k: int = 0) -> float:
         """Computes the stage cost `L(s,a)`."""
         lb, ub = self.x_bnd
+        #_lb, _ub = self.x_bnd
+        #lb, ub = _lb[k], _ub[k]
         return float(
             #0.5 * 1E2 * np.square((state[0] - kwargs["x_nom_b"])/kwargs["x_nom"] - 0.75).sum()
             + 0.5 * (action/kwargs["u_nom"])**2
@@ -148,7 +170,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
         )
         
     def set_state(self):
-        self.x = np.asarray([293.15]).reshape(self.nx, 1)
+        self.x = np.asarray([289.15]).reshape(self.nx, 1)
         self.k = 0
         return self.x, {}
         
@@ -160,9 +182,34 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
     ) -> tuple[npt.NDArray[np.floating], float, bool, bool, dict[str, Any]]:
         """Steps the LTI system."""
         action = float(action)
+        
+        # use integrator:
+        """
         x_new = self.A @ self.x + self.B * action + self.R @ np.array([r_forecast[self.k]])
+        x = (self.x - kwargs["x_nom_b"])/kwargs["x_nom"]
+        u = action/kwargs["u_nom"]
+        p = params/kwargs["p_nom"]
+        r = (np.array([r_forecast[self.k]]) - kwargs["r_nom_b"])/kwargs["r_nom"]
+        x_new = np.array(
+                        self.F(
+                            x0=x*kwargs["x_nom"] + kwargs["x_nom_b"],
+                            u=u*kwargs["u_nom"],
+                            p=p*kwargs["p_nom"],
+                            r=r*kwargs["r_nom"] + kwargs["r_nom_b"]
+                            )["xf"]
+                        ).reshape((self.nx,1))
+        """
+        x_new = np.array(
+                        self.F(
+                            x0=self.x,
+                            u=action,
+                            p=params,
+                            r=r_forecast[self.k]
+                            )["xf"]
+                        ).reshape((self.nx,1))
+        #x_new = x_new*kwargs["x_nom"] + kwargs["x_nom_b"]
         #x_new[0] += self.np_random.uniform(*self.e_bnd)
-        r = self.get_stage_cost(self.x, action)
+        r = self.get_stage_cost(self.x, action, k=self.k)
         self.x = x_new
         self.k += 1
         # store for MHE:
@@ -177,11 +224,11 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("1R1C_MPC_Q_learning.json")
+    mpc_cfg = os.path.join("1R1C_MPC_Q_learning_1H.json")
     perturb = 1.0
-    days = 20
-    params = np.array([1e-2,1E6])*perturb
-    #params[0] *= 1.5
+    days = 700
+    params = np.array([1e-2,1E6])*1.0
+    params[1] *= perturb
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
     seed = 1
@@ -195,15 +242,17 @@ if __name__ == "__main__":
             },
             "eps": 0.25,
             "learning_params": {
-                "lr": 1e-6 ,
-                #"lr": 0,
-                #"lr": 1e-6,
+                #"lr": 1e-6 ,
+                "lr": 1e-2,
+                #"lr": 1e-3, # works well starting from above
+                #"lr": 1e-2,
                 #"lr": 5e-2,
                 #"lr": 5e-3,
-                "tr": 1,
+                #"tr": 0.5e-1,
+                "tr": 9e-3,
                 "train_params": {
                     "iterations": 1,
-                    "batch_size": 96
+                    "batch_size": 24
                 },
                 "constrained_updates": False
             }
@@ -240,7 +289,7 @@ if __name__ == "__main__":
     
     #url = 'http://bacssaas_boptest:5000'
     # Use gym env:
-    B = 96
+    B = 24
     max_ep_len = int(B)
     env = MonitorEpisodes(
                           TimeLimit(
@@ -322,6 +371,8 @@ if __name__ == "__main__":
     #mpc.learning_module.grad_q_history_ipopt.columns = policy_history.columns
     #data = pd.DataFrame(data=r.T, columns=["Ta", "phi_s"])
     all_data = pd.DataFrame(data=r_forecast, columns=["Ta"])
+    all_data["lb"] = lb_per
+    all_data["ub"] = ub_per
     raw_sol = None
     env.reset()
     
@@ -356,6 +407,9 @@ if __name__ == "__main__":
         Get Q(s,a) and ∇Q.
         Only change from V(s) is fixed u0.
         """
+        if k == 5:
+            print("head")
+        
         q_mpc, add_info, qsol, raw_q_sol = mpc.Q_value(
                                                     state, 
                                                     action
@@ -370,7 +424,7 @@ if __name__ == "__main__":
         sensitivity of model params, 
         explictly:
         """
-        dQdP[:,-2:] = dQdP[:,-2:]/np.array(kwargs["p_nom"])
+        #dQdP[:,-2:] = dQdP[:,-2:]/np.array(kwargs["p_nom"])
         model_sens.loc[k, :] = dQdP[:,-2:]
         # normal-centered pert. on action:
         #action = action + np.random.normal(0, sigma*(decay**k))
@@ -401,6 +455,7 @@ if __name__ == "__main__":
         Get V(s+).
         """
         lbx, ubx, ref = bounds.get_bounds(k+1, mpc.N) 
+        v_prev = v_mpc
         v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
                                                                 next_state, 
                                                                 params,
@@ -409,12 +464,20 @@ if __name__ == "__main__":
                                                                 lbx, 
                                                                 ubx,
                                                                 ) # state value, gives the action 
+        """
+        Modify v_mpc by subtracting stage cost at t=0
+        """
+        #v_next = v_mpc - (0.5*((qsol["phi_h"]/3000).iloc[0])**2 + 100*(vsol["sigma_1"].iloc[0]**2))
+        #v_next = v_prev - reward
+        #v_next = v_mpc - 0.5*(100*(vsol["sigma_1"].iloc[-1]**2))
+        #v_next = v_mpc - (0.5*((vsol["phi_h"]/3000).iloc[-2])**2 + 100*(vsol["sigma_1"].iloc[-1]**2))
+        v_next = v_mpc - reward
         rollout_buffer.push(
                 state,
                 action,
                 reward,
                 next_state,
-                v_mpc,
+                v_next,
                 q_mpc,
                 dQdP,
                 0, # no policy gradient yet, ignore dPi
@@ -457,6 +520,17 @@ if __name__ == "__main__":
             New replay buffer:
             """
             replay_buffer = ReplayBuffer(max_len_buffer, seed)
+            """
+            Recalculate with new params:
+            """
+            v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
+                                                                next_state, 
+                                                                params,
+                                                                policy_params,
+                                                                all_data[(k+1):(k+1+mpc.N)],
+                                                                lbx, 
+                                                                ubx,
+                                                                ) # state value, gives the action 
 
         if (k+1) % max_ep_len == 0:
             env.reset()
@@ -476,12 +550,13 @@ if __name__ == "__main__":
 
     _, axs = plt.subplots(2, 1, constrained_layout=True, sharex=True)
     X_set = np.repeat(np.array([295.15]),K)
-    axs[0].plot(X_set, color="r", linestyle="dashed")
+    #axs[0].plot(X_set, color="r", linestyle="dashed")
     #axs[1].plot(X[1])
     for i in range(2):
         axs[0].axhline(env.x_bnd[i][0], color="r")
+        #axs[0].plot(env.x_bnd[i], drawstyle="steps-pre", color="r")
         #axs[1].axhline(env.x_bnd[i][1], color="r")
-        axs[1].axhline(env.a_bnd[i], color="r")
+        axs[1].axhline(env.a_bnd[i], drawstyle="steps-post", color="r")
     axs[0].plot(X, linestyle="dashed")
     axs[1].plot(U, color="b", linestyle="dashed")
     axs[0].set_ylabel("$s_1$")
@@ -499,6 +574,7 @@ if __name__ == "__main__":
     ax = policy_history.R.plot()
     X_set = np.repeat(np.array([1]),K)
     ax.plot(X_set, color="r", linestyle="dashed")
+    ax.legend(["R", "R_true"])
     plt.show()
     
  
