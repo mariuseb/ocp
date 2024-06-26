@@ -169,7 +169,7 @@ if __name__ == "__main__":
     y_data.Pvent.plot(color="y", linewidth=0.75)
     plt.show()
 
-    cfg_path = "configs/4R3C_Tsup_input_energy_cons.json"
+    cfg_path = "configs/4R3C_Tsup_input_Rirad_NL.json"
 
     kwargs = {
         "x_nom": 12,
@@ -274,6 +274,12 @@ if __name__ == "__main__":
                         "init": 15,
                         "lb": 1,
                         "ub": 40
+                    },
+                    "n":
+                    {
+                        "init": 1,
+                        "lb": 0.2,
+                        "ub": 3
                     }
                     }
     
@@ -334,7 +340,7 @@ if __name__ == "__main__":
                                       ubp=ubp,
                                       x_guess=x_guess,
                                       covar=ca.veccat(Q, R),
-                                      codegen=False
+                                      codegen=True
                                       )       
         
         sol.index = y_data.index

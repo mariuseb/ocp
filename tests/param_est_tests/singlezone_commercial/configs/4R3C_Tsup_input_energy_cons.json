@@ -1,0 +1,87 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*alpha_vent1*cp_air*ahu_reaFloSupAir*(Tsup_air - Ti) + (Trad - Ti)/(Rirad*Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "rad_flo*cp_water*(Tsup - Trad)/Crad + (Ti - Trad)/(Rirad*Crad)"
+        },
+        "alg": {
+            "Prad_to_env": "Prad_to_env - (Trad - Ti)/(Rirad)"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Ai",
+            "cp_water",
+            "cp_air",
+            "alpha_vent1"
+        ],
+        "u": [
+            "Pvent",
+            "Prad",
+            "ahu_pump_sup",
+            "rad_flo",
+            "ahu_reaFloSupAir",
+            "Tsup",
+            "rad_flo_on",
+            "ahu_reaTHeaRec", 
+            "Tret", 
+            "Tsup_air"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad"
+        ],
+        "z": [
+            "Prad_to_env"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        },
+        "z": {
+            "lbz": [-1E4],
+            "ubz": [1E6]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + 1E-8*dot(ca.sum1(Prad_to_env) - ca.sum1(Prad), ca.sum1(Prad_to_env) - ca.sum1(Prad))",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

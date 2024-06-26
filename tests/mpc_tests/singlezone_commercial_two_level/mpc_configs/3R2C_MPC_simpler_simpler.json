@@ -4,9 +4,6 @@
             "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*Prad_to_env",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
-        "alg": {
-            "Trad": "(Prad_to_env*Rirad + Ti) - Trad"
-        },
         "p": [
             "Rie",
             "Rea",
@@ -25,9 +22,7 @@
             "cp_air",
             "alpha_vent1",
             "alpha_vent2",
-            "Tret_offset",
-            "Prad_to_env_lim",
-            "Trad_lim"
+            "Tret_offset"
         ],
         "u": [
             "Prad_to_env"
@@ -42,9 +37,6 @@
         "x": [
             "Ti",
             "Te"
-        ],
-        "z": [
-            "Trad"
         ]
     },
     "bounds": {
@@ -55,17 +47,7 @@
         "x": {
             "lbx": [280,280],
             "ubx": [340,340]
-        },
-        "z": {
-            "lbz": [280],
-            "ubz": [340]
         }
-    },
-    "ocp": {
-        "h": [
-            "-20 <= Trad[0] - Trad_lim <= 20",
-            "0 <= Prad_to_env[0] - Prad_to_env_lim <= 0"
-        ]
     },
     "objective": "dot(Prad_to_env, Prad_to_env) + 1E3*dot(sl, sl)",
     "N": 24,

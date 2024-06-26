@@ -31,9 +31,10 @@ if __name__ == "__main__":
     opt_config_base = get_opt_config_path()
     
     mpc_env_cfg = os.path.join("mpc_configs", "3R2C_MPC_simpler_simpler.json")
-    mpc_hvac_cfg = os.path.join("mpc_configs", "HVAC_MPC_no_CO2_adj_Tsup_300s.json")
+    mpc_hvac_cfg = os.path.join("mpc_configs", "HVAC_MPC_no_CO2_adj_Tsup_300s_mod_longer.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
     ekf_env_cfg = os.path.join("ekf_configs", "3R2C_simpler_EKF.json")
+    ekf_hvac_cfg = os.path.join("ekf_configs", "3R3C_HVAC_EKF.json")
     
     #params_hvac = pd.read_csv("HVAC_model_latest.csv", index_col=0)
     params_hvac = pd.read_csv("HVAC_DAE_model_latest_Tsup_Tret_1min.csv", index_col=0)
@@ -43,7 +44,10 @@ if __name__ == "__main__":
     params = params.to_dict()["0"]
     params = {k: {"init": v} for k, v in params.items()}
     # to get the scale right:
-    params["Prad_to_env_MPC"] = {
+    params["Prad_to_env_MPC_1"] = {
+        "init": 1E6
+    }
+    params["Prad_to_env_MPC_2"] = {
         "init": 1E6
     }
 
@@ -102,6 +106,19 @@ if __name__ == "__main__":
     ekf_env.set_R(R)
     ekf_env.set_Q(Q)
     
+    """
+    EKF for HVAC problem:
+    """
+    ekf_hvac = KalmanDAE(ekf_hvac_cfg,
+                        functions=deepcopy(functions)
+                        )
+    # set params:
+    R = ca.DM.eye(ekf_hvac.dae.n_y)
+    Q = ca.DM.eye(mpc_hvac.n_x)*100
+    ekf_hvac.set_params(params)
+    ekf_hvac.set_R(R)
+    ekf_hvac.set_Q(Q)
+    
     boptest = Boptest(
                       boptest_cfg,
                       name="singlezone_commercial"
@@ -112,10 +129,10 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     #dt = mpc.dt
-    lb_night = {"Ti": 294.15}
-    ub_night = {"Ti": 296.15}
-    lb_day = {"Ti": 294.15}
-    ub_day = {"Ti": 296.15}
+    lb_night = {"Ti": 297.15}
+    ub_night = {"Ti": 300.15}
+    lb_day = {"Ti": 297.15}
+    ub_day = {"Ti": 300.15}
     
     bounds = Bounds(mpc.dt,
                     mpc.dae.x,
@@ -130,16 +147,17 @@ if __name__ == "__main__":
     
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
-    x0_env = np.array([294.15,294.15])
+    #x0_env = np.array([289.9,289.9])
+    x0_env = np.array([293.15,293.15])
     #x0_hvac = np.array([293.15,293.15,293.15,420])
     
     sol = pd.read_csv("HVAC_DAE_sol_latest_Tret_1min.csv", index_col=0)
     #x0_hvac = sol.loc[0, ["Trad", "Tret", "Tsup"]].values
-    #x0_hvac = np.array([306,309,330.15])
     x0_hvac = np.array([293.15,293.15,293.15])
+    #x0_hvac = np.array([293.15,293.15,330.15])
     
     # sim horizon: 2 days
-    days = 2
+    days = 3
     K = int(days*24*4*3)
     time = pd.DataFrame(columns=["time"])
 
@@ -185,6 +203,7 @@ if __name__ == "__main__":
             """
             data_hvac["Ti"] = data_hvac["Ti"].interpolate(method="linear")
             params_hvac[-1] = sol_env.Prad_to_env[0].astype(float)
+            params_hvac[-2] = sol_env.Prad_to_env[1].astype(float)
             #data.loc[(2*mpc_hvac.N-1)*mpc_hvac.dt, "Ti"] = sol_env.Ti[2].astype(float)
             
             #data.loc[:(mpc.N-1)*mpc.dt,"Prad_to_env_MPC"] = sol_env.Prad_to_env.astype(float).values
@@ -207,7 +226,7 @@ if __name__ == "__main__":
                                                         codegen=False
                                                         )
             # set starting state to end of horizon:
-            x0_hvac = sol_hvac.loc[3, mpc_hvac.x_names].values
+            #x0_hvac = sol_hvac.loc[3, mpc_hvac.x_names].values
             # store results:
             sol_hvac[mpc.u_names] = sol_env.loc[0, mpc.u_names]
             for i in range(4):
@@ -228,6 +247,7 @@ if __name__ == "__main__":
             Get current disturbances before advancing:
             """
             r_pred_env = data[ekf_env.dae.r_names].iloc[0].values
+            r_pred_hvac = data_hvac[ekf_hvac.dae.r_names].iloc[0].values
             #r_pred_hvac = data[ekf_hvac.dae.r_names].iloc[0].values
             """
             Advance:
@@ -243,6 +263,9 @@ if __name__ == "__main__":
             """
             u_model = sol_env[ekf_env.dae.u].iloc[0].values
             y_z_meas = [y_meas[name] for name in ekf_env.y]
+            """
+            Change z here to estimated Trad:
+            """
             x0_env, _, _ = ekf_env.estimate(
                                             x0_env, 
                                             z=sol_env.loc[0, mpc.z_names].values,
@@ -250,6 +273,27 @@ if __name__ == "__main__":
                                             y=y_z_meas, 
                                             u=u_model, 
                                             r=r_pred_env
+                                            )
+            """
+            HVAC filter:
+            
+            Let's assume for simplicity 
+            that we can actually measure
+            'rad_flo':
+            """
+            u_model = [y_meas[name] for name in ekf_hvac.dae.u]
+            # but this Ti is not correct? more correct with x0 from sol_env
+            u_model[1] = data_hvac.iloc[0].Ti
+            y_z_meas = [y_meas[name] for name in ekf_hvac.y]
+            """
+            Change z here to estimated Trad:
+            """
+            x0_hvac, _, _ = ekf_hvac.estimate(
+                                            x0_hvac, 
+                                            p=params_hvac,
+                                            y=y_z_meas, 
+                                            u=u_model, 
+                                            r=r_pred_hvac
                                             )
             
         else:
@@ -273,13 +317,16 @@ if __name__ == "__main__":
     #ax = z_model.Prad.plot(color="r", linewidth=0.75, drawstyle="steps-post")
     #Prad.plot(color="k", linewidth=0.75, drawstyle="steps-post")
     #plt.show()
+    z_model_comp = z_model.copy()
+    x_model_comp = x_model.copy()
+    
     z_model = z_model[:-1]
     
     fig, axes = plt.subplots(2,2, sharex=False)
     res = boptest.get_data(tf=K*boptest.h)
     res["Pvent"] -= res["Prad"]
     res.Prad_to_env = -res.Prad_to_env
-    res = res.shift(-1)
+    #res = res.shift(-1)
     #res = res.iloc[:-1]
     z_model.index = res.index
     
@@ -304,8 +351,9 @@ if __name__ == "__main__":
     fig, axes = plt.subplots(3,2, sharex=False)
     res = boptest.get_data(tf=K*boptest.h)
     #res = res.iloc[:-1]
+    #x_model = x_model[:-1]
     res_x = res[::3]
-    #res_x = res_x[:-1]
+    #res_x = res_x.iloc[:-1]
     x_model.index = res_x.index
     
     for name, ax in zip(x_names, axes.flatten()):
@@ -318,10 +366,19 @@ if __name__ == "__main__":
         ax.set_xticklabels([])
     #fig.tight_layout()
     plt.show()
-        
-    z_model_comp = z_model.copy()
+    
+    #z_model_comp = z_model.copy()
+    z_model_comp = z_model_comp.iloc[:-1]
+    
     index = pd.Index(datetime(2020, 1, 1) + z_model_comp.index * pd.offsets.Second())
     z_model_comp.index = index
+    
+    res = boptest.get_data(tf=K*boptest.h)
+    #res = res.iloc[:-1]
+    res.Prad_to_env = -res.Prad_to_env
+    res.index = z_model_comp.index
+    z_model_comp["Prad_to_env_true"] = res.Prad_to_env
+    
         
     plt.rcParams.update({'font.size': 12})
     fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds, heat_key="Prad")

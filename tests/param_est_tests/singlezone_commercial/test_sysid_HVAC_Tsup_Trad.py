@@ -100,8 +100,8 @@ if __name__ == "__main__":
 
     data.index = pd.TimedeltaIndex(data.index, unit="s")
     old_data = data.copy()
-    data = data.resample(rule="1min").asfreq()
-    #data = data.resample(rule="1min").mean()
+    #data = data.resample(rule="5min").asfreq()
+    data = data.resample(rule="15min").mean()
     # special handling of these:_
     #integrate = ["rad_flo", "coi_flo", "Pvent", "Prad", "Tsup", "Tret", "Ti"]
     #for name in integrate:
@@ -184,8 +184,8 @@ if __name__ == "__main__":
     """
     dt = (y_data.index[1] - y_data.index[0]).seconds
     #M = 2*24*4
-    M = 2*24*60
-    W = 3*24*60
+    M = 0*24*4
+    W = 4*24*4
     W2 = 14*24*60
     train = y_data[M:W]
     test = y_data[W:W2]
@@ -523,10 +523,13 @@ if __name__ == "__main__":
         """
         R[0,0] = 0
         R[1,1] = 1/np.var(y_data.Tret)
+        #R[1,1] = 0
         R[2,2] = 1/np.var(y_data.Tsup)
+        #R[2,2] = 0
         #R[1,1] = 0
         #R[2,2] = 0
         R[3,3] = 1/np.var(y_data.Prad)
+        #R[3,3] = 0
         R[4,4] = 1/np.var(y_data.Prad_to_env)
         #R[4,4] = 0
         #R[3,3] = 0

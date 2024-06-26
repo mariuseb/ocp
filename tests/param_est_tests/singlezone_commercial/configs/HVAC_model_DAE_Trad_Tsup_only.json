@@ -2,11 +2,10 @@
     "model": {
         "ode": {
             "Trad": "rad_flo*cp_water*(Tsup - Trad)/Crad + (Ti + Trad_offset - Trad)/(Rirad*Crad)",
-            "Tret": "(a2*rad_flo*(Trad - Tret))/(Rrr*Cret)",
             "Tsup": "(a1*rad_flo*(dh_Tsup - Tsup))/(Rsup*Csup) + ((1 - rad_val)*(dh_Tsup_off - Tsup))/(Rsup_off*Csup_off)"
         },
         "alg": {
-            "Prad": "Prad - rad_flo*cp_water*eta_hex_rad*(Tsup - Tret)",
+            "Prad": "Prad - rad_flo*cp_water*eta_hex_rad*(Tsup - Trad)",
             "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)",
             "Prad_to_env": "Prad_to_env - (Trad - Ti)/Rirad"
         },
@@ -75,7 +74,8 @@
             "ahu_pump_sup",
             "ahu_pump_ret",
             "rad_flo_on",
-            "Ti"
+            "Ti",
+            "Tret"
         ],
         "r": [
             "Ta",
@@ -86,7 +86,6 @@
         ],
         "x": [
             "Trad",
-            "Tret",
             "Tsup"
         ],
         "z": [
@@ -106,8 +105,8 @@
     },
     "bounds": {
         "x": {
-            "lbx": [280,280,280],
-            "ubx": [340,340,340]
+            "lbx": [280,280],
+            "ubx": [340,340]
         },
         "z": {
             "lbz": [0,0,0],

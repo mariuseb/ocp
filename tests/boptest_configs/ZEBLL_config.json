@@ -254,9 +254,9 @@
     "singlezone_commercial":
     {
       "misc": {
-        "h": 60,
+        "h": 300,
         "N": 97,
-        "start_time": 172800,
+        "start_time": 0,
         "warmup_period": 604800
       },
       "maps" : {

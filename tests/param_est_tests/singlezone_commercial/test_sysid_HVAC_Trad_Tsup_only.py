@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     data.index = pd.TimedeltaIndex(data.index, unit="s")
     old_data = data.copy()
-    data = data.resample(rule="1min").asfreq()
+    data = data.resample(rule="5min").mean()
     #data = data.resample(rule="1min").mean()
     # special handling of these:_
     #integrate = ["rad_flo", "coi_flo", "Pvent", "Prad", "Tsup", "Tret", "Ti"]
@@ -184,8 +184,8 @@ if __name__ == "__main__":
     """
     dt = (y_data.index[1] - y_data.index[0]).seconds
     #M = 2*24*4
-    M = 2*24*60
-    W = 3*24*60
+    M = 2*24*12
+    W = 4*24*12
     W2 = 14*24*60
     train = y_data[M:W]
     test = y_data[W:W2]
@@ -217,8 +217,8 @@ if __name__ == "__main__":
         "z_nom_b": [0,0,0],
         "r_nom": [12,300,1E5,1E5,1E5],
         "r_nom_b": [289.15,0,0,0,0],
-        "u_nom": [1]*5 + [12],
-        "u_nom_b ": [0]*5 + [289.15],
+        "u_nom": [1]*5 + 2*[12],
+        "u_nom_b ": [0]*5 + 2*[289.15],
         "y_nom": [12,12,12,1E6,1E6,12,1],
         "y_nom_b": [289.15,289.15,289.15,0,0,289.15,0],
         #"slack": True
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     }
     """
          
-    cfg_path = "configs/HVAC_model_DAE_Tret_Tsup_Prad_to_env.json"
+    cfg_path = "configs/HVAC_model_DAE_Trad_Tsup_only.json"
         
     param_guess = {
                 "UA_sup_nom": 
@@ -501,7 +501,7 @@ if __name__ == "__main__":
     #start = test.index[0] - 10
     #stop = test.index[-1] + 10
     #y_data = y_data.loc[start:stop]
-    x_guess = y_data[["Trad","Tret","Tsup"]].values.T        
+    x_guess = y_data[["Trad","Tsup"]].values.T        
     N = len(y_data) 
     
     with ParameterEstimation(config=cfg_path,
@@ -511,7 +511,7 @@ if __name__ == "__main__":
                              param_guess=param_guess,
                              **kwargs) as param_est:
                              #as param_est:
-        Q = ca.DM.eye(3)
+        Q = ca.DM.eye(2)
         R = ca.DM.eye(7)
         #R[0,0] =2 1E-9
         

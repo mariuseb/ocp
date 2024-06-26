@@ -435,23 +435,11 @@ if __name__ == "__main__":
                     {
                         "init": 60
                     },
-                "Cret":
-                    {
-                        "init": 1E2
-                    },
                 "Csup":
                     {
-                        "init": 1E2
+                        "init": 1E4
                     },
                 "Rsup":
-                    {
-                        "init": 1E-2
-                    },
-                "Rrr":
-                    {
-                        "init": 1E-2
-                    },
-                "Rsr":
                     {
                         "init": 1E-2
                     },
@@ -477,26 +465,30 @@ if __name__ == "__main__":
                     },           
                 }
     
-    #params_env = pd.read_csv("envelope_model_latest_6R4C.csv", index_col=0)
-    params_env = pd.read_csv("envelope_model_latest_4R3C.csv", index_col=0)
+    params_env = pd.read_csv("envelope_model_latest_6R4C.csv", index_col=0)
     """
     Set ub = lb = init on all env paramaters,
     except those related to Tret.
     """
     for ndx in params_env.index:
         val = float(params_env.loc[ndx])
-        param_guess[ndx] = {
-            "init": val,
-            "lb": val,
-            "ub": val
-        }
-    param_guess["alpha_vent2"] = param_guess["alpha_vent1"]
-    param_guess["Rirad"]["lb"] /= 100
-    param_guess["Rirad"]["ub"] *= 100
-    param_guess["Crad"]["lb"] /= 100
-    param_guess["Crad"]["ub"] *= 100
-    #param_guess["Csup"]["init"] /= 10
-    #param_guess["Crad"]["init"] /= 100
+        if ndx not in ("Rrr", "Cret", "Rsr", "Tret_offset",
+                       "Crad", "Rirad" \
+                       ):
+            param_guess[ndx] = {
+                "init": val,
+                "lb": val,
+                "ub": val
+            }
+        else:
+            param_guess[ndx] = {
+                "init": val,
+                #"lb": val,
+                #"ub": val
+            }
+    param_guess["Cret"]["init"] /= 1000
+    param_guess["Csup"]["init"] /= 10
+    param_guess["Crad"]["init"] /= 100
     #test = y_data.loc[(y_data.rad_val > 0) & (y_data.rad_flo > 0)]
     #start = test.index[0] - 10
     #stop = test.index[-1] + 10
@@ -528,11 +520,11 @@ if __name__ == "__main__":
         #R[2,2] = 0
         R[3,3] = 1/np.var(y_data.Prad)
         R[4,4] = 1/np.var(y_data.Prad_to_env)
-        #R[4,4] = 0
+        R[4,4] = 0
         #R[3,3] = 0
         #R[4,4] = 0
         R[5,5] = 1/np.var(y_data.Trad)
-        #R[5,5] = 0
+        R[5,5] = 0
         R[6,6] = 1/np.var(y_data.rad_flo)
         #R[6,6] = 0
         

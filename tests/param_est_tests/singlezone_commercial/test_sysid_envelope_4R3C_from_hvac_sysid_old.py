@@ -121,7 +121,7 @@ if __name__ == "__main__":
     data["rad_flo"] = data["rad_flo"].shift(-1) 
     data["rad_flo_on"] = (data.rad_flo > 1E-4).astype(int) + 0.01
     data["Tret_coi"] = data["Tret_coi"].shift(-1)
-    data["Tsup"] = data["Tsup"].shift(-1) 
+    #data["Tsup"] = data["Tsup"].shift(-1) 
     #data["Tret"] = data["Tret"].shift(-1) 
     data["ahu_pump_sup"] = data["ahu_pump_sup"].shift(-1) 
     data["ahu_pump_ret"] = data["ahu_pump_ret"].shift(-1) 
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     y_data.Pvent.plot(color="y", linewidth=0.75)
     plt.show()
 
-    cfg_path = "configs/4R3C_Tsup_input_energy_cons.json"
+    cfg_path = "configs/4R3C.json"
 
     kwargs = {
         "x_nom": 12,
@@ -278,7 +278,6 @@ if __name__ == "__main__":
                     }
     
     params_hvac = pd.read_csv("HVAC_DAE_model_latest_Tret_5min.csv", index_col=0)
-    """
     val = float(params_hvac.loc["Crad"])
     param_guess["Crad"] = {
         "init": val,
@@ -309,7 +308,6 @@ if __name__ == "__main__":
         "lb": val,
         "ub": val,
     }
-    """
     x_guess = y_data[["Ti", "Ti", "Tret"]].values.T
     #param_guess = ParamGuess(_param_guess)    
 
@@ -334,7 +332,7 @@ if __name__ == "__main__":
                                       ubp=ubp,
                                       x_guess=x_guess,
                                       covar=ca.veccat(Q, R),
-                                      codegen=False
+                                      codegen=True
                                       )       
         
         sol.index = y_data.index
