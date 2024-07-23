@@ -110,7 +110,6 @@ mpc_cfg = os.path.join("1R1C_MPC.json")
 #params = [1]*5
 #params = [1e-2,1e-1,1e6,5e6,1]
 params = [1e-2,1e6]
-params_true = np.array(params)
 _mpc = MPC(
           config=mpc_cfg,
           param_guess=params,
@@ -186,18 +185,9 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
         # use integrator:
         """
         x_new = self.A @ self.x + self.B * action + self.R @ np.array([r_forecast[self.k]])
-        x_new = np.array(
-                        self.F(
-                            x0=self.x,
-                            u=action,
-                            p=params,
-                            r=r_forecast[self.k]
-                            )["xf"]
-                        ).reshape((self.nx,1))
-        """
         x = (self.x - kwargs["x_nom_b"])/kwargs["x_nom"]
         u = action/kwargs["u_nom"]
-        p = params_true/kwargs["p_nom"]
+        p = params/kwargs["p_nom"]
         r = (np.array([r_forecast[self.k]]) - kwargs["r_nom_b"])/kwargs["r_nom"]
         x_new = np.array(
                         self.F(
@@ -205,6 +195,15 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], float]):
                             u=u*kwargs["u_nom"],
                             p=p*kwargs["p_nom"],
                             r=r*kwargs["r_nom"] + kwargs["r_nom_b"]
+                            )["xf"]
+                        ).reshape((self.nx,1))
+        """
+        x_new = np.array(
+                        self.F(
+                            x0=self.x,
+                            u=action,
+                            p=params,
+                            r=r_forecast[self.k]
                             )["xf"]
                         ).reshape((self.nx,1))
         #x_new = x_new*kwargs["x_nom"] + kwargs["x_nom_b"]
@@ -224,8 +223,7 @@ if __name__ == "__main__":
     bop_config_base = get_boptest_config_path()
     opt_config_base = get_opt_config_path()
     
-    mpc_cfg = os.path.join("1R1C_MPC_Q_learning_1H_terminal_constraint.json")
-    mpc_cfg_ = os.path.join("1R1C_MPC_Q_learning_1H_one_step_less.json")
+    mpc_cfg = os.path.join("1R1C_MPC_Q_learning_1H.json")
     perturb = 0.9
     #days = 1
     params = np.array([1e-2,1E6])*1.0
@@ -245,13 +243,13 @@ if __name__ == "__main__":
             "learning_params": {
                 #"lr": 1e-6 ,
                 #"lr": 1e-2,
-                "lr": 1e-2,
+                "lr": 10,
                 #"lr": 1e-3, # works well starting from above
                 #"lr": 1e-2,
                 #"lr": 5e-2,
                 #"lr": 5e-3,
                 #"tr": 0.5e-1,
-                "tr": 9e-3,
+                "tr": 9e-2,
                 "train_params": {
                     "iterations": 1,
                     "batch_size": 24
@@ -264,8 +262,6 @@ if __name__ == "__main__":
     kwargs = {
         "p_nom": [1,1],
         "x_nom_b": 0,
-        "r_nom": 1,
-        "r_nom_b": 0,
         "x_nom": 1,
         "u_nom": 1
     }
@@ -273,16 +269,16 @@ if __name__ == "__main__":
                 "x_nom": 20,
                 "x_nom_b": 280.15,
                 "u_nom": 3000,
+                #"u_nom_b": 3000,
                 "r_nom": [20],
                 "r_nom_b": [280.15],
-                #"u_nom_b": 3000,
                 #"p_nom": [1e-2,1e6],
                 #"p_nom": [1]*5,
                 "p_nom": [1e-2,1E6],
                 "sl_nom": 20,
               }
     mpc = MPCfunapprox(
-                        deepcopy(agent_params),
+                        agent_params,
                         config=mpc_cfg,
                         param_guess=params, 
                         functions=functions,
@@ -290,17 +286,6 @@ if __name__ == "__main__":
                         rl_algorithm="Qlearning",
                         **deepcopy(kwargs)
                         )  # to remove, replace with N
-    """
-    mpc_ = MPCfunapprox(
-                        agent_params,
-                        config=mpc_cfg_,
-                        param_guess=params, 
-                        functions=functions,
-                        model_params_in_policy=True,
-                        rl_algorithm="Qlearning",
-                        **deepcopy(kwargs)
-                        )  # to remove, replace with N
-    """
     
     #url = 'http://bacssaas_boptest:5000'
     # Use gym env:
@@ -422,18 +407,13 @@ if __name__ == "__main__":
         Get Q(s,a) and ∇Q.
         Only change from V(s) is fixed u0.
         """
+        if k == 5:
+            print("head")
         
         q_mpc, add_info, qsol, raw_q_sol = mpc.Q_value(
                                                     state, 
                                                     action
                                                     ) # state value, gives the action
-        
-        if k == 4:
-            print("head")
-            
-        if k == 5:
-            print("head")
-            
         dQdP = mpc.dQdP(
                         raw_q_sol,
                         optimal=add_info["optimal"]
@@ -479,37 +459,21 @@ if __name__ == "__main__":
         lbx, ubx, ref = bounds.get_bounds(k+1, mpc.N) 
         v_prev = v_mpc
         v_mpc, add_info, vsol, raw_v_sol, action, x0 = mpc.V_value(
-                                                                    next_state, 
-                                                                    params,
-                                                                    policy_params,
-                                                                    all_data[(k+1):(k+1+mpc.N)],
-                                                                    lbx, 
-                                                                    ubx,
-                                                                    ) # state value, gives the action 
+                                                                next_state, 
+                                                                params,
+                                                                policy_params,
+                                                                all_data[(k+1):(k+1+mpc.N)],
+                                                                lbx, 
+                                                                ubx,
+                                                                ) # state value, gives the action 
         """
         Modify v_mpc by subtracting stage cost at t=0
         """
         #v_next = v_mpc - (0.5*((qsol["phi_h"]/3000).iloc[0])**2 + 100*(vsol["sigma_1"].iloc[0]**2))
-        """
-        Below works only in case p = p_true:
-        """
-        #v_next = v_prev - (0.5*((qsol["phi_h"]/3000).iloc[0])**2 + 100*(vsol["sigma_1"].iloc[0]**2))
         #v_next = v_prev - reward
-        v_next = v_mpc - (0.5*((vsol["phi_h"]/3000).iloc[-2])**2 + 100*(vsol["sigma_1"].iloc[-1]**2))
         #v_next = v_mpc - 0.5*(100*(vsol["sigma_1"].iloc[-1]**2))
-        
-        if k == 6:
-            print(vsol)
-        
-        if k == 7:
-            print(vsol)
-            
-        if k == 8:
-            print(vsol)
-        
-        #v_next = v_mpc - (0.5*((vsol["phi_h"]/3000).iloc[-2])**2 + 100*(vsol["sigma_1"].iloc[-1]**2))
+        v_next = v_mpc - (0.5*((vsol["phi_h"]/3000).iloc[-2])**2 + 100*(vsol["sigma_1"].iloc[-1]**2))
         #v_next = v_mpc - reward
-        #v_next = v_mpc
         rollout_buffer.push(
                 state,
                 action,

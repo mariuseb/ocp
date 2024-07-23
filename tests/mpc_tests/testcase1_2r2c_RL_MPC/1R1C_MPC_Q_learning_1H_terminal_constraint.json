@@ -19,14 +19,19 @@
     },
     "bounds": {
         "u": {
-            "lbu": [-10000],
-            "ubu": [10000]
+            "lbu": [-3000],
+            "ubu": [3000]
         }
     },
+    "ocp": {
+        "h": [
+            "0 == Ti[0] - Ti[24]"
+        ]
+    },
     "objective": "dot(phi_h, phi_h)",
-    "N": 24,
+    "N": 25,
     "dt": 3600,
-    "method": "multiple_shooting",
+    "method": "collocation",
     "integrator": 
         {
         "name": "IRK",
