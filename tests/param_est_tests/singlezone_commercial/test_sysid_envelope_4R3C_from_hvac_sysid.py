@@ -169,7 +169,8 @@ if __name__ == "__main__":
     y_data.Pvent.plot(color="y", linewidth=0.75)
     plt.show()
 
-    cfg_path = "configs/4R3C_Tsup_input_energy_cons.json"
+    #cfg_path = "configs/4R3C_Tsup_input_energy_cons.json"
+    cfg_path = "configs/4R3C.json"
 
     kwargs = {
         "x_nom": 12,
@@ -277,14 +278,28 @@ if __name__ == "__main__":
                     }
                     }
     
-    params_hvac = pd.read_csv("HVAC_DAE_model_latest_Tret_5min.csv", index_col=0)
-    """
+    params_hvac = pd.read_csv("HVAC_DAE_model_latest_Tret_1min.csv", index_col=0)
     val = float(params_hvac.loc["Crad"])
     param_guess["Crad"] = {
         "init": val,
         "lb": val,
         "ub": val,
     }
+    
+    val = float(params_hvac.loc["Rirad"])
+    param_guess["Rirad"] = {
+        "init": val,
+        "lb": val,
+        "ub": val,
+    }
+    val = float(params_hvac.loc["dh_Tsup"])
+    param_guess["dh_Tsup"] = {
+        "init": val,
+        "lb": val,
+        "ub": val,
+    }
+    
+    """
     val = float(params_hvac.loc["Cret"])
     param_guess["Cret"] = {
         "init": val,
@@ -293,12 +308,6 @@ if __name__ == "__main__":
     }
     val = float(params_hvac.loc["Rrr"])
     param_guess["Rrr"] = {
-        "init": val,
-        "lb": val,
-        "ub": val,
-    }
-    val = float(params_hvac.loc["Rirad"])
-    param_guess["Rirad"] = {
         "init": val,
         "lb": val,
         "ub": val,
@@ -350,4 +359,4 @@ if __name__ == "__main__":
         plt.show()
         print(params)
         
-    params.to_csv("envelope_model_latest_4R3C.csv", index=True)  
+    params.to_csv("envelope_model_old_4R3C.csv", index=True)  

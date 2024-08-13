@@ -115,7 +115,7 @@ if __name__ == "__main__":
                         )
     # set params:
     R = ca.DM.eye(ekf_hvac.dae.n_y)
-    Q = ca.DM.eye(mpc_hvac.n_x)*1E-3
+    Q = ca.DM.eye(mpc_hvac.n_x)*1E3
     ekf_hvac.set_params(params)
     ekf_hvac.set_R(R)
     ekf_hvac.set_Q(Q)
@@ -321,13 +321,13 @@ if __name__ == "__main__":
     z_model_comp = z_model.copy()
     x_model_comp = x_model.copy()
     
-    z_model = z_model[:-1]
+    #z_model = z_model[:-1]
     
     fig, axes = plt.subplots(2,2, sharex=False)
     res = boptest.get_data(tf=K*boptest.h)
     res["Pvent"] -= res["Prad"]
     res.Prad_to_env = -res.Prad_to_env
-    #res = res.shift(-1)
+    res = res.shift(-1)
     #res = res.iloc[:-1]
     z_model.index = res.index
     
@@ -351,7 +351,7 @@ if __name__ == "__main__":
     
     fig, axes = plt.subplots(3,2, sharex=False)
     res = boptest.get_data(tf=K*boptest.h)
-    #res = res.iloc[:-1]
+    res = res.iloc[:-1]
     #x_model = x_model[:-1]
     res_x = res[::3]
     #res_x = res_x.iloc[:-1]

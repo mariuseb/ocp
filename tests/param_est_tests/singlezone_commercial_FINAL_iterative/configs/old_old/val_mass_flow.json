@@ -1,0 +1,55 @@
+{
+    "model": {
+        "alg": {
+            "rad_flo": "rad_flo - NN(rad_val)",
+            "Prad": "Prad - rad_flo*cp_water*(Tsup - Tret)*eta_hex3"
+        },
+        "w": {
+            "v1": "y1 - Prad",
+            "v6": "y6 - rad_flo"
+        },
+        "p": [
+            "cp_water",
+            "eta_hex3"
+        ],
+        "u": [
+            "Tsup",
+            "Tret",
+            "rad_val"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "z": [
+            "rad_flo",
+            "Prad"
+        ],
+        "y": [
+            ["y1", "Prad"],
+            ["y6", "rad_flo"]
+            
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v6, v6)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

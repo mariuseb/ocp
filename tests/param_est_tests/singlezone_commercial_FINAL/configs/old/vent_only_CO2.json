@@ -1,0 +1,67 @@
+{
+    "model": {
+        "ode": {
+            "CO2_in": "n_air*c*(CO2_out - CO2_in) + c_occ*n_occ"
+        },
+        "alg": {
+            "n_air": "n_air - (n_mech + n_nat + n_inf)",
+            "n_mech": "n_mech - ahu_reaFloExtAir",
+            "n_nat": "n_nat - (ahu_reaFloSupAir-ahu_reaFloExtAir)"
+        },
+        "w": {
+            "v1": "CO2_in - y1"
+        },
+        "p": [
+            "c",
+            "CO2_out",
+            "n_inf",
+            "c_occ"
+        ],
+        "u": [
+            "Pvent",
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir",
+            "ahu_reaTSupAir"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad",
+            "n_occ"
+        ],
+        "x": [
+            "CO2_in"
+        ],
+        "z": [
+            "n_air",
+            "n_mech",
+            "n_nat"
+        ],
+        "y": [
+            ["y1", "CO2_in"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

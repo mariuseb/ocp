@@ -1,0 +1,79 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci*Rhi)*(ahu_reaTSupAir - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "ahu_reaTSupAir": "(Th - ahu_reaTSupAir)/(Rhs*Csup) + (1/Csup*Rhi)*(Ti - ahu_reaTSupAir)"
+        },
+        "alg": {
+            "Th": "oveValCoi*m_flow_water_nom*cp_water*(ahu_reaTCoiSup - ahu_reaTCoiRet)*eta_hex - ahu_reaFloSupAir*cp_air*(Th - ahu_reaTHeaRec)"
+        },
+        "w": {
+            "v1": "Ti - y1", 
+            "v2": "oveValCoi*m_flow_water_nom*cp_water*(ahu_reaTCoiSup - ahu_reaTCoiRet) - y2"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rhs",
+            "Rhi",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Csup",
+            "Ai",
+            "m_flow_water_nom",
+            "cp_water",
+            "cp_air",
+            "eta_hex"
+        ],
+        "u": [
+            "Pvent",
+            "ahu_pump_sup",
+            "oveValCoi",
+            "ahu_reaTHeaRec",
+            "ahu_reaTCoiSup",
+            "ahu_reaTCoiRet",
+            "ahu_reaFloSupAir"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "z": [
+            "Th"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "ahu_reaTSupAir"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "ahu_reaTSupAir"],
+            ["y3", "Pvent"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

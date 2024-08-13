@@ -1,0 +1,119 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*Prad_to_env_act",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "P_to_rad_act/Crad - Prad_to_env_act/Crad",
+            "Tret": "(rad_flo*a1*(Trad - Tret))/(Rrr*Cret)"
+        },
+        "alg": {
+            "Prad": "Prad - rad_flo*cp_water*eta_hex_rad*(dh_Tsup - Tret)",
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)",
+            "P_to_rad_act": "P_to_rad_act - rad_flo*cp_water*(dh_Tsup - Trad)",
+            "Prad_to_env_act": "Prad_to_env_act - (Trad - Ti)/Rirad"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v2": "Prad - y2"
+        },
+        "p": [
+            "Rie",
+            "Ria",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "rho_int",
+            "Rirad",
+            "Crad",
+            "n1",
+            "n",
+            "n2",
+            "n3",
+            "n4",
+            "rad_flo_nom",
+            "cp_water",
+            "eta_hex_ahu",
+            "eta_hex_rad",
+            "m_flow_air_nom",
+            "m_flow_air_nom_ext",
+            "cp_air",
+            "eta_hex1",
+            "Trec_off",
+            "k",
+            "ahu_pump_sup_thres",
+            "coi_flo_nom_b",
+            "coi_flo_nom_a",
+            "Tret_coi_b",
+            "dh_Tsup",
+            "dh_Tsup_off",
+            "a",
+            "b",
+            "c",
+            "d",
+            "Rrr",
+            "Rsr",
+            "Cret",
+            "Csup",
+            "Rsup",
+            "Csup_off",
+            "Rsup_off",
+            "Csup_nom",
+            "Tret_offset",
+            "a1",
+            "a2",
+            "Prad_to_env_MPC"
+        ],
+        "u": [
+            "rad_val"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad",
+            "n_occ"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad",
+            "Tret"
+        ],
+        "z": [
+            "Prad",
+            "rad_flo",
+            "P_to_rad_act",
+            "Prad_to_env_act"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Prad"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+    "N": 96,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

@@ -415,10 +415,10 @@ class MultipleShooting(Shooting):
                             )["h"]
         """
         
-        #nlp_parser.set_x_gaps(x_gaps_orig)
-        #nlp_parser.set_h_gaps(h_gaps_orig)
-        nlp_parser.set_x_gaps(x_gaps)
-        nlp_parser.set_h_gaps(h_gaps)
+        nlp_parser.set_x_gaps(x_gaps_orig)
+        nlp_parser.set_h_gaps(h_gaps_orig)
+        #nlp_parser.set_x_gaps(x_gaps)
+        #nlp_parser.set_h_gaps(h_gaps)
         
         nlp = {
                'x': V,

@@ -1,0 +1,112 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*Prad_to_env",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad_ENV": "P_to_rad/Crad - Prad_to_env/Crad"
+        },
+        "alg": {
+            "Prad_to_env": "Prad_to_env - (Trad_ENV - Ti)/Rirad"
+        },
+        "p": [
+            "Rie",
+            "Ria",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "rho_int",
+            "Rirad",
+            "Crad",
+            "n1",
+            "n",
+            "n2",
+            "n3",
+            "n4",
+            "rad_flo_nom",
+            "cp_water",
+            "eta_hex_ahu",
+            "eta_hex_rad",
+            "m_flow_air_nom",
+            "m_flow_air_nom_ext",
+            "cp_air",
+            "eta_hex1",
+            "Trec_off",
+            "k",
+            "ahu_pump_sup_thres",
+            "coi_flo_nom_b",
+            "coi_flo_nom_a",
+            "Tret_coi_b",
+            "dh_Tsup",
+            "dh_Tsup_off",
+            "a",
+            "b",
+            "c",
+            "d",
+            "Rrr",
+            "Rsr",
+            "Cret",
+            "Csup",
+            "Rsup",
+            "Csup_off",
+            "Rsup_off",
+            "Csup_nom",
+            "Tret_offset",
+            "a1",
+            "a2",
+            "Prad_to_env_MPC"
+        ],
+        "u": [
+            "P_to_rad"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad_ENV"
+        ],
+        "z": [
+            "Prad_to_env"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [-1E5],
+            "ubu": [1E7]
+        },
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        }
+    },
+    "objective": "dot(P_to_rad, P_to_rad) + 1E3*dot(sl, sl)",
+    "N": 36,
+    "dt": 300,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

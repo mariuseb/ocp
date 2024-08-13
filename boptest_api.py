@@ -580,12 +580,15 @@ class Boptest(RestApi):
             else:
                 ser = res[y_name]
                 
-            l1 = ax.plot(dt_index, ser, color=next(colors), label="$%s_%s$" % (prefix, suffix))
+            index = np.array(res.index)
+                
+            #l1 = ax.plot(index, ser, color=next(colors), label="$%s_%s$" % (prefix, suffix))
+            l1 = ax.plot(index, ser.values, drawstyle="steps-post", color=next(colors), label="$%s_%s$" % (prefix, suffix))
             ax1 = ax.twinx()
             #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
             #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
             #try:
-            l2 = ax1.plot(res.index, res[[heat_key]], color="k", linestyle="dashed", label="$\phi_h$")
+            l2 = ax1.plot(index, res[[heat_key]].values, drawstyle="steps-post", color="k", linestyle="dashed", label="$\phi_h$")
             #except KeyError:
             #    pass
             #l2 = ax1.plot(res.index, res.Ph, color="k", linestyle="dashed", label="$\phi_h$")
@@ -642,14 +645,14 @@ class Boptest(RestApi):
                     style = "pre"
                    
                 try: 
-                    l_upper = ax.plot(dt_index,
-                                    (df[("ub", y_name)]), 
+                    l_upper = ax.plot(index,
+                                    (df[("ub", y_name)].values), 
                                     drawstyle="steps-" + style,
                                     color=cols_bds[0],
                                     label="$%s_{%s}^{ub}$" % (prefix, suffix))
                     
-                    l_lower = ax.plot(dt_index, 
-                                    (df[("lb", y_name)]),
+                    l_lower = ax.plot(index, 
+                                    (df[("lb", y_name)].values),
                                     drawstyle="steps-" + style,
                                     color=cols_bds[1],
                                     label="$%s_{%s}^{lb}$" % (prefix, suffix))
@@ -675,17 +678,20 @@ class Boptest(RestApi):
         if solar:
             # plot solar rad
             ax2 = fig.add_subplot(212, sharex=ax)
-            l1 = ax2.plot(dt_index, res.phi_s, color=next(colors), label="$\phi_{s}$")
+            l1 = ax2.plot(index, res.phi_s.values, color=next(colors), label="$\phi_{s}$")
             ax2.set_ylabel(r"Global radiation [$\frac{kW}{m^{2}}$]")
             ax3 = ax2.twinx()
             ax3.set_ylabel(r"Shading control [-]")
-            l2 = ax3.plot(dt_index, res.u_sha, drawstyle="steps", color=next(colors), label="$u_{sha}$")
+            try:
+                l2 = ax3.plot(dt_index, res.u_sha, drawstyle="steps", color=next(colors), label="$u_{sha}$")
+                lns = l1 + l2
+            except:
+                pass
             
             
             _min, _max = ax3.get_ylim()
             ax3.set_ylim([_min, _max*1.2])
             
-            lns = l1 + l2
             labs = [l.get_label() for l in lns]
             ax.legend(lns, labs, loc='upper center', ncol=2)
             

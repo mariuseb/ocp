@@ -37,6 +37,7 @@ class MHE(OCP):
         """
         self.gamma = kwargs.pop("gamma", 1)
         self.arrival_cost = kwargs.pop("arrival_cost", False)
+        self.algebraic_slack = kwargs.pop("algebraic_slack", False)
         super(MHE, self).__init__(**kwargs)
         self.df = pd.DataFrame(columns=self.dae.p + self.dae.x + self.dae.z)
         # covariance matrices:
@@ -52,7 +53,7 @@ class MHE(OCP):
         in shooting gaps.
         """
         if self.slack:
-            self.add_slack_to_shooting_gaps()
+            self.add_slack_to_shooting_gaps(algebraic_slack=self.algebraic_slack)
         
         if "f" not in self.nlp:
             self.set_nlp_obj(arrival_cost=self.arrival_cost)
@@ -63,7 +64,7 @@ class MHE(OCP):
         self.prepare_solver()
         
        
-    def add_slack_to_shooting_gaps(self):
+    def add_slack_to_shooting_gaps(self, algebraic_slack=False):
         """
         Write:  
             F(x, u) - x+ = s
@@ -76,19 +77,27 @@ class MHE(OCP):
            
         Only for multiple shooting for now.
         """
+        if algebraic_slack:
+            self.n_sl = self.n_x + self.n_z
+            alg_gaps = self.nlp_parser.vars["z"]["alg_gaps"]
+        else:
+            self.n_sl = self.n_x
+            alg_gaps = ca.MX(self.N-1)
+        
         shooting_gaps = self.nlp_parser.vars["x"]["shooting_gaps"]
-        alg_gaps = self.nlp_parser.vars["z"]["alg_gaps"]
-        sigma_shape = (self.N-1, self.n_x + self.n_z)
+        #alg_gaps = self.nlp_parser.vars["z"]["alg_gaps"]
+        sigma_shape = (self.N-1, self.n_sl)
         self.sigma = sigma = ca.MX.sym("sigma", sigma_shape)
         """
         Differential part:
         """
         diff_sigma = sigma[:,:self.n_x]
         new_x_gaps = shooting_gaps + diff_sigma
+        #self.n_sl = self.n_x
         """
         Algebraic part:
         """
-        alg_sigma = sigma[:,self.n_x:(self.n_x + self.n_z)]
+        alg_sigma = sigma[:,self.n_x:(self.n_sl)]
         new_z_gaps = alg_gaps + alg_sigma
         """
         Flatten, add new differential gaps back to NLP:
@@ -119,7 +128,7 @@ class MHE(OCP):
                                     },
                             "dim": dim
                             }
-        self.n_sl = self.n_x + self.n_z
+        #self.n_sl = self.n_x + self.n_z
         self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_sl)))
         """
         MHE is now discrete-time stochastic.
@@ -816,8 +825,8 @@ class MHE(OCP):
         s1, s2, ... , s_{nx} are aliases for sigma[:,0] , ... , sigma[:,nx-1]
         """
         if self.slack:
-            sigma = self.sigma.reshape((self.N-1, self.n_x + self.n_z))
-            for n in range(self.n_x + self.n_z):
+            sigma = self.sigma.reshape((self.N-1, self.n_sl))
+            for n in range(self.n_sl):
                 vals["s" + str(n+1)] = sigma[:,n]
         
         

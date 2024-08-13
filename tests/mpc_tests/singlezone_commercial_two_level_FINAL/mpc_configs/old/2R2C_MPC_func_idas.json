@@ -1,0 +1,52 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*UA_nom*regNonZeroPower((Tsup - Ti), 1.24, 0.05)  + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ph": "UA_nom*regNonZeroPower((Tsup - Ti), 1.24, 0.05) - Ph"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "UA_nom"
+        ],
+        "u": [
+            "Tsup"
+        ],
+        "z": [
+            "Ph"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "N": 24,
+    "dt": 3600,
+    "method": "multiple_shooting",
+    "map_eval": false,
+    "integrator": 
+        {
+        "name": "idas",
+        "abstol": 1E-2,
+        "calc_ic": true
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma27",
+        "ipopt.ma57_pre_alloc": 3, 
+        "ipopt.hessian_approximation": "limited-memory"
+    },
+    "codegen": false
+}

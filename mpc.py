@@ -94,7 +94,7 @@ class MPC(OCP):
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
         self.add_h() 
-        #self.add_path_constraints_symbolically()
+        self.add_path_constraints_symbolically()
         # TOOD: add settings:
         self.prepare_solver()
     
@@ -170,10 +170,9 @@ class MPC(OCP):
         #self.lbg = np.append(lbg, lbx)
         #self.ubg = np.append(ubg, ubx)
     
-        # Add numerical values for path constraint each solve:        
+        # Add numerical values for path constraint each solve:       
         self.nlp["g"] = ca.vertcat(self.nlp["g"], *h_x)
-        
-        
+
     ### should work for reading from config:  
     def set_nlp_obj(self):
         
@@ -339,7 +338,7 @@ class MPC(OCP):
         elif self.strategy.name == "SingleShooting":
             raise ValueError("Not implemented for single shooting yet..")
         
-    def add_path_constraints(
+    def add_path_constraints_alt(
                             self,
                             x0=None,
                             lbx=None,
@@ -405,6 +404,27 @@ class MPC(OCP):
         self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
         return self._solve(lbg=self.lbg,
                            ubg=self.ubg,
+                           return_raw_sol=return_raw_sol,
+                           p_val=p_val,
+                           sqp=sqp,
+                           codegen=codegen)
+        
+    def solve(
+              self,
+              data,
+              x0=None,
+              lbx=None,
+              ubx=None,
+              params=None,
+              return_raw_sol=False,
+              codegen=False,
+              p_val=None,
+              sqp=False
+              ):
+        lbg, ubg = self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
+        #self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
+        return self._solve(lbg=lbg,
+                           ubg=ubg,
                            return_raw_sol=return_raw_sol,
                            p_val=p_val,
                            sqp=sqp,
@@ -527,7 +547,7 @@ class MPC(OCP):
             x0_nom_b = bx_nom_b = self.x_nom_b
             x0_nom = bx_nom = self.x_nom
         
-        self.add_path_constraints(
+        lbg, ubg = self.add_path_constraints(
                                  x0=(x0 - x0_nom_b)/x0_nom,
                                  #lbx=(lbx - self.x_nom_b)/self.x_nom,
                                  #ubx=(ubx - self.x_nom_b)/self.x_nom,
@@ -537,7 +557,7 @@ class MPC(OCP):
         # large number -> inf/-inf
         #self.lbx = np.array([val if abs(val) < 1e8 else -np.inf for val in self.lbx])
         #self.ubx = np.array([val if val < 1e8 else np.inf for val in self.ubx])
-        #return lbg, ubg
+        return lbg, ubg
               
     def _solve(
                self,
@@ -578,8 +598,8 @@ class MPC(OCP):
         if p_val is None:
             sol = solver(
                         x0=self.x0,
-                        lbg=self.lbg,
-                        ubg=self.ubg,
+                        lbg=lbg,
+                        ubg=ubg,
                         lbx=self.lbx,
                         ubx=self.ubx,
                         )

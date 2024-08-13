@@ -50,7 +50,7 @@
         }
     },
     "objective": "dot(Prad_to_env, Prad_to_env) + 1E3*dot(sl, sl)",
-    "N": 24,
+    "N": 12,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 

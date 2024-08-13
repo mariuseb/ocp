@@ -1347,8 +1347,14 @@ class OCP(metaclass=ABCMeta):
             # TODO: improve logic:
             
             if isinstance(self.x_nom_b, list):
+                """
                 bias = self.x_nom_b = np.tile(self.x_nom_b, self.N)
                 scale = self.x_nom = np.tile(self.x_nom, self.N)
+                """
+                # 'arrayify':
+                bias = np.repeat(self.x_nom_b, self.N).reshape(self.n_x, self.N)
+                scale = np.repeat(self.x_nom, self.N).reshape(self.n_x, self.N)
+                
             else:
                 bias = self.x_nom_b
                 scale = self.x_nom
@@ -1361,8 +1367,10 @@ class OCP(metaclass=ABCMeta):
                 if "x" in bounds_cfg:
                     
                     dim = int(self.nlp_parser["x"]["dim"]/self.n_x)
-                    lbx = np.hstack([bounds_cfg["x"]["lbx"] for n in range(dim)])
-                    ubx = np.hstack([bounds_cfg["x"]["ubx"] for n in range(dim)])
+                    #lbx = np.hstack([bounds_cfg["x"]["lbx"] for n in range(dim)])
+                    #ubx = np.hstack([bounds_cfg["x"]["ubx"] for n in range(dim)])
+                    lbx = np.repeat(bounds_cfg["x"]["lbx"], self.N).reshape(self.n_x, self.N)
+                    ubx = np.repeat(bounds_cfg["x"]["ubx"], self.N).reshape(self.n_x, self.N)
                     bounds["x"]["lb"] = (lbx - bias)/scale
                     bounds["x"]["ub"] = (ubx - bias)/scale
                 else:
@@ -1784,7 +1792,7 @@ class OCP(metaclass=ABCMeta):
                         else:
                             _vals = np.vstack([_vals, newrow])
                     # Temporary fix:
-                        
+                    #_scaled_vals = _vals.copy()    
                     _vals *= scale
                     _vals += bias
                     # OLD:
@@ -1800,7 +1808,7 @@ class OCP(metaclass=ABCMeta):
                     
             # reverse scaling again:
             #_scaled_vals = (_vals - bias)/scale
-            #_scaled_vals = ((_vals.flatten() - bias)/scale).reshape((self.N, getattr(self, attr_name)))
+            #_scaled_vals = ((_vals - bias)/scale).reshape((self.N, getattr(self, attr_name)))
                 
             #all_vals = np.append(all_vals, vals)
             try:
@@ -1823,9 +1831,9 @@ class OCP(metaclass=ABCMeta):
                              )
         """
         self.scaled_sol_df = pd.DataFrame(
-                                            columns = 
-                                            all_names, 
-                                            data = scaled_vals
+                                        columns = 
+                                        all_names, 
+                                        data = scaled_vals
                                          )
         """
         # return time-series, params  

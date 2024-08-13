@@ -98,7 +98,7 @@
             "ubz": [1E7,20,1E7]
         }
     },
-    "objective": "dot(Prad_to_env_MPC_1 - ca.sum1(Prad_to_env_act[:3])/3, Prad_to_env_MPC_1 - ca.sum1(Prad_to_env_act[:3])/3) + dot(Prad_to_env_MPC_2 - ca.sum1(Prad_to_env_act[3:6])/3, Prad_to_env_MPC_2 - ca.sum1(Prad_to_env_act[3:6])/3) + 1E-2*dot(rad_val[0:6] - rad_val[1:7], rad_val[0:6] - rad_val[1:7]) + 1E3*dot(sl, sl)",
+    "objective": "dot(Prad_to_env_MPC_1 - ca.sum1(Prad_to_env_act[:3])/3, Prad_to_env_MPC_1 - ca.sum1(Prad_to_env_act[:3])/3) + dot(Prad_to_env_MPC_2 - ca.sum1(Prad_to_env_act[3:6])/3, Prad_to_env_MPC_2 - ca.sum1(Prad_to_env_act[3:6])/3) + 0*dot(rad_val[0:6] - rad_val[1:7], rad_val[0:6] - rad_val[1:7]) + 1E3*dot(sl, sl)",
     "N": 7,
     "dt": 300,
     "method": "multiple_shooting",

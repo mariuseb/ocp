@@ -58,7 +58,8 @@
             "Tret_offset",
             "a1",
             "a2",
-            "Prad_to_env_MPC"
+            "Prad_to_env_MPC_1",
+            "Prad_to_env_MPC_2"
         ],
         "u": [
             "rad_val"
@@ -97,9 +98,9 @@
             "ubz": [1E7,20,1E7]
         }
     },
-    "objective": "dot(Prad_to_env_MPC - ca.sum1(Prad_to_env_act), Prad_to_env_MPC - ca.sum1(Prad_to_env_act)) + dot(rad_val[-1], rad_val[-1]) + 1E3*dot(sl, sl)",
-    "N": 2,
-    "dt": 900,
+    "objective": "dot(Prad_to_env_MPC_1 - ca.sum1(Prad_to_env_act[:1]), Prad_to_env_MPC_1 - ca.sum1(Prad_to_env_act[:1])) + dot(Prad_to_env_MPC_2 - ca.sum1(Prad_to_env_act[1:2]), Prad_to_env_MPC_2 - ca.sum1(Prad_to_env_act[1:2])) + 0*dot(rad_val[-1], rad_val[-1]) + 1E3*dot(sl, sl)",
+    "N": 3,
+    "dt": 300,
     "method": "multiple_shooting",
     "integrator": 
         {

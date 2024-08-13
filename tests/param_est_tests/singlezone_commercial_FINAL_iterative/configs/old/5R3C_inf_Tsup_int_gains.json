@@ -1,0 +1,72 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + (1/Ci)*UA_nom*regNonZeroPower((Tw - Ti), n, 0.05) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Tw": "(1/Cw)*rad_flo*cp_water*(Tsup - Tret) - (1/Cw)*UA_nom*regNonZeroPower((Tw - Ti), n, 0.05)"
+
+        },
+        "w": {
+            "v1": "Ti - y1", 
+            "v2": "UA_nom*regNonZeroPower((Tw - Ti), n, 0.05) - y2*eta"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Cw",
+            "Ai",
+            "m_flow_nom",
+            "cp_water",
+            "n",
+            "n1",
+            "UA_nom",
+            "eta"
+        ],
+        "u": [
+            "dh_pump",
+            "rad_val",
+            "Prad",
+            "Tsup",
+            "Tret",
+            "rad_flo"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Tw"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Prad"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

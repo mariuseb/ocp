@@ -255,7 +255,7 @@
     {
       "misc": {
         "h": 300,
-        "N": 97,
+        "N": 1000,
         "start_time": 0,
         "warmup_period": 604800
       },

@@ -1,0 +1,85 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*ahu_reaFloSupAir*cp_air*(ahu_reaTSupAir - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "ahu_reaTRetAir": "ahu_pump_ret*(ahu_reaTRetAir - Ti)"
+        },
+        "w": {
+            "v1": "Ti - y1", 
+            "v2": "Pvent*eta_hex1 - (m_flow_air_nom_sup*regNonZeroPower(ahu_pump_sup, n, 0.01)*cp_air*(ahu_reaTSupAir-ahu_reaTHeaRec))",
+            "v3": "ahu_pump_ret*(Ta + (ahu_reaTRetAir - Ta)*eta_hex2 - ahu_reaTHeaRec)",
+            "v4": "ahu_reaFloSupAir - m_flow_air_nom_sup*regNonZeroPower(ahu_pump_sup, n, 0.01)",
+            "v5": "y5 - m_flow_air_nom_ret*regNonZeroPower(ahu_pump_ret, n2, 0.01)",
+            "v6": "ahu_pump_ret*(y6 - ahu_reaTRetAir)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai",
+            "m_flow_air_nom_sup",
+            "m_flow_air_nom_ret",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2",
+            "n",
+            "n2"
+        ],
+        "u": [
+            "Pvent",
+            "ahu_pump_sup",
+            "ahu_pump_ret",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir",
+            "ahu_reaTSupAir"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad",
+            "n_occ"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "ahu_reaTRetAir"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Pvent"],
+            ["y3", "ahu_reaTHeaRec"],
+            ["y4", "ahu_reaFloSupAir"],
+            ["y5", "ahu_reaFloExtAir"],
+            ["y6", "ahu_reaTRetAir"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}
