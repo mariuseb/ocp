@@ -29,13 +29,14 @@ import pandas as pd
 from utils import ZEBData
 import matplotlib.pyplot as plt
 from scipy.stats import shapiro
-from statsmodels.stats.diagnostic import acorr_ljungbox
+#from statsmodels.stats.diagnostic import acorr_ljungbox
 import numpy as np
 
 params = pd.DataFrame(pd.read_csv("results/params_envelope_tvp_2R2C_vent.csv", index_col=0))
 # to get estimated x0, read trajectory:
 sol = pd.read_csv("results/tvp_in_training_traj_2R2C_vent.csv", index_col=0)
-Data = ZEBData("ZEBLab_2years_60m.csv")
+#Data = ZEBData("ZEBLab_2years_60m.csv")
+Data = ZEBData("ZEBLab_nov23_1m.csv")
 y_data = Data.get_dataset(
                           start = pd.Timestamp("2023-11-14 00:00"),
                           stop = pd.Timestamp("2023-11-28 00:00")
@@ -90,6 +91,7 @@ res = result_gen.plot_residual_dist(
                                     y_data,
                                     "tvp_residual_plot_training_2R2C_vent"
                                     )
+"""
 ljung_test = acorr_ljungbox(res.Ti_res, lags=len(y_data)-2)
 shapiro_test = shapiro(res.Ti_res)
 normal_data = np.random.normal(size=500)
@@ -99,6 +101,7 @@ from pandas.plotting import autocorrelation_plot
 autocorrelation_plot(res.Ti_res)
 train_metrics = result_gen.report_metrics("training")
 print(train_metrics)
+"""
 
 """
 Switch to validation dataset:
