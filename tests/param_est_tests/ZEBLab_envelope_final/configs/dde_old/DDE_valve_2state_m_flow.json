@@ -1,0 +1,57 @@
+{
+    "model": {
+        "ode": {
+            "x1": "(2/d)*(u_val_set - x2)",
+            "x2": "-(2/d)*(x2 - x1)"
+        },
+        "alg": {
+            "m_flow": "m_flow - m_flow_nom*x2"
+        },
+        "w": {
+            "v5": "m_flow - y5"
+        },
+        "p": [
+            "d",
+            "m_flow_nom"
+        ],
+        "u": [
+            "u_val_set",
+            "Tsup",
+            "Tret"
+        ],
+        "x": [
+            "x1",
+            "x2"
+        ],
+        "z": [
+            "m_flow"
+        ],
+        "y": [
+            ["y5", "x2"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [-1],
+            "ubz": [2]
+        }
+    },
+    "objective": "dot(v5, v5)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 10
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

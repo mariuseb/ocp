@@ -216,10 +216,10 @@ def prepare_data(data):
     
     # set measurements:
     y_data["y1"] = y_data["Ti"]
-    y_data["y2"] = y_data["Tret"]
-    y_data["y3"] = y_data["Tsup"]
-    y_data["y4"] = y_data["Prad"]
-    y_data["y5"] = y_data["m_flow"]
+    #y_data["y2"] = y_data["Tret"]
+    #y_data["y3"] = y_data["Tsup"]
+    #y_data["y4"] = y_data["Prad"]
+    #y_data["y5"] = y_data["m_flow"]
     #y_data["y6"] = y_data["CO2_in"]
     
     return y_data
