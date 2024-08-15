@@ -42,16 +42,19 @@ if __name__ == "__main__":
     #data_path = os.path.join("ZEBLab_2years_60m.csv")
     data_path = os.path.join("ZEBLab_nov23_1m.csv")
 
-    zeb_data = ZEBData(data_path)
-    
+    Data = ZEBData(data_path)
+    #Data.data = Data.data.bfill()
+    #Data.data.index.name = "time"
+    #Data.data = Data.data.groupby(pd.Grouper(freq='60min')).mean().dropna()
     start = pd.Timestamp("2023-11-14 00:00")
     stop = pd.Timestamp("2023-11-28 00:00")
     
-    y_data = zeb_data.get_dataset(start=start, stop=stop)
+    y_data = Data.get_dataset(start=start, stop=stop)
 
     #y_data = prepare_data(data)
     y_data = y_data.bfill()
-    y_data = y_data.resample(rule="1H").mean()
+    #y_data = y_data.resample(rule="1H").mean()
+    y_data = y_data.groupby(pd.Grouper(freq='60min')).mean().dropna()
     # some temps missing?:
 
     fig, axes = plt.subplots(1,1,sharex=True)
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     #lbp[5] = -100
     #lbp[5] = 0
     #lbp[5] = -100
-    #
+    #s
     #lbp[5] = -1E7
     # Ci_a:
     lbp[5] = 0
@@ -125,8 +128,95 @@ if __name__ == "__main__":
     lbp[7] = -1E8
     ubp[7] = 1E8
     
-    len_p = param_guess.shape[0]
     
+    """
+    param_guess = {
+                    "Rie": 
+                    {
+                        "init": 1e-2
+                    },
+                    "Rie_a": 
+                    {
+                        "init": 1e-2,
+                        "lb": -100,
+                        "ub": 100
+                    },
+                    "Rea":
+                    {
+                        "init": 1e-1
+                    },
+                    "Rea_a":
+                    {
+                        "init": 1e-1,
+                        "lb": -100,
+                        "ub": 100
+                    },
+                    "Ci":
+                    {
+                        "init": 1e6
+                    },
+                    "Ci_a":
+                    {
+                        "init": 1e6,
+                        "lb": -1e-8,
+                        "ub": 1e8
+                    },
+                    "Ce":
+                    {
+                        "init": 1e7
+                    },
+                    "Ce_a":
+                    {
+                        "init": 1e6,
+                        "lb": -1e-8,
+                        "ub": 1e8
+                    },
+                    "Ai":
+                    {
+                        "init": 10
+                    },
+                    "Ae":
+                    {
+                        "init": 10
+                    },
+                    "cp_air":
+                    {
+                        "init": 1,
+                        "lb": 1,
+                        "ub": 1
+                    },
+                    "alpha_vent":
+                    {
+                        "init": 1,
+                        "lb": 1E-3,
+                        "ub": 100
+                    },
+                    "R_121_e":
+                    {
+                        "init": 1
+                    },
+                    "R_321_e":
+                    {
+                        "init": 1
+                    },
+                    "R_320_e":
+                    {
+                        "init": 1
+                    },
+                    "R_121_i":
+                    {
+                        "init": 1e-1
+                    },
+                    "R_321_i":
+                    {
+                        "init": 1e-1
+                    },
+                    "R_320_i":
+                    {
+                        "init": 1e-1
+                    }
+                    }
+    """   
     # constrain in particular Th to physically meaningful values:
     x_guess = np.array([
                     y_data.Ti.values.flatten(),
@@ -156,6 +246,9 @@ if __name__ == "__main__":
 
         Q = ca.DM.eye(2)
         R = ca.DM.eye(1)
+        
+        #lbp = param_est.get_lbp(1e-3)
+        #ubp = param_est.get_ubp(1e3)
         
         sol, params = param_est.solve(
                                       y_data,

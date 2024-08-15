@@ -143,7 +143,7 @@ def prepare_data(data):
     temps_219 = data[temps_219_cols].mean(axis=1)
     y_data = data[["P_rad_219"]]*1000
     y_data.columns = ["phi_h"]
-    y_data["phi_int"] = data["phi_int"]
+    #y_data["phi_int"] = data["phi_int"]
     # ventilation:
     y_data["T_ext_air"] = data["T_ext_air_219"] # + 273.15
     y_data["T_sup_air"] = data["T_sup_air_219"] # + 273.15
@@ -158,7 +158,7 @@ def prepare_data(data):
     y_data["phi_s"] = data["I_ver"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_219"]*1000
-    y_data["CO2_in"] = data["CO2_219"]
+    #y_data["CO2_in"] = data["CO2_219"]
 
     try:
         y_data["T_207"] = data["T_207"]
@@ -216,11 +216,11 @@ def prepare_data(data):
     
     # set measurements:
     y_data["y1"] = y_data["Ti"]
-    y_data["y2"] = y_data["Tret"]
-    y_data["y3"] = y_data["Tsup"]
-    y_data["y4"] = y_data["Prad"]
-    y_data["y5"] = y_data["m_flow"]
-    y_data["y6"] = y_data["CO2_in"]
+    #y_data["y2"] = y_data["Tret"]
+    #y_data["y3"] = y_data["Tsup"]
+    #y_data["y4"] = y_data["Prad"]
+    #y_data["y5"] = y_data["m_flow"]
+    #y_data["y6"] = y_data["CO2_in"]
     
     return y_data
     
