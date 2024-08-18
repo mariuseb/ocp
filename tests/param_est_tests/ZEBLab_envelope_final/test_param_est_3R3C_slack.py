@@ -48,8 +48,8 @@ if __name__ == "__main__":
     #Data.data = Data.data.groupby(pd.Grouper(freq='60min')).mean().dropna()
     #start = pd.Timestamp("2023-11-14 00:00")
     #stop = pd.Timestamp("2023-11-28 00:00")
-    start = pd.Timestamp("2024-01-01 00:00")
-    stop = pd.Timestamp("2024-01-15 00:00")
+    start = pd.Timestamp("2024-01-08 00:00")
+    stop = pd.Timestamp("2024-01-22 00:00")
     
     y_data = Data.get_dataset(start=start, stop=stop)
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
                              **kwargs,
                              ) as param_est:
 
-        Q = ca.DM.eye(3)
+        Q = ca.DM.eye(3)*10
         R = ca.DM.eye(1)
         
         lbp = param_est.get_lbp(1e-3)
@@ -288,8 +288,7 @@ if __name__ == "__main__":
         sol["y1"].plot(color="k", ax=ax)
         ax.legend(["model", "measured"])
         plt.show()
-        params.to_csv("results/params_envelope_3R3C.csv", index=True)
-        print(params)
+        params.to_csv("results/params_envelope_3R3C_no_constr.csv", index=True)
     # dump for plots:
     sol.to_csv("results/tvp_in_training_traj_3R3C.csv", index=True)
     print(params)

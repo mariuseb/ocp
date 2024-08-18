@@ -1,8 +1,8 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + (1/Ci)*alpha_vent*V_sup_air*(T_sup_air - Ti)",
-            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + Ae*(phi_s/Ce)"
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + (1/Ci)*alpha_vent*cp_air*ahu_reaFloSupAir*(T_sup_air - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
          },
         "p": [
             "Rie",
@@ -10,17 +10,19 @@
             "Ci",
             "Ce",
             "Ai",
-            "Ae",
-            "alpha_vent"
+            "alpha_vent",
+            "cp_air"
         ],
         "u": [
+            "Ta",
+            "T_sup_air",
+            "T_207",
+            "T_121",
+            "T_321",
+            "T_320",
             "phi_h",
             "phi_s",
-            "Ta",
-            "V_sup_air",
-            "T_sup_air",
-            "vent_on",
-            "weeknd"
+            "ahu_reaFloSupAir"
         ],
         "x": [
             "Ti",
@@ -30,7 +32,7 @@
             ["y1", "Ti"]
         ]
     },
-    "dt": 3600,
+    "dt": 900,
     "integrator": 
         {
         "name": "IRK",

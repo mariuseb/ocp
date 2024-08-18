@@ -8,8 +8,7 @@
             "Rie_TVP": "Rie + Rie_a*ca.if_else(V_sup_air > 10, 1, 0) - Rie_TVP",
             "Rea_TVP": "Rea + Rea_a*ca.if_else(V_sup_air > 10, 1, 0) - Rea_TVP",
             "Ci_TVP": "Ci + Ci_a*ca.if_else(V_sup_air > 10, 1, 0) - Ci_TVP",
-            "Ce_TVP": "Ce + Ce_a*ca.if_else(V_sup_air > 10, 1, 0) - Ce_TVP", 
-            "Pvent": "Pvent - alpha_vent*cp_air*ahu_reaFloSupAir*(T_sup_air - Ti)"
+            "Ce_TVP": "Ce + Ce_a*ca.if_else(V_sup_air > 10, 1, 0) - Ce_TVP"
         },
         "w": {
             "v1": "Ti - y1"
@@ -52,8 +51,7 @@
             "Rie_TVP",
             "Rea_TVP",
             "Ci_TVP",
-            "Ce_TVP",
-            "Pvent"
+            "Ce_TVP"
         ],
         "x": [
             "Ti",
@@ -73,8 +71,8 @@
     },
     "bounds": {
         "z": {
-            "lbz": [1E-5,1E-5,1E5,1E5,-1E2],
-            "ubz": [1,1,1E9,1E9,1E4]
+            "lbz": [1E-5,1E-5,1E5,1E5],
+            "ubz": [1,1,1E9,1E9]
         }
     },
     "objective": "dot(v1, v1)@R[0,0]",

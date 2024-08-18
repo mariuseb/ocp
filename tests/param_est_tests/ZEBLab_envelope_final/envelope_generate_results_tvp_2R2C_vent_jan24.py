@@ -42,7 +42,7 @@ Data = ZEBData("ZEBLab_jan24_1m.csv")
 #Data.data = Data.data.groupby(pd.Grouper(freq='60min')).mean().dropna()
 y_data = Data.get_dataset(
                           start = pd.Timestamp("2024-01-01 00:00"),
-                          stop = pd.Timestamp("2024-01-15 00:00")
+                          stop = pd.Timestamp("2024-01-08 00:00")
                           )
 y_data = y_data.bfill()
 y_data.index.name = "time"
@@ -54,7 +54,7 @@ GOAL: produce all needed results with following object:
 """
 
 result_gen = ResultGenerator(
-                             config="configs/2R2C_det_vent_tvp_vent_cond_no_Pvent.json",
+                             config="configs/2R2C_det_vent_tvp_vent_cond_alt_int_gains.json",
                              params=params,
                              dt=3600
                             )
@@ -68,7 +68,7 @@ result_gen.simple_sim_plot(
 
 p_base = pd.read_csv("results/tvp_params_base_2R2C_vent_jan24.csv", index_col=0).values.flatten()
 p_mod = pd.read_csv("results/tvp_params_mod_2R2C_vent_jan24.csv", index_col=0).values.flatten()
-ekf_config = "configs/ekf_configs/2R2C_envelope_EKF.json"
+ekf_config = "configs/ekf_configs/2R2C_envelope_EKF_alt_int_gains.json"
 
 #y_data.V_sup_air = y_data.V_sup_air.shift(1)
 #y_data = y_data.bfill()
@@ -121,7 +121,7 @@ Switch to validation dataset:
 
 y_data = Data.get_dataset(
                           start = pd.Timestamp("2024-01-15 00:00"),
-                          stop = pd.Timestamp("2024-01-18 00:00")
+                          stop = pd.Timestamp("2024-01-29 00:00")
                           )
 y_data = y_data.bfill()
 y_data.index.name = "time"

@@ -781,7 +781,7 @@ class OCP(metaclass=ABCMeta):
         raise NotImplementedError("ERROR.")
         
     @abstractmethod
-    def get_nlp_obj(self):
+    def set_nlp_obj(self):
         raise NotImplementedError("ERROR.")
         
     def get_scale(self, param_guess):

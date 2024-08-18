@@ -37,7 +37,7 @@ if __name__ == "__main__":
     Use room 219 first.
     """
 
-    cfg_path = os.path.join("configs", "2R2C_det_vent_tvp_vent_cond_alt.json")
+    cfg_path = os.path.join("configs", "2R2C_det_vent_tvp_vent_cond_alt_int_gains.json")
     #cfg_path = os.path.join("configs", "2R2C_det_vent_tvp_vent_cond_no_constr.json")
     #data_path = os.path.join("ZEBLab_2years_60m.csv")
     data_path = os.path.join("ZEBLab_jan24_1m.csv")
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     #Data.data.index.name = "time"
     #Data.data = Data.data.groupby(pd.Grouper(freq='60min')).mean().dropna()
     start = pd.Timestamp("2024-01-01 00:00")
-    stop = pd.Timestamp("2024-01-15 00:00")
+    stop = pd.Timestamp("2024-01-08 00:00")
     
     y_data = Data.get_dataset(start=start, stop=stop)
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
                     {
                         "init": 1e6,
                         "lb": -1e-8,
-                        "ub": 1e8
+                        "ub": 1e9
                     },
                     "Ai":
                     {
@@ -185,9 +185,9 @@ if __name__ == "__main__":
                     },
                     "alpha_vent":
                     {
-                        "init": 0.5,
+                        "init": 1,
                         "lb": 1E-3,
-                        "ub": 1
+                        "ub": 1E-3
                     },
                     "alpha_vent_1":
                     {
@@ -291,7 +291,9 @@ if __name__ == "__main__":
                         "Ce",
                         "Ai",
                         "Ae",
+                        "cp_air",
                         "alpha_vent",
+                        "alpha_int",
                         "R_121_e",
                         "R_321_e",
                         "R_320_e",
@@ -306,7 +308,9 @@ if __name__ == "__main__":
                         "Ce_a",
                         "Ai",
                         "Ae",
+                        "cp_air",
                         "alpha_vent",
+                        "alpha_int",
                         "R_121_e",
                         "R_321_e",
                         "R_320_e",

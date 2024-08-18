@@ -45,6 +45,7 @@ class ResultGenerator(object):
                  config=None,
                  params=None,
                  dt=None,
+                 slack=False,
                  z_guess=None):
         # for simplicity, to get the integrator:
         self.param_est = \
@@ -52,6 +53,7 @@ class ResultGenerator(object):
                             config=config,
                             N=2, # no map in any case
                             dt=dt,
+                            slack=slack,
                             param_guess=params.values.flatten()
                             )
         self.dae = param_est.dae

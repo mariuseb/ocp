@@ -146,7 +146,7 @@ def prepare_data(data):
     temps_219 = data[temps_219_cols].mean(axis=1)
     y_data = data[["P_rad_219"]]*1000
     y_data.columns = ["phi_h"]
-    #y_data["phi_int"] = data["phi_int"]
+    y_data["phi_int"] = data["phi_int"]
     # ventilation:
     y_data["T_ext_air"] = data["T_ext_air_219"] # + 273.15
     y_data["T_sup_air"] = data["T_sup_air_219"] # + 273.15

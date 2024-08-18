@@ -37,7 +37,7 @@ if __name__ == "__main__":
     Use room 219 first.
     """
 
-    cfg_path = os.path.join("configs", "3R3C_det_vent.json")
+    cfg_path = os.path.join("configs", "3R3C_det_vent_no_slack_int_gains.json")
     #cfg_path = os.path.join("configs", "2R2C_det_vent_tvp_vent_cond_no_constr.json")
     #data_path = os.path.join("ZEBLab_2years_60m.csv")
     data_path = os.path.join("ZEBLab_jan24_1m.csv")

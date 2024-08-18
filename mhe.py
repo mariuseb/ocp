@@ -34,6 +34,10 @@ class MHE(OCP):
         """
         Almost equal to regular sysid,
         though we drop statistics for now.
+        
+        Revised: now EXACTLY equal to 
+        regular sysid problem under some
+        conditions.
         """
         self.gamma = kwargs.pop("gamma", 1)
         self.arrival_cost = kwargs.pop("arrival_cost", False)
@@ -132,661 +136,7 @@ class MHE(OCP):
         self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_sl)))
         """
         MHE is now discrete-time stochastic.
-        """
-        
-    # skip this:
-    def set_hess_obj(self):
-        """
-        For covariance estimation.
-        
-        (negative log-likelihood) 
-        """ 
-        
-        self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
-        self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
-        #self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        #self.R = ca.MX.sym("R", self.n_y, self.n_y)
-        #### set up log(det) - Functions:
-        Q_SX = self.Q_SX
-        R_SX = self.R_SX
-        
-        """
-        self.R_sqrt_inv = ca.Function("R_sqrt_inv",
-                                     [self.R_SX],
-                                     [ca.sqrt(ca.inv(self.R_SX))],
-                                     ["R"],
-                                     ["R_sqrt_inv"])
-        
-        self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
-                                     [self.Q_SX],
-                                     [ca.sqrt(ca.inv(self.Q_SX))],
-                                     ["Q"],
-                                     ["Q_sqrt_inv"])
-        """ 
-        
-        #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
-        #self.R_square_root = ca.sqrt(ca.inv(self.R))
-        
-        #self.R_square_root = self.R_sqrt_inv(self.R_SX)
-        #self.Q_square_root = self.Q_sqrt_inv(self.Q_SX)
-        # for Q:
-        self.log_det_Q = ca.Function(
-                                     "log_det_Q",
-                                     [Q_SX],
-                                     [ca.trace(ca.log(ca.qr(Q_SX)[1]))],
-                                     ["Q"],
-                                     ["log(det(Q))"]                        
-        )
-        # for R:
-        self.log_det_R = ca.Function(
-                                     "log_det_R",
-                                     [R_SX],
-                                     [ca.trace(ca.log(ca.qr(R_SX)[1]))],
-                                     ["Q"],
-                                     ["log(det(R))"]                        
-        )
-        
-        """
-        x = ca.vec(self.nlp_x)*self.x_nom
-        z = ca.vec(self.nlp_z)*self.x_nom
-        u = ca.vec(self.nlp_u)*self.u_nom
-        p = ca.vertcat(*self.dae.dae.p)*self.p_nom
-        w = ca.vec(self.nlp_w)*self.w_nom
-        v = ca.vec(self.nlp_v)*self.v_nom
-        y = ca.vec(self.nlp_y)*self.y_nom
-        r = ca.vec(self.nlp_r)*self.r_nom
-        """        
-        x = ca.vec(self.nlp_x)
-        z = ca.vec(self.nlp_z)
-        u = ca.vec(self.nlp_u)
-        p = ca.vertcat(*self.dae.dae.p)
-        w = ca.vec(self.nlp_w)
-        v = ca.vec(self.nlp_v)
-        y = ca.vec(self.nlp_y)
-        r = ca.vec(self.nlp_r)
-        
-        R = self.R
-        Q = self.Q
-        
-        
-        # residual x:
-        res_x = self.nlp_parser.x_gaps
-        # residual y:
-        res_y = self.nlp_parser.h_gaps
-        
-        self.x_gaps = ca.Function(
-                                  "x_gaps",
-                                  [x, z, u, p, w, v, y, r],
-                                  [res_x],
-                                  ["x", "z", "u", "p", "w", "v", "y", "r"],
-                                  ["res_x"]
-                                  )
-        self.y_gaps = ca.Function(
-                                  "y_gaps",
-                                  [x, z, u, p, w, v, y, r],
-                                  [res_y],
-                                  ["x", "z", "u", "p", "w", "v", "y", "r"],
-                                  ["res_y"]
-                                  )
-        
-        #self.alt_obj = 0.5*ca.dot(
-        self.alt_obj = 0.5*ca.dot(
-                             ca.mtimes(self.R,
-                                       res_y),
-                             ca.mtimes(res_y.T,
-                                       self.R).T) \
-                            + \
-                  0.5*ca.dot(
-                            ca.mtimes(self.Q,
-                                      res_x),
-                            ca.mtimes(res_x.T,
-                                      self.Q).T) \
-                            #- \
-                            #((self.N-1)/2)*self.log_det_Q(self.Q) \
-                            #- \
-                            #(self.N/2)*self.log_det_R(self.R)
-        
-        #self.res_obj = ca.Function("objective", [res_y, res_x, R, Q], [self.alt_obj],
-        #                           ["res_y", "res_x", "R", "Q"], ["residual"])     
-        # [x, z, u, p, w, v, y, r],     
-        self.res_obj = ca.Function("objective",
-                                   [x, z, u, p, w, v, y, r, ca.vec(R), ca.vec(Q)],
-                                   [self.alt_obj],
-                                   ["x", "z", "u", "p", "w", "v", "y", "r", "R", "Q"],
-                                   ["residual"])
-          
-        hess_expr, jac_expr =  ca.hessian(self.alt_obj,
-                                ca.vertcat(p,
-                                           x,
-                                           u,
-                                           y,
-                                           w,
-                                           v,
-                                           r,
-                                           ca.vec(R),
-                                           ca.vec(Q)
-                                           )
-                                )       
-        """
-        jac_expr =  ca.jacobian(self.alt_obj,
-                                ca.vertcat(p,
-                                           x,
-                                           u,
-                                           y,
-                                           r,
-                                           ca.vec(R),
-                                           ca.vec(Q)
-                                           )
-                                )             
         """    
-        self.hess_obj = ca.Function(
-                                    "hess_obj",
-                                     [p,
-                                      x,
-                                      u,
-                                      w,
-                                      v,
-                                      y,
-                                      r,
-                                      ca.vec(R),
-                                      ca.vec(Q)
-                                      ],
-                                    [hess_expr],
-                                    #self.dae.p + ["x", "u", "y", "R", "Q"],
-                                    ["p", "x", "u", "w", "v", "y", "r", "R", "Q"],
-                                    ["hess_obj"]
-                                    )           
-        self.jac_obj = ca.Function(
-                                    "jac_obj",
-                                     [p,
-                                      x,
-                                      u,
-                                      y,
-                                      r,
-                                      ca.vec(R),
-                                      ca.vec(Q)
-                                      ],
-                                    [jac_expr.T],
-                                    #self.dae.p + ["x", "u", "y", "R", "Q"],
-                                    ["p", "x", "u", "y", "r", "R", "Q"],
-                                    ["jac_obj"]
-                                    )    
-        
-        #res_x = ca.MX.sym("res_x", res_x.shape[0], res_x.shape[1])
-        #res_y = ca.MX.sym("res_x", res_y.shape[0], res_y.shape[1])
-        """
-        alt_obj = 0.5*ca.dot(
-                             ca.mtimes(self.R,
-                                       res_y),
-                             ca.mtimes(res_y.T,
-                                       self.R).T) \
-                            + \
-                  0.5*ca.dot(
-                            ca.mtimes(self.Q,
-                                      res_x),
-                            ca.mtimes(res_x.T,
-                                      self.Q).T) \
-                            #- \
-                            #((self.N-1)/2)*self.log_det_Q(self.Q) \
-                            #- \
-                            #(self.N/2)*self.log_det_R(self.R)
-        """
-        
-       
-    def eval_res_obj(self, sol_df, params, R, Q):
-        """
-        Evaluate residual.
-        """
-        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
-        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
-        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
-        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
-        
-        obj_value = self.res_obj(
-                                x_vals,
-                                0,
-                                u_vals,
-                                params,
-                                0,
-                                0,
-                                y_vals,
-                                r_vals,
-                                ca.vec(R),
-                                ca.vec(Q)
-                                  )
-        # x_residual:
-        """
-        res_x = self.x_gaps(
-                            x_vals,
-                            0,
-                            u_vals,
-                            params,
-                            0,
-                            0,
-                            y_vals,
-                            r_vals,
-                            ca.vec(R),
-                            ca.vec(Q)
-                            )
-        res_y = self.y_gaps(
-                            x_vals,
-                            0,
-                            u_vals,
-                            params,
-                            0,
-                            0,
-                            y_vals,
-                            r_vals,
-                            ca.vec(R),
-                            ca.vec(Q)
-                            )
-
-        obj_value = self.res_obj(res_y, res_x, R, Q)
-        """
-        
-        return obj_value
-                
-    def get_fisher(self, params, R, Q):
-        """
-        Get covariance of parameter estimates.
-        """
-
-        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
-        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
-        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
-        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
-        w_vals =  self.sol_df[self.dae.w_names].values.flatten()/self.w_nom
-        v_vals =  self.sol_df[self.dae.v_names].values.flatten()/self.v_nom
-        """
-        x_vals =  self.sol_df[self.dae.x].values.flatten()
-        u_vals =  self.sol_df[self.dae.u].values.flatten()
-        y_vals =  self.sol_df[self.dae.y].values.flatten()
-        r_vals =  self.sol_df[self.dae.r_names].values.flatten()
-        w_vals =  self.sol_df[self.dae.w_names].values.flatten()
-        v_vals =  self.sol_df[self.dae.v_names].values.flatten()
-        """
-        
-        # sample fisher information:
-        hess_val = self.hess_obj(
-                                 #params.values*self.scale,
-                                 params.values,
-                                 x_vals,
-                                 u_vals,
-                                 w_vals,
-                                 v_vals,
-                                 y_vals,
-                                 r_vals,
-                                 ca.vec(R),
-                                 ca.vec(Q)
-                                 )
-        
-        param_dim = self.nlp_parser["p"]["dim"]
-        
-        fisher_p = hess_val[:param_dim,:param_dim]
-        
-        x_start, x_stop = self.nlp_parser["x"]["range"]["a"] + self.nlp_parser["p"]["dim"], \
-                    self.nlp_parser["x"]["range"]["b"] + self.nlp_parser["p"]["dim"]
-            
-        fisher_x = hess_val[(x_stop-self.n_x):x_stop,(x_stop-self.n_x):x_stop]
-        
-        fisher = np.vstack([fisher_p, np.zeros((1, self.n_p)) ] )
-        fisher = np.column_stack([fisher, np.zeros((self.n_p + self.n_x, 1))] )
-        #fisher[self.n_p:(self.n_p + self.n_x),
-        #       self.n_p:(self.n_p + self.n_x)] = fisher_x
-        fisher[self.n_p:(self.n_p + self.n_x),
-               self.n_p:(self.n_p + self.n_x)] = 1
-        
-        return np.diag(np.diag(fisher))
-                    
-        
-        
-        
-       
-    def get_covar_p(self, params, R, Q):
-        """
-        Get covariance of parameter estimates.
-        """
-        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
-        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
-        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
-        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
-        
-        # sample fisher information:
-        hess_val = self.hess_obj(
-                                 params,
-                                 x_vals,
-                                 u_vals,
-                                 y_vals,
-                                 r_vals,
-                                 ca.vec(R),
-                                 ca.vec(Q)
-                                 )
-        jac_val = self.jac_obj(
-                                params,
-                                x_vals,
-                                u_vals,
-                                y_vals,
-                                r_vals,
-                                ca.vec(R),
-                                ca.vec(Q)
-                                ).T
-        
-        param_dim = self.nlp_parser["p"]["dim"]
-        
-        fisher_p = hess_val[:param_dim,:param_dim]
-        jac_p = jac_val[:param_dim]
-        
-        x_start, x_stop = self.nlp_parser["x"]["range"]["a"] + self.nlp_parser["p"]["dim"], \
-                    self.nlp_parser["x"]["range"]["b"] + self.nlp_parser["p"]["dim"]
-                    
-        jac_x = jac_val[x_start:x_stop]
-        """
-        return pd.DataFrame(data=np.array(ca.inv(fisher)),
-                            index=self.dae.p,
-                            columns=self.dae.p), \
-                pd.DataFrame(data=np.array(fisher),
-                            index=self.dae.p,
-                            columns=self.dae.p)
-        """        
-        return pd.DataFrame(data=np.array(jac_p),
-                            index=self.dae.p,
-                            columns=["val"]), \
-                pd.DataFrame(data=np.array(fisher_p),
-                            index=self.dae.p,
-                            columns=self.dae.p), \
-                pd.DataFrame(data=np.array(jac_x)[:self.dae.n_x],
-                            columns=["val"])
-                
-                
-    def get_covar_x(self, params, R, Q):
-        """
-        Get covariance of parameter estimates.
-        """
-        x_vals =  self.sol_df[self.dae.x].values.flatten()/self.x_nom
-        u_vals =  self.sol_df[self.dae.u].values.flatten()/self.u_nom
-        y_vals =  self.sol_df[self.dae.y].values.flatten()/self.y_nom
-        r_vals =  self.sol_df[self.dae.r_names].values.flatten()/self.r_nom
-        
-        # sample fisher information:
-        hess_val = self.hess_obj(
-                                 params,
-                                 x_vals,
-                                 u_vals,
-                                 y_vals,
-                                 r_vals,
-                                 ca.vec(R),
-                                 ca.vec(Q)
-                                 )
-        
-        x_start, x_stop = self.nlp_parser["x"]["range"]["a"] + self.nlp_parser["p"]["dim"], \
-                            self.nlp_parser["x"]["range"]["b"] + self.nlp_parser["p"]["dim"]
-        
-        fisher = np.array(hess_val[x_start:x_stop,x_start:x_stop])
-        
-        #names = np.repeat(self.dae.x, self.N, axis=1)
-        names = np.repeat(np.array([self.dae.x]),
-                          self.N,
-                          axis=0)
-        
-        ns = list(map(lambda x: str(x), list(range(self.N))))
-        
-        x_names = []
-        for name_tup, num in zip(names, ns):
-            for name in name_tup:
-                x_names.append(name + num)
-        
-        #def namer(*args, y):
-        #    ret = []
-        #    for s in enumerate(args):
-        #        ret.append(s + y)
-        #    return ret
-        
-        #vector_namer = np.vectorize(namer)
-        #vector_namer(names, ns)
-        
-        return pd.DataFrame(data=np.array(np.linalg.inv(fisher)),
-                            index=x_names,
-                            columns=x_names), \
-                pd.DataFrame(data=fisher,
-                            index=x_names,
-                            columns=x_names)
-    
-    # TODO: P0 as parameter in NLP
-    def get_nlp_obj(self, v, w, P0, x_N, p0, arrival_cost=False):
-        """ 
-        Objective for mhe.
-        """          
-        # define Q, R here:
-        """
-        self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
-        self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
-        self.P0_SX = ca.SX.sym("R", self.n_y, self.n_y)
-        # actual:
-        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        self.R = ca.MX.sym("R", self.n_y, self.n_y)
-        self.P0 = ca.MX.sym("P0", self.n_x + self.n_p, self.n_x + self.n_p)
-        #self.P0 = ca.MX.eye(self.n_x + self.n_p)
-        
-        self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
-                                   [self.Q_SX],
-                                   [ca.sqrt(ca.inv(self.Q_SX))],
-                                   ["Q"],
-                                   ["Q_sqrt_inv"])
-
-        #self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
-        #                            [Q0, Q1, Q2, Q3],
-        #                            [ca.sqrt(ca.inv(self.Q))],
-        #                            ["Q"],
-        #                            ["Q_sqrt_inv"])
-        
-        self.R_sqrt_inv = ca.Function("R_sqrt_inv",
-                                     [self.R_SX],
-                                     [ca.sqrt(ca.inv(self.R_SX))],
-                                     ["R"],
-                                     ["R_sqrt_inv"])
-        
-        self.P0_sqrt_inv = ca.Function("P0_sqrt_inv",
-                                        [self.P0_SX],
-                                        [ca.sqrt(ca.inv(self.P0_SX))],
-                                        ["P0"],
-                                        ["P0_sqrt_inv"])
-        """        
-        #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
-        #self.R_square_root = ca.sqrt(ca.inv(self.R))
-        
-        
-        #self.R_square_root = self.R_sqrt_inv(self.R)
-        #self.Q_square_root = self.Q_sqrt_inv(self.Q)
-        #self.R_square_root = self.R_sqrt_inv(ca.DM.eye(1))
-        #self.Q_square_root = self.Q_sqrt_inv(ca.DM.eye(2))
-        #self.R_sqrt_inv = ca.MX.sym("R", self.n_y, self.n_y)
-        #self.Q_sqrt_inv = ca.MX.sym("Q", self.n_x, self.n_x)
-        #self.R = ca.MX.sym("R", self.n_y, self.n_y)
-        #self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        #self.R = ca.MX.sym("R", ca.Sparsity.diag(self.n_y))
-        #self.Q = ca.MX.sym("Q", ca.Sparsity.diag(self.n_x))
-        
-        #self.P0_sqrt_inv = ca.sqrt(ca.inv(P0))
-        #self.P0_sqrt_inv = ca.MX.sym("P0", self.n_x + self.n_p, self.n_x + self.n_p)
-        #dim_P0 = self.n_x + self.n_p
-        #self.P0 = ca.MX.sym("P0", dim_P0, dim_P0)
-        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
-        #self.P0_sqrt_inv = ca.MX.sym("P0", self.n_x + self.n_p, self.n_x + self.n_p)
-        # arrival cost:
-        #self.P0_sqrt = ca.sqrt(P0)
-        
-        #P0_sqrt_inv = ca.sqrt(ca.inv(self.P0))
-        #R_sqrt_inv = ca.sqrt(ca.inv(self.R))
-        #Q_sqrt_inv = ca.sqrt(ca.inv(self.Q))
-        #R_sqrt_inv = ca.sqrt(ca.inv(self.R))
-        #Q_sqrt_inv = ca.sqrt(ca.inv(self.Q))
-        #P0_sqrt = ca.sqrt(self.P0)
-        #R_sqrt = ca.sqrt(self.R)
-        #Q_sqrt = ca.sqrt(self.Q)
-        
-        #v = v/self.v_nom
-        #w = w/self.w_nom
-        
-        nlp_obj = ca.dot(ca.mtimes(self.R,
-                                    v),
-                            ca.mtimes(v.T,
-                                      self.R).T) \
-                + \
-                ca.dot(ca.mtimes(self.Q,
-                                     w),
-                            ca.mtimes(w.T,
-                                      self.Q).T)
-        
-        """
-        nlp_obj = ca.dot(ca.mtimes(w, w.T), self.Q) + \
-                  ca.dot(ca.mtimes(v, v.T), self.R)
-        nlp_obj = ca.dot(ca.mtimes(R_sqrt,
-                                    v),
-                            ca.mtimes(v.T,
-                                      R_sqrt).T) \
-                + \
-                ca.dot(ca.mtimes(Q_sqrt,
-                                     w),
-                            ca.mtimes(w.T,
-                                      Q_sqrt).T) \
-        
-        """
-        if arrival_cost:
-            
-            #last_x = self.nlp_x[0:self.n_x]*self.x_nom
-            #p = ca.vertcat(*self.dae.dae.p)*self.p_nom
-            last_x = self.nlp_x[0:self.n_x]
-            p = ca.vertcat(*self.dae.dae.p)
-            costate = ca.vertcat(p, last_x)
-            
-            # define this as parameter:
-            #costate_prior = ca.vertcat(p0, x_N)
-            self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
-
-
-            # TODO: take steps directly on P0, not sqrt(P0)    
-            """
-            arrival_cost = ca.dot(
-                                ca.mtimes(
-                                    self.P0,
-                                    #P0_sqrt,
-                                    (costate - self.costate_prior)
-                            ),
-                                ca.mtimes(
-                                    (costate - self.costate_prior).T,
-                                    self.P0).T
-                                    #P0_sqrt).T
-                            )
-            """
-            arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
-            #arrival_cost = (self.P0@(costate - self.costate_prior).T)@(self.P0@(costate - self.costate_prior))
-            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
-            #P0 = (ca.MX.eye(self.n_x + self.n_p) - ca.expm(-self.P0))
-            #P0 = ca.expm(self.P0)
-            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
-            #arrival_cost = ((P0@(costate - self.costate_prior)).T)@(P0@(costate - self.costate_prior))
-            nlp_obj += arrival_cost
-            
-            return nlp_obj, ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
-        # return obj, params of NLP
-        #return nlp_obj, ca.veccat(self.Q, self.R)
-        
-        # return nlp_obj, arrival cost weighting as parameters:
-        return nlp_obj, ca.veccat(self.Q, self.R)
-                
-        """
-        return 0.5*ca.dot(ca.mtimes(self.R_square_root,
-                                    v),
-                            ca.mtimes(v.T,
-                                      self.R_square_root).T) \
-                + \
-                0.5*ca.dot(ca.mtimes(self.Q_square_root,
-                                     w),
-                            ca.mtimes(w.T,
-                                      self.Q_square_root).T), \
-                ca.veccat(self.Q, self.R)
-        """
-        
-    def get_nlp_obj(self, w, v, P0, x_N, p0, arrival_cost=False):
-        """
-        TODO: make sure this is not called every iteration.
-        
-        Modified.
-        """
-        
-        # covariance matrices:
-        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        self.R = ca.MX.sym("R", self.n_y, self.n_y)
-        
-        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_p))
-        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
-        
-        y_inds = self.nlp_parser["y"]["range"]
-        x_inds = self.nlp_parser["x"]["range"]
-        v_inds = self.nlp_parser["v"]["range"]
-        s_inds = self.nlp_parser["s"]["range"]
-        
-        #x1 = self.nlp["x"][x_inds["a"]:x_inds["b"]:self.dae.n_x]
-        #y_Ti = self.nlp["x"][y_inds["a"]:y_inds["b"]:self.dae.n_y]
-        v1 = self.nlp["x"][v_inds["a"]:v_inds["b"]:self.dae.n_y]
-        #v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
-        #v2 = self.nlp["x"][(v_inds["a"]+1):v_inds["b"]:self.dae.n_y]
-        w1 = self.nlp["x"][s_inds["a"]:s_inds["b"]:self.dae.n_x]
-        w2 = self.nlp["x"][(s_inds["a"]+1):s_inds["b"]:self.dae.n_x]
-        
-        #eta = self.dae.dae.var("eta")
-        #v2 /= eta
-        #nlp_obj = 0.5*ca.dot(v1, v1) + 1E-6*ca.dot(v2, v2)
-        #nlp_obj = 0.5*ca.dot(v1, v1)
-        nlp_obj = ca.mtimes(ca.dot(v1, v1), self.R[0,0]) + \
-                  ca.mtimes(ca.dot(w1, w1), self.Q[0,0]) + \
-                  ca.mtimes(ca.dot(w2, w2), self.Q[1,1])        
-        #          ca.mtimes(ca.dot(v2, v2), self.R[1,1])
-                  
-        if arrival_cost:
-            
-            #last_x = self.nlp_x[0:self.n_x]*self.x_nom
-            #p = ca.vertcat(*self.dae.dae.p)*self.p_nom
-            last_x = self.nlp_x[0:self.n_x]
-            #p = ca.vertcat(*self.dae.F.p)
-            p = self.strategy.F.p
-            costate = ca.vertcat(p, last_x)
-            
-            # define this as parameter:
-            #costate_prior = ca.vertcat(p0, x_N)
-            #self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_p)
-
-
-            # TODO: take steps directly on P0, not sqrt(P0)    
-            """
-            arrival_cost = ca.dot(
-                                ca.mtimes(
-                                    self.P0,
-                                    #P0_sqrt,
-                                    (costate - self.costate_prior)
-                            ),
-                                ca.mtimes(
-                                    (costate - self.costate_prior).T,
-                                    self.P0).T
-                                    #P0_sqrt).T
-                            )
-            """
-            arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
-            #arrival_cost = (self.P0@(costate - self.costate_prior).T)@(self.P0@(costate - self.costate_prior))
-            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
-            #P0 = (ca.MX.eye(self.n_x + self.n_p) - ca.expm(-self.P0))
-            #P0 = ca.expm(self.P0)
-            #arrival_cost = ((self.P0@(costate - self.costate_prior)).T)@(self.P0@(costate - self.costate_prior))
-            #arrival_cost = ((P0@(costate - self.costate_prior)).T)@(P0@(costate - self.costate_prior))
-            nlp_obj += arrival_cost
-            
-            return nlp_obj, ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
-        
-        #self.res = y_Ti - x1
-        #return 0.5*ca.dot(v1, v1) + 0.01*ca.dot(v2, v2), 0
-        #return nlp_obj, ca.veccat(self.P0, self.Q, self.R, self.costate_prior)
-        return nlp_obj, ca.veccat(self.Q, self.R)
-    
     
     def set_nlp_obj(self, alg_in_Q=False, arrival_cost=False):
         """
@@ -796,10 +146,8 @@ class MHE(OCP):
         """
         
         # initialize the parameters needed for the objective:
-        self.Q = ca.MX.sym("Q", self.n_x + self.n_z, self.n_x + self.n_z)
+        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
-        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + self.n_z + self.n_p))
-        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + self.n_z + self.n_p)
         
         symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
         vals = dict()
@@ -851,23 +199,24 @@ class MHE(OCP):
             
         exec(f'obj_expr =' + obj_string, vals)
         
-        self.nlp["f"] = vals["obj_expr"]
+        self.nlp["f"] = self.f_orig = vals["obj_expr"]
         #self.nlp["p"] = ca.veccat(self.R, self.Q)
         #if self.arrival_cost:
         #    self.nlp["p"] = ca.veccat(self.nlp["p"], self.P0)
         
         # TODO: reshuffle ordering of MHE parameters ...
         if arrival_cost:
+            """
             last_x = self.nlp_x[0:self.n_x]
-            """
             This might be the second last:
-            """
             last_z = self.nlp_z[0:self.n_z]
             p = self.strategy.F.p
             costate = ca.vertcat(p, last_x, last_z)
             arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
             self.nlp["f"] += arrival_cost
             self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
+            """
+            self.add_arrival_cost_to_objective()
         else:
             self.nlp["p"] = ca.veccat(self.Q, self.R)    
    
@@ -877,6 +226,30 @@ class MHE(OCP):
             print("Deleting %s..." % file)
             os.remove(file)
     """      
+    
+    def add_arrival_cost_to_objective(self, p_aux=None):
+        """
+        Method for adding arrival cost to objective function
+        """
+        last_x = self.nlp_x[0:self.n_x]
+        """
+        This might be the second last:
+        """
+        
+        #last_z = self.nlp_z[0:self.n_z]
+        if p_aux is None:
+            p = self.strategy.F.p
+        else:
+            p = p_aux
+            
+        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + p.shape[0]))
+        self.costate_prior = ca.MX.sym("costate_prior", self.n_x + p.shape[0])
+            
+        costate = ca.vertcat(p, last_x)
+        arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
+        self.nlp["f"] = self.f_orig + arrival_cost
+        self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
+        
     
     def store_param_and_state(self, params, state, z, k):
         self.df.loc[k*self.dt, :] = np.concatenate([params, state, z])
@@ -892,9 +265,11 @@ class MHE(OCP):
               ubx=None,
               P0=None,
               x_N=None,
-              z_N=np.array([]),
+              #z_N=np.array([]),
               x_guess=None,
-              arrival_cost=False,
+              p_aux=None,
+              p_aux_prior=None,
+              #arrival_cost=False,
               return_raw_sol=False,
               codegen=False
               ):
@@ -920,13 +295,20 @@ class MHE(OCP):
         
         self.set_bounds()
         #self._init_solver()
-        if arrival_cost:        
+        if self.arrival_cost:        
             p0 = param_guess/self.p_nom
             x_N = (x_N - self.x_nom_b)/self.x_nom
-            z_N = (z_N - self.z_nom_b)/self.z_nom
+            #z_N = (z_N - self.z_nom_b)/self.z_nom
             #p0 = param_guess
             #x_N = x_N
-            costate_prior = ca.vertcat(p0, x_N, z_N)
+            if p_aux is not None:
+                self.add_arrival_cost_to_objective(p_aux=p_aux)
+                assert p_aux_prior is not None
+                p_nom = self.get_scale(p_aux_prior)
+                costate_prior = ca.vertcat(p_aux_prior/p_nom, x_N)
+            else:
+                costate_prior = ca.vertcat(p0, x_N)
+                
             p = ca.veccat(P0, covar, costate_prior)       
         else:
             p = ca.veccat(covar)
@@ -949,13 +331,13 @@ class MHE(OCP):
         for k, v in self.nlp_parser.vars.items():
             pprint(k + ": ")
             pprint(self.x0[v["range"]["a"]:v["range"]["b"]])
-        """
         # TODO:
         try:
             self.lbx = self.lbx.round(8)
             self.ubx = self.ubx.round(8)
         except:
             pass
+        """
     
         solution = self.solver(
                             x0=self.x0,
