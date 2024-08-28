@@ -1,25 +1,6 @@
 import casadi as ca
 import pandas as pd
 import numpy as np
-#pd.set_option("display.precision", 8)
-#np.set_printoptions(precision=10)
-#import json
-#import sys
-#import pdb
-#import pprint
-#from sysid.shooting import MultipleShooting, SingleShooting
-#import copy
-
-#from tables import Col
-#from integrators import RungeKutta4, Cvodes, IRK
-#import sysid.integrators as integrators
-#from sysid.dae import DAE
-#from shooting import MultipleShooting
-#from callback import ProcessIdCallback
-#import os
-#from shooting import Collocation
-#from sysid.ocp import OCP
-#import typing
 from ocp.ocp import OCP
 from ocp.filters import EKF, KalmanBucy
 import re

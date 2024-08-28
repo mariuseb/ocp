@@ -65,7 +65,7 @@ class MHE(OCP):
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         self.add_h() 
-        self.prepare_solver()
+        #self.prepare_solver()
         
        
     def add_slack_to_shooting_gaps(self, algebraic_slack=False):
@@ -314,8 +314,10 @@ class MHE(OCP):
             p = ca.veccat(covar)
         self.p_val = p # store
         
-        if not hasattr(self, "solver"):      
-            self._init_solver()
+        self.prepare_solver(codegen=codegen)
+        
+        #if not hasattr(self, "solver"):      
+        #    self._init_solver()
         # with p=covar
         
         # TODO: branching on arrival cost:

@@ -306,8 +306,9 @@ class KalmanBucy(Filter):
         self.df = pd.DataFrame(columns=self.dae.x)
         # for state covariance:
         self.P = {0: P_prev}
-        
-
+        self.generate_symbolic_estimate()
+        self.generate_symbolic_estimate_for_loglik()
+    
     def init_identity(self):
         self.I = ca.DM.eye(self.x_symbolic.shape[0] + self.z_symbolic.shape[0])
 
@@ -461,6 +462,158 @@ class KalmanBucy(Filter):
 
         # Create one for process noise
         self.one_sample_P = ca.Function('one_sample_P', [P0, A, sigma], [P])
+        
+    def generate_symbolic_estimate(self):
+        """
+        To be able to map evaluation of
+        kalman feedback, create function:
+        
+        x0, u, r, p, y, Q, R, P_prev -> x_pred, x_hat, P_hat
+        
+        NOTE: remember to test equivalence with numeric version.
+        
+        NB! Only for ODE's.
+        """
+        
+        #F = self.integrator.one_sample
+        
+        x0 = ca.MX.sym("x0", self.n_x)
+        z0 = ca.MX.sym("z0", self.n_z)
+        u = ca.MX.sym("u", self.n_u)
+        r = ca.MX.sym("r", self.n_r)
+        p = ca.MX.sym("p", self.n_p)
+        y = ca.MX.sym("y", self.n_y)
+        Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        R = ca.MX.sym("R", self.n_y, self.n_y)
+        dt = ca.MX.sym("dt", 1)
+        P_prev = ca.MX.sym("P_prev", self.n_x, self.n_x)
+        
+        """
+        x_apriori = F(
+                      x0=x0,
+                      z=ca.MX(),
+                      u=u,
+                      p=p,
+                      r=r
+                      )["xf"]
+        """
+        F = self.chain_integrator()
+        res = F(
+                x0=x0,
+                z0=z0,
+                u=u,
+                p=p,
+                r=r
+                )
+        x_apriori = res["xf"]
+        z = res["z"]
+
+        # obtain discretized linearization of df/dx:
+        A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        #B = self.jac_f_u(x0,[],u,p,r,y,0,[])
+        Ad = ca.expm(A*dt)
+        #Bd = A@(Ad - ca.DM.eye(self.n_x))@B
+        #x_apriori = A@x0 + B@u
+
+        # obtain discretized linearization of h(x):
+        C = self.jac_h(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        # take symbolic measurement:        
+        #h_x = self.h(x_apriori, [])
+        h_x = C@x_apriori
+        # a priori covariance:
+        P_apriori = Ad@P_prev@Ad.T + Q.T@Q
+        # measurement uncertainty:
+        V_k = C@P_apriori@(C.T) + R.T@R
+        # kalman gain:
+        K = P_apriori@(C.T)@ca.inv(V_k)
+        # posterior state estimate:
+        x_posteriori = x_apriori + K@(y - h_x)
+        P_aposteriori = (ca.MX.eye(self.n_x) - K@C)@P_apriori
+        
+        self.one_sample_feedback = ca.Function(
+            "F",
+            [x0, z0, P_prev, u, r, p, y, Q, R, dt],
+            [x_posteriori, z, P_aposteriori, x_apriori, h_x],
+            ["x0","z0","P_prev","u","r","p","y","Q","R","dt"],
+            ["x_hat","z","P_hat","x_pred","h_x"],
+        )
+    
+    def generate_symbolic_estimate_for_loglik(self):
+        """
+        To be able to map evaluation of
+        kalman feedback, create function:
+        
+        x0, u, r, p, y, Q, R, P_prev -> x_pred, x_hat, P_hat
+        
+        NOTE: remember to test equivalence with numeric version.
+        
+        NB! Only for ODE's.
+        """
+        
+        #F = self.integrator.one_sample
+        
+        x0 = ca.MX.sym("x0", self.n_x)
+        z0 = ca.MX.sym("z0", self.n_z)
+        u = ca.MX.sym("u", self.n_u)
+        r = ca.MX.sym("r", self.n_r)
+        p = ca.MX.sym("p", self.n_p)
+        y = ca.MX.sym("y", self.n_y)
+        Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        R = ca.MX.sym("R", self.n_y, self.n_y)
+        dt = ca.MX.sym("dt", 1)
+        P_prev = ca.MX.sym("P_prev", self.n_x, self.n_x)
+        
+        """
+        x_apriori = F(
+                      x0=x0,
+                      z=ca.MX(),
+                      u=u,
+                      p=p,
+                      r=r
+                      )["xf"]
+        """
+        F = self.chain_integrator()
+        res = F(
+                x0=x0,
+                z0=z0,
+                u=u,
+                p=p,
+                r=r
+                )
+        x_apriori = res["xf"]
+        z = res["z"]
+
+        # obtain discretized linearization of df/dx:
+        A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        #B = self.jac_f_u(x0,[],u,p,r,y,0,[])
+        Ad = ca.expm(A*dt)
+        #Bd = A@(Ad - ca.DM.eye(self.n_x))@B
+        #x_apriori = A@x0 + B@u
+
+        # obtain discretized linearization of h(x):
+        C = self.jac_h(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        # take symbolic measurement:        
+        #h_x = self.h(x_apriori, [])
+        h_x = C@x_apriori
+        # a priori covariance:
+        P_apriori = Ad@P_prev@Ad.T + Q.T@Q
+        # measurement uncertainty:
+        V_k = C@P_apriori@(C.T) + R.T@R
+        # kalman gain:
+        K = P_apriori@(C.T)@ca.inv(V_k)
+        # posterior state estimate:
+        e_k = y - h_x
+        x_posteriori = x_apriori + K@e_k
+        P_aposteriori = (ca.MX.eye(self.n_x) - K@C)@P_apriori
+        loglik = self.log_det_R(V_k) + e_k.T@ca.inv(V_k)@e_k
+        
+        self.one_sample_feedback_adj = ca.Function(
+            "F",
+            [x0, P_prev, z0, u, r, p, y, Q, R, dt],
+            [x_posteriori, P_aposteriori, z, x_apriori, h_x, e_k, V_k, loglik],
+            ["x0","P_prev","z0","u","r","p","y","Q","R","dt"],
+            ["x_hat","P_hat","z","x_pred","h_x", "e_k", "V_k", "loglik"],
+        )
 
     # rethink this inteface
     def estimate(
@@ -609,8 +762,12 @@ class KalmanDAE(Filter):
         
         Q = cfg.pop("Q", ca.DM.eye(dae.n_x + dae.n_z))
         R = cfg.pop("R", ca.DM.eye(dae.n_y))
-        self.Q = ca.DM(Q)
-        self.R = ca.DM(R)
+        if isinstance([Q, R], list):
+            self.Q = ca.diag(Q)
+            self.R = ca.diag(R)
+        else:
+            self.Q = Q
+            self.R = R
         # easy access for y:
         
         P_prev = cfg.pop("P0", None)
@@ -656,6 +813,7 @@ class KalmanDAE(Filter):
         Optional:
         """
         self.init_jac_f_z()
+        self.init_jac_f_u()
         self.init_jac_g_x()
         self.init_jac_g_z()
     
@@ -670,7 +828,9 @@ class KalmanDAE(Filter):
         # for state covariance:
         self.P = {0: P_prev}
         self.P_aprioris = dict()
-        
+        self.set_log_det()
+        self.generate_symbolic_estimate()
+        self.generate_symbolic_estimate_for_loglik()
 
     def init_identity(self):
         self.I = ca.DM.eye(self.x_symbolic.shape[0] + self.z_symbolic.shape[0])
@@ -695,6 +855,22 @@ class KalmanDAE(Filter):
     @property
     def n_x(self):
         return self.integrator.nx
+
+    @property
+    def n_u(self):
+        return self.integrator.nu
+    
+    @property
+    def n_r(self):
+        return self.integrator.nr
+    
+    @property
+    def n_z(self):
+        return self.integrator.nz
+    
+    @property
+    def n_p(self):
+        return self.integrator.np
     
     def init_h(self):
         """
@@ -747,10 +923,18 @@ class KalmanDAE(Filter):
     @property
     def z_symbolic(self):
         return self.integrator.z
+    
+    @property
+    def u_symbolic(self):
+        return self.integrator.u
 
     @property
     def jac_f_x_expr(self):
         return ca.jacobian(self.f_expr, self.x_symbolic)
+
+    @property
+    def jac_f_u_expr(self):
+        return ca.jacobian(self.f_expr, self.u_symbolic)
     
     @property
     def jac_g_z_expr(self):
@@ -777,7 +961,8 @@ class KalmanDAE(Filter):
     def jac_h_x(self):
         #return ca.jacobian(self.h_expr, self.x_symbolic)      
         # CORRRECTION:
-        return ca.jacobian(self.h_expr, ca.vertcat(self.x_symbolic, self.z_symbolic))
+        #return ca.jacobian(self.h_expr, ca.vertcat(self.x_symbolic, self.z_symbolic))
+        return ca.jacobian(self.h_expr, ca.vertcat(self.x_symbolic))
     
     def init_jac_f_x(self):
         self.jac_f_x = ca.Function('jac_f_x',
@@ -789,6 +974,17 @@ class KalmanDAE(Filter):
                                 #self.order,
                                 self.all_names,
                                 ['jac_f_x']) 
+    
+    def init_jac_f_u(self):
+        self.jac_f_u = ca.Function('jac_f_u',
+                                #self.integrator.all_vars,
+                                self.all_vars,
+                                #[self.x_symbolic],
+                                [self.jac_f_u_expr],
+                                #["x"],
+                                #self.order,
+                                self.all_names,
+                                ['jac_f_u']) 
     
     def init_jac_f_z(self):
         self.jac_f_z = ca.Function('jac_f_z',
@@ -828,6 +1024,57 @@ class KalmanDAE(Filter):
                                 [self.jac_h_x],
                                 self.all_names,
                                 ['jac_h'])
+        
+    def set_log_det(self):
+        """
+        For covariance estimation.
+        
+        (negative log-likelihood) 
+        """ 
+        
+        self.Q_SX = ca.SX.sym("Q", self.n_x, self.n_x)
+        self.R_SX = ca.SX.sym("R", self.n_y, self.n_y)
+        #self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        #self.R = ca.MX.sym("R", self.n_y, self.n_y)
+        #### set up log(det) - Functions:
+        Q_SX = self.Q_SX
+        R_SX = self.R_SX
+        
+        self.R_sqrt_inv = ca.Function("R_sqrt_inv",
+                                     [self.R_SX],
+                                     [ca.sqrt(ca.inv(self.R_SX))],
+                                     ["R"],
+                                     ["R_sqrt_inv"])
+        
+        self.Q_sqrt_inv = ca.Function("Q_sqrt_inv",
+                                     [self.Q_SX],
+                                     [ca.sqrt(ca.inv(self.Q_SX))],
+                                     ["Q"],
+                                     ["Q_sqrt_inv"])
+            
+        
+        #self.Q_square_root = ca.sqrt(ca.inv(self.Q))
+        #self.R_square_root = ca.sqrt(ca.inv(self.R))
+        
+        self.R_square_root = self.R_sqrt_inv(self.R)
+        self.Q_square_root = self.Q_sqrt_inv(self.Q)
+        # for Q:
+        self.log_det_Q = ca.Function(
+                                     "log_det_Q",
+                                     [Q_SX],
+                                     [ca.trace(ca.log(ca.qr(Q_SX)[1]))],
+                                     ["Q"],
+                                     ["log(det(Q))"]                        
+        )
+        # for R:
+        self.log_det_R = ca.Function(
+                                     "log_det_R",
+                                     [R_SX],
+                                     [ca.trace(ca.log(ca.qr(R_SX)[1]))],
+                                     ["Q"],
+                                     ["log(det(R))"]                        
+        )
+         
         
         
     def estimate(
@@ -896,7 +1143,8 @@ class KalmanDAE(Filter):
         #C = self.jac_h(x_pred, z, u, self.p if p is None else p, s, v, y_pad, r, w)
         C = self.jac_h(x_pred,z,u,p,r,y,0,v)
         #h_x = self.h(y, x_pred, z, u, self.p if p is None else p, v, r)
-        h_x = self.h(x_pred, z)
+        #h_x = self.h(x_pred, z)
+        h_x = C@x_pred
         try:
             P_prev = self.P_prev
         except AttributeError:
@@ -930,6 +1178,178 @@ class KalmanDAE(Filter):
         self.P[self.k] = ca.mtimes((self.I - ca.mtimes(K, C)), P_apriori)
 
         return x_post[0:nx], x_post[nx:dim], np.array(h_x).reshape(-1)
+    
+    def generate_symbolic_estimate(self):
+        """
+        To be able to map evaluation of
+        kalman feedback, create function:
+        
+        x0, u, r, p, y, Q, R, P_prev -> x_pred, x_hat, P_hat
+        
+        NOTE: remember to test equivalence with numeric version.
+        
+        NB! Only for ODE's.
+        """
+        
+        #F = self.integrator.one_sample
+        
+        x0 = ca.MX.sym("x0", self.n_x)
+        z0 = ca.MX.sym("z0", self.n_z)
+        u = ca.MX.sym("u", self.n_u)
+        r = ca.MX.sym("r", self.n_r)
+        p = ca.MX.sym("p", self.n_p)
+        y = ca.MX.sym("y", self.n_y)
+        Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        R = ca.MX.sym("R", self.n_y, self.n_y)
+        dt = ca.MX.sym("dt", 1)
+        P_prev = ca.MX.sym("P_prev", self.n_x, self.n_x)
+        
+        """
+        x_apriori = F(
+                      x0=x0,
+                      z=ca.MX(),
+                      u=u,
+                      p=p,
+                      r=r
+                      )["xf"]
+        """
+        F = self.chain_integrator()
+        res = F(
+                x0=x0,
+                z0=z0,
+                u=u,
+                p=p,
+                r=r
+                )
+        x_apriori = res["xf"]
+        z = res["z"]
+
+        # obtain discretized linearization of df/dx:
+        A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        #B = self.jac_f_u(x0,[],u,p,r,y,0,[])
+        Ad = ca.expm(A*dt)
+        #Bd = A@(Ad - ca.DM.eye(self.n_x))@B
+        #x_apriori = A@x0 + B@u
+
+        # obtain discretized linearization of h(x):
+        C = self.jac_h(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        # take symbolic measurement:        
+        #h_x = self.h(x_apriori, [])
+        h_x = C@x_apriori
+        # a priori covariance:
+        P_apriori = Ad@P_prev@Ad.T + Q.T@Q
+        # measurement uncertainty:
+        V_k = C@P_apriori@(C.T) + R.T@R
+        # kalman gain:
+        K = P_apriori@(C.T)@ca.inv(V_k)
+        # posterior state estimate:
+        x_posteriori = x_apriori + K@(y - h_x)
+        P_aposteriori = (ca.MX.eye(self.n_x) - K@C)@P_apriori
+        
+        self.one_sample_feedback = ca.Function(
+            "F",
+            [x0, z0, P_prev, u, r, p, y, Q, R, dt],
+            [x_posteriori, z, P_aposteriori, x_apriori, h_x],
+            ["x0","z0","P_prev","u","r","p","y","Q","R","dt"],
+            ["x_hat","z","P_hat","x_pred","h_x"],
+        )
+    
+    def generate_symbolic_estimate_for_loglik(self):
+        """
+        To be able to map evaluation of
+        kalman feedback, create function:
+        
+        x0, u, r, p, y, Q, R, P_prev -> x_pred, x_hat, P_hat
+        
+        NOTE: remember to test equivalence with numeric version.
+        
+        NB! Only for ODE's.
+        """
+        
+        #F = self.integrator.one_sample
+        
+        x0 = ca.MX.sym("x0", self.n_x)
+        z0 = ca.MX.sym("z0", self.n_z)
+        u = ca.MX.sym("u", self.n_u)
+        r = ca.MX.sym("r", self.n_r)
+        p = ca.MX.sym("p", self.n_p)
+        y = ca.MX.sym("y", self.n_y)
+        Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        R = ca.MX.sym("R", self.n_y, self.n_y)
+        dt = ca.MX.sym("dt", 1)
+        P_prev = ca.MX.sym("P_prev", self.n_x, self.n_x)
+        
+        """
+        x_apriori = F(
+                      x0=x0,
+                      z=ca.MX(),
+                      u=u,
+                      p=p,
+                      r=r
+                      )["xf"]
+        """
+        F = self.chain_integrator()
+        res = F(
+                x0=x0,
+                z0=z0,
+                u=u,
+                p=p,
+                r=r
+                )
+        x_apriori = res["xf"]
+        z = res["z"]
+
+        # obtain discretized linearization of df/dx:
+        A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        #B = self.jac_f_u(x0,[],u,p,r,y,0,[])
+        Ad = ca.expm(A*dt)
+        #Bd = A@(Ad - ca.DM.eye(self.n_x))@B
+        #x_apriori = A@x0 + B@u
+
+        # obtain discretized linearization of h(x):
+        C = self.jac_h(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        # take symbolic measurement:        
+        #h_x = self.h(x_apriori, [])
+        h_x = C@x_apriori
+        # a priori covariance:
+        P_apriori = Ad@P_prev@Ad.T + Q.T@Q
+        # measurement uncertainty:
+        V_k = C@P_apriori@(C.T) + R.T@R
+        # kalman gain:
+        K = P_apriori@(C.T)@ca.inv(V_k)
+        # posterior state estimate:
+        e_k = y - h_x
+        x_posteriori = x_apriori + K@e_k
+        P_aposteriori = (ca.MX.eye(self.n_x) - K@C)@P_apriori
+        loglik = self.log_det_R(V_k) + e_k.T@ca.inv(V_k)@e_k
+        
+        self.one_sample_feedback_adj = ca.Function(
+            "F",
+            [x0, P_prev, z0, u, r, p, y, Q, R, dt],
+            [x_posteriori, P_aposteriori, z, x_apriori, h_x, e_k, V_k, loglik],
+            ["x0","P_prev","z0","u","r","p","y","Q","R","dt"],
+            ["x_hat","P_hat","z","x_pred","h_x", "e_k", "V_k", "loglik"],
+        )
+    
+    def chain_integrator(self):
+        """
+        Chain rootfinder for z (G) into integrator I.
+        """
+        _x0 = ca.MX.sym("x0", self.dae.n_x)
+        _z0 = ca.MX.sym("z0", self.dae.n_z)
+        #_z = ca.MX.sym("z", self.dae.n_z)
+        _u = ca.MX.sym("u", self.dae.n_u)
+        _p = ca.MX.sym("p", self.dae.n_p)
+        _r = ca.MX.sym("r", self.dae.n_r)
+        # = ca.MX.sym("r", self.dae.n_r)
+        z_expr = self.integrator.G(_z0, _x0, _u, _p, _r)
+        I_chained_expr = self.integrator.one_sample(_x0, z_expr, _u, _p, _r)
+        return ca.Function("I_chained",
+                            [_x0, _z0, _u, _p, _r],
+                            [I_chained_expr, z_expr],
+                            ["x0","z0","u","p","r"],
+                            ["xf", "z"])
+        
 
     def plot_results(self, boptest_df, \
                      boptest_map: dict, \

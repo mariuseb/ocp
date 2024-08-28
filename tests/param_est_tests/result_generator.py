@@ -204,7 +204,7 @@ class ResultGenerator(object):
                           tvp=False,
                           cond_series=None,
                           p_base: pd.Series = None,
-                          p_mod: pd.Series = None,
+                          #p_mod: pd.Series = None,
                           p_tvp: pd.Series = None,
                           switch=None
                           ):
@@ -226,34 +226,34 @@ class ResultGenerator(object):
         #I = ekf.integrator.one_sample    
         I = self.I
         G = self.G
-        v = [0]*self.dae.n_v
+        #v = [0]*self.dae.n_v
         z_guess = self.z_guess
         if z_guess is None:
             z_guess = np.array([])
         #p = p_base
-        
+
+        if not tvp:
+            p_base = p_tvp
+            
         # get correct order for ekf:
         if isinstance(p_base, (pd.Series, pd.DataFrame)):
             p_base = p_base.loc[ekf.dae.p].values.flatten()
 
         if switch is None:
-            def bypass(cond, p_base, p_mod):
+            def bypass(cond):
                 return p_base
             switch = bypass
             
         if cond_series is None:
             cond_series = pd.Series([0]*N)
-
-        if not tvp:
-            p_tvp = p_base
-            
         
         for n in range(N-1):   
             u = y_data[ekf.dae.u_names].iloc[n].values
             r = y_data[ekf.dae.r_names].iloc[n].values
                 
             #p = switch(y_data.index[0], p_base, p_mod)
-            p = switch(cond_series.iloc[n], p_base, p_mod)
+            #p = switch(cond_series.iloc[n], p_base, p_mod)
+            p = switch(cond_series.iloc[n])
             
             """
             TODO: figure out ordering of z,x.
@@ -263,7 +263,7 @@ class ResultGenerator(object):
             """
             
             # z_k-1|k-1:
-            z_pred = G(z_guess, x0, u, p_tvp, r)
+            z_pred = G(z_guess,x0,u,p_tvp,r)
             # x_k|k-1:
             x_pred = I(x0,z_pred,u,p_tvp,r)
             

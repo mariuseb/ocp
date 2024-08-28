@@ -1,0 +1,51 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + (1/Ci)*alpha_vent_sup*ahu_reaFloSupAir*(T_sup_air - Ti) + (1/Ci)*alpha_vent_ext*ahu_reaFloExtAir*(Ti - T_ext_air) + (1/Ci)*alpha_int_plugs*phi_int_plugs + (1/Ci)*alpha_int_lig*phi_int_lig",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "alpha_vent_sup",
+            "alpha_vent_ext",
+            "alpha_int_plugs",
+            "alpha_int_lig"
+        ],
+        "u": [
+            "Ta",
+            "T_sup_air",
+            "T_ext_air",
+            "T_207",
+            "T_121",
+            "T_321",
+            "T_320",
+            "phi_h",
+            "phi_int_plugs",
+            "phi_int_lig",
+            "phi_s",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 300,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1],
+    "R": [1]
+}
