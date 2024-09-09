@@ -171,8 +171,8 @@ if __name__ == "__main__":
         "Ai": 10, # m²
         "alpha_vent_sup": 1,
         "alpha_vent_ext": 1,
-        "alpha_int_plugs": 1,
-        "alpha_int_lig": 1  
+        "alpha_int_plugs": 1E-5,
+        "alpha_int_lig": 1E-5  
     }
     
     for name, value in priors.items():
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     #alpha0 = 0.1
     decay_rate = 0.2
     params_hist = pd.DataFrame(columns=list(param_guess.keys()))
-    plot = False
+    plot = True
     
     # clean P_rad_219:
     Data.data.P_rad_219[Data.data.P_rad_219 < 0] = 0
@@ -218,17 +218,27 @@ if __name__ == "__main__":
                 )
     p0 = param_est.p0
     
+    cols = ["mse",
+            "rmse",
+            "nrmse",
+            "cv-rmse",
+            "r2",
+            "r2_adj",
+            "aic",
+            "bic"]
+    
     metrics = pd.DataFrame(columns=
-                           ["mse",
-                            "rmse",
-                            "nrmse",
-                            "cv-rmse",
-                            "r2",
-                            "aic",
-                            "bic"]
+                           cols
+                           )
+    training_metrics = pd.DataFrame(columns=
+                           cols
                            )
     
-    for delta_day in range(7):
+    fig, axes = plt.subplots(7,2, sharex=False)
+    plt.show(block=False)
+    
+    N_days = 7
+    for delta_day in range(N_days):
         
         stop = start + pd.Timedelta(days=14)
         y_data = Data.get_dataset(start=start, stop=stop)
@@ -274,13 +284,13 @@ if __name__ == "__main__":
                 
             Q = ca.DM.eye(2)
             R = ca.DM.eye(1)
-            P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*1
+            P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*1E-2
             #for n in (1,3,5,7):
             #    P0[n,n] = 0
             for n in range(param_est.n_p, param_est.n_p + param_est.n_x):
                 P0[n,n] = 0
             #P0[9,9] = 1E3
-            if delta_day == 0:
+            if delta_day < 100:
                 lbp = param_est.get_lbp(1e-2)
                 ubp = param_est.get_ubp(1e2)
             else:
@@ -315,11 +325,13 @@ if __name__ == "__main__":
             result_gen.simple_sim_plot(
                                     y_data,
                                     x0,
-                                    plot=plot,
+                                    params,
+                                    plot=False,
                                     map_eval=True,
-                                    chained_eval=True
+                                    chained_eval=True,
+                                    ax=axes[delta_day, 0]
                                     )            
-            plt.show(block=True)
+            #plt.show(block=True)
             #plt.close()
             # obtain one-step ahead estimate:
                     
@@ -332,12 +344,12 @@ if __name__ == "__main__":
                                             tvp=False,
                                             ekf_config=ekf_config,
                                             cond_series=y_data.vent,
-                                            plot=plot,
+                                            plot=False,
                                             map_eval=True,
                                             switch=None,
                                             symbolic_estimate=True
                                             )   
-            plt.show(block=True)
+            #plt.show(block=True)
             #plt.close()
             train_metrics = result_gen.report_metrics("training")
             
@@ -361,15 +373,17 @@ if __name__ == "__main__":
             x0 = result_gen.filtered[result_gen.x].iloc[-1]
             #x0 = sol[result_gen.x].iloc[-1]
             result_gen.simple_sim_plot(
-                            y_data,
-                            x0,
-                            #plot=plot,
-                            plot=plot,
-                            map_eval=True,
-                            #symbolic_estimate=True
-                            )
-            plt.show(block=True)
-            plt.close()
+                                y_data,
+                                x0,
+                                params,
+                                #plot=plot,
+                                plot=plot,
+                                map_eval=True,
+                                #symbolic_estimate=True
+                                ax=axes[delta_day, 0]
+                                )
+            #plt.show(block=True)
+            #plt.close()
             test_metrics = result_gen.report_metrics("validation (bic, aic not valid)")
             
             results[delta_day] = {
@@ -379,7 +393,8 @@ if __name__ == "__main__":
             }       
             
             metrics.loc[delta_day, :] = test_metrics.loc[metrics.columns].values.flatten()
-            
+            training_metrics.loc[delta_day, :] = train_metrics.loc[metrics.columns].values.flatten()
+        
             result_gen.simple_one_step_plot(
                                             y_data,
                                             x0, 
@@ -389,12 +404,12 @@ if __name__ == "__main__":
                                             tvp=False,
                                             ekf_config=ekf_config,
                                             cond_series=y_data.vent,
-                                            plot=plot,
+                                            plot=False,
                                             map_eval=True,
                                             switch=None,
                                             symbolic_estimate=True
                                             )   
-            plt.show(block=True)
+            #plt.show(block=True)
             #plt.close()
             train_metrics = result_gen.report_metrics("training")
             y_data = Data.get_dataset(
@@ -413,15 +428,17 @@ if __name__ == "__main__":
             x0 = result_gen.filtered[result_gen.x].iloc[-1]
             #x0 = sol[result_gen.x].iloc[-1]
             result_gen.simple_sim_plot(
-                            y_data,
-                            x0,
-                            #plot=plot,
-                            plot=plot,
-                            map_eval=True,
-                            #symbolic_estimate=True
-                            )
-            plt.show(block=True)
-            plt.close()
+                                y_data,
+                                x0,
+                                params,
+                                #plot=plot,
+                                plot=plot,
+                                map_eval=True,
+                                #symbolic_estimate=True
+                                ax=axes[delta_day, 1]
+                                )
+            #plt.show(block=True)
+            #plt.close()
             
             test_metrics = result_gen.report_metrics("validation (bic, aic not valid)")
             
@@ -450,5 +467,14 @@ if __name__ == "__main__":
                 # check what happens
                 print(params)
             p0 = params.values
+    
+    #fig.tight_layout()     
+    #axes[delta_day, 0].set_xticklabels(labels1)
+    #axes[delta_day, 1].set_xticklabels(labels2)
+    for n in range(N_days-1):
+        axes[n, 0].set_xticklabels([])
+        axes[n, 1].set_xticklabels([])
+    
+    plt.show()
             
     print(params)

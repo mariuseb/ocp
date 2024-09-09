@@ -248,7 +248,12 @@ class ZEBData(object):
             sys.exit(1)
         data.index = pd.to_datetime(data.index).tz_localize(None)
         # filter power outliers:
+        #data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
         data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
+        data["P_rad_219"][data["P_rad_219"] < 0] = 0
+        data["P_rad_220"][data["P_rad_220"] > 2.0] = 2.0
+        data["P_rad_220"][data["P_rad_220"] < 0] = 0
+        #data.P_rad_219[Data.data.P_rad_219 < 0] = 0
         # TODO: add more filters
         self.data = data
         
@@ -264,6 +269,19 @@ class ZEBData(object):
         data = self.data.loc[start:stop]
         data = data.interpolate()
         return prepare_data(data)
+    
+    def get_meta_for_parest(self,
+                            start,
+                            days,
+                            sampling_rate
+                            ):
+        
+        stop = start + pd.Timedelta(days=days) 
+        y_data = self.get_dataset(start=start, stop=stop)
+        y_data = y_data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
+        N = len(y_data)
+        dt = (y_data.index[1] - y_data.index[0]).seconds
+        return dt, N
     
 def quick_plot(ax, y_data):
     """

@@ -37,6 +37,7 @@ from sklearn.metrics import r2_score
 rc('text', usetex=True)
 from scipy.stats import norm
 import casadi as ca
+from copy import deepcopy
 
 class ResultGenerator(object):
     """
@@ -55,15 +56,234 @@ class ResultGenerator(object):
                             N=2, # no map in any case
                             dt=dt,
                             slack=slack,
-                            param_guess=params.values.flatten()
+                            param_guess=params
                             )
+        self.config = config
+        self.dt = dt
+        self.slack = slack
         self.dae = param_est.dae
         self.I = param_est.integrator.one_sample
         self.G = param_est.integrator.G
         self.params = params
         self.z_guess = z_guess
         
-       
+    def half_day_validation_runner(
+        self,
+        ekf_config,
+        start,
+        N_days,
+        param_guess,
+        param_est,
+        data,
+        plot=True,
+        prior_weight=1,
+        sampling_rate="60min"
+    ):
+        p0 = param_est.p0
+        cols = ["mse",
+                "rmse",
+                "nrmse",
+                "cv-rmse",
+                "r2",
+                "r2_adj",
+                "aic",
+                "bic"]
+        
+        metrics = pd.DataFrame(
+                            columns=cols
+                            )
+        training_metrics = pd.DataFrame(
+                            columns=cols
+                            )
+        params_hist = pd.DataFrame(columns=list(param_guess.keys()))
+        
+        fig, axes = plt.subplots(7,2, sharex=False)
+        # iterate:
+        for delta_day in range(N_days):
+            
+            stop = start + pd.Timedelta(days=14)
+            y_data = data.get_dataset(start=start, stop=stop)
+            
+            if not y_data.Ti.isna().any():
+                """
+                Skip if any holes in temperature
+                """    
+                y_data = y_data.bfill()
+                y_data = y_data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                
+                N = len(y_data)
+                dt = (y_data.index[1] - y_data.index[0]).seconds
+                # set range index for identification:
+                y_data.index = range(0,N*dt,dt)
+            
+        
+                x_guess = np.array([
+                                y_data.Ti.values.flatten(),
+                                y_data.Ti.values.flatten() - 2
+                                ])
+                lbx = 0.7*x_guess
+                ubx = 2*x_guess
+
+                param_guess["alpha_vent_sup"]["ub"] = 1.1
+                param_guess["alpha_vent_ext"]["ub"] = 1.1
+                
+                Q = ca.DM.eye(2)
+                R = ca.DM.eye(1)
+                P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight
+                #for n in (1,3,5,7):
+                #    P0[n,n] = 0
+                for n in range(param_est.n_p, param_est.n_p + param_est.n_x):
+                    P0[n,n] = 0
+                #P0[9,9] = 1E3
+                if delta_day < 100:
+                    lbp = param_est.get_lbp(1e-2)
+                    ubp = param_est.get_ubp(1e2)
+                else:
+                    lbp = p0
+                    ubp = p0
+                    
+                sol, params = param_est.solve(
+                            y_data,
+                            #param_est.p0,
+                            p0,
+                            lbp=lbp,
+                            ubp=ubp,
+                            lbx=lbx,
+                            ubx=ubx,
+                            x_guess=x_guess,
+                            x_N = np.array([293.15,293.15]), # not used
+                            P0=P0,
+                            covar=ca.veccat(Q, R),
+                            codegen=True
+                            )
+                x0 = sol[self.x].iloc[0]   
+                self.simple_sim_plot(
+                                        y_data,
+                                        x0,
+                                        params,
+                                        plot=False,
+                                        map_eval=True,
+                                        chained_eval=True,
+                                        ax=axes[delta_day, 0]
+                                        )            
+                # obtain one-step ahead estimate:
+                self.simple_one_step_plot(
+                                                y_data,
+                                                x0, 
+                                                p_base=params,
+                                                #p_mod=p_mod,
+                                                p_tvp=params.values,
+                                                tvp=False,
+                                                ekf_config=ekf_config,
+                                                cond_series=y_data.vent,
+                                                plot=False,
+                                                map_eval=True,
+                                                switch=None,
+                                                symbolic_estimate=True
+                                                )   
+                train_metrics = self.report_metrics("training")
+                
+                """
+                Split validation in two:
+                """
+                
+                y_data = data.get_dataset(
+                                start = stop,
+                                stop = stop + pd.Timedelta(days=0.5)
+                                )  
+                        
+                if y_data.Ti.isna().any():
+                    # check what happens
+                    print(params)
+                    
+                y_data_raw = y_data.bfill()
+                y_data_raw.index.name = "time"
+                y_data = y_data_raw.groupby(pd.Grouper(freq=sampling_rate)).mean() #.dropna(axis=1)
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                x0 = self.filtered[self.x].iloc[-1]
+                #x0 = sol[self.x].iloc[-1]
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    #plot=plot,
+                                    plot=plot,
+                                    map_eval=True,
+                                    #symbolic_estimate=True
+                                    ax=axes[delta_day, 0]
+                                    )
+                test_metrics = self.report_metrics("validation (bic, aic not valid)")
+                metrics.loc[delta_day, :] = test_metrics.loc[metrics.columns].values.flatten()
+                training_metrics.loc[delta_day, :] = train_metrics.loc[metrics.columns].values.flatten()
+            
+                self.simple_one_step_plot(
+                                        y_data,
+                                        x0, 
+                                        p_base=params,
+                                        #p_mod=p_mod,
+                                        p_tvp=params.values,
+                                        tvp=False,
+                                        ekf_config=ekf_config,
+                                        cond_series=y_data.vent,
+                                        plot=False,
+                                        map_eval=True,
+                                        switch=None,
+                                        symbolic_estimate=True
+                                        )   
+                #plt.show(block=True)
+                #plt.close()
+                train_metrics = self.report_metrics("training")
+                y_data = data.get_dataset(
+                                start = stop + pd.Timedelta(days=0.5),
+                                stop = stop + pd.Timedelta(days=1)
+                                )  
+                        
+                if y_data.Ti.isna().any():
+                    # check what happens
+                    print(params)
+                    
+                y_data_raw = y_data.bfill()
+                y_data_raw.index.name = "time"
+                y_data = y_data_raw.groupby(pd.Grouper(freq=sampling_rate)).mean() #.dropna(axis=1)
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                x0 = self.filtered[self.x].iloc[-1]
+                #x0 = sol[self.x].iloc[-1]
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    #plot=plot,
+                                    plot=plot,
+                                    map_eval=True,
+                                    #symbolic_estimate=True
+                                    ax=axes[delta_day, 1]
+                                    )
+                test_metrics = self.report_metrics("validation (bic, aic not valid)")    
+                metrics.loc[delta_day+0.5, :] = test_metrics.loc[metrics.columns].values.flatten()       
+                param_guess = {
+                    k: {
+                        "init": params.loc[k],
+                        "lb": 1e-2*params.loc[k],
+                        "ub": 1e2*params.loc[k]
+                        }
+                    for k in params.index
+                }
+                params_hist.loc[delta_day] = params
+                # advance 1 day:
+                start = start + pd.Timedelta(days=1)
+        
+                if float(test_metrics.loc["nrmse"]) > 1:
+                    # check what happens
+                    print(params)
+                p0 = params.values
+                
+        return fig, \
+               axes, \
+               training_metrics, \
+               metrics, \
+               params_hist
+                
        
     def mse(self, y, y_pred):
         """
@@ -130,6 +350,12 @@ class ResultGenerator(object):
         metrics.loc["nrmse", name] = self.nrmse(y, y_pred)
         metrics.loc["cv-rmse", name] = metrics.loc["rmse", name]/y.mean()
         metrics.loc["r2", name] = r2_score(y, y_pred)
+        # to calculate r^2 adjusted:
+        r2 = metrics.loc["r2", name]
+        np = self.dae.n_p
+        n = len(y)
+        #
+        metrics.loc["r2_adj", name] = (1 - (1 - r2))*((n-1)/(n - np - 1))
         metrics.loc["aic", name] = self.aic(y, y_pred, self.num_params)
         metrics.loc["bic", name] = self.bic(y, y_pred, self.num_params)
         
@@ -144,6 +370,7 @@ class ResultGenerator(object):
                       self,
                       x0,
                       y_data,
+                      p,
                       map_eval=False,
                       chained_eval=True
                       ):
@@ -157,7 +384,7 @@ class ResultGenerator(object):
         xs = np.array([])
         zs = np.array([])
         # p to array:
-        p = self.params.values.flatten()
+        #p = self.params.values.flatten()
         I = self.I
         G = self.G
         """
@@ -173,7 +400,8 @@ class ResultGenerator(object):
         But for now, assume all
         z to be tv parameters.
         """
-        tvp = list(map(lambda x: x.split("_")[0], [p for p in self.params.index if p.endswith("_a")]))
+        #tvp = self.dae.z
+        tvp = list(map(lambda x: x.split("_")[0], [p for p in self.dae.z if p.endswith("_a")]))
         if self.z_guess is None:
             z_guess = self.params.loc[tvp].values
         else:
@@ -504,24 +732,54 @@ class ResultGenerator(object):
         
         return res, y_data
     
-    def simple_sim_plot(self, y_data, x0, HVAC=False, plot=True, map_eval=False,
-                        chained_eval=True):
+    def simple_sim_plot(self,
+                        y_data,
+                        x0,
+                        p,
+                        HVAC=False,
+                        plot=True,
+                        map_eval=False,
+                        chained_eval=True,
+                        ax=None
+                        ):
         """
         Create a simple plot.
         
         TODO: modularize
         """
-        res, y_data = self.simulate_full(x0, y_data, map_eval=map_eval, chained_eval=chained_eval)
+        # update:
+        self.params = p
+        # new scaled integrator:
+        """
+        self.param_est = ParameterEstimation(
+                                            config=self.config,
+                                            N=2, # no map in any case
+                                            dt=self.dt,
+                                            slack=self.slack,
+                                            param_guess=p
+                                             )
+        """
+        res, y_data = self.simulate_full(
+                                         x0,
+                                         y_data,
+                                         p,
+                                         map_eval=map_eval,
+                                         chained_eval=chained_eval
+                                         )
         if plot:
             if not HVAC:
                 """
                 Plot envelope model.
                 """
-                ax = res.Ti.plot(color="r", drawstyle="steps-post")
+                if ax is None:
+                    ax = res.Ti.plot(color="r", drawstyle="steps-post")
+                else:
+                    res.Ti.plot(color="r", drawstyle="steps-post", ax=ax)    
+                    
                 y_data.Ti.plot(color="k", linestyle="dashed", drawstyle="steps-post", linewidth=0.75, ax=ax)
                 #y_data.Ta.plot(color="b", linestyle="dashed", linewidth=0.75, ax=ax, drawstyle="steps-post")
                 ax1 = ax.twinx()
-                y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75, drawstyle="steps-post")
+                #y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75, drawstyle="steps-post")
                 (y_data.phi_h/y_data.phi_h.max()).plot(ax=ax1, color="g", linewidth=0.75, drawstyle="steps-post")
                 ax.legend(["model", "measured"])
             else:
@@ -534,7 +792,7 @@ class ResultGenerator(object):
                     res[name].plot(color="r", linestyle="dashed", linewidth=0.75, ax=ax)
                     ax.legend([y, name])
                 
-            plt.show()
+            #plt.show()
         
     def simple_one_step_plot(
                             self,
@@ -590,7 +848,7 @@ class ResultGenerator(object):
             y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75)
             (y_data.phi_h/y_data.phi_h.max()).plot(ax=ax1, color="g", linewidth=0.75)
             ax.legend(["model", "measured", "filtered"])
-            plt.show()
+            #plt.show()
         
     def make_journal_plot(
                           self,

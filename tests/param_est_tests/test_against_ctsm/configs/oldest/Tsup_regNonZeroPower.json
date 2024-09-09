@@ -1,0 +1,52 @@
+{
+    "model": {
+        "alg": {
+            "Prad":  "Prad - m_flow*UA_nom*regNonZeroPower((Tsup - Tret), n, delta)"
+        },
+        "w": {
+            "v2": "Prad - y2"
+        },
+        "p": [
+            "Ta_dim",
+            "T_set_sup_b",
+            "T_set_sup_a",
+            "Ta_max",
+            "UA_nom",
+            "n",
+            "delta"
+        ],
+        "u": [
+            "u_val",
+            "Ta",
+            "Ti",
+            "m_flow_bool",
+            "m_flow",
+            "Tsup",
+            "Tret"
+        ],
+        "z": [
+          "Prad"
+        ],
+        "y": [
+            ["y2", "Prad"]
+        ]
+    },
+    "objective": "dot(v2, v2)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

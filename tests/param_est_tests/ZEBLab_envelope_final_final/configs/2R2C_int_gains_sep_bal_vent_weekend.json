@@ -5,24 +5,23 @@
             "Te": "(Ti - Te)/(Rie_TVP*Ce_TVP) + (Ta - Te)/(Rea_TVP*Ce_TVP)"
         },
         "alg": {
-            "Rie_TVP": "Rie + Rie_a*ca.if_else(weeknd > 0, 1, 0) - Rie_TVP",
-            "Rea_TVP": "Rea + Rea_a*ca.if_else(weeknd > 0, 1, 0) - Rea_TVP",
-            "Ci_TVP": "Ci - Ci_a*ca.if_else(weeknd > 0, 1, 0) - Ci_TVP",
-            "Ce_TVP": "Ce - Ce_a*ca.if_else(weeknd > 0, 1, 0) - Ce_TVP", 
-            "Pvent": "Pvent - alpha_vent_sup*ahu_reaFloSupAir*(T_sup_air - Ti)"
+            "Rie_TVP": "weeknd*Rie_w + (1 - weeknd)*Rie - Rie_TVP",
+            "Rea_TVP": "weeknd*Rea_w + (1 - weeknd)*Rea - Rea_TVP",
+            "Ci_TVP": "weeknd*Ci_w + (1 - weeknd)*Ci - Ci_TVP",
+            "Ce_TVP": "weeknd*Ce_w + (1 - weeknd)*Ce - Ce_TVP"
         },
         "w": {
             "v1": "Ti - y1"
         },
         "p": [
             "Rie",
-            "Rie_a",
+            "Rie_w",
             "Rea",
-            "Rea_a",
+            "Rea_w",
             "Ci",
-            "Ci_a",
+            "Ci_w",
             "Ce",
-            "Ce_a",
+            "Ce_w",
             "Ai",
             "alpha_vent_sup",
             "alpha_vent_ext",
@@ -43,14 +42,14 @@
             "phi_s",
             "ahu_reaFloSupAir",
             "ahu_reaFloExtAir",
-            "weeknd"
+            "weeknd",
+            "vent"
         ],
         "z": [
             "Rie_TVP",
             "Rea_TVP",
             "Ci_TVP",
-            "Ce_TVP",
-            "Pvent"
+            "Ce_TVP"
         ],
         "x": [
             "Ti",
@@ -62,8 +61,8 @@
     },
     "bounds": {
         "z": {
-            "lbz": [1E-5,1E-5,1E5,1E5,-1E2],
-            "ubz": [1,1,1E9,1E9,1E4]
+            "lbz": [1E-5,1E-5,1E5,1E5],
+            "ubz": [1,1,1E9,1E9]
         }
     },
     "objective": "dot(v1, v1)@R[0,0]",
