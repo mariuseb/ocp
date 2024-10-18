@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF
+#from ocp.filters import EKF
 from matplotlib import rc
 from pprint import pprint
 #from ocp.covar_solve import CovarianceSolver
@@ -25,6 +25,19 @@ rc('mathtext', default='regular')
 import matplotlib.dates as mdates
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path, get_data_path
     
+SMALL_SIZE = 14
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 16
+MARKERSIZE = 5
+LINEWIDTH=0.6
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 if __name__ == "__main__":
     
@@ -38,12 +51,14 @@ if __name__ == "__main__":
     cfg_path = os.path.join(opt_config_base, "ALG_func_DAE.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
-    GENERATE_DATA = False
+    GENERATE_DATA = True
 
+    """
     boptest = Boptest(
                       boptest_cfg,
                       name="bestest_hydronic"
                       )
+    """
     
     sampling_time = "15min"
       
@@ -52,13 +67,23 @@ if __name__ == "__main__":
     if GENERATE_DATA:
         
         prbs = pd.read_csv(os.path.join(get_data_path(), "inputPRBS1.csv"), sep=";")
-        prbs.index = pd.TimedeltaIndex(prbs.t, unit="H").round(freq="S")
+        prbs.index = pd.Timestamp("2024-12-09 00:00") + pd.TimedeltaIndex(prbs.t, unit="H").round(freq="S")
         dt_index = prbs.index
         prbs.Ph /= 5
         prbs = prbs.Ph
-        prbs = prbs.round(1)
+        prbs = prbs.round(0)
         prbs = prbs.resample(sampling_time).first()
-        prbs.index = range(len(prbs.index))
+        #prbs.index = range(len(prbs.index))
+        prbs[prbs == 0] = -1
+        prbs = prbs.to_frame()
+        prbs.columns = ["delta_Tset"]
+        
+        fig, ax = plt.subplots(1,1)
+        prbs.plot(drawstyle="steps-post", ax=ax)
+        ax.legend(["$\Delta{T}_{set}$"], loc="upper right")
+        ax.set_ylim([-1.3,1.3])
+        fig.tight_layout()
+        plt.show()
         # baseline control for sysid:
         N = len(prbs)
         

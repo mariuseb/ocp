@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Generated with the modifications:  -->
+<!--Take care about array indices, they are stored in column major layout.-->
+<ModelDescription modelName="LimPID">
+  <ModelVariables>
+    <ScalarVariable name="PI.I.y" valueReference="0" description="Connector of Real output signal" variability="continuous" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  start="0.0" fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="der(PI.I.y)" valueReference="1" description="der(Connector of Real output signal)" variability="continuous" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="Ki" valueReference="2"  variability="continuous" causality="input" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="true">
+      <Real  start="1800.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="Kp" valueReference="3"  variability="continuous" causality="input" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="true">
+      <Real  start="0.4" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.Dzero.y" valueReference="4" description="Connector of Real output signal" variability="continuous" causality="internal" alias="noAlias" isProtected="true" hideResult="true" isDiscrete="false" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.I.u" valueReference="5" description="Connector of Real input signal" variability="continuous" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.I.y_reset_internal" valueReference="6" description="Internal connector for integrator reset" variability="continuous" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.P.y" valueReference="7" description="Output signal connector" variability="continuous" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addP.y" valueReference="8" description="Connector of Real output signal" variability="continuous" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addPID.y" valueReference="9" description="Connector of Real output signal" variability="continuous" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addSat.y" valueReference="10" description="Connector of Real output signal" variability="continuous" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.controlError" valueReference="11" description="Control error (set point - measurement)" variability="continuous" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.gainPID.y" valueReference="12" description="Output signal connector" variability="continuous" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.gainTrack.y" valueReference="13" description="Output signal connector" variability="continuous" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.y_reset_internal" valueReference="14" description="Internal connector for controller output reset" variability="continuous" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="Tmeas" valueReference="15"  variability="continuous" causality="input" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="true">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="Tset" valueReference="16"  variability="continuous" causality="input" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="true">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="u_val" valueReference="17"  variability="continuous" causality="output" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="u_val1" valueReference="18"  variability="continuous" causality="output" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  start="1800.0" fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="u_val11" valueReference="19"  variability="continuous" causality="output" alias="noAlias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  start="0.4" fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.Dzero.k" valueReference="20" description="Constant output value" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="true" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.I.k" valueReference="21" description="Integrator gain" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" unit="1" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.I.y_reset" valueReference="22" description="Value to which integrator is reset, used if reset = Buildings.Types.Reset.Parameter" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.I.y_start" valueReference="23" description="Initial or guess value of output (= state)" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.Nd" valueReference="24" description="The higher Nd, the more ideal the derivative block" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="10.0" fixed="true" useNominal="false" min="1e-13" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.Ni" valueReference="25" description="Ni*Ti is time constant of anti-windup compensation" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="2.0" fixed="true" useNominal="false" min="1e-13" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.P.k" valueReference="26" description="Gain value multiplied with input signal" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="1.0" fixed="true" useNominal="false" unit="1" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.Td" valueReference="27" description="Time constant of Derivative block" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="0.1" fixed="true" useNominal="false" min="0.0" unit="s" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.Ti" valueReference="28" description="Time constant of Integrator block" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" min="1e-60" unit="s" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addI.k1" valueReference="29" description="Gain of input signal 1" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addI.k2" valueReference="30" description="Gain of input signal 2" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addI.k3" valueReference="31" description="Gain of input signal 3" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addP.k1" valueReference="32" description="Gain of input signal 1" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addP.k2" valueReference="33" description="Gain of input signal 2" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addPID.k1" valueReference="34" description="Gain of input signal 1" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addPID.k2" valueReference="35" description="Gain of input signal 2" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addPID.k3" valueReference="36" description="Gain of input signal 3" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addSat.k1" valueReference="37" description="Gain of input signal 1" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addSat.k2" valueReference="38" description="Gain of input signal 2" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="-1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.gainPID.k" valueReference="39" description="Gain value multiplied with input signal" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="false" useNominal="false" unit="1" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.gainTrack.k" valueReference="40" description="Gain value multiplied with input signal" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="false" useNominal="false" unit="1" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.k" valueReference="41" description="Gain of controller" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" min="0.0" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.limiter.uMax" valueReference="42" description="Upper limits of input signals" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.limiter.uMin" valueReference="43" description="Lower limits of input signals" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.revAct" valueReference="44" description="Switch for sign for reverse or direct acting controller" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.wd" valueReference="45" description="Set-point weight for Derivative block (0..1)" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="0.0" fixed="true" useNominal="false" min="0.0" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.wp" valueReference="46" description="Set-point weight for Proportional block (0..1)" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="1.0" fixed="true" useNominal="false" min="0.0" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.xd_start" valueReference="47" description="Initial or guess value for state of derivative block" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.xi_start" valueReference="48" description="Initial or guess value value for integrator output (= integrator state)" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.yMax" valueReference="49" description="Upper limit of output" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="1.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.yMin" valueReference="50" description="Lower limit of output" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.y_reset" valueReference="51" description="Value to which the controller output is reset if the boolean trigger has a rising edge, used if reset == Buildings.Types.Reset.Parameter" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.y_start" valueReference="52" description="Initial value of output" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.0" fixed="true" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="gain.k" valueReference="53" description="Gain value multiplied with input signal" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="1.0" fixed="true" useNominal="false" unit="1" />
+    </ScalarVariable>
+    <ScalarVariable name="gain1.k" valueReference="54" description="Gain value multiplied with input signal" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Real  start="1.0" fixed="true" useNominal="false" unit="1" />
+    </ScalarVariable>
+    <ScalarVariable name="ki" valueReference="55" description="Controller I gain" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="900.0" fixed="false" useNominal="false" unit="s" />
+    </ScalarVariable>
+    <ScalarVariable name="kp" valueReference="56" description="Controller P gain" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Real  start="0.1" fixed="false" useNominal="false" unit="1" />
+    </ScalarVariable>
+    <ScalarVariable name="_D_outputAlias_u_val" valueReference="17"  variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="_D_outputAlias_u_val1" valueReference="18"  variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="_D_outputAlias_u_val11" valueReference="19"  variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.P.u" valueReference="8" description="Input signal connector" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addI.u1" valueReference="16" description="Connector of Real input signal 1" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addI.u2" valueReference="15" description="Connector of Real input signal 2" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addI.u3" valueReference="13" description="Connector of Real input signal 3" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addI.y" valueReference="5" description="Connector of Real output signal" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addP.u1" valueReference="16" description="Connector of Real input signal 1" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addP.u2" valueReference="15" description="Connector of Real input signal 2" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addPID.u1" valueReference="7" description="Connector of Real input signal 1" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addPID.u2" valueReference="4" description="Connector of Real input signal 2" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addPID.u3" valueReference="0" description="Connector of Real input signal 3" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addSat.u1" valueReference="17" description="Connector of Real input signal 1" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.addSat.u2" valueReference="12" description="Connector of Real input signal 2" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.gainPID.u" valueReference="9" description="Input signal connector" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.gainTrack.u" valueReference="10" description="Input signal connector" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.limiter.u" valueReference="12" description="Connector of Real input signal" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.limiter.y" valueReference="17" description="Connector of Real output signal" variability="continuous" causality="internal" alias="alias" isProtected="true" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.u_m" valueReference="15" description="Connector of measurement input signal" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.u_s" valueReference="16" description="Connector of setpoint input signal" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.y" valueReference="17" description="Connector of actuator output signal" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="gain.u" valueReference="2" description="Input signal connector" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="gain.y" valueReference="18" description="Output signal connector" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="gain1.u" valueReference="3" description="Input signal connector" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+    <ScalarVariable name="gain1.y" valueReference="19" description="Output signal connector" variability="continuous" causality="internal" alias="alias" isProtected="false" hideResult="" isDiscrete="false" isValueChangeable="false">
+      <Real  fixed="false" useNominal="false" />
+    </ScalarVariable>
+
+    <ScalarVariable name="PI.I.initType" valueReference="0" description="Type of initialization (1: no init, 2: steady state, 3,4: initial output)" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Integer  start="3" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.I.reset" valueReference="1" description="Type of integrator reset" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Integer  start="1" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.controllerType" valueReference="2" description="Type of controller" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Integer  start="2" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.initType" valueReference="3" description="Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Integer  start="5" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.reset" valueReference="4" description="Type of controller output reset" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Integer  start="1" fixed="true" />
+    </ScalarVariable>
+
+    <ScalarVariable name="PI.I.trigger_internal" valueReference="0" description="Needed to use conditional connector trigger" variability="discrete" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Boolean  start="false" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.limiter.limitsAtInit" valueReference="1" description="Has no longer an effect and is only kept for backwards compatibility (the implementation uses now the homotopy operator)" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Boolean  start="true" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.limiter.strict" valueReference="2" description="= true, if strict limits with noEvent(..)" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Boolean  start="true" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.reverseActing" valueReference="3" description="Set to true for reverse acting, or false for direct acting control action" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="true">
+      <Boolean  start="true" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.strict" valueReference="4" description="= true, if strict limits with noEvent(..)" variability="parameter" causality="internal" alias="noAlias" isProtected="false" hideResult="" isDiscrete="true" isValueChangeable="false">
+      <Boolean  start="true" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.with_D" valueReference="5" description="Boolean flag to enable derivative action" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="true" isDiscrete="true" isValueChangeable="false">
+      <Boolean  start="false" fixed="true" />
+    </ScalarVariable>
+    <ScalarVariable name="PI.with_I" valueReference="6" description="Boolean flag to enable integral action" variability="parameter" causality="internal" alias="noAlias" isProtected="true" hideResult="true" isDiscrete="true" isValueChangeable="false">
+      <Boolean  start="true" fixed="true" />
+    </ScalarVariable>
+
+  </ModelVariables>
+</ModelDescription>

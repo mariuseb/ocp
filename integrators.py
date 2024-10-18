@@ -27,19 +27,33 @@ class Integrator(metaclass=ABCMeta):
     def x(self):
          return ca.vertcat(*self.dae.dae.x)
      
-    def vars(self, names):
+    """
+    def vars(self, names, stoch=False):
         mxs = []
         for name in names:
             #mxs.append(self.dae.dae.var(name))
             mxs.append(getattr(self.dae, name)) # get mx by name
-        return ca.vertcat(*mxs)
+        if stoch:
+            method = ca.veccat
+        else:
+            method = ca.vertcat
+        return method(*mxs)
+    """
+    # redirect calls to DAE-vars:
+    def vars(self, names, stoch=False):
+        return self.dae.vars(names, stoch=stoch)
     
     def var(self, var: str):
         if isinstance(self.dae, DAE):
-            if var in ("r", "w", "v"): 
-                return self.vars(getattr(self.dae, var + "_names"))
+            """
+            if var in ("r", "w", "v", "theta"): 
+                if var == "theta":
+                    stoch = True
+                return self.vars(getattr(self.dae, var + "_names"), stoch=stoch)
             else:
                 return self.vars(getattr(self.dae.dae, var)())
+            """
+            return self.dae.var(var)
                 
         elif isinstance(self.dae, dict):
             return self.dae[var]
@@ -60,6 +74,11 @@ class Integrator(metaclass=ABCMeta):
         else: 
             raise TypeError("Unknown DAE-type")
         
+    def set_sde_expr(self):
+        """
+        TODO: make more general.
+        """
+        self.sde = self.dae.sde
 
     """
     TODO: fix for w-exprs:
@@ -117,6 +136,26 @@ class Integrator(metaclass=ABCMeta):
         
         self.g_expr = g_expr        
     
+    
+    def chain_integrator(self):
+        """
+        Chain rootfinder for z (G) into integrator I.
+        """
+        _x0 = ca.MX.sym("x0", self.dae.n_x)
+        _z0 = ca.MX.sym("z0", self.dae.n_z)
+        #_z = ca.MX.sym("z", self.dae.n_z)
+        _u = ca.MX.sym("u", self.dae.n_u)
+        _p = ca.MX.sym("p", self.dae.n_p)
+        _r = ca.MX.sym("r", self.dae.n_r)
+        # = ca.MX.sym("r", self.dae.n_r)
+        z_expr = self.G(_z0, _x0, _u, _p, _r)
+        I_chained_expr = self.one_sample(_x0, z_expr, _u, _p, _r)
+        return ca.Function("I_chained",
+                            [_x0, _z0, _u, _p, _r],
+                            [I_chained_expr, z_expr],
+                            ["x0","z0","u","p","r"],
+                            ["xf", "z"])
+        
     
     """
     @property
@@ -196,6 +235,10 @@ class Integrator(metaclass=ABCMeta):
     def s(self):
         return self.var("s")
     
+    @property
+    def theta(self):
+        return self.var("theta")
+    
     
     """
     TODO: clean up r:
@@ -249,6 +292,38 @@ class Integrator(metaclass=ABCMeta):
         
     """
     
+class SDEIntegrator(Integrator):
+    """
+    Wrapper for Cvodes functionality in Casadi.
+
+    TODO: how to do n-step? i.e. sub-sampling.
+    For now, only n_step = 1.
+
+    TODO: handling of DAE's
+    """ 
+    
+    def __init__(self, dae, **kwds):
+
+        self.dae = dae
+        try:
+            self.set_sde_expr()
+            self.set_sde_func()
+        except:
+            print("No sde expressions found in config.")
+            
+
+    def set_sde_func(self):
+        """
+        TODO: add more vars
+        """
+        self.Q_symbolic = ca.Function(
+                    "f",
+                    [self.theta, self.u],
+                    #[ca.veccat(self.dae.Q, self.dae.Q_vent), self.u],
+                    [self.sde],
+                    ["theta", "u"],
+                    ["f"])
+        
 class Cvodes(Integrator):
     """
     Wrapper for Cvodes functionality in Casadi.

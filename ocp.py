@@ -784,6 +784,7 @@ class OCP(metaclass=ABCMeta):
     def set_nlp_obj(self):
         raise NotImplementedError("ERROR.")
         
+    @classmethod
     def get_scale(self, param_guess):
         """
         For numerical conditioning.

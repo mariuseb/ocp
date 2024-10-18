@@ -5,7 +5,9 @@ import pdb
 
 class DAE(object):
     """
-    class to be used as input for parameter estimation
+    Class to be used as input for parameter estimation.
+    
+    TODO: extend to S-DAE.
     """
     def __init__(self, config):
 
@@ -29,24 +31,32 @@ class DAE(object):
         self.add_controls()
         self.add_refs()
         self.add_meas()
-        #self.add_process_noise()
+        self.add_process_noise()
         #self.add_meas_noise()
         self.add_w()
         #self.add_meas()
         self.add_odes()
         self.add_algs()
 
-    def vars(self, names):
+    def vars(self, names, stoch=False):
         mxs = []
         for name in names:
             #mxs.append(self.dae.dae.var(name))
             #mxs.append(getattr(self.dae, "var")(name)) # get mx by name
             mxs.append(getattr(self, name)) # get mx by name
-        return ca.vertcat(*mxs)
+        if stoch:
+            method = ca.veccat
+        else:
+            method = ca.vertcat
+        return method(*mxs)
     
     def var(self, var: str):
-        if var in ("r", "w", "v"): 
-            return self.vars(getattr(self, var + "_names"))
+        if var in ("r", "w", "v", "theta"): 
+            if var == "theta":
+                stoch = True
+            else:
+                stoch= False
+            return self.vars(getattr(self, var + "_names"), stoch=stoch)
         else:
             return self.vars(getattr(self, var))
 
@@ -59,20 +69,29 @@ class DAE(object):
         self.__setattr__("p", self.config["p"])
     
     
-    """      
     def add_process_noise(self): # s
-
+        """
+        Only defined for MX as of yet.
+        Thus, matrix expression can
+        easily be included in Lyapunov 
+        equation.
+        """
         try:
-            for name in self.config["s"]:
+            for name in self.config["theta"]:
                 # can't add to dae:
                 # state = self.dae.add_x(name)
-                _noise = ca.MX.sym(name)
-                noise = self.dae.add_w(name, _noise)
-                self.__setattr__(name, noise)
+                _noise = ca.MX.sym(name, self.n_x, self.n_x)
+                #noise = self.dae.add_w(name, _noise)
+                self.__setattr__(name, _noise)
 
-            self.__setattr__("s_names", self.config["s"])
+            self.__setattr__("theta_names", self.config["theta"])
+            
+            assert self.config["sde"]["all"] is not None
+            self.add_sdes()
+            
         except KeyError:
-            self.__setattr__("s_names", [])
+            self.__setattr__("theta_names", [])
+    """      
             
     def add_meas_noise(self):
     
@@ -267,6 +286,10 @@ class DAE(object):
     @property
     def n_u(self):
         return self.dae.nu()
+    
+    @property
+    def n_theta(self):
+        return len(self.theta_names)*(self.n_x**2)
 
     @property
     def n_y(self):
@@ -305,21 +328,32 @@ class DAE(object):
         return [eq for eq in self.dae.alg() if not eq.is_zero()]
                 
 
-    """
-    @property
-    def p(self):
-        return vertcat(*self.dae.p)
 
-    @property
-    def x(self):
-        return vertcat(*self.dae.p)
-
-    @property
-    def u(self):
-        return vertcat(*self.dae.u)
-    """
 
     """
+    #@property
+    def p_names(self):
+        return self.dae.p()
+
+    @property
+    def x_names(self):
+        return self.dae.x()
+
+    @property
+    def u_names(self):
+        return self.dae.u()
+    
+    @property
+    def r_names(self):
+        return self.r_names
+    
+    @property
+    def theta(self):
+        return self.theta_names
+    
+    @property
+    def y(self):
+        return list(self.y.keys()) 
     Can generalize the below to add equation.
     """
 
@@ -354,6 +388,13 @@ class DAE(object):
             #method = self.dae.add_alg
             #method = self.dae.set_alg
             method = self.dae.add_w
+
+        elif kind == "sde":
+            
+            self.sdes = expr_dict = {}
+            #method = self.dae.add_alg
+            #method = self.dae.set_alg
+            method = self.add_sde
             
         try:
             for expr_name, _string in self.config[kind].items():
@@ -410,12 +451,19 @@ class DAE(object):
             
     def add_odes(self):
         self._init_exprs("ode")
+    
+    def add_sdes(self):
+        self._init_exprs("sde")
         
     def add_algs(self):
         self._init_exprs("alg")
     
     def add_w(self):
         self._init_exprs("w")
+        
+    def add_sde(self, name, expr):
+        setattr(self, "sde", expr)
+        
         
 '''     
     def add_odes(self):

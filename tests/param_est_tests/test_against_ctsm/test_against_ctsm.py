@@ -332,8 +332,8 @@ if __name__ == "__main__":
     
     #_x_guess = sol[["Ti", "Te"]].iloc[0].values.flatten()
     _x_guess = np.array([20.48625, 18.56523])
-    _lbx = 0.99*_x_guess
-    _ubx = 1.01*_x_guess
+    _lbx = 0.90*_x_guess
+    _ubx = 1.1*_x_guess
     
     #P_guess = np.array(ca.DM.eye(ekf.dae.n_x)).flatten()
     #P_guess = np.diag([3532.547, 3581.484]).flatten()
@@ -349,8 +349,8 @@ if __name__ == "__main__":
     R_guess = Rval.flatten()
     
     _x0 = np.concatenate([_x_guess, P_guess, Q_guess, R_guess])
-    lbx = np.concatenate([_lbx, lbP, Q_guess*0.1, R_guess*1E-4])
-    ubx = np.concatenate([_ubx, ubP, Q_guess*10, R_guess*1E4])
+    ubx = np.concatenate([_ubx, lbP, Q_guess*0.1, R_guess*1E-4])
+    lbx = np.concatenate([_lbx, ubP, Q_guess*10, R_guess*1E4])
     #lbx = np.concatenate([_lbx, lbP, -5E1*Q_guess, -5E1*R_guess])
     #ubx = np.concatenate([_ubx, ubP, 1E1*Q_guess, 1E1*R_guess])
     

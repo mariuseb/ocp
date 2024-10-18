@@ -60,11 +60,16 @@ def prepare_data(data, room=219):
         y_data["T_121"] = data["RSegm121"]
         y_data["T_321"] = data["RSegm321"]
         y_data["T_320"] = data["RSegm320"]
+        y_data["Tset"] = data["T_set"]
         y_data["vent_on"] = (y_data["V_sup_air"] > 10).astype(int) 
         y_data["dt_index"] = y_data.index
+        y_data[temps_219_cols] = data[temps_219_cols]
         y_data.dt_index.name = ""
         y_data["weekday"] = y_data["dt_index"].apply(lambda x: x.weekday())
+        y_data["Tset_high"] = (y_data["Tset"] > 18).astype(int)
+        y_data["hour"] = y_data["dt_index"].apply(lambda x: x.hour)
         y_data["weeknd"] = y_data["weekday"].apply(lambda x: 1 if x in (5,6) else 0)
+        y_data["daytime"] = y_data["hour"].apply(lambda x: 1 if x in range(5,17) else 0)
     except:
         pass
     try:
@@ -73,7 +78,6 @@ def prepare_data(data, room=219):
         y_data["val_pos_219"] = data["val_pos_219"]
         y_data["Tsup"] = data["T_sup_219"]
         y_data["Tret"] = data["T_ret_219"]
-        y_data["Tset"] = data["T_set"]
         y_data["m_flow"] = data["V_flow_219"]*1.293
         y_data["V_flow_219"] = data["V_flow_219"]
         
@@ -111,7 +115,8 @@ def prepare_data(data, room=219):
     
     # set measurements:
     y_data["y1"] = y_data["Ti"]
-    #y_data["y2"] = y_data["Tret"]
+    #y_data["y2"] = y_data["Tret"]## ----setup, include=FALSE------------------------------------------------
+## this is equivalent to \SweaveOpts{...}
     #y_data["y3"] = y_data["Tsup"]
     #y_data["y4"] = y_data["Prad"]
     #y_data["y5"] = y_data["m_flow"]
@@ -169,6 +174,11 @@ class ZEBData(object):
         data = data.bfill()
         data = data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
         data["vent"] = (data["V_sup_air"] > 10).astype(int) 
+        #data["vent"] = data["daytime"]
+        data["Tset_high"] = (data["Tset"] > 18).astype(int)
+        data["heat_on"] = (data["phi_h"] > 10).astype(int)
+        #data["vent"] = data["Tset_high"]
+        data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)
         
         """
         for name in ("T_sup_air", "T_ext_air"):

@@ -163,7 +163,7 @@ if __name__ == "__main__":
     Data.data.P_rad_219[Data.data.P_rad_219 < 0] = 0
     #Data.data.P_rad_219 = Data.data.P_rad_219.shift(-1)
     
-    stop = start + pd.Timedelta(days=7) 
+    stop = start + pd.Timedelta(days=1) 
     y_data = Data.get_dataset(start=start, stop=stop)
     y_data = y_data.groupby(pd.Grouper(freq='5min')).mean().dropna()
     N = len(y_data)
@@ -320,7 +320,9 @@ if __name__ == "__main__":
     }
     opts = param_est.opt
     #opts["ipopt.tol"] = 1e-10
-    ll_solver = ca.nlpsol("ll_solver",  "ipopt", ll_nlp, param_est.opt)
+    opts["verbose"] = False
+    opts["ipopt.linear_solver"] = "ma57"
+    ll_solver = ca.nlpsol("ll_solver",  "ipopt", ll_nlp, opts)
     
     # construct numerical bounds for ll-opt:
     p_val = np.concatenate([
@@ -380,7 +382,8 @@ if __name__ == "__main__":
                         ubx=ubx,
                         #ubg=ubg,
                         #lbg=lbg,
-                        p=p_val)
+                        p=p_val
+                        )
     
     Q = np.diag(np.array([_sol["x"][-5], _sol["x"][-2]]).flatten())
     P0 = np.diag(np.array([_sol["x"][2], _sol["x"][5]]).flatten())

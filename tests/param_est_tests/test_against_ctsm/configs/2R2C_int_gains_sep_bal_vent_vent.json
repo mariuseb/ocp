@@ -42,7 +42,9 @@
             "phi_s",
             "ahu_reaFloSupAir",
             "ahu_reaFloExtAir",
-            "vent"
+            "weeknd",
+            "vent",
+            "stepQi"
         ],
         "z": [
             "Rie_TVP",

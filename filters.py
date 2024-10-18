@@ -378,6 +378,16 @@ class KalmanBucy(Filter):
     """
     def __init__(self, cfg, **kwds):
         super(KalmanBucy, self).__init__(cfg, **kwds)
+        """
+        SDE-integrator: create, get Function:
+        """
+        
+        self.SDEInt = SDEInt = integrators.SDEIntegrator(self.dae)
+        try:
+            self.Q_function = SDEInt.Q_symbolic
+        except:
+            pass
+        
         self.initialize_P_integrator()
         self.generate_symbolic_estimate()
         self.generate_symbolic_estimate_for_loglik()
@@ -393,9 +403,24 @@ class KalmanBucy(Filter):
         n_x = self.dae.n_x # + self.dae.n_z
         A = ca.MX.sym("A", n_x, n_x)
         sigma = ca.MX.sym("sigma", n_x, n_x)
+        """
+        Recreate symbolic theta:
+        mxs = []
+        for name in self.dae.theta_names:
+            mxs.append(getattr(self.dae, name))
+        """
+        n_theta = self.dae.var("theta").shape[0]
+        u = ca.MX.sym("u", self.n_u)
+        #theta = ca.MX.sym("theta", n_theta)
+        
         P0 = ca.MX.sym("P0", n_x, n_x)
         # c.t. Lyapunov equation:
         rhs_P = A@P0 + P0@A.T + sigma@sigma.T
+        #Q_call = self.Q_function(theta, u)
+        #rhs_P = A@P0 + P0@A.T + Q_call@Q_call.T
+        #rhs_P = A@P0 + P0@A.T + self.SDEInt.sde@self.SDEInt.sde.T
+        #rhs_P = A@P0 + P0@A.T + theta.reshape((n_x, n_x))@theta.reshape((n_x, n_x)).T
+        #rhs_P = A@P0 + P0@A.T + Q_call
         # function-obj for continuous-time ode:
         ode_P = ca.Function('ode_P', [P0, A, sigma], [rhs_P])
         # RK4 for this, analogous to state:
@@ -436,13 +461,13 @@ class KalmanBucy(Filter):
         #A = ca.MX.sym("A", n_x, n_x)
         # obtain df/dx linearized at t=k-1:
         A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX())
-        Ad = ca.expm(A*dt)
+        #Ad = ca.expm(A*dt)
         
         n_x = self.dae.n_x # + self.dae.n_z
         sigma = ca.MX.sym("sigma", n_x, n_x)
         #P0 = ca.MX.sym("P0", n_x, n_x)
         # c.t. Lyapunov equation:
-        rhs_P = Ad@ca.expm(sigma)@ca.expm(sigma.T)@Ad.T
+        rhs_P = A@ca.expm(sigma)@ca.expm(sigma.T)@A.T
         # 'faux' P0:
         P0 = ca.MX.sym("P0", self.n_x, self.n_x)
         # function-obj for continuous-time ode:
@@ -473,6 +498,13 @@ class KalmanBucy(Filter):
                                              ["P"])
         
         
+    def reinit_symbolic_Q(self):
+        mxs = []
+        for name in self.dae.theta_names:
+            mx = ca.MX.sym(name, self.n_x, self.n_x)
+            mxs.append(mx)
+        return mxs
+        
     def generate_symbolic_estimate(self):
         """
         To be able to map evaluation of
@@ -489,8 +521,13 @@ class KalmanBucy(Filter):
         u = ca.MX.sym("u", self.n_u)
         r = ca.MX.sym("r", self.n_r)
         p = ca.MX.sym("p", self.n_p)
-        y = ca.MX.sym("y", self.n_y)
-        Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        y = ca.MX.sym("y", self.n_y)   
+        """
+        Recreate symbolic theta:
+        """
+        #Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        Q = ca.veccat(*self.reinit_symbolic_Q())
+        
         R = ca.MX.sym("R", self.n_y, self.n_y)
         #dt = ca.MX.sym("dt", 1)
         P_prev = ca.MX.sym("P_prev", self.n_x, self.n_x)
@@ -516,16 +553,17 @@ class KalmanBucy(Filter):
         z = res["z"]
 
         # obtain df/dx linearized at t=k-1:
-        A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        A = self.jac_f_x(x0,z,u,p,r,y,ca.MX(),ca.MX())
         # obtain linearization of h(x) (usually just [1, 0, ..., 0]):
-        C = self.jac_h(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        C = self.jac_h(x0,z,u,p,r,y,ca.MX(),ca.MX())
         # take symbolic measurement:        
         #h_x = self.h(x_apriori, [])
         h_x = C@x_apriori
         # a priori covariance, continuous-time:
-        P_apriori = self.one_sample_P(P_prev, A, Q)
+        #P_apriori = self.one_sample_P(P_prev, A, ca.expm(Q))
+        P_apriori = self.one_sample_P(P_prev, A, self.Q_function(Q, u))
         # output prediction uncertainty:
-        V_k = C@P_apriori@(C.T) + R
+        V_k = C@P_apriori@(C.T) + ca.expm(R)
         # kalman gain:
         K = P_apriori@(C.T)@ca.inv(V_k)
         # posterior state, covariance estimate (update equations):
@@ -560,7 +598,15 @@ class KalmanBucy(Filter):
         r = ca.MX.sym("r", self.n_r)
         p = ca.MX.sym("p", self.n_p)
         y = ca.MX.sym("y", self.n_y)
-        Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        # here:
+        # replace with:
+        """
+        Recreate symbolic theta:
+        """
+        #Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        Q = ca.veccat(*self.reinit_symbolic_Q())
+        
+        #Q_expr = self.dae.sde
         R = ca.MX.sym("R", self.n_y, self.n_y)
         #dt = ca.MX.sym("dt", 1)
         P_prev = ca.MX.sym("P_prev", self.n_x, self.n_x)
@@ -586,14 +632,16 @@ class KalmanBucy(Filter):
         z = res["z"]
 
         # obtain df/dx linearized at t=k-1:
-        A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        A = self.jac_f_x(x0,z,u,p,r,y,ca.MX(),ca.MX())
         # obtain linearization of h(x) (usually just [1, 0, ..., 0]):
-        C = self.jac_h(x0,z0,u,p,r,y,ca.MX(),ca.MX())
+        C = self.jac_h(x0,z,u,p,r,y,ca.MX(),ca.MX())
         # take symbolic measurement:        
         #h_x = self.h(x_apriori, [])
         h_x = C@x_apriori
         # a priori covariance, continuous-time:
-        P_apriori = self.one_sample_P(P_prev, A, ca.expm(Q))
+        #P_apriori = self.one_sample_P(P_prev, A, Q, u)
+        P_apriori = self.one_sample_P(P_prev, A, self.Q_function(Q, u))
+        #P_apriori = self.one_sample_P(P_prev, A, ca.expm(Q))
         # output prediction uncertainty:
         V_k = C@P_apriori@(C.T) + ca.expm(R)
         # kalman gain:
@@ -611,7 +659,84 @@ class KalmanBucy(Filter):
             ["x0","P_prev","z0","u","r","p","y","Q","R"],
             ["x_hat","P_hat","z","x_pred","h_x", "e_k", "V_k", "P_apriori", "loglik"],
         )
-
+        
+    def generate_symbolic_estimate_for_loglik(self):
+        """
+        To be able to map evaluation of
+        kalman feedback, create function:
+        
+        x0, u, r, p, y, Q, R, P_prev -> x_pred, x_hat, P_hat
+        
+        NOTE: remember to test equivalence with numeric version.
+        
+        NB! Only for ODE's.
+        """
+        
+        #F = self.integrator.one_sample
+        
+        x_0 = ca.MX.sym("x0", self.n_x)
+        z_0 = ca.MX.sym("z0", self.n_z)
+        u = ca.MX.sym("u", self.n_u)
+        u_shift = ca.MX.sym("u_1", self.n_u)
+        r = ca.MX.sym("r", self.n_r)
+        p = ca.MX.sym("p", self.n_p)
+        y = ca.MX.sym("y", self.n_y)
+        # here:
+        # replace with:
+        """
+        Recreate symbolic theta:
+        """
+        #Q = ca.MX.sym("Q", self.n_x, self.n_x)
+        Q = ca.veccat(*self.reinit_symbolic_Q())
+        #Q_expr = self.dae.sde
+        R = ca.MX.sym("R", self.n_y, self.n_y)
+        #dt = ca.MX.sym("dt", 1)
+        P_0 = ca.MX.sym("P_0", self.n_x, self.n_x)
+        """
+        To produce log-likelihood expression:
+        """
+        # obtain linearization of h(x) (usually just [1, 0, ..., 0]):
+        C = self.jac_h(x_0,z_0,u,p,r,y,ca.MX(),ca.MX())
+        # let x0 denote x_0|-1, i.e a one-step pred:
+        h_x = C@x_0
+        e_k = y - h_x
+        # similarly, let P0 denote P_0|-1,
+        # yielding the output prediction uncertainty
+        V_k = C@P_0@(C.T) + ca.expm(R)
+        # the expression for the loglik becomes:
+        loglik = (1/2)*(self.log_det_R(V_k) + \
+                  e_k.T@ca.inv(V_k)@e_k + \
+                  self.n_y*ca.log(2*ca.pi))
+        # the Kalman gain:
+        K = P_0@(C.T)@ca.inv(V_k)
+        # posterior state, covariance estimate (update equations):
+        x_00 = x_0 + K@e_k # x_0|0
+        P_00 = (ca.MX.eye(self.n_x) - K@C)@P_0 # P_0|0
+        # chain function calls to get DAE-integrator:
+        F = self.chain_integrator()
+        res = F(
+                x0=x_00,
+                z0=z_0,
+                u=u,
+                p=p,
+                r=r
+                )
+        # symbolic simulation:
+        x_10 = res["xf"]
+        z_1 = res["z"]
+     
+        # obtain df/dx linearized at t=t_k:
+        A = self.jac_f_x(x_0,z_1,u,p,r,y,ca.MX(),ca.MX())
+        P_10 = self.one_sample_P(P_00, A, self.Q_function(Q, u))
+        
+        self.one_sample_feedback_adj = ca.Function(
+            "F",
+            [x_0, P_0, z_0, u, r, p, y, Q, R],
+            [x_00, P_00, z_1, x_10, h_x, e_k, V_k, P_10, loglik],
+            ["x_0","P_0","z_0","u","r","p","y","Q","R"],
+            ["x_00","P_00","z","x_10","h_x", "e_k", "V_k", "P_10", "loglik"],
+        )
+        
     # rethink this inteface
     def estimate(
                  self,
@@ -1168,7 +1293,7 @@ class KalmanDAE(Filter):
                       r=r
                       )["xf"]
         """
-        F = self.chain_integrator()
+        F = self.integrator.chain_integrator()
         res = F(
                 x0=x0,
                 z0=z0,

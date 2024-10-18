@@ -47,6 +47,7 @@
     "opt": {
         "verbose": false,
         "ipopt.linear_solver": "ma57",
+        "ipopt.print_level": 5,
         "ipopt.ma57_pre_alloc": 10,
         "ipopt.ma57_automatic_scaling" : "yes"
     },

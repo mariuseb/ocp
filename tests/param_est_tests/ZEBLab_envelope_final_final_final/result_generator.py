@@ -26,7 +26,7 @@ NOTE:
 """
 import pandas as pd
 import numpy as np
-from utils import ZEBData
+from ocp.utils import ZEBData
 from ocp.param_est import ParameterEstimation
 import matplotlib.pyplot as plt
 from ocp.filters import KalmanDAE
@@ -35,15 +35,21 @@ from matplotlib import rc
 from sklearn.metrics import r2_score
 # text:
 rc('text', usetex=True)
+# try to standardize datetime-formatting:
+#plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d"
+import matplotlib.dates as mdates
+#plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M:%S"
 from scipy.stats import norm
 import casadi as ca
 from copy import deepcopy
 from matplotlib.colors import ListedColormap
 import seaborn as sns
 # construct cmap
-flatui = ["#9b59b6", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"]
+#colors = ["#9b59b6", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"]
 #my_cmap = ListedColormap(sns.color_palette(flatui).as_hex())
-my_cmap = sns.color_palette("Spectral", as_cmap=True)
+#my_cmap = sns.color_palette("Spectral", as_cmap=True)
+#my_cmap = sns.color_palette("bright", as_cmap=True)
+colors = sns.color_palette("Set1") #, as_cmap=True)
 
 def discrete_cmap(N, base_cmap=None):
     """Create an N-bin discrete colormap from the specified input map"""
@@ -57,10 +63,30 @@ def discrete_cmap(N, base_cmap=None):
     cmap_name = base.name + str(N)
     return base.from_list(cmap_name, color_list, N)
 
+#colors = sns.color_palette("bright")
 #colors = sns.color_palette("bright", as_cmap=True)
-colors = sns.color_palette("husl", 9)
+#colors = sns.color_palette("husl", 9)
 my_cmap = ListedColormap(sns.color_palette(colors).as_hex())
 color_cycler = plt.cycler(color=colors)
+
+color_map_custom = {
+    "space_heat": colors[0],
+    "vent_in": colors[4],
+    "vent_out": colors[-2],
+    "solar": colors[5],
+    "one_step": colors[1],
+    "sim": colors[2],
+    "meas": "k",
+    "int_gains": colors[-3],
+    #"temp_amb": colors[-1],
+    "temp_amb": "g",
+    "binary": colors[3],
+    "T_219_TR1": "dimgray", 
+    "T_219_TR2": "gray", 
+    "T_219_TR3": "darkgray", 
+    "T_219_TR4": "silver", 
+}
+
 #my_cmap = discrete_cmap(10, my_cmap)
 
 #N = 500
@@ -108,7 +134,12 @@ class ResultGenerator(object):
         plot=True,
         prior_weight=1,
         sampling_rate="60min",
-        journal_plot=False
+        journal_plot=False,
+        R=None,
+        Q=None,
+        P0=None,
+        P0x=None,
+        x0_opt=None # from 1-step optimizatoin
     ):
         self.extra_inds = extra_inds = []
         p0 = param_est.p0
@@ -116,6 +147,7 @@ class ResultGenerator(object):
                 "rmse",
                 "nrmse",
                 "cv-rmse",
+                "mbe",
                 "r2",
                 "r2_adj",
                 "aic",
@@ -168,8 +200,418 @@ class ResultGenerator(object):
             result.loc[new_index, "Ti_sim"] = new_results["Ti"].values
             result = result.sort_index()
             return result, new_first
+            
+        for delta_day in range(N_days):
+            
+            stop = start + pd.Timedelta(days=days)
+            y_data, dt, N = data.get_dataset(
+                                            start=start, 
+                                            stop=stop, 
+                                            sampling_rate=sampling_rate
+                                            )
+            
+            if not y_data.Ti.isna().any():
+                """
+                Skip if any holes in temperature
+                y_data = y_data.bfill()
+                y_data = y_data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
                 
+                N = len(y_data)
+                dt = (y_data.index[1] - y_data.index[0]).seconds
+                # set range index for identification:
+                y_data.index = range(0,N*dt,dt)
+                """    
+            
+                if param_est.n_x == 2:
+                    
+                    x_guess = np.array([
+                                    y_data.Ti.values.flatten(),
+                                    y_data.Ti.values.flatten() - 2
+                                    ])
+                    
+                elif param_est.n_x == 3:
+                    
+                    x_guess = np.array([
+                                    y_data.Ti.values.flatten(),
+                                    y_data.Ti.values.flatten() - 2,
+                                    y_data.Ti.values.flatten() + 2
+                                    ])
+                    
+                else: 
+                    
+                    raise ValueError("error")
+                    
+                    
+                lbx = 0.7*x_guess
+                ubx = 2*x_guess
+
+                param_guess["alpha_vent_sup"]["ub"] = 1.1
+                param_guess["alpha_vent_ext"]["ub"] = 1.1
+                
+                if Q is None:
+                    Q = ca.DM.eye(param_est.n_x)
+                if R is None:
+                    R = ca.DM.eye(param_est.n_y)
+                if P0x is None:
+                    P0x = ca.DM.eye(param_est.n_x)
+                    
+                P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight*(1 + delta_day)
+                #for n in (1,3,5,7):
+                #    P0[n,n] = 0
+                for n in range(param_est.n_p, param_est.n_p + param_est.n_x):
+                    P0[n,n] = 0
+                #P0[9,9] = 1E3
+                if delta_day < 100:
+                    lbp = param_est.get_lbp(1e-2)
+                    ubp = param_est.get_ubp(1e2)
+                else:
+                    lbp = p0
+                    ubp = p0
+                
+                """
+                ax = y_data["Ti"].plot(drawstyle="steps-post")
+                ax1 = ax.twinx()
+                y_data["phi_h"].plot(ax=ax1, color="r", drawstyle="steps-post")
+                y_data["phi_int_plugs"].plot(ax=ax1, color="m", drawstyle="steps-post")
+                y_data["phi_s"].plot(ax=ax1, color="y", drawstyle="steps-post")
+                #y_data["DeltaPs"].plot(ax=ax1, color="y", drawstyle="steps-post")
+                plt.show()
+                """
+  
+                sol, params = param_est.solve(
+                            y_data,
+                            #param_est.p0,
+                            p0,
+                            lbp=lbp,
+                            ubp=ubp,
+                            lbx=lbx,
+                            ubx=ubx,
+                            x_guess=x_guess,
+                            x_N = np.array([293.15]*param_est.n_x), # not used
+                            P0=P0,
+                            covar=ca.veccat(Q, R),
+                            codegen=True
+                            )
         
+                    
+                x0 = sol[self.x].iloc[0]   
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    plot=False,
+                                    map_eval=True,
+                                    chained_eval=True,
+                                    #ax=axes[delta_day, 0]
+                                    )  
+                if journal_plot:
+                    self.make_journal_plot(
+                        y_data, 
+                        x0,
+                        str(start) + "_" + str(days),
+                        res = self.res
+                    )       
+                # obtain one-step ahead estimate:
+                if x0_opt is None:
+                    x0_opt = x0
+                self.simple_one_step_plot(
+                                            y_data,
+                                            x0_opt, 
+                                            p_base=params,
+                                            #p_mod=p_mod,
+                                            p_tvp=params.values,
+                                            tvp=False,
+                                            ekf_config=ekf_config,
+                                            cond_series=y_data.vent,
+                                            plot=plot,
+                                            map_eval=True,
+                                            switch=None,
+                                            symbolic_estimate=True,
+                                            R=R,
+                                            Q=Q,
+                                            P0=P0,
+                                            P0x=P0x
+                                            )   
+                sol["Ti_onestep"] = self.filtered["y_pred"].values
+                sol["Ti_sim"] = sol["Ti"]
+                
+                if delta_day == 0:
+                    sol["phi_int"] = sol["phi_int_plugs"] + sol["phi_int_lig"]
+                    # keep residuals:
+                    self.residuals = pd.DataFrame(
+                                             index=range(len(sol)),
+                                             data=(sol["Ti_onestep"] - sol["y1"]).values,
+                                             columns=["0"]
+                                             )
+                    #
+                    sol.index = y_data.dt_index
+                    self.train_res = sol.copy()
+                    self.train_res[y_data.columns] = y_data
+                    self.train_res["Pvent"] = params["alpha_vent_sup"]*sol["ahu_reaFloSupAir"]*(sol["T_sup_air"] - sol["Ti"])
+                    
+                    """
+                    ax = y_data[["y1", "Tset"]].plot(drawstyle="steps-post")
+                    ax1 = ax.twinx()
+                    #y_data[["phi_h"]].plot(color="r", drawstyle="steps-post", ax=ax1)
+                    y_data[["phi_s"]].plot(color="y", drawstyle="steps-post", ax=ax1)
+                    #y_data[["T_sup_air"]].plot(color="k", drawstyle="steps-post", ax=ax)
+                    #(y_data["vent"]*y_data["phi_h"].max()).plot(color="m", drawstyle="steps-post", ax=ax1)
+                    plt.show(block=False)
+                    """    
+                else: 
+                    # keep residuals:
+                    self.residuals[str(delta_day)] = (sol["Ti_onestep"] - sol["y1"]).values 
+                
+                y_data.to_csv("ZEBLab_data_15min_nov_daytime_" + str(delta_day) +  ".csv")
+                params.to_csv("parameters_LTV_nov_2023_daytime_15min" + str(delta_day) +  ".csv")
+                sol.to_csv("solution_LTV_nov_2023_daytime_15min" + str(delta_day) + ".csv")
+                
+                train_metrics = self.report_metrics("training")
+                
+                """
+                Split validation in two:p
+                """
+                
+                y_data, dt, N = data.get_dataset(
+                                                start = stop,
+                                                stop = stop + pd.Timedelta(days=0.5),
+                                                sampling_rate=sampling_rate
+                                                )
+                                
+                """
+                if y_data.Ti.isna().any():
+                    # check what happens
+                    print(params)
+                
+                y_data_raw = y_data.bfill()
+                y_data_raw.index.name = "time"
+                y_data = y_data_raw.groupby(pd.Grouper(freq=sampling_rate)).mean() #.dropna(axis=1)
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                """        
+                
+                x0 = self.filtered[self.x].iloc[-1]
+                #x0 = sol[self.x].iloc[-1]
+                y_data.index.name = None
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    #plot=plot,
+                                    plot=plot,
+                                    suff="+12hrs",
+                                    map_eval=True,
+                                    #symbolic_estimate=True
+                                    #ax=axes[0, delta_day*2]
+                                    )
+                #result.loc[y_data.index, y_data.columns] = y_data
+                #result.loc[y_data.index, "Ti_sim"] = self.res["Ti"]
+                result, extra_ind = set_new_results(y_data, result, self.res)
+                extra_inds.append(extra_ind)
+                if delta_day == 0:
+                    result["Ti_sim"] = result["Ti_sim"].bfill()
+                
+                
+                test_metrics = self.report_metrics("validation (bic, aic not valid)")
+                metrics.loc[delta_day, :] = test_metrics.loc[metrics.columns].values.flatten()
+                training_metrics.loc[delta_day, :] = train_metrics.loc[metrics.columns].values.flatten()
+            
+                self.simple_one_step_plot(
+                                        y_data,
+                                        x0, 
+                                        p_base=params,
+                                        #p_mod=p_mod,
+                                        p_tvp=params.values,
+                                        tvp=False,
+                                        ekf_config=ekf_config,
+                                        cond_series=y_data.vent,
+                                        plot=plot,
+                                        map_eval=True,
+                                        switch=None,
+                                        symbolic_estimate=True,
+                                        #ax=axes[1, delta_day*2]
+                                        R=R,
+                                        Q=Q,
+                                        P0=P0
+                                        )   
+                # one-step:
+                result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
+                result["Ti_onestep"] = result["Ti_onestep"].ffill()
+                
+                #plt.show(block=True)
+                #plt.close()
+                train_metrics = self.report_metrics("training")
+                y_data, dt, N = data.get_dataset(
+                                                start = stop + pd.Timedelta(days=0.5),
+                                                stop = stop + pd.Timedelta(days=1), 
+                                                sampling_rate=sampling_rate
+                                                )  
+                                
+                """
+                if y_data.Ti.isna().any():
+                    # check what happens
+                    print(params)
+                    
+                y_data_raw = y_data.bfill()
+                y_data_raw.index.name = "time"
+                y_data = y_data_raw.groupby(pd.Grouper(freq=sampling_rate)).mean() #.dropna(axis=1)
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                y_data.index.name = None
+                """        
+                
+                x0 = self.filtered[self.x].iloc[-1]
+                #x0 = sol[self.x].iloc[-1]
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    #plot=plot,
+                                    plot=plot,
+                                    suff="+12-24hrs",
+                                    map_eval=True,
+                                    #symbolic_estimate=True
+                                    #ax=axes[delta_day, 1]
+                                    #ax=axes[0, delta_day*2 + 1]
+                                    )
+                """
+                y_data_to_set = y_data[1:]
+                result.loc[y_data_to_set.index, y_data_to_set.columns] = y_data_to_set
+                new_index = y_data.index[1:]
+                new_first = y_data.index[0] + pd.Timedelta(seconds=1)
+                new_index = pd.DatetimeIndex.union(pd.DatetimeIndex([new_first]), new_index)
+                res_to_set = self.res["Ti"]
+                res_to_set.index = new_index
+                result.loc[new_index[0], y_data.columns] = result.loc[y_data.index[0], y_data.columns]
+                result.loc[new_index, "Ti_sim"] = self.res["Ti"].values
+                result = result.sort_index()
+                """
+                result, extra_ind = set_new_results(y_data, result, self.res)
+                extra_inds.append(extra_ind)
+                
+                test_metrics = self.report_metrics("validation (bic, aic not valid)")    
+                metrics.loc[delta_day+0.5, :] = test_metrics.loc[metrics.columns].values.flatten()       
+
+                self.simple_one_step_plot(
+                        y_data,
+                        x0, 
+                        p_base=params,
+                        #p_mod=p_mod,
+                        p_tvp=params.values,
+                        tvp=False,
+                        ekf_config=ekf_config,
+                        cond_series=y_data.vent,
+                        plot=plot,
+                        map_eval=True,
+                        switch=None,
+                        symbolic_estimate=True,
+                        R=R,
+                        Q=Q,
+                        P0=P0
+                        #ax=axes[1, delta_day*2 + 1]
+                        )  
+                # one-step:
+                result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
+                result["Ti_onestep"] = result["Ti_onestep"].ffill()
+                result["Pvent"] = params["alpha_vent_sup"]*result["ahu_reaFloSupAir"]*(result["T_sup_air"] - result["Ti"])
+                
+
+                param_guess = {
+                    k: {
+                        "init": params.loc[k],
+                        "lb": 1e-2*params.loc[k],
+                        "ub": 1e2*params.loc[k]
+                        }
+                    for k in params.index
+                }
+                params_hist.loc[delta_day] = params
+                # advance 1 day:
+                start = start + pd.Timedelta(days=1)
+        
+                if float(test_metrics.loc["nrmse"]) > 1:
+                    # check what happens
+                    print(params)
+                p0 = params.values
+        self.val_res = result 
+        return 0, \
+               0, \
+               training_metrics, \
+               metrics, \
+               params_hist
+                
+    def whole_day_validation_runner(
+        self,
+        ekf_config,
+        start,
+        N_days,
+        days,
+        param_guess,
+        param_est,
+        data,
+        plot=True,
+        prior_weight=1,
+        sampling_rate="60min",
+        journal_plot=False
+    ):
+        self.extra_inds = extra_inds = []
+        p0 = param_est.p0
+        cols = ["mse",
+                "rmse",
+                "nrmse",
+                "cv-rmse",
+                "mbe",
+                "r2",
+                "r2_adj",
+                "aic",
+                "bic"]
+        
+        metrics = pd.DataFrame(
+                            columns=cols
+                            )
+        training_metrics = pd.DataFrame(
+                            columns=cols
+                            )
+        params_hist = pd.DataFrame(
+                                   columns=list(param_guess.keys())
+                                   )
+        # prepare result data frame:
+        y_data, dt, N = data.get_dataset(
+                                start=start, 
+                                stop=start + pd.Timedelta(days=days), 
+                                sampling_rate=sampling_rate
+                                )
+        val_start = start + pd.Timedelta(days=days)
+        val_stop = val_start + pd.Timedelta(days=N_days)
+        result = pd.DataFrame(index=
+                              pd.date_range(
+                                            start=val_start,
+                                            end=val_stop,
+                                            freq=sampling_rate
+                                            ),
+                              columns=list(y_data.columns) + ["Ti_sim", "Ti_onestep"]
+                              )
+        #fig, axes = plt.subplots(2,N_days*2, sharex=False)
+        # iterate:
+        def set_new_results(y_data, result, new_results):
+            #y_data_to_set = y_data[1:]
+            #result.loc[y_data_to_set.index, y_data_to_set.columns] = y_data_to_set
+            result.loc[y_data.index, y_data.columns] = y_data
+            """
+            New non-overlapping index:
+            """
+            new_index = y_data.index[1:]
+            new_first = y_data.index[0] + pd.Timedelta(seconds=1e-3)
+            new_index = pd.DatetimeIndex.union(pd.DatetimeIndex([new_first]), new_index)
+            res_to_set = self.res["Ti"]
+            res_to_set.index = new_index
+            """
+            Extend data cols with last element,
+            new index should not be visible
+            """
+            result.loc[new_index[0], y_data.columns] = result.loc[y_data.index[0], y_data.columns]
+            result.loc[new_index, "Ti_sim"] = new_results["Ti"].values
+            result = result.sort_index()
+            return result, new_first
+            
         for delta_day in range(N_days):
             
             stop = start + pd.Timedelta(days=days)
@@ -231,6 +673,8 @@ class ResultGenerator(object):
                             covar=ca.veccat(Q, R),
                             codegen=True
                             )
+        
+                    
                 x0 = sol[self.x].iloc[0]   
                 self.simple_sim_plot(
                                     y_data,
@@ -263,6 +707,14 @@ class ResultGenerator(object):
                                                 switch=None,
                                                 symbolic_estimate=True
                                                 )   
+                if delta_day == 0:
+                    sol["Ti_onestep"] = self.filtered["y_pred"].values
+                    sol["Ti_sim"] = sol["Ti"]
+                    sol["phi_int"] = sol["phi_int_plugs"] + sol["phi_int_lig"]
+                    sol.index = y_data.dt_index
+                    self.train_res = sol.copy()
+                    self.train_res[y_data.columns] = y_data
+                
                 train_metrics = self.report_metrics("training")
                 
                 """
@@ -271,7 +723,7 @@ class ResultGenerator(object):
                 
                 y_data, dt, N = data.get_dataset(
                                                 start = stop,
-                                                stop = stop + pd.Timedelta(days=0.5),
+                                                stop = stop + pd.Timedelta(days=1),
                                                 sampling_rate=sampling_rate
                                                 )
                                 
@@ -330,77 +782,6 @@ class ResultGenerator(object):
                 result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
                 result["Ti_onestep"] = result["Ti_onestep"].ffill()
                 
-                #plt.show(block=True)
-                #plt.close()
-                train_metrics = self.report_metrics("training")
-                y_data, dt, N = data.get_dataset(
-                                                start = stop + pd.Timedelta(days=0.5),
-                                                stop = stop + pd.Timedelta(days=1), 
-                                                sampling_rate=sampling_rate
-                                                )  
-                                
-                """
-                if y_data.Ti.isna().any():
-                    # check what happens
-                    print(params)
-                    
-                y_data_raw = y_data.bfill()
-                y_data_raw.index.name = "time"
-                y_data = y_data_raw.groupby(pd.Grouper(freq=sampling_rate)).mean() #.dropna(axis=1)
-                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
-                y_data.index.name = None
-                """        
-                
-                x0 = self.filtered[self.x].iloc[-1]
-                #x0 = sol[self.x].iloc[-1]
-                self.simple_sim_plot(
-                                    y_data,
-                                    x0,
-                                    params,
-                                    #plot=plot,
-                                    plot=plot,
-                                    map_eval=True,
-                                    #symbolic_estimate=True
-                                    #ax=axes[delta_day, 1]
-                                    #ax=axes[0, delta_day*2 + 1]
-                                    )
-                """
-                y_data_to_set = y_data[1:]
-                result.loc[y_data_to_set.index, y_data_to_set.columns] = y_data_to_set
-                new_index = y_data.index[1:]
-                new_first = y_data.index[0] + pd.Timedelta(seconds=1)
-                new_index = pd.DatetimeIndex.union(pd.DatetimeIndex([new_first]), new_index)
-                res_to_set = self.res["Ti"]
-                res_to_set.index = new_index
-                result.loc[new_index[0], y_data.columns] = result.loc[y_data.index[0], y_data.columns]
-                result.loc[new_index, "Ti_sim"] = self.res["Ti"].values
-                result = result.sort_index()
-                """
-                result, extra_ind = set_new_results(y_data, result, self.res)
-                extra_inds.append(extra_ind)
-                
-                test_metrics = self.report_metrics("validation (bic, aic not valid)")    
-                metrics.loc[delta_day+0.5, :] = test_metrics.loc[metrics.columns].values.flatten()       
-
-                self.simple_one_step_plot(
-                        y_data,
-                        x0, 
-                        p_base=params,
-                        #p_mod=p_mod,
-                        p_tvp=params.values,
-                        tvp=False,
-                        ekf_config=ekf_config,
-                        cond_series=y_data.vent,
-                        plot=plot,
-                        map_eval=True,
-                        switch=None,
-                        symbolic_estimate=True,
-                        #ax=axes[1, delta_day*2 + 1]
-                        )  
-                # one-step:
-                result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
-                result["Ti_onestep"] = result["Ti_onestep"].ffill()
-                
                 param_guess = {
                     k: {
                         "init": params.loc[k],
@@ -455,6 +836,10 @@ class ResultGenerator(object):
         aic = n*np.log(mse) + 2*num_params
         return aic
     
+    def mbe(self, y, y_pred):
+        mbe_loss = np.mean(y - y_pred)
+        return mbe_loss
+    
     def bic(self, y, y_pred, num_params):
         """
         Akaike's information criterion.
@@ -490,6 +875,7 @@ class ResultGenerator(object):
         metrics.loc["nrmse", name] = self.nrmse(y, y_pred)
         metrics.loc["cv-rmse", name] = metrics.loc["rmse", name]/y.mean()
         metrics.loc["r2", name] = r2_score(y, y_pred)
+        metrics.loc["mbe", name] = self.mbe(y, y_pred)
         # to calculate r^2 adjusted:
         r2 = metrics.loc["r2", name]
         np = self.dae.n_p
@@ -625,7 +1011,8 @@ class ResultGenerator(object):
                           symbolic_estimate=False,
                           R=None,
                           Q=None,
-                          P0=None
+                          P0=None,
+                          P0x=None
                           ):
         """
         Simulate one-step ahead with Kalman feedback.
@@ -635,8 +1022,11 @@ class ResultGenerator(object):
             ekf.set_R(R)
         if Q is not None:
             ekf.set_Q(Q)
-        if P0 is None:
+        if P0x is None:
             P_prev = np.diag([1]*ekf.n_x)
+        else:
+            P_prev = P0x
+            
         #ekf.set_R(np.diag([1]))
         # set R, Q? P0?
         N = len(y_data)
@@ -878,6 +1268,8 @@ class ResultGenerator(object):
                         p,
                         HVAC=False,
                         plot=True,
+                        savefig=True,
+                        suff="",
                         map_eval=False,
                         chained_eval=True,
                         ax=None
@@ -912,9 +1304,10 @@ class ResultGenerator(object):
                 Plot envelope model.
                 """
                 if ax is None:
-                    ax = res.Ti.plot(color="r", drawstyle="steps-post")
-                else:
-                    res.Ti.plot(color="r", drawstyle="steps-post", ax=ax)    
+                    fig, ax = plt.subplots(1,1)
+                    #res.Ti.plot(color="r", drawstyle="steps-post")
+                #else:
+                res.Ti.plot(color="r", drawstyle="steps-post", ax=ax)    
                     
                 y_data.Ti.plot(color="k", linestyle="dashed", drawstyle="steps-post", linewidth=0.75, ax=ax)
                 #y_data.Ta.plot(color="b", linestyle="dashed", linewidth=0.75, ax=ax, drawstyle="steps-post")
@@ -927,6 +1320,7 @@ class ResultGenerator(object):
                 else:
                     #ax.legend(["$\\hat{x}_{N} \\vert M", "y_{N}"])
                     ax.set_ylim([18,25])
+                fig.savefig("plots/" + str(y_data.index[-2]).split(" ")[0] + suff + ".pdf") 
             else:
                 y_map = self.param_est.dae.y
                 fig, axes = plt.subplots(4,1, sharex=True)
@@ -937,7 +1331,7 @@ class ResultGenerator(object):
                     res[name].plot(color="r", linestyle="dashed", linewidth=0.75, ax=ax)
                     ax.legend([y, name])
                 
-            #plt.show()
+            plt.close()
         
     def simple_one_step_plot(
                             self,
@@ -956,6 +1350,7 @@ class ResultGenerator(object):
                             R=None,
                             Q=None,
                             P0=None,
+                            P0x=None,
                             ax=None
                             ):
         """
@@ -976,7 +1371,8 @@ class ResultGenerator(object):
                                                     symbolic_estimate=symbolic_estimate,
                                                     R=R,
                                                     Q=Q,
-                                                    P0=P0
+                                                    P0=P0,
+                                                    P0x=P0x
                                                     # pass switch as anonymous func
                                                     )
         # need to cut out estimate of first state:
@@ -1041,7 +1437,8 @@ class ResultGenerator(object):
           
     def make_journal_plot_alt(
                           self,
-                          name
+                          name,
+                          training=True
                          ):
         
         SMALL_SIZE = 14
@@ -1058,7 +1455,34 @@ class ResultGenerator(object):
         plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
         
-        self.save_journal_plot_alt("plots/" + name + ".pdf")
+        self.save_journal_plot_alt_alt(
+                                "plots/" + name + ".pdf",
+                                   training=training
+                                   )
+    def make_data_plot_alt(
+                          self,
+                          name,
+                          training=True
+                         ):
+        
+        SMALL_SIZE = 14
+        MEDIUM_SIZE = 16
+        BIGGER_SIZE = 16
+        self.MARKERSIZE = 2
+        self.LINEWIDTH=0.75
+
+        plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+        plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+        plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+        plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+        plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+        plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+        
+        self.save_data_plot_alt(
+                                "plots/data_" + name + ".pdf",
+                                   training=training
+                                   )
           
     def plot_residual_dist(
                            self,
@@ -1079,7 +1503,7 @@ class ResultGenerator(object):
     def x(self):
         return self.dae.x
         
-    def save_journal_plot_alt(self, name):
+    def save_journal_plot_alt(self, name, training=True):
         """
         Make a nicely formatted plot of
         simulation result, boundary conditions.
@@ -1087,47 +1511,61 @@ class ResultGenerator(object):
         TODO: handling unit C or K
         
         """
-        data = self.val_res
+        if training:
+            data = self.train_res
+            markevery = 1E6
+        else:
+            data = self.val_res
+            markevery = 13
         
         fig, axes = plt.subplots(3,1, sharex=True, figsize=(14,7 ))
         # plot training fit:
         ax = axes[0]
+        
+        index = data.index
         #plt.set_prop_cycle(color_cycler)
-        plt.rc('axes', prop_cycle=color_cycler)
-        data[["Ti_onestep"]].plot(ax=ax,
+        #plt.rc('axes', prop_cycle=color_cycler)
+        ax.plot(index.to_numpy(),
+            data["Ti_onestep"].to_numpy(),
                                   linewidth=self.LINEWIDTH,
                                   drawstyle="steps-post",
-                                  #c=colors, 
+                                  c=color_map_custom["one_step"],
                                   #cmap=my_cmap
                                   ) #, marker="v", markersize=MARKERSIZE)
-        data[["y1"]].plot(linewidth=self.LINEWIDTH,
+        ax.plot(index.to_numpy(),
+            data["y1"].to_numpy(),
+                linewidth=self.LINEWIDTH,
                           drawstyle="steps-post",
                           #color="k",
                           linestyle="dashed",
-                          #c=colors, 
+                          c=color_map_custom["meas"],
                           #cmap=my_cmap,
-                          ax=ax) #, marker="<", markersize=MARKERSIZE)
-        data[["Ti_sim"]].plot(linewidth=self.LINEWIDTH,
+                          ) #, marker="<", markersize=MARKERSIZE)
+        ax.plot(index.to_numpy(),
+                data["Ti_sim"].to_numpy(),
+                linewidth=self.LINEWIDTH,
                               drawstyle="steps-post", 
-                              linestyle="dashed",
+                              #linestyle="dashed",
                               #color="r",
-                              #c=colors, 
+                              c=color_map_custom["sim"],
                               #cmap=my_cmap,
-                              markevery=13,
-                              ax=ax,
+                              markevery=markevery,
+                              #ax=ax,
                               marker="*", 
                               markersize=self.MARKERSIZE)
-        (data["T_sup_air"]).plot(#color="k",
-                                 #c=colors, 
+        ax.plot(index.to_numpy(),
+                data["T_sup_air"].to_numpy(),
+                                 c=color_map_custom["vent_in"],
                                  #cmap=my_cmap,
                                  linestyle="dashed",
-                                 ax=ax, 
+                                 #ax=ax, 
                                  linewidth=self.LINEWIDTH)
-        (data["T_ext_air"]).plot(#color="g", 
-                                 #c=colors, 
+        ax.plot(index.to_numpy(),
+                data["T_ext_air"].to_numpy(),
+                                 c=color_map_custom["vent_out"],
                                  #cmap=my_cmap,
                                  linestyle="dashed",
-                                 ax=ax,
+                                 #ax=ax,
                                  linewidth=self.LINEWIDTH)
         ax.set_ylabel("Temperature $[^\circ C]$")
         #ax.legend(["$T_i$", "$T_{i}^{meas}$", "$T_{sup}^{v}$", "$T_{ext}^{v}$"], loc="upper left", ncol=4)
@@ -1142,7 +1580,7 @@ class ResultGenerator(object):
                    "$T_{ext}^{v}$"
                    ],
                   loc="upper left",
-                  bbox_to_anchor=(0.0, 1.25),
+                  bbox_to_anchor=(0.0, 1.28),
                   ncol=5
                   )
         # dim. less vent on/off:
@@ -1150,8 +1588,10 @@ class ResultGenerator(object):
         ax = ax1
         #data["weeknd"].plot(color="m", ax=ax, drawstyle="steps-post", linewidth=0.75)
         #ax.set_prop_cycle(color_cycler)
-        data["vent"].plot(ax=ax,
+        ax.plot(index.to_numpy(),
+            (data["vent"]).to_numpy(),
                           drawstyle="steps-post", 
+                          c=color_map_custom["binary"],
                           linewidth=0.75
                           )
         ax.set_yticks([0,1])
@@ -1159,26 +1599,31 @@ class ResultGenerator(object):
         ax.set_ylim([ylim[0], ylim[1]*1.1])
         ax.legend(["$\sigma_{vent}$"],
                   loc="upper right",
-                  bbox_to_anchor=(1.00, 1.25),
+                  bbox_to_anchor=(1.00, 1.26),
                   ncol=1
                   )
         
         # vertlines:
-        for ind in self.extra_inds:
-            plt.axvline(x=ind, color='k', linewidth=0.5, label='axvline - full height')
+        if not training:
+            for ind in self.extra_inds:
+                plt.axvline(x=ind, color='k', linewidth=0.5, label='axvline - full height')
         
         ax = axes[1]
         #ax.set_prop_cycle(color_cycler)
         # power, other room temps / ventilation 
-        (data["phi_h"]/1000).plot(#color="r", 
+        ax.plot(index.to_numpy(),
+                (data["phi_h"]/1000).to_numpy(), 
                                   drawstyle="steps-post",
-                                  ax=ax,
+                                  #ax=ax,
+                                  c=color_map_custom["space_heat"],
                                   linewidth=0.75
                                   )
-        (data["phi_int"]/1000).plot(
+        ax.plot(index.to_numpy(),
+                (data["phi_int"]/1000).to_numpy(),
                                     #color="m",
                                     drawstyle="steps-post", 
-                                    ax=ax,
+                                    #ax=ax,
+                                    c=color_map_custom["int_gains"],
                                     linewidth=0.75
                                     )
         #(data["phi_s"]/1000).plot(color="y", drawstyle="steps-post", ax=ax, linewidth=0.75)
@@ -1191,23 +1636,27 @@ class ResultGenerator(object):
         #(data["T_sup_air"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
         #(data["T_321"] - 273.15).plot(color="b", ax=ax, linewidth=0.75)
         #(data["T_320"] - 273.15).plot(color="y", ax=ax, linewidth=0.75)
-        (data["V_sup_air"]).plot(
+        ax.plot(index.to_numpy(),
+                (data["ahu_reaFloSupAir"]).to_numpy(),
                                  #color="k",
                                  linestyle="dashed",
-                                 ax=ax,
+                                 #ax=ax,
+                                 c=color_map_custom["vent_in"],
                                  linewidth=0.75
                                  )
-        (data["V_ext_air"]).plot(
+        ax.plot(index.to_numpy(),
+                (data["ahu_reaFloExtAir"]).to_numpy(),
                                  #color="g",
                                  linestyle="dashed",
-                                 ax=ax,
+                                 c=color_map_custom["vent_out"],
+                                 #ax=ax,
                                  linewidth=0.75
                                  )
         #(data["T_321"]).plot(color="b", ax=ax, linewidth=0.75)
         #(data["T_320"]).plot(color="y", ax=ax, linewidth=0.75)
         #ax.legend(["$T_{sup}^{v}$", "$T_{321}$", "$T_{320}$"], loc="upper right", ncol=3)
         ax.legend(["$V_{sup}^{v}$", "$V_{ext}^{v}$"], loc="upper right", ncol=1)
-        ax.set_ylabel("Airflow [$\\frac{m^3}{h}$]")
+        ax.set_ylabel("Airflow [$\\frac{kg}{s}$]")
         ax.set_xlabel("")
         ylim = ax.get_ylim()
         ax.set_ylim([ylim[0], ylim[1]*1.2])
@@ -1216,10 +1665,12 @@ class ResultGenerator(object):
         
         # dataar, outdoor temp
         #(data["phi_h"]/1000).plot(color="r", drawstyle="steps-post", ax=ax, linewidth=0.75)
-        (data["phi_s"]/1000).plot(
-                                  #color="y", 
+        ax.plot(index.to_numpy(),
+                (data["phi_s"]/1000).to_numpy(),
+                                  #color="y",
+                                  c=color_map_custom["solar"], 
                                   drawstyle="steps-post", 
-                                  ax=ax, 
+                                  #ax=ax, 
                                   linewidth=0.75
                                   )
         ax.legend(["$\phi_s$"], loc="upper left", ncol=1)
@@ -1228,13 +1679,15 @@ class ResultGenerator(object):
         ax.set_ylabel("Solar global [$\\frac{kW}{m^2}$]")
         ax.set_yticks([0,0.5])
         ax.set_xlabel("")
+        
         ax1 = ax.twinx()
         ax = ax1
         #(data["Ta"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
-        (data["Ta"]).plot(
-                          color="g", 
+        ax.plot(index.to_numpy(),
+                (data["Ta"]).to_numpy(),
+                          c=color_map_custom["temp_amb"],
                           linestyle="dashed",
-                          ax=ax, 
+                          #ax=ax, 
                           linewidth=0.75
                           )
         #data["T_321"].plot(color="b", ax=ax, linewidth=0.75)
@@ -1243,9 +1696,413 @@ class ResultGenerator(object):
         ax.set_ylabel("Temperature $[^\circ C]$")
         ax.set_xlabel("")
         ylim = ax.get_ylim()
+
+        # set formatter
+        #plt.show()
+        #ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%b-%d'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        ax.minorticks_off()
+        #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%b-%d'))
+        # Rotates and right-aligns the x labels so they don't crowd each other.
+        for label in ax.get_xticklabels(which='major'):
+            label.set(rotation=30, horizontalalignment='right')
         #ax.set_ylim([ylim[0], ylim[1]*1.25])
         fig.tight_layout()
+        plt.savefig(name)
+        plt.savefig(name.replace(".pdf", ".png"))
+        plt.close()
+        
+    def save_journal_plot_alt_alt(self, name, training=True):
+        """
+        Make a nicely formatted plot of
+        simulation result, boundary conditions.
+        
+        TODO: handling unit C or K
+        
+        """
+        if training:
+            data = self.train_res
+            markevery = 1E6
+        else:
+            data = self.val_res
+            markevery = 13
+        
+        fig, axes = plt.subplots(2,1, sharex=True, figsize=(14,5 ))
+        # plot training fit:
+        ax = axes[0]
+        
+        index = data.index
+        #plt.set_prop_cycle(color_cycler)
+        #plt.rc('axes', prop_cycle=color_cycler)
+        ax.plot(index.to_numpy(),
+            data["Ti_onestep"].to_numpy(),
+                                  linewidth=self.LINEWIDTH,
+                                  drawstyle="steps-post",
+                                  c=color_map_custom["one_step"],
+                                  #cmap=my_cmap
+                                  ) #, marker="v", markersize=MARKERSIZE)
+        ax.plot(index.to_numpy(),
+            data["y1"].to_numpy(),
+                linewidth=self.LINEWIDTH,
+                          drawstyle="steps-post",
+                          #color="k",
+                          linestyle="dashed",
+                          c=color_map_custom["meas"],
+                          #cmap=my_cmap,
+                          ) #, marker="<", markersize=MARKERSIZE)
+        ax.plot(index.to_numpy(),
+                data["Ti_sim"].to_numpy(),
+                linewidth=self.LINEWIDTH,
+                              drawstyle="steps-post", 
+                              #linestyle="dashed",
+                              #color="r",
+                              c=color_map_custom["sim"],
+                              #cmap=my_cmap,
+                              markevery=markevery,
+                              #ax=ax,
+                              marker="*", 
+                              markersize=self.MARKERSIZE)
+        ax.set_ylabel("Temperature $[^\circ C]$")
+        #ax.legend(["$T_i$", "$T_{i}^{meas}$", "$T_{sup}^{v}$", "$T_{ext}^{v}$"], loc="upper left", ncol=4)
+        ylim = ax.get_ylim()
+        #ax.set_ylim([ylim[0], ylim[1]*1.05])
+        ax.legend(
+                  [
+                   "$\\hat{x}_{k|k-1}$", 
+                   "$y_{N}$",
+                   "$x_{K|K-M}$"
+                   ],
+                  loc="upper left",
+                  bbox_to_anchor=(0.0, 1.28),
+                  ncol=3
+                  )
+        # dim. less vent on/off:
+        ax1 = ax.twinx()
+        ax = ax1
+        #data["weeknd"].plot(color="m", ax=ax, drawstyle="steps-post", linewidth=0.75)
+        #ax.set_prop_cycle(color_cycler)
+        ax.plot(index.to_numpy(),
+            (data["vent"]).to_numpy(),
+                          drawstyle="steps-post", 
+                          c=color_map_custom["binary"],
+                          linewidth=0.75
+                          )
+        ax.set_yticks([0,1])
+        ylim = ax.get_ylim()
+        #ax.set_ylim([ylim[0], ylim[1]*1.1])
+        ax.legend(["$\sigma_{vent}$"],
+                  loc="upper right",
+                  bbox_to_anchor=(1.00, 1.26),
+                  ncol=1
+                  )
+        
+        # vertlines:
+        if not training:
+            for ind in self.extra_inds:
+                plt.axvline(x=ind, color='k', linewidth=0.5, label='axvline - full height')
+        
+        ax = axes[1]
+        #ax.set_prop_cycle(color_cycler)
+        # power, other room temps / ventilation 
+        ax.plot(index.to_numpy(),
+                (data["phi_h"]/1000).to_numpy(), 
+                                  drawstyle="steps-post",
+                                  #ax=ax,
+                                  c=color_map_custom["space_heat"],
+                                  linewidth=0.75
+                                  )
+        ax.plot(index.to_numpy(),
+                (data["phi_int"]/1000).to_numpy(),
+                                    #color="m",
+                                    drawstyle="steps-post", 
+                                    #ax=ax,
+                                    c=color_map_custom["int_gains"],
+                                    linewidth=0.75
+                                    )
+        #(data["phi_s"]/1000).plot(color="y", drawstyle="steps-post", ax=ax, linewidth=0.75)
+        ax.plot(index.to_numpy(),
+                (data["Pvent"]/1000).to_numpy(),
+                                    #color="m",
+                                    drawstyle="steps-post", 
+                                    #ax=ax,
+                                    c=color_map_custom["vent_in"],
+                                    linewidth=0.75
+                                    )
+        ax.plot(index.to_numpy(),
+                (data["phi_s"]/1000).to_numpy(),
+                                    #color="m",
+                                    drawstyle="steps-post", 
+                                    #ax=ax,
+                                    c=color_map_custom["solar"],
+                                    linewidth=0.75
+                                    )
+        #(data["phi_s"]/1000).plot(color="y", drawstyle="steps-post", ax=ax, linewidth=0.75)
+        #ax.legend(["$\phi_h$", "$\phi_{int}$", "$\phi_{v}$", "$\phi_s$"], loc="upper left", ncol=1)
+        
+        # rotate ticks:
+        #for label in ax.get_xticklabels(which='major'):
+        #    label.set(rotation=30, horizontalalignment='right')
+            
+        ax.legend(["$\phi_h$", "$\phi_{int}$", "$\phi_{v}$", "$\phi_s$"], loc="upper left", ncol=4)
+        ylim = ax.get_ylim()
+        #ax.set_ylim([ylim[0], ylim[1]*1.2])
+        ax.set_ylabel("Power $[kW]$")
+        #(data["T_321"]).plot(color="b", ax=ax, linewidth=0.75)
+        #(data["T_320"]).plot(color="y", ax=ax, linewidth=0.75)
+        #ax.legend(["$T_{sup}^{v}$", "$T_{321}$", "$T_{320}$"], loc="upper right", ncol=3)
+        #ax.legend(["$V_{sup}^{v}$", "$V_{ext}^{v}$"], loc="upper right", ncol=1)
+        #ax.set_ylabel("Airflow [$\\frac{kg}{s}$]")
+        ax.set_xlabel("")
+        ylim = ax.get_ylim()
+        ax.set_ylim([ylim[0], ylim[1]*1.2])
+        
+        
+        ax1 = ax.twinx()
+        ax = ax1
+        #(data["Ta"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+        ax.plot(index.to_numpy(),
+                (data["Ta"]).to_numpy(),
+                          c=color_map_custom["temp_amb"],
+                          linestyle="dashed",
+                          #ax=ax, 
+                          linewidth=0.75
+                          )
+        #data["T_321"].plot(color="b", ax=ax, linewidth=0.75)
+        #sol["T_320"].plot(color="y", ax=ax, linewidth=0.75)
+        ax.legend(["$T_{a}$"], loc="upper right", ncol=1)
+        ax.set_ylabel("Temperature $[^\circ C]$")
+        ax.set_xlabel("")
+        ylim = ax.get_ylim()
+
+        # set formatter
         #plt.show()
+        #ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%b-%d'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        ax.minorticks_off()
+        #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%b-%d'))
+        # Rotates and right-aligns the x labels so they don't crowd each other.
+        #ax.set_ylim([ylim[0], ylim[1]*1.25])
+        fig.tight_layout()
+        plt.savefig(name)
+        plt.savefig(name.replace(".pdf", ".png"))
+        plt.close()
+        
+    def save_data_plot_alt(self, name, training=True):
+        """
+        Make a nicely formatted plot of
+        simulation result, boundary conditions.
+        
+        TODO: handling unit C or K
+        
+        """
+        if training:
+            data = self.train_res
+            markevery = 1E6
+        else:
+            data = self.val_res
+            markevery = 13
+        
+        fig, axes = plt.subplots(4,1, sharex=True, figsize=(14,10))
+        # plot training fit:
+        ax = axes[0]
+        
+        index = data.index
+        #plt.set_prop_cycle(color_cycler)
+        #plt.rc('axes', prop_cycle=color_cycler)
+        ax.plot(index.to_numpy(),
+            data["y1"].to_numpy(),
+                linewidth=1.0,
+                          drawstyle="steps-post",
+                          #color="k",
+                          c=color_map_custom["meas"],
+                          #cmap=my_cmap,
+                          ) #, marker="<", markersize=MARKERSIZE)
+        for col in ["T_219_TR1", "T_219_TR2", "T_219_TR3", "T_219_TR4"]:
+            ax.plot(index.to_numpy(),
+                data[col].to_numpy(),
+                    linewidth=self.LINEWIDTH,
+                            drawstyle="steps-post",
+                            #color="k",
+                            linestyle="dashed",
+                            c=color_map_custom[col],
+                            #cmap=my_cmap,
+                            ) #, marker="<", markersize=MARKERSIZE)
+            
+        #ax.legend(["$T_i$", "$T_{i}^{meas}$", "$T_{sup}^{v}$", "$T_{ext}^{v}$"], loc="upper left", ncol=4)
+        ylim = ax.get_ylim()
+        #ax.set_ylim([ylim[0], ylim[1]*1.05])
+        #ax.set_ylim([ylim[0], ylim[1]*0.9])
+        ax.legend(
+                  [
+                   "$y_{N}$",
+                   "$y_{1,N}$",
+                   "$y_{2,N}$",
+                   "$y_{3,N}$",
+                   "$y_{4,N}$"
+                   ],
+                  loc="upper left",
+                  bbox_to_anchor=(0.0, 1.28),
+                  ncol=5
+                  )
+        ax.set_ylabel("Temperature $[^\circ C]$")
+        
+        ax = axes[1]
+        
+        ax.plot(index.to_numpy(),
+                data["T_sup_air"].to_numpy(),
+                                 c=color_map_custom["vent_in"],
+                                 #cmap=my_cmap,
+                                 linestyle="dashed",
+                                 #ax=ax, 
+                                 linewidth=self.LINEWIDTH)
+        ax.plot(index.to_numpy(),
+                data["T_ext_air"].to_numpy(),
+                                 c=color_map_custom["vent_out"],
+                                 #cmap=my_cmap,
+                                 linestyle="dashed",
+                                 #ax=ax,
+                                 linewidth=self.LINEWIDTH)
+        ax.set_ylabel("Temperature $[^\circ C]$")
+        ylim = ax.get_ylim()
+        #ax.set_ylim([ylim[0], ylim[1]*1.05])
+        #ax.set_ylim([ylim[0], ylim[1]*0.9])
+        ax.legend(
+                  [
+                   "$T_{sup}^{v}$",
+                   "$T_{ext}^{v}$"
+                   ],
+                  loc="upper left",
+                  bbox_to_anchor=(0.0, 1.26),
+                  ncol=2
+                  )
+        # dim. less vent on/off:
+        ax1 = ax.twinx()
+        ax = ax1
+        #data["weeknd"].plot(color="m", ax=ax, drawstyle="steps-post", linewidth=0.75)
+        #ax.set_prop_cycle(color_cycler)
+        ax.plot(index.to_numpy(),
+            (data["vent"]).to_numpy(),
+                          drawstyle="steps-post", 
+                          c=color_map_custom["binary"],
+                          linewidth=0.75
+                          )
+        ax.set_yticks([0,1])
+        ylim = ax.get_ylim()
+        ax.set_ylim([ylim[0], ylim[1]*1.1])
+        ax.legend(["$\sigma_{vent}$"],
+                  loc="upper right",
+                  bbox_to_anchor=(1.00, 1.26),
+                  ncol=1
+                  )
+        
+        # vertlines:
+        if not training:
+            for ind in self.extra_inds:
+                plt.axvline(x=ind, color='k', linewidth=0.5, label='axvline - full height')
+        
+        ax = axes[2]
+        #ax.set_prop_cycle(color_cycler)
+        # power, other room temps / ventilation 
+        ax.plot(index.to_numpy(),
+                (data["phi_h"]/1000).to_numpy(), 
+                                  drawstyle="steps-post",
+                                  #ax=ax,
+                                  c=color_map_custom["space_heat"],
+                                  linewidth=0.75
+                                  )
+        ax.plot(index.to_numpy(),
+                (data["phi_int"]/1000).to_numpy(),
+                                    #color="m",
+                                    drawstyle="steps-post", 
+                                    #ax=ax,
+                                    c=color_map_custom["int_gains"],
+                                    linewidth=0.75
+                                    )
+        #(data["phi_s"]/1000).plot(color="y", drawstyle="steps-post", ax=ax, linewidth=0.75)
+        ax.legend(["$\phi_h$", "$\phi_{int}$"], loc="upper left", ncol=1)
+        ylim = ax.get_ylim()
+        ax.set_ylim([ylim[0], ylim[1]*1.2])
+        ax.set_ylabel("Power $[kW]$")
+        ax1 = ax.twinx()
+        ax = ax1
+        #(data["T_sup_air"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+        #(data["T_321"] - 273.15).plot(color="b", ax=ax, linewidth=0.75)
+        #(data["T_320"] - 273.15).plot(color="y", ax=ax, linewidth=0.75)
+        ax.plot(index.to_numpy(),
+                (data["ahu_reaFloSupAir"]).to_numpy(),
+                                 #color="k",
+                                 linestyle="dashed",
+                                 #ax=ax,
+                                 c=color_map_custom["vent_in"],
+                                 linewidth=0.75
+                                 )
+        ax.plot(index.to_numpy(),
+                (data["ahu_reaFloExtAir"]).to_numpy(),
+                                 #color="g",
+                                 linestyle="dashed",
+                                 c=color_map_custom["vent_out"],
+                                 #ax=ax,
+                                 linewidth=0.75
+                                 )
+        #(data["T_321"]).plot(color="b", ax=ax, linewidth=0.75)
+        #(data["T_320"]).plot(color="y", ax=ax, linewidth=0.75)
+        #ax.legend(["$T_{sup}^{v}$", "$T_{321}$", "$T_{320}$"], loc="upper right", ncol=3)
+        ax.legend(["$V_{sup}^{v}$", "$V_{ext}^{v}$"], loc="upper right", ncol=1)
+        ax.set_ylabel("Airflow [$\\frac{kg}{s}$]")
+        ax.set_xlabel("")
+        ylim = ax.get_ylim()
+        ax.set_ylim([ylim[0], ylim[1]*1.2])
+        
+        ax = axes[3]
+        
+        # dataar, outdoor temp
+        #(data["phi_h"]/1000).plot(color="r", drawstyle="steps-post", ax=ax, linewidth=0.75)
+        ax.plot(index.to_numpy(),
+                (data["phi_s"]/1000).to_numpy(),
+                                  #color="y",
+                                  c=color_map_custom["solar"], 
+                                  drawstyle="steps-post", 
+                                  #ax=ax, 
+                                  linewidth=0.75
+                                  )
+        ax.legend(["$\phi_s$"], loc="upper left", ncol=1)
+        ylim = ax.get_ylim()
+        ax.set_ylim([ylim[0], ylim[1]*1.1])
+        ax.set_ylabel("Solar global [$\\frac{kW}{m^2}$]")
+        ax.set_yticks([0,0.5])
+        ax.set_xlabel("")
+        
+        ax1 = ax.twinx()
+        ax = ax1
+        #(data["Ta"] - 273.15).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
+        ax.plot(index.to_numpy(),
+                (data["Ta"]).to_numpy(),
+                          c=color_map_custom["temp_amb"],
+                          linestyle="dashed",
+                          #ax=ax, 
+                          linewidth=0.75
+                          )
+        #data["T_321"].plot(color="b", ax=ax, linewidth=0.75)
+        #sol["T_320"].plot(color="y", ax=ax, linewidth=0.75)
+        ax.legend(["$T_{a}$"], loc="upper right", ncol=1)
+        ax.set_ylabel("Temperature $[^\circ C]$")
+        ax.set_xlabel("")
+        ylim = ax.get_ylim()
+
+        # set formatter
+        #plt.show()
+        #ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%b-%d'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        ax.minorticks_off()
+        #ax.xaxis.set_minor_formatter(mdates.DateFormatter('%b-%d'))
+        # Rotates and right-aligns the x labels so they don't crowd each other.
+        for label in ax.get_xticklabels(which='major'):
+            label.set(rotation=30, horizontalalignment='right')
+        #ax.set_ylim([ylim[0], ylim[1]*1.25])
+        fig.tight_layout()
         plt.savefig(name)
         plt.savefig(name.replace(".pdf", ".png"))
         plt.close()
