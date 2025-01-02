@@ -176,6 +176,7 @@ class ZEBData(object):
         data["vent"] = (data["V_sup_air"] > 10).astype(int) 
         #data["vent"] = data["daytime"]
         data["Tset_high"] = (data["Tset"] > 18).astype(int)
+        data["Tset"] = 22
         data["heat_on"] = (data["phi_h"] > 10).astype(int)
         #data["vent"] = data["Tset_high"]
         data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)

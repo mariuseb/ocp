@@ -254,7 +254,7 @@
     "singlezone_commercial":
     {
       "misc": {
-        "h": 300,
+        "h": 900,
         "N": 1000,
         "start_time": 0,
         "warmup_period": 604800

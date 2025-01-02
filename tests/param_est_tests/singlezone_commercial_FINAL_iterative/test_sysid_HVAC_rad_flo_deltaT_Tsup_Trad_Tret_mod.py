@@ -10,10 +10,10 @@ import ocp
 import ocp.dae as dae
 import ocp.integrators as integrators
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF
+#from ocp.filters import EKF
 from matplotlib import rc
 from pprint import pprint
 #from ocp.covar_solve import CovarianceSolver
@@ -24,8 +24,8 @@ rc('mathtext', default='regular')
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d %H:%M"
 import matplotlib.dates as mdates
 from ocp.functions import functions
-from ocp.nn import ParamDataset, NN
-import torch
+#from ocp.nn import ParamDataset, NN
+#import torch
 #import l4casadi as l4c
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path, get_data_path
     
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     #cfg_path = os.path.join("configs", "4R3C_vent_n_power_eff_non_linear.json")
     boptest_cfg = os.path.join(bop_config_base, "ZEBLL_config.json")
 
-    GENERATE_DATA_NORMAL_OP = False
+    GENERATE_DATA_NORMAL_OP = True
     PLOT = False
     
     """
@@ -53,8 +53,9 @@ if __name__ == "__main__":
                             get_data_path(), 
                             "data_singlezone_commercial_normal_op_60s.csv"
                             )  
-    days = 7
-    N = 24*days*60
+    days = 1
+    #N = 24*days*60
+    N = 24*days*4
     
     if GENERATE_DATA_NORMAL_OP:
         

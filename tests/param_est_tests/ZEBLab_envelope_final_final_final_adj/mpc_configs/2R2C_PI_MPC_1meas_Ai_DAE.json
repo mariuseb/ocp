@@ -1,0 +1,68 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + _y/Ci + (Ai/Ci)*phi_s",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "E": "(Tset - Ti)*(ki/kp)"
+        },
+        "alg": {
+            "_y": "_y - kp*((Tset - Ti) + E)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "kp",
+            "ki"
+        ],
+        "u": [
+            "Tset"
+        ],
+        "z": [
+            "_y"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "E"
+            ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [288.15],
+            "ubu": [313.15]
+        },
+        "z": {
+            "lbz": [0],
+            "ubz": [100000]
+        }
+    },
+    "objective": "dot(_y, _y)",
+    "N": 24,
+    "dt": 900,
+    "method": "collocation",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 3,
+        "ipopt.ma57_automatic_scaling": "yes",
+        "ipopt.max_cpu_time": 100,
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

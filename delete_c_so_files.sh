@@ -11,7 +11,7 @@ delete_files() {
     fi
 
     # Recursively find files and delete them
-    find "$dir" -type f \( -name "MPC*.c" -o -name "MPC*.so" -o -name "MPC*.o" -o -name "MHE*.c" -o -name "MHE*.so" -o -name "MHE*.o" -o -name "jit*.c" -o -name "jit*.so" -o -name "jit*.o" -o -name "tmp*.so" -o -name "tmp*.o" \) -exec rm -f {} +
+    find "$dir" -type f \( -name "MPC*.c" -o -name "MPC*.so" -o -name "MPC*.o" -o -name "MHE*.c" -o -name "MHE*.so" -o -name "MHE*.o" -o -name "Estimation*.so" -o -name "Estimation*.o" -o -name "jit*.c" -o -name "jit*.so" -o -name "jit*.o" -o -name "tmp*.so" -o -name "tmp*.o" \) -exec rm -f {} +
 }
 
 # Check if the user provided a directory path

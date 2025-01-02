@@ -1,0 +1,63 @@
+{
+    "model": {
+        "ode": {
+            "_x": "dx",
+            "dx": "(-k*_x - c*dx + F)/m"
+        },
+        "p": 
+        [
+	    "k",
+	    "c",
+	    "m"
+        ],
+        "u": [
+            "F"
+        ],
+        "r": [
+        ],
+        "x": [
+            "_x",
+            "dx"
+        ],
+        "d": [
+            "w1",
+            "w2"
+        ],
+        "w": {
+            "v1": "_x - y1"
+        },
+        "y": [
+            ["y1", "_x"]
+        ]
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 == s1"        
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(s2, s2)@Q[1,1]",
+    "N": 2,
+    "dt": 0.05,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "RK4",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "mumps",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

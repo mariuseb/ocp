@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ocp.boptest_api import Boptest
 from pprint import pprint
-from ocp.filters import EKF, KalmanDAE
+from ocp.filters import KalmanBucy, KalmanDAE
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os
@@ -86,6 +86,7 @@ if __name__ == "__main__":
                     **deepcopy(kwargs))
     
     ekf = KalmanDAE(ekf_cfg,
+                    P0=np.eye(mpc.n_x),
                      functions=deepcopy(functions)
                      )
     # set params:

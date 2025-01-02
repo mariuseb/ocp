@@ -45,6 +45,8 @@ class Shooting(metaclass=ABCMeta):
         self.s_nom = kwargs.pop("s_nom", 1)
         self.v_nom = kwargs.pop("v_nom", 1)
         self.v_nom_b = kwargs.pop("v_nom_b", 0)
+        self.d_nom = kwargs.pop("d_nom", 1)
+        self.d_nom_b = kwargs.pop("d_nom_b", 0)
         #self.w_nom = kwargs.pop("w_nom", 1E-3)
         #self.w_nom = kwargs.pop("w_nom", 1/(self.x_nom*self.F.dt))
         #self.v_nom = kwargs.pop("v_nom", 1/self.x_nom)
@@ -94,6 +96,10 @@ class Shooting(metaclass=ABCMeta):
     @property
     def n_r(self):
         return self.F.dae.n_r
+    
+    @property
+    def n_d(self):
+        return self.F.dae.n_d
 
     @property
     def n_p(self):
@@ -115,15 +121,15 @@ class NLPParser(object):
                 tuple - expect order "x", "z", "u", "p", "s", "v", "y", "r", "w"
         """
         
-        d = {}
-        varnames = ("x", "z", "u", "p", "v", "y", "r", "w")
+        _d = {}
+        varnames = ("x", "z", "u", "p", "v", "y", "r", "w", "d")
         #varnames = ("x", "z", "p", "w", "v")
         
         prev = 0
         for name, var in zip(varnames, var_tuple):
             
             dim = var.shape[0]*var.shape[1]           
-            d[name] = {
+            _d[name] = {
                         "range":
                         {
                             "a": prev,
@@ -133,7 +139,7 @@ class NLPParser(object):
                       }
             prev += dim
             
-        self.vars = d
+        self.vars = _d
         
     def __getitem__(self, k):
         return self.vars[k]
@@ -179,6 +185,7 @@ class MultipleShooting(Shooting):
         #p = self.F.p
         p = self.get_p()
         w = self.get_w()
+        d = self.get_d()
         
         # TODO: refactor
         #if isinstance(self.F, (idas, Cvodes)):
@@ -238,7 +245,8 @@ class MultipleShooting(Shooting):
                             z=z[:,:-1]*self.z_nom + self.z_nom_b,
                             u=u[:,:-1]*self.u_nom + self.u_nom_b,
                             p=self.p_nom*ca.repmat(p, 1, self.N-1) + self.p_nom_b,
-                            r=r[:,:-1]*self.r_nom + self.r_nom_b
+                            r=r[:,:-1]*self.r_nom + self.r_nom_b,
+                            d=d[:,:-1]*self.d_nom + self.d_nom_b
                             #s=s[:,:-1]*self.s_nom,
                             #w=w[:,:-1]
                             )["xf"]
@@ -378,10 +386,10 @@ class MultipleShooting(Shooting):
         
         """
         #V = ca.veccat(x, z, u, p, w, v, y, r)
-        V = ca.veccat(x, z, u, p, v, y, r, w)
+        V = ca.veccat(x, z, u, p, v, y, r, w, d)
         
         #nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
-        nlp_parser = NLPParser((x, z, u, p, v, y, r, w))
+        nlp_parser = NLPParser((x, z, u, p, v, y, r, w, d))
         # keep orig g:
         nlp_parser.set_g(g)  
         nlp_parser.set_x_orig(x)  
@@ -459,6 +467,11 @@ class MultipleShooting(Shooting):
         """ Dep vars. """
         #return ca.MX.sym("w", self.n_w, self.N-1)
         return ca.MX.sym("w", self.n_w, self.N)
+    
+    def get_d(self):
+        """ Disturbances. """
+        #return ca.MX.sym("w", self.n_w, self.N-1)
+        return ca.MX.sym("d", self.n_d, self.N)
 
     def get_y(self):
         """ Measurements. """

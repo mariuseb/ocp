@@ -102,6 +102,34 @@ basicFlowFunction_dp = ca.Function(
                                 ["m_flow"]
                                 )
 
+x = ca.MX.sym("x") 
+a = ca.MX.sym("a") 
+b = ca.MX.sym("b") 
+
+expr = (1/(1 + ca.exp(-x*a + b)))
+sigmoid = ca.Function(
+                    "sigmoid", 
+                    [x,a,b],
+                    [expr],
+                    ["x","a","b"],
+                    ["sigmoid"]
+                    )
+
+x = ca.MX.sym("x") 
+K = ca.MX.sym("K") 
+A = ca.MX.sym("A") 
+B = ca.MX.sym("B") 
+Q = ca.MX.sym("Q") 
+
+expr = A + (K - A)/(1 + Q*ca.exp(-x*B))
+gen_sigmoid = ca.Function(
+                    "sigmoid", 
+                    [x,K,A,B,Q],
+                    [expr],
+                    ["x","K","A","B","Q"],
+                    ["gen_sigmoid"]
+                    )
+
 
 #test = regNonZeroPower(1, 1.24, 10)
 #print(test)
@@ -164,5 +192,7 @@ functions = {
              "regNonZeroPower": regNonZeroPower,
              "oneWayHeating": oneWayHeating,
              "equalPercentage": equalPercentage,
-             "basicFlowFunction_dp": basicFlowFunction_dp
+             "basicFlowFunction_dp": basicFlowFunction_dp,
+             "sigmoid": sigmoid,
+             "gen_sigmoid": gen_sigmoid
              }

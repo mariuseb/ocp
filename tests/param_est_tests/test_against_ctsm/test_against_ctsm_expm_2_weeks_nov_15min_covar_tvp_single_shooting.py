@@ -62,8 +62,8 @@ if __name__ == "__main__":
     for k, v in _param_guess.items():
         param_guess[k] = {"init": v}
     
-    start = pd.Timestamp("2023-11-15 00:00")
-    stop = start + pd.Timedelta(days=1) 
+    start = pd.Timestamp("2023-11-16 00:00")
+    stop = start + pd.Timedelta(days=14) 
     y_data, dt, N  = Data.get_dataset(
                               start=start,
                               stop=stop,
@@ -82,6 +82,7 @@ if __name__ == "__main__":
     y_data["stepQi"] = y_data_R["stepQi"]
     
     P0 = np.diag(one_step_pred_sd.iloc[0].values**2)
+    P0 = np.ones((2,2))*1e-3
     
     one_step_pred_sd = one_step_pred_sd.shift(-1)
     one_step_pred_sd.index = range(len(one_step_pred_sd))
@@ -109,6 +110,14 @@ if __name__ == "__main__":
                 ]
             ).flatten()
     P0_guess = P0.flatten()
+    
+    Q_guess = np.array(
+    ca.veccat(
+                ca.DM.eye(ekf.dae.n_x),
+                ca.DM.eye(ekf.dae.n_x)
+                )
+    ).flatten()*-5
+    R_guess = np.array(ca.DM.eye(ekf.dae.n_y)).flatten()*-5
 
     covar_solver = CovarianceSolverContinuous(
         ekf_config,
@@ -119,7 +128,7 @@ if __name__ == "__main__":
     # set z vals:
     sol = sol[:len(y_data)]
     sol.index = y_data.index
-    y_data[covar_solver.param_est.z_names] = sol[covar_solver.param_est.z_names]
+    y_data[covar_solver.ekf.dae.z] = sol[covar_solver.ekf.dae.z]
     
     #one_step_pred_sd = pd.read_csv("tvp_one_step_pred_sd.csv", index_col=0)
     # needed for P0 guess:
@@ -143,7 +152,7 @@ if __name__ == "__main__":
                                   R_guess
                                   )
     """
-    _params = params.loc[covar_solver.param_est.dae.p].values
+    _params = params.loc[covar_solver.ekf.dae.p].values
     sol = covar_solver.solve(
                             y_data, 
                             _params,

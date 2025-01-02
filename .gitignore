@@ -6,6 +6,10 @@ __pycache__/
 # 
 *~
 
+# a particular file, to avoid LFS:
+tests/param_est_tests/ZEBLab_HVAC/ZEBLab_nov23_oct24_1m.csv
+tests/param_est_tests/ZEBLab_envelope_final_final_final/ZEBLab_nov23_oct24_1m.csv
+
 # C extensions
 *.so
 *.c

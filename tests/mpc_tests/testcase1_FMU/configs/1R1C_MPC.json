@@ -19,14 +19,14 @@
     },
     "bounds": {
         "u": {
-            "lbu": [-10000],
+            "lbu": [-100],
             "ubu": [10000]
         }
     },
     "objective": "dot(phi_h, phi_h)",
-    "N": 13,
+    "N": 2,
     "dt": 900,
-    "method": "collocation",
+    "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",

@@ -84,7 +84,7 @@ if __name__ == "__main__":
     y_data["stepQi"] = y_data_R["stepQi"]
     
     P0 = np.diag(one_step_pred_sd.iloc[0].values**2)
-    #P0 = np.eye(2)*1e-3 # + 1e-2
+    P0 = np.eye(2)*1e-3
     
     one_step_pred_sd = one_step_pred_sd.shift(-1)
     one_step_pred_sd.index = range(len(one_step_pred_sd))
@@ -180,6 +180,8 @@ if __name__ == "__main__":
         "u_nom_b ": [289.15]*7 + [0]*9,
         "y_nom": [12],
         "y_nom_b": [289.15],
+        "P_nom": [[1e-6,1e-6],[1e-6,1e-2]]
+        
     }
     
     covar_solver = CovarianceSolverContinuous(
@@ -235,7 +237,7 @@ if __name__ == "__main__":
     r = y_data[ekf.dae.r_names][0:1].values.T
     Y = y_data[ekf.dae.y_names][0:1].values.T
     Z = y_data[ekf.dae.z][0:1].values.T
-
+    #U[-1] = 1
     _P0 = W(
         P0=0,
         #z0=Z[:,:1],

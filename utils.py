@@ -20,6 +20,8 @@ import os
 from scipy.stats import norm
 from hampel import hampel
 # text:
+
+pd.options.mode.chained_assignment = None
     
 def prepare_data(data, room=219):
     """
@@ -45,13 +47,17 @@ def prepare_data(data, room=219):
     y_data["ahu_reaFloExtAir"] =  data["V_ext_air_" + str(room)]*(1.292/3600)*1000
     # indoor temp:
     y_data["Ti"] = temps_219
-    y_data.Ti[y_data.Ti > 30] = 30
+    y_data.loc[y_data.Ti > 30, "Ti"] = 30
     
     y_data["phi_s"] = data["I_ver"]
     #y_data["phi_s"] = data["I_hor"]
     #y_data["I_hor"] = data["I_hor"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_" + str(room)]*1000
+    
+    #y_data["Tdev"] = data["Tdev"]
+    y_data["u_val"] = data.val_pos_219/100
+    y_data["m_flow"] = data.V_flow_219/data.V_flow_219.max()
     #y_data["CO2_in"] = data["CO2_219"]
 
     try:
@@ -81,8 +87,8 @@ def prepare_data(data, room=219):
         y_data["V_flow_219"] = data["V_flow_219"]
         
         # remove obviously non-physical values, space heating:
-        y_data.Tsup[y_data.Tsup > 48] = 48
-        y_data.Tret[y_data.Tret > 38] = 38
+        y_data.loc[y_data.Tsup > 48, "Tsup"] = 48
+        y_data.loc[y_data.Tret > 38, "Tret"] = 38
         # remove obviously non-physical values, ventilation:
         #y_data.T_sup_air[y_data.T_sup_air > 28] = np.nan
         #y_data.T_ext_air[y_data.T_ext_air > 28] = np.nan
@@ -90,8 +96,8 @@ def prepare_data(data, room=219):
         y_data["Tret_above"] = (y_data.Tret > 24).astype(int)
         
         y_data["m_flow"] = data.V_flow_219*1.293
-        y_data["delta_m_flow"] = (y_data.m_flow - y_data.m_flow.shift(1))
-        y_data["delta_m_flow"].fillna(method="bfill", inplace=True)
+        #y_data["delta_m_flow"] = (y_data.m_flow - y_data.m_flow.shift(1))
+        #y_data["delta_m_flow"].fillna(method="bfill", inplace=True)
         
         y_data["u_val_set"] = data.val_cmd_219
         
@@ -102,7 +108,7 @@ def prepare_data(data, room=219):
         y_data["valve_open"] = (data.val_pos_219 > 0).astype(int).round(0)
         y_data["valve_weight"] = y_data["valve_open"] + 1E-2
         # filter u_val
-        y_data.u_val[y_data["u_val"] > 1] = 1
+        y_data.loc[y_data["u_val"] > 1, "u_val"] = 1
         y_data["Tsup"] = y_data["Tsup"]
         y_data["Tret"] = y_data["Tret"]
     except:
@@ -114,6 +120,7 @@ def prepare_data(data, room=219):
     
     # set measurements:
     y_data["y1"] = y_data["Ti"]
+    #y_data.drop(columns=["Ti"], inplace=True)
     #y_data["y2"] = y_data["Tret"]
     #y_data["y3"] = y_data["Tsup"]
     #y_data["y4"] = y_data["Prad"]
@@ -138,6 +145,20 @@ def get_stepped_data(X, tunit='secs', exclude=0, samples_after_Pint_step=0, samp
     # Store original Ti values
     X['yTi'] = X['Ti']
 
+    def set_stepped(
+                    varname=None,
+                    stepname=None
+                    ):
+        i = np.where(np.abs(np.diff(X[varname])) > 100)[0]
+        if len(i) == 0:
+            L = np.array([]) # prev L
+        else:
+            X[stepname] = 0
+            L = np.unique(np.concatenate([np.arange(index - 1, index + samples_after_Ps_step + 1) for index in i]))
+            L = np.array([i for i in L if i >= 0])
+        if L.size > 0:
+            X.loc[L, stepname] = 1
+
     # Exclude after switching state
     if exclude != 0:
         i = np.where(np.abs(np.diff(X['Qi'])) > 10)[0]
@@ -147,27 +168,15 @@ def get_stepped_data(X, tunit='secs', exclude=0, samples_after_Pint_step=0, samp
 
     # Generate a signal with another level after switching for Qi
     if samples_after_Qi_step != 0:
-        i = np.where(np.abs(np.diff(X['phi_h'])) > 200)[0]
-        X['stepQi'] = 0
-        L = np.unique(np.concatenate([np.arange(index - 1, index + samples_after_Qi_step + 1) for index in i]))
-        if L.size > 0:
-            X.loc[L, 'stepQi'] = 1
+        set_stepped("phi_h", "stepQi")
 
     # Generate a signal with another level after switching for Ps
     if samples_after_Ps_step != 0:
-        i = np.where(np.abs(np.diff(X['phi_s'])) > 100)[0]
-        X['stepPs'] = 0
-        L = np.unique(np.concatenate([np.arange(index - 1, index + samples_after_Ps_step + 1) for index in i]))
-        if L.size > 0:
-            X.loc[L, 'stepPs'] = 1
+        set_stepped("phi_s", "stepPs")
 
     # Generate a signal with another level after switching for Pint
     if samples_after_Pint_step != 0:
-        i = np.where(np.abs(np.diff(X['phi_int'])) > 100)[0]
-        X['stepPintPlugs'] = 0
-        L = np.unique(np.concatenate([np.arange(index - 1, index + samples_after_Pint_step + 1) for index in i]))
-        if L.size > 0:
-            X.loc[L, 'stepPintPlugs'] = 1
+        set_stepped("phi_int", "stepPintPlugs")
 
     # Only keep output values with a given interval
     if rmvTs != 0:
@@ -198,10 +207,10 @@ class ZEBData(object):
         data.index = pd.to_datetime(data.index).tz_localize(None)
         # filter power outliers:
         #data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
-        data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
-        data["P_rad_219"][data["P_rad_219"] < 0] = 0
-        data["P_rad_220"][data["P_rad_220"] > 2.0] = 2.0
-        data["P_rad_220"][data["P_rad_220"] < 0] = 0
+        data.loc[data["P_rad_219"] > 2.0, "P_rad_219"] = 2.0
+        data.loc[data["P_rad_219"] < 0, "P_rad_219"] = 0
+        #data.loc[data["P_rad_220"] > 2.0, "P_rad_220"] = 2.0
+        #data.loc[data["P_rad_220"] < 0, "P_rad_220"] = 0
         #data.P_rad_219[Data.data.P_rad_219 < 0] = 0
         # TODO: add more filters
         self.data = data
@@ -225,8 +234,10 @@ class ZEBData(object):
         data = prepare_data(data, room=self.room)
         if (data.T_sup_air > 28).any():
             print("head")
-        data.T_sup_air[data.T_sup_air > 28] = np.nan
-        data.T_ext_air[data.T_ext_air > 28] = np.nan
+        #data["T_sup_air"].loc[data["T_sup_air"] > 28] = np.nan
+        #data["T_ext_air"].loc[data["T_ext_air"] > 28] = np.nan
+        data.loc[data["T_sup_air"] > 28, "T_sup_air"] = np.nan
+        data.loc[data["T_ext_air"] > 28, "T_ext_air"] = np.nan
         # interpolate:
         data[["T_sup_air", "T_ext_air"]] = data[["T_sup_air", "T_ext_air"]].interpolate()
         # then backfill:
@@ -244,6 +255,11 @@ class ZEBData(object):
         # normalize:
         data["DeltaPh"] = data["DeltaPh"]/data["DeltaPh"].max()
         data["DeltaPs"] = data["DeltaPs"]/data["DeltaPs"].max()
+        
+        data["phi_occ"] = 0
+        working_hours = [ndx for ndx in data.index if ndx.hour > 7 and ndx.hour < 17 and data.index[0].weekday() in range(0,5)]
+        data["phi_occ"] = 0
+        data.loc[working_hours, "phi_occ"] = 11*75 # people x assumed internal gains pp
         # steps, hold:
         #data["stepPh"] = data["stepPh"].resample("60min").mean().astype(bool).astype(int).resample("5min").ffill()
         #data["stepPs"] = data["stepPs"].resample("60min").mean().astype(bool).astype(int).resample("5min").ffill()
@@ -258,10 +274,19 @@ class ZEBData(object):
                                 samples_after_Qi_step=1
                                 )
         data["stepQi"] = (data.stepQi + data.stepPs + data.stepPintPlugs).astype(bool).astype(int)
-        
-        
+        data["phi_s_high"] = (data.phi_s > 200).astype(int)
+        data["Ta_low"] = (data.Ta < 2).astype(int)
+        data["hour"] = data.dt_index.apply(lambda x: x.hour)
+        data["wday"] = data.dt_index.apply(lambda x: x.weekday())
+        data["before_mid"] = data.hour.apply(lambda x: 1 if x < 12 else 0)
         data["vent"] = (data["V_sup_air"] > 10).astype(int) 
-        data["Tset_high"] = (data["Tset"] > 18).astype(int)
+        #data["vent"] = (data["phi_int_plugs"] > 60).astype(int) 
+        #data["vent"] = ((data["hour"] > 7) & (data["hour"] < 18) & (data["wday"] < 5)).astype(int) 
+        #data["both"] = data["vent"]*data["stepQi"]
+        #data["vent"] -= data["both"]
+        #data["Tset_high"] = (data["Tset"] > 20).astype(int)
+        #data["Tset"] = 21
+        #data["vent"] = (data["Tset"] > 20).astype(int)
         data["heat_on"] = (data["phi_h"] > 10).astype(int)
         #data["vent"] = data["Tset_high"]
         #data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)
@@ -287,6 +312,7 @@ class ZEBData(object):
         data["dt_index"] = data.index
         # set range index for identification:
         data.index = range(0,N*dt,dt)
+        data.drop(columns=["Ti"], inplace=True)
         
         return data.iloc[0:N-1], dt, N-1
     

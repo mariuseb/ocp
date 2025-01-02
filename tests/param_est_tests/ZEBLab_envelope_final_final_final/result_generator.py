@@ -33,6 +33,7 @@ from ocp.filters import KalmanDAE
 #from utils import save_journal_plot, plot_residuals
 from matplotlib import rc
 from sklearn.metrics import r2_score
+from copy import deepcopy
 # text:
 rc('text', usetex=True)
 # try to standardize datetime-formatting:
@@ -44,6 +45,8 @@ import casadi as ca
 from copy import deepcopy
 from matplotlib.colors import ListedColormap
 import seaborn as sns
+import os
+from ocp.covar_solver_cont import CovarianceSolverContinuous
 # construct cmap
 #colors = ["#9b59b6", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"]
 #my_cmap = ListedColormap(sns.color_palette(flatui).as_hex())
@@ -100,6 +103,7 @@ class ResultGenerator(object):
     """
     def __init__(self,
                  config=None,
+                 ekf_config=None,
                  params=None,
                  dt=None,
                  slack=False,
@@ -114,6 +118,7 @@ class ResultGenerator(object):
                             param_guess=params
                             )
         self.config = config
+        self.ekf_config = ekf_config
         self.dt = dt
         self.slack = slack
         self.dae = param_est.dae
@@ -139,7 +144,8 @@ class ResultGenerator(object):
         Q=None,
         P0=None,
         P0x=None,
-        x0_opt=None # from 1-step optimizatoin
+        x0_opt=None,
+        covar_solve=True
     ):
         self.extra_inds = extra_inds = []
         p0 = param_est.p0
@@ -160,7 +166,7 @@ class ResultGenerator(object):
                             columns=cols
                             )
         params_hist = pd.DataFrame(
-                                   columns=list(param_guess.keys())
+                                   columns=list(param_guess.keys() + ["phi_s_avg"])
                                    )
         # prepare result data frame:
         y_data, dt, N = data.get_dataset(
@@ -200,6 +206,57 @@ class ResultGenerator(object):
             result.loc[new_index, "Ti_sim"] = new_results["Ti"].values
             result = result.sort_index()
             return result, new_first
+         
+        """
+        Set up covariance identification:
+        """
+        ##########################################################
+        cfg_path = os.path.join(
+                    "configs", 
+                    "2R2C_int_gains_sep_bal_vent_vent.json"
+                    )
+        ekf_config = os.path.join(
+                                "configs",
+                                "ekf_configs",
+                                "2R2C_envelope_EKF_int_gains_sep_bal_vent_tvp_vent_covar_tvp.json"
+                                )
+        covar_kwargs = {
+            "x_nom": 12,
+            "x_nom_b": 289.15,
+            "z_nom": [1e-2,1e-1,1E6,1E6,1],
+            "z_nom_b": [0]*5,
+            #"p_nom": OCP.get_scale(_params),
+            #"p_nom": self.param_est.p_nom,
+            "p_nom": [1e-2]*4 + [1e6]*4 + [1,1,1,1e-3,1,1],
+            "u_nom": [12]*7 + [1E3,1E3,1E3,1E3,10,10,1,1,1],
+            "u_nom_b ": [289.15]*7 + [0]*9,
+            "y_nom": [12],
+            "y_nom_b": [289.15],
+            #"P_nom": [[1e-6,1e-6],[1e-6,1e-2]]  
+            "P_nom": [[1e-3,1e-3],[1e-3,1e-3]]  
+        }
+    
+        self.covar_solver = \
+            covar_solver = \
+                CovarianceSolverContinuous(
+                                            ekf_config,
+                                            cfg_path,
+                                            y_data,
+                                            param_guess,
+                                            method="single_shooting",
+                                            **covar_kwargs
+                                          )
+        P0 = np.eye(covar_solver.ekf.dae.n_x)*1e-3 # + 1e-2
+        P0_guess = P0.flatten()
+        Q_guess = np.array(
+            ca.veccat(
+                    ca.DM.eye(covar_solver.ekf.dae.n_x),
+                    ca.DM.eye(covar_solver.ekf.dae.n_x)
+                    )
+            ).flatten()*-5
+        R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*-5
+        H = np.eye(covar_solver.n_theta + covar_solver.n_y)*0
+        ##########################################################
             
         for delta_day in range(N_days):
             
@@ -250,9 +307,9 @@ class ResultGenerator(object):
                 param_guess["alpha_vent_ext"]["ub"] = 1.1
                 
                 if Q is None:
-                    Q = ca.DM.eye(param_est.n_x)
+                    _Q = ca.DM.eye(param_est.n_x)
                 if R is None:
-                    R = ca.DM.eye(param_est.n_y)
+                    _R = ca.DM.eye(param_est.n_y)
                 if P0x is None:
                     P0x = ca.DM.eye(param_est.n_x)
                     
@@ -290,7 +347,7 @@ class ResultGenerator(object):
                             x_guess=x_guess,
                             x_N = np.array([293.15]*param_est.n_x), # not used
                             P0=P0,
-                            covar=ca.veccat(Q, R),
+                            covar=ca.veccat(_Q, _R),
                             codegen=True
                             )
         
@@ -315,9 +372,120 @@ class ResultGenerator(object):
                 # obtain one-step ahead estimate:
                 if x0_opt is None:
                     x0_opt = x0
+                    
+                """
+                Here, do covariance identification:
+                """
+                #########################################################
+                
+                if covar_solve:
+                
+                    _params = params.loc[covar_solver.param_est.dae.p].values
+                    sol = sol[:len(y_data)]
+                    sol.index = y_data.index
+                    y_data[covar_solver.param_est.z_names] = sol[covar_solver.param_est.z_names]
+                    covar_sol, Q_df, R = covar_solver.solve(
+                                    y_data, 
+                                    _params,
+                                    x0, # guess from smoothing
+                                    P0_guess,
+                                    Q_guess,
+                                    R_guess, 
+                                    H=H    
+                                    )
+                    
+                    M = int(86400/(int(sampling_rate.rstrip("min"))*60)) + 1
+                    
+                    def simulate_one_day_feedback(ekf, M, covar_sol):
+                        F = ekf.one_sample_feedback_adj
+                        F_map = F.mapaccum("simulator", M, [0,1], [3,7])
+                        # simulate:
+                        res = F_map(
+                            x_0=x0,
+                            #z0=Z,
+                            P_0=covar_sol[["p11", "p12", "p21", "p22"]].values.reshape((2,2)),
+                            u=y_data[ekf.dae.u_names][0:M].values.T,
+                            #u_shift=y_data[ekf.dae.u_names][1:M+1].values.T,
+                            r=y_data[ekf.dae.r_names][0:M].values.T,
+                            p=ca.repmat(_params,1,M),
+                            y=y_data[ekf.dae.y_names][0:M].values.T,
+                            Q=ca.repmat(Q_df.values.flatten(),1,M),
+                            #Q=ca.repmat(Qval,1,M),
+                            R=ca.repmat(R.flatten(),1,M)
+                        ) 
+                        P0 = res["P_10"][:,-ekf.n_x:]
+                        return P0
+                    
+                    def transform_Q_df(Q_df, covar_solver):
+                        Q_cols_orig = list(Q_df.columns)
+                        Q_cols = list(Q_df.columns)
+                        for n in range(covar_solver.nQs - 1):
+                            Q_cols_mod = list(map(
+                                lambda x: x + "_" + str(n+1),
+                                Q_cols_orig
+                            ))
+                            Q_cols += (Q_cols_mod)
+                        _Q_vals = Q_df.values.flatten()
+                        _Q_vals = _Q_vals.reshape((1,_Q_vals.shape[0]))
+                        _Q_df = pd.DataFrame(
+                                            index=np.array([delta_day]),
+                                            columns=np.array(Q_cols),
+                                            data=_Q_vals
+                                            )
+                        _Q_df["r"] = R
+                        
+                        return _Q_df
+                        
+                    
+                    _Q_df = transform_Q_df(
+                        Q_df,
+                        covar_solver
+                        )
+                    """
+                    P0x = simulate_one_day_feedback(
+                        covar_solver.ekf,
+                        M, 
+                        covar_sol
+                        )
+                    """
+                    P0x_next = covar_sol[
+                        covar_solver.ekf.p_cols
+                        ].values.reshape((
+                            covar_solver.ekf.n_x,
+                            covar_solver.ekf.n_x)
+                        )
+                    # DM to np.array:
+                    #P0x = np.array(P0x)
+                    # keep history:
+                    if delta_day == 0:
+                        # TODO: modularize:
+                        theta_hist = covar_sol.copy()
+                        theta_hist_orig_cols = covar_sol.columns
+                        # swap P0 constraint:
+                        covar_solver.exchange_P0_constraint(P0x_next.flatten())
+                        H = np.eye(covar_solver.n_theta + covar_solver.n_y)*1
+                    else: 
+                        theta_hist.loc[delta_day] = np.nan
+                        theta_hist.loc[delta_day, list(theta_hist_orig_cols)] = covar_sol.values
+                        # swap P0 value in constraint:
+                        covar_solver.exchange_P0_value(P0x_next.flatten())
+                
+                    # for next iter:
+                    Q_guess = Q_df.values.flatten()
+                    R_guess = R.flatten()
+                    P0_guess = P0x_next.flatten()
+                    
+                    theta_hist.loc[delta_day, _Q_df.columns] = _Q_df.values
+                    #########################################################
+                    
+                    x0_filt = covar_sol[covar_solver.ekf.dae.x].values.flatten()
+                else:
+                    x0_filt = sol[covar_solver.ekf.dae.x].values.flatten()
+                    Q = Q_guess
+                                
                 self.simple_one_step_plot(
                                             y_data,
-                                            x0_opt, 
+                                            x0_filt,
                                             p_base=params,
                                             #p_mod=p_mod,
                                             p_tvp=params.values,
@@ -329,7 +497,7 @@ class ResultGenerator(object):
                                             switch=None,
                                             symbolic_estimate=True,
                                             R=R,
-                                            Q=Q,
+                                            Q=Q_df.values.flatten(),
                                             P0=P0,
                                             P0x=P0x
                                             )   
@@ -390,7 +558,14 @@ class ResultGenerator(object):
                 y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
                 """        
                 
+                # take filtered now: (check model pred)
                 x0 = self.filtered[self.x].iloc[-1]
+                P0x = np.array(self.filtered.iloc[-1][
+                    self.covar_solver.ekf.p_cols
+                    ].astype(float).values).reshape(
+                        (param_est.n_x, param_est.n_x)
+                    )
+                    
                 #x0 = sol[self.x].iloc[-1]
                 y_data.index.name = None
                 self.simple_sim_plot(
@@ -431,8 +606,10 @@ class ResultGenerator(object):
                                         symbolic_estimate=True,
                                         #ax=axes[1, delta_day*2]
                                         R=R,
-                                        Q=Q,
-                                        P0=P0
+                                        Q=Q_df.values.flatten(),
+                                        P0=P0,
+                                        P0x=P0x,
+                                        suff="+12h"
                                         )   
                 # one-step:
                 result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
@@ -460,7 +637,12 @@ class ResultGenerator(object):
                 """        
                 
                 x0 = self.filtered[self.x].iloc[-1]
-                #x0 = sol[self.x].iloc[-1]
+                P0x = np.array(self.filtered.iloc[-1][
+                    self.covar_solver.ekf.p_cols
+                    ].astype(float).values).reshape(
+                        (param_est.n_x, param_est.n_x)
+                    )
+                #x0 = self.res[self.x].iloc[-1]
                 self.simple_sim_plot(
                                     y_data,
                                     x0,
@@ -505,9 +687,10 @@ class ResultGenerator(object):
                         switch=None,
                         symbolic_estimate=True,
                         R=R,
-                        Q=Q,
-                        P0=P0
-                        #ax=axes[1, delta_day*2 + 1]
+                        Q=Q_df.values.flatten(),
+                        P0=P0,
+                        P0x=P0x,
+                        suff="+12-24h"
                         )  
                 # one-step:
                 result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
@@ -536,7 +719,8 @@ class ResultGenerator(object):
                0, \
                training_metrics, \
                metrics, \
-               params_hist
+               params_hist, \
+               theta_hist
                 
     def whole_day_validation_runner(
         self,
@@ -550,7 +734,597 @@ class ResultGenerator(object):
         plot=True,
         prior_weight=1,
         sampling_rate="60min",
-        journal_plot=False
+        journal_plot=False,
+        R=None,
+        Q=None,
+        P0=None,
+        P0x=None,
+        x0_opt=None,
+        covar_solve=True
+    ):
+        self.extra_inds = extra_inds = []
+        p0 = param_est.p0
+        cols = ["mse",
+                "rmse",
+                "nrmse",
+                "cv-rmse",
+                "one_step_mse",
+                "one_step_rmse",
+                "one_step_nrmse",
+                "mbe",
+                "r2",
+                "r2_adj",
+                "aic",
+                "bic"]
+        
+        metrics = pd.DataFrame(
+                            columns=cols
+                            )
+        training_metrics = pd.DataFrame(
+                            columns=cols
+                            )
+        params_hist = pd.DataFrame(
+                                   columns=list(param_guess.keys()) + ["phi_s_avg"]
+                                   )
+        # prepare result data frame:
+        y_data, dt, N = data.get_dataset(
+                                start=start, 
+                                stop=start + pd.Timedelta(days=days), 
+                                sampling_rate=sampling_rate
+                                )
+        val_start = start + pd.Timedelta(days=days)
+        val_stop = val_start + pd.Timedelta(days=N_days)
+        result = pd.DataFrame(index=
+                              pd.date_range(
+                                            start=val_start,
+                                            end=val_stop,
+                                            freq=sampling_rate
+                                            ),
+                              columns=list(y_data.columns) + ["Ti_sim", "Ti_onestep"]
+                              )
+        #fig, axes = plt.subplots(2,N_days*2, sharex=False)
+        # iterate:
+        
+        self.sols = dict()
+        self.covar_sols = dict()
+        self.train_res = dict()
+        
+        def set_new_results(y_data, result, new_results):
+            #y_data_to_set = y_data[1:]
+            #result.loc[y_data_to_set.index, y_data_to_set.columns] = y_data_to_set
+            result.loc[y_data.index, y_data.columns] = y_data
+            """
+            New non-overlapping index:
+            """
+            new_index = y_data.index[1:]
+            new_first = y_data.index[0] + pd.Timedelta(seconds=1e-3)
+            new_index = pd.DatetimeIndex.union(pd.DatetimeIndex([new_first]), new_index)
+            res_to_set = self.res["Ti"]
+            res_to_set.index = new_index
+            """
+            Extend data cols with last element,
+            new index should not be visible
+            """
+            result.loc[new_index[0], y_data.columns] = result.loc[y_data.index[0], y_data.columns]
+            result.loc[new_index, "Ti_sim"] = new_results["Ti"].values
+            result = result.sort_index()
+            return result, new_first
+         
+        """
+        Set up covariance identification:
+        """
+        ##########################################################
+        covar_kwargs = {
+            "x_nom": 12,
+            "x_nom_b": 289.15,
+            "z_nom": [1e-2,1e-2,1E6,1E6,1],
+            "z_nom_b": [0]*5,
+            #"p_nom": OCP.get_scale(_params),
+            #"p_nom": self.param_est.p_nom,
+            "p_nom": [1e-2]*4 + [1e6]*4 + [1,1,1,1e-3,1,1],
+            "u_nom": [12]*7 + [1E3,1E3,1E3,1E3,10,10,1,1,1],
+            "u_nom_b ": [289.15]*7 + [0]*9,
+            "y_nom": [12],
+            "y_nom_b": [289.15],
+            #"P_nom": [[1e-6,1e-6],[1e-6,1e-2]]  
+            "P_nom": [[1e-3,1e-3],[1e-3,1e-3]]  
+        }
+        self.covar_solver = \
+            covar_solver = \
+                CovarianceSolverContinuous(
+                                            self.ekf_config,
+                                            self.config,
+                                            y_data,
+                                            param_guess,
+                                            method="single_shooting",
+                                            **covar_kwargs
+                                          )
+        P0 = np.ones(
+                     (covar_solver.ekf.dae.n_x,
+                      covar_solver.ekf.dae.n_x)
+                     )*1e-3 # + 1e-2
+        P0_guess = P0.flatten()
+        Q_guess = np.array(
+            ca.veccat(
+                    ca.DM.eye(covar_solver.ekf.dae.n_x),
+                    ca.DM.eye(covar_solver.ekf.dae.n_x)
+                    )
+            ).flatten()*-5
+        #Q_guess[0] = -15
+        #Q_guess[4] = -10
+        R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*-5
+        H = np.eye(covar_solver.n_theta + covar_solver.n_y)*1
+        ##########################################################
+            
+        for delta_day in range(N_days):
+            
+            stop = start + pd.Timedelta(days=days)
+            y_data, dt, N = data.get_dataset(
+                                            start=start, 
+                                            stop=stop, 
+                                            sampling_rate=sampling_rate
+                                            )
+            y_data_train = y_data
+            
+            if not y_data.Ti.isna().any():
+                """
+                Skip if any holes in temperature
+                y_data = y_data.bfill()
+                y_data = y_data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                
+                N = len(y_data)
+                dt = (y_data.index[1] - y_data.index[0]).seconds
+                # set range index for identification:
+                y_data.index = range(0,N*dt,dt)
+                """    
+            
+                if param_est.n_x == 2:
+                    
+                    x_guess = np.array([
+                                    y_data.Ti.values.flatten(),
+                                    y_data.Ti.values.flatten() - 2
+                                    ])
+                    
+                elif param_est.n_x == 3:
+                    
+                    x_guess = np.array([
+                                    y_data.Ti.values.flatten(),
+                                    y_data.Ti.values.flatten() - 2,
+                                    y_data.Ti.values.flatten() + 2
+                                    ])
+                    
+                else: 
+                    
+                    raise ValueError("error")
+                    
+                    
+                lbx = 0.7*x_guess
+                ubx = 2*x_guess
+
+                param_guess["alpha_vent_sup"]["ub"] = 1.1
+                param_guess["alpha_vent_ext"]["ub"] = 1.1
+                
+                if Q is None:
+                    _Q = ca.DM.eye(param_est.n_x)
+                if R is None:
+                    _R = ca.DM.eye(param_est.n_y)
+                if P0x is None:
+                    P0x = ca.DM.eye(param_est.n_x)
+                    
+                #P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight*(1 + delta_day)
+                P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight
+                #P0[4,4] = 1E1
+                # extra weight on int gains:
+                #for n in range(param_est.n_p - 4, param_est.n_p):
+                #    P0[n,n] = 1E3
+                
+                #if delta_day > 10: 
+                #    P0 *= 1E-2
+                
+                #for n in (1,3,5,7):
+                #    P0[n,n] = 0s
+                for n in range(param_est.n_p, param_est.n_p + param_est.n_x):
+                    P0[n,n] = 0
+                #P0[9,9] = 1E3
+                if delta_day < 100:
+                    lbp = param_est.get_lbp(1e-2)
+                    ubp = param_est.get_ubp(1e2)
+                else:
+                    lbp = p0
+                    ubp = p0
+                
+                """
+                ax = y_data["Ti"].plot(drawstyle="steps-post")
+                ax1 = ax.twinx()
+                y_data["phi_h"].plot(ax=ax1, color="r", drawstyle="steps-post")
+                y_data["phi_int_plugs"].plot(ax=ax1, color="m", drawstyle="steps-post")
+                y_data["phi_s"].plot(ax=ax1, color="y", drawstyle="steps-post")
+                #y_data["DeltaPs"].plot(ax=ax1, color="y", drawstyle="steps-post")
+                plt.show()
+                """
+  
+                sol, params = param_est.solve(
+                            y_data,
+                            #param_est.p0,
+                            p0,
+                            lbp=lbp,
+                            ubp=ubp,
+                            lbx=lbx,
+                            ubx=ubx,
+                            x_guess=x_guess,
+                            x_N = np.array([293.15]*param_est.n_x), # not used
+                            P0=P0,
+                            covar=ca.veccat(_Q, _R),
+                            codegen=True
+                            )
+                self.sols[delta_day] = sol
+        
+                    
+                x0 = sol[self.x].iloc[0]   
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    plot=False,
+                                    map_eval=True,
+                                    chained_eval=True,
+                                    #ax=axes[delta_day, 0]
+                                    )  
+                if journal_plot:
+                    self.make_journal_plot(
+                        y_data, 
+                        x0,
+                        str(start) + "_" + str(days),
+                        res = self.res
+                    )       
+                # obtain one-step ahead estimate:
+                if x0_opt is None:
+                    x0_opt = x0
+                    
+                """
+                Here, do covariance identification:
+                """
+                #########################################################
+                
+                if covar_solve:  # and delta_day == 0: # only first:         
+                    """
+                    Re-init covar solver each iter.
+                    self.covar_solver = \
+                    covar_solver = \
+                        CovarianceSolverContinuous(
+                                                    self.ekf_config,
+                                                    self.config,
+                                                    y_data,
+                                                    param_guess,
+                                                    method="single_shooting",
+                                                    **covar_kwargs
+                                                )
+                    P0 = np.ones((covar_solver.ekf.dae.n_x,
+                                  covar_solver.ekf.dae.n_x))*1e-5 # + 1e-2
+                    P0[1,1] *= 1e3
+                    P0_guess = P0.flatten()
+                    Q_guess = np.array(
+                        ca.veccat(
+                                ca.DM.eye(covar_solver.ekf.dae.n_x),
+                                ca.DM.eye(covar_solver.ekf.dae.n_x)
+                                )
+                        ).flatten()*-5
+                    Q_guess[0] = -15
+                    Q_guess[4] = -15
+                    R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*-5
+                    """
+                    H = np.eye(covar_solver.n_theta + covar_solver.n_y)*1
+                    
+                    _params = params.loc[covar_solver.ekf.dae.p].values
+                    sol = sol[:len(y_data)]
+                    sol.index = y_data.index
+                    y_data[covar_solver.ekf.dae.z] = sol[covar_solver.ekf.dae.z]
+                    covar_sol, Q_df, R, raw_sol = covar_solver.solve(
+                                    y_data, 
+                                    _params,
+                                    x0, # guess from smoothing
+                                    P0_guess,
+                                    Q_guess,
+                                    R_guess, 
+                                    #H=H    
+                                    )
+                    self.covar_sols[delta_day] = raw_sol
+                    M = int(86400/(int(sampling_rate.rstrip("min"))*60)) + 1
+                    
+                    def simulate_one_day_feedback(ekf, M, P_0):
+                        F = ekf.one_sample_feedback_adj
+                        F_map = F.mapaccum("simulator", M, [0,1], [3,7])
+                        # simulate:
+                        res = F_map(
+                            x_0=x0,
+                            #z0=Z,
+                            P_0=P_0,
+                            u=y_data[ekf.dae.u_names][0:M].values.T,
+                            #u_shift=y_data[ekf.dae.u_names][1:M+1].values.T,
+                            r=y_data[ekf.dae.r_names][0:M].values.T,
+                            p=ca.repmat(_params,1,M),
+                            y=y_data[ekf.dae.y_names][0:M].values.T,
+                            Q=ca.repmat(Q_df.values.flatten(),1,M),
+                            #Q=ca.repmat(Qval,1,M),
+                            R=ca.repmat(R.flatten(),1,M)
+                        ) 
+                        P0 = res["P_10"][:,-ekf.n_x:]
+                        return np.array(P0)
+                    
+                    def transform_Q_df(Q_df, covar_solver):
+                        Q_cols_orig = list(Q_df.columns)
+                        Q_cols = list(Q_df.columns)
+                        for n in range(covar_solver.nQs - 1):
+                            Q_cols_mod = list(map(
+                                lambda x: x + "_" + str(n+1),
+                                Q_cols_orig
+                            ))
+                            Q_cols += (Q_cols_mod)
+                        _Q_vals = Q_df.values.flatten()
+                        _Q_vals = _Q_vals.reshape((1,_Q_vals.shape[0]))
+                        _Q_df = pd.DataFrame(
+                                            index=np.array([delta_day]),
+                                            columns=np.array(Q_cols),
+                                            data=_Q_vals
+                                            )
+                        _Q_df["r"] = R
+                        
+                        return _Q_df
+                        
+                    
+                    _Q_df = transform_Q_df(
+                        Q_df,
+                        covar_solver
+                        )
+                    P0x_first = covar_sol[
+                        covar_solver.ekf.p_cols
+                        ].values.reshape((
+                            covar_solver.ekf.n_x,
+                            covar_solver.ekf.n_x)
+                        )
+                
+                    P0x_next = simulate_one_day_feedback(
+                        covar_solver.ekf,
+                        M, 
+                        P0x_first
+                        )
+                    # DM to np.array:
+                    #P0x = np.array(P0x)
+                    # keep history:
+                    if delta_day == 0:
+                        # TODO: modularize:
+                        theta_hist = covar_sol.copy()
+                        theta_hist_orig_cols = covar_sol.columns
+                        # swap P0 constraint:
+                        covar_solver.exchange_P0_constraint(P0x_next.flatten())
+                        #H = np.eye(covar_solver.n_theta + covar_solver.n_y)*1
+                        #H = np.eye(covar_solver.n_theta + covar_solver.n_y)*0
+                    else: 
+                        theta_hist.loc[delta_day] = np.nan
+                        theta_hist.loc[delta_day, list(theta_hist_orig_cols)] = covar_sol.values
+                        # swap P0 value in constraint:
+                        covar_solver.exchange_P0_value(P0x_next.flatten())
+                    # for next iter:
+                    Q_guess = Q_df.values.flatten()
+                    R_guess = R.flatten()
+                    P0_guess = P0x_next.flatten()
+                    
+                    theta_hist.loc[delta_day, _Q_df.columns] = _Q_df.values
+                    #########################################################
+                    
+                    x0_filt = covar_sol[covar_solver.ekf.dae.x].values.flatten()
+                    Q = Q_df.values.flatten()
+                else:
+                    theta_hist = pd.DataFrame()
+                    x0_filt = sol[covar_solver.ekf.dae.x].values[0].flatten()
+                    Q = Q_guess
+                    R = R_guess
+                    P0x = P0_guess.reshape((
+                        self.covar_solver.ekf.n_x,
+                        self.covar_solver.ekf.n_x
+                                            ))
+                                
+                self.simple_one_step_plot(
+                                            y_data,
+                                            x0_filt,
+                                            p_base=params,
+                                            #p_mod=p_mod,
+                                            p_tvp=params.values,
+                                            tvp=False,
+                                            ekf_config=ekf_config,
+                                            cond_series=y_data.vent,
+                                            plot=plot,
+                                            map_eval=True,
+                                            switch=None,
+                                            symbolic_estimate=True,
+                                            R=R,
+                                            Q=Q,
+                                            P0=P0,
+                                            P0x=P0x
+                                            )   
+                sol["Ti_onestep"] = self.filtered["y_pred"].values
+                sol["Ti_sim"] = sol["Ti"]
+                
+                residual_normalized = self.filtered["res"]/np.sqrt(self.one_step_res["V_k"])
+                
+                if delta_day == 0:
+                    sol["phi_int"] = sol["phi_int_plugs"] + sol["phi_int_lig"]
+                    # keep residuals:
+                    self.residuals = pd.DataFrame(
+                                             index=range(len(sol)),
+                                             data=residual_normalized.values,
+                                             columns=["0"]
+                                             )
+                    #
+                    
+                    """
+                    ax = y_data[["y1", "Tset"]].plot(drawstyle="steps-post")
+                    ax1 = ax.twinx()
+                    #y_data[["phi_h"]].plot(color="r", drawstyle="steps-post", ax=ax1)
+                    y_data[["phi_s"]].plot(color="y", drawstyle="steps-post", ax=ax1)
+                    #y_data[["T_sup_air"]].plot(color="k", drawstyle="steps-post", ax=ax)
+                    #(y_data["vent"]*y_data["phi_h"].max()).plot(color="m", drawstyle="steps-post", ax=ax1)
+                    plt.show(block=False)
+                    """    
+                else: 
+                    # keep residuals:
+                    self.residuals[str(delta_day)] = residual_normalized.values
+                # keep training results:
+                sol.index = y_data.dt_index
+                self.train_res[delta_day] = sol.copy()
+                self.train_res[delta_day][y_data.columns] = y_data
+                self.train_res[delta_day]["Pvent"] = params["alpha_vent_sup"]*result["ahu_reaFloSupAir"]*(result["T_sup_air"] - result["Ti"]) + params["alpha_vent_ext"]*result["ahu_reaFloExtAir"]*(result["Ti"] - result["T_ext_air"])
+                
+                month = str(y_data.index[0].month)
+                y_data.to_csv("to_CTSMR/ZEBLab_data_15min_%s_daytime_" % (month) + str(delta_day) +  ".csv")
+                params.to_csv("to_CTSMR/parameters_LTV_%s_2023_daytime_15min" % (month) + str(delta_day) +  ".csv")
+                sol.to_csv("to_CTSMR/solution_LTV_%s_2023_daytime_15min" % (month) + str(delta_day) + ".csv")
+                
+                train_metrics = self.report_metrics("training")
+                
+                """
+                Split validation in two:p
+                """
+                
+                y_data, dt, N = data.get_dataset(
+                                                start = stop,
+                                                stop = stop + pd.Timedelta(days=1),
+                                                sampling_rate=sampling_rate
+                                                )
+                                
+                """
+                if y_data.Ti.isna().any():
+                    # check what happens
+                    print(params)
+                
+                y_data_raw = y_data.bfill()
+                y_data_raw.index.name = "time"
+                y_data = y_data_raw.groupby(pd.Grouper(freq=sampling_rate)).mean() #.dropna(axis=1)
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                """        
+                
+                # take filtered now: (check model pred)
+                x0 = self.filtered[self.x].iloc[-1]
+                P0x = np.array(self.filtered.iloc[-1][
+                    self.covar_solver.ekf.p_cols
+                    ].astype(float).values).reshape(
+                        (param_est.n_x, param_est.n_x)
+                    )
+                    
+                #x0 = sol[self.x].iloc[-1]
+                y_data.index.name = None
+                
+                if "Ai_high" in params.index and y_data.dt_index[0].month == 1:
+                    if delta_day == 3:
+                        params["Ai_high"] = params["Ai"]
+                    # somewhere here, solar shading is implemented:
+                    if delta_day > 4:
+                        #params["Ai_high"] = 0
+                        #if delta_day in (10,11,12,13):
+                        params["Ai_high"] = 1E-1
+                    #if delta_day == 13:
+                    #    params["Ai_high"] = params["Ai"]
+                 
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    #plot=plot,
+                                    plot=plot,
+                                    suff="+24hrs",
+                                    map_eval=True,
+                                    #symbolic_estimate=True
+                                    #ax=axes[0, delta_day*2]
+                                    )
+                #result.loc[y_data.index, y_data.columns] = y_data
+                #result.loc[y_data.index, "Ti_sim"] = self.res["Ti"]
+                result, extra_ind = set_new_results(y_data, result, self.res)
+                extra_inds.append(extra_ind)
+                
+                if delta_day == 0:
+                    result["Ti_sim"] = result["Ti_sim"].bfill()
+                
+            
+                self.simple_one_step_plot(
+                                        y_data,
+                                        x0, 
+                                        p_base=params,
+                                        #p_mod=p_mod,
+                                        p_tvp=params.values,
+                                        tvp=False,
+                                        ekf_config=ekf_config,
+                                        cond_series=y_data.vent,
+                                        plot=plot,
+                                        map_eval=True,
+                                        switch=None,
+                                        symbolic_estimate=True,
+                                        #ax=axes[1, delta_day*2]
+                                        R=R,
+                                        Q=Q,
+                                        P0=P0,
+                                        P0x=P0x,
+                                        suff="+24h"
+                                        )   
+                
+                # save metrics:
+                test_metrics = self.report_metrics("validation (bic, aic not valid)")
+                metrics.loc[delta_day, :] = test_metrics.loc[metrics.columns].values.flatten()
+                training_metrics.loc[delta_day, :] = train_metrics.loc[metrics.columns].values.flatten()
+                
+                # one-step:
+                result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
+                result["Ti_onestep"] = result["Ti_onestep"].ffill()
+                # Pvent estimation:
+                result.loc[y_data.index, "Pvent"] = params["alpha_vent_sup"]*result["ahu_reaFloSupAir"]*(result["T_sup_air"] - result["Ti"]) + params["alpha_vent_ext"]*result["ahu_reaFloExtAir"]*(result["Ti"] - result["T_ext_air"])
+                
+
+                param_guess = {
+                    k: {
+                        "init": params.loc[k],
+                        #"lb": 1e-2*params.loc[k],
+                        #"ub": 1e2*params.loc[k]
+                        "lb": 1e-2*params.loc[k],
+                        "ub": 1e2*params.loc[k]
+                        }
+                    for k in params.index
+                }
+                params_hist.loc[delta_day, list(param_guess.keys())] = params
+                params_hist.loc[delta_day, "phi_s_avg"] = y_data_train["phi_s"].mean()
+                # advance 1 day:
+                start = start + pd.Timedelta(days=1)
+        
+                if float(test_metrics.loc["nrmse"]) > 1:
+                    # check what happens
+                    print(params)
+                p0 = params.values
+        self.val_res = result 
+        return 0, \
+               0, \
+               training_metrics, \
+               metrics, \
+               params_hist, \
+               theta_hist
+ 
+    def half_day_validation_runner(
+        self,
+        ekf_config,
+        start,
+        N_days,
+        days,
+        param_guess,
+        param_est,
+        data,
+        plot=True,
+        prior_weight=1,
+        sampling_rate="60min",
+        journal_plot=False,
+        R=None,
+        Q=None,
+        P0=None,
+        P0x=None,
+        x0_opt=None,
+        covar_solve=True
     ):
         self.extra_inds = extra_inds = []
         p0 = param_est.p0
@@ -611,6 +1385,47 @@ class ResultGenerator(object):
             result.loc[new_index, "Ti_sim"] = new_results["Ti"].values
             result = result.sort_index()
             return result, new_first
+         
+        """
+        Set up covariance identification:
+        """
+        ##########################################################
+        covar_kwargs = {
+            "x_nom": 12,
+            "x_nom_b": 289.15,
+            "z_nom": [1e-2,1e-1,1E6,1E6],
+            "z_nom_b": [0]*4,
+            #"p_nom": OCP.get_scale(_params),
+            "p_nom": self.param_est.p_nom,
+            "u_nom": [12]*7 + [1E3,1E3,1E3,1E3,10,10,1,1,1],
+            "u_nom_b ": [289.15]*7 + [0]*9,
+            "y_nom": [12],
+            "y_nom_b": [289.15],
+            #"P_nom": [[1e-6,1e-6],[1e-6,1e-2]]  
+            "P_nom": [[1e-3,1e-3],[1e-3,1e-3]]  
+        }
+    
+        self.covar_solver = \
+            covar_solver = \
+                CovarianceSolverContinuous(
+                                            self.ekf_config,
+                                            self.config,
+                                            y_data,
+                                            param_guess,
+                                            method="single_shooting",
+                                            **covar_kwargs
+                                          )
+        P0 = np.eye(covar_solver.ekf.dae.n_x)*1e-3 # + 1e-2
+        P0_guess = P0.flatten()
+        Q_guess = np.array(
+            ca.veccat(
+                    ca.DM.eye(covar_solver.ekf.dae.n_x),
+                    ca.DM.eye(covar_solver.ekf.dae.n_x)
+                    )
+            ).flatten()*-5
+        R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*-5
+        H = np.eye(covar_solver.n_theta + covar_solver.n_y)*0
+        ##########################################################
             
         for delta_day in range(N_days):
             
@@ -634,18 +1449,40 @@ class ResultGenerator(object):
                 y_data.index = range(0,N*dt,dt)
                 """    
             
-                x_guess = np.array([
-                                y_data.Ti.values.flatten(),
-                                y_data.Ti.values.flatten() - 2
-                                ])
+                if param_est.n_x == 2:
+                    
+                    x_guess = np.array([
+                                    y_data.Ti.values.flatten(),
+                                    y_data.Ti.values.flatten() - 2
+                                    ])
+                    
+                elif param_est.n_x == 3:
+                    
+                    x_guess = np.array([
+                                    y_data.Ti.values.flatten(),
+                                    y_data.Ti.values.flatten() - 2,
+                                    y_data.Ti.values.flatten() + 2
+                                    ])
+                    
+                else: 
+                    
+                    raise ValueError("error")
+                    
+                    
                 lbx = 0.7*x_guess
                 ubx = 2*x_guess
 
                 param_guess["alpha_vent_sup"]["ub"] = 1.1
                 param_guess["alpha_vent_ext"]["ub"] = 1.1
                 
-                Q = ca.DM.eye(2)
-                R = ca.DM.eye(1)
+                if Q is None:
+                    _Q = ca.DM.eye(param_est.n_x)
+                if R is None:
+                    _R = ca.DM.eye(param_est.n_y)
+                if P0x is None:
+                    P0x = ca.DM.eye(param_est.n_x)
+                    
+                #P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight*(1 + delta_day)
                 P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight
                 #for n in (1,3,5,7):
                 #    P0[n,n] = 0
@@ -658,7 +1495,17 @@ class ResultGenerator(object):
                 else:
                     lbp = p0
                     ubp = p0
-                    
+                
+                """
+                ax = y_data["Ti"].plot(drawstyle="steps-post")
+                ax1 = ax.twinx()
+                y_data["phi_h"].plot(ax=ax1, color="r", drawstyle="steps-post")
+                y_data["phi_int_plugs"].plot(ax=ax1, color="m", drawstyle="steps-post")
+                y_data["phi_s"].plot(ax=ax1, color="y", drawstyle="steps-post")
+                #y_data["DeltaPs"].plot(ax=ax1, color="y", drawstyle="steps-post")
+                plt.show()
+                """
+  
                 sol, params = param_est.solve(
                             y_data,
                             #param_est.p0,
@@ -668,9 +1515,9 @@ class ResultGenerator(object):
                             lbx=lbx,
                             ubx=ubx,
                             x_guess=x_guess,
-                            x_N = np.array([293.15,293.15]), # not used
+                            x_N = np.array([293.15]*param_est.n_x), # not used
                             P0=P0,
-                            covar=ca.veccat(Q, R),
+                            covar=ca.veccat(_Q, _R),
                             codegen=True
                             )
         
@@ -693,37 +1540,189 @@ class ResultGenerator(object):
                         res = self.res
                     )       
                 # obtain one-step ahead estimate:
+                if x0_opt is None:
+                    x0_opt = x0
+                    
+                """
+                Here, do covariance identification:
+                """
+                #########################################################
+                
+                if covar_solve and delta_day == 0:
+                
+                    _params = params.loc[covar_solver.ekf.dae.p].values
+                    sol = sol[:len(y_data)]
+                    sol.index = y_data.index
+                    y_data[covar_solver.ekf.dae.z] = sol[covar_solver.ekf.dae.z]
+                    covar_sol, Q_df, R = covar_solver.solve(
+                                    y_data, 
+                                    _params,
+                                    x0, # guess from smoothing
+                                    P0_guess,
+                                    Q_guess,
+                                    R_guess, 
+                                    H=H    
+                                    )
+                    M = int(86400/(int(sampling_rate.rstrip("min"))*60)) + 1
+                    
+                    def simulate_one_day_feedback(ekf, M, P_0):
+                        F = ekf.one_sample_feedback_adj
+                        F_map = F.mapaccum("simulator", M, [0,1], [3,7])
+                        # simulate:
+                        res = F_map(
+                            x_0=x0,
+                            #z0=Z,
+                            P_0=P_0,
+                            u=y_data[ekf.dae.u_names][0:M].values.T,
+                            #u_shift=y_data[ekf.dae.u_names][1:M+1].values.T,
+                            r=y_data[ekf.dae.r_names][0:M].values.T,
+                            p=ca.repmat(_params,1,M),
+                            y=y_data[ekf.dae.y_names][0:M].values.T,
+                            Q=ca.repmat(Q_df.values.flatten(),1,M),
+                            #Q=ca.repmat(Qval,1,M),
+                            R=ca.repmat(R.flatten(),1,M)
+                        ) 
+                        P0 = res["P_10"][:,-ekf.n_x:]
+                        return np.array(P0)
+                    
+                    def transform_Q_df(Q_df, covar_solver):
+                        Q_cols_orig = list(Q_df.columns)
+                        Q_cols = list(Q_df.columns)
+                        for n in range(covar_solver.nQs - 1):
+                            Q_cols_mod = list(map(
+                                lambda x: x + "_" + str(n+1),
+                                Q_cols_orig
+                            ))
+                            Q_cols += (Q_cols_mod)
+                        _Q_vals = Q_df.values.flatten()
+                        _Q_vals = _Q_vals.reshape((1,_Q_vals.shape[0]))
+                        _Q_df = pd.DataFrame(
+                                            index=np.array([delta_day]),
+                                            columns=np.array(Q_cols),
+                                            data=_Q_vals
+                                            )
+                        _Q_df["r"] = R
+                        
+                        return _Q_df
+                        
+                    
+                    _Q_df = transform_Q_df(
+                        Q_df,
+                        covar_solver
+                        )
+                    P0x_first = covar_sol[
+                        covar_solver.ekf.p_cols
+                        ].values.reshape((
+                            covar_solver.ekf.n_x,
+                            covar_solver.ekf.n_x)
+                        )
+                
+                    P0x_next = simulate_one_day_feedback(
+                        covar_solver.ekf,
+                        M, 
+                        P0x_first
+                        )
+                    # DM to np.array:
+                    #P0x = np.array(P0x)
+                    # keep history:
+                    if delta_day == 0:
+                        # TODO: modularize:
+                        theta_hist = covar_sol.copy()
+                        theta_hist_orig_cols = covar_sol.columns
+                        # swap P0 constraint:
+                        covar_solver.exchange_P0_constraint(P0x_next.flatten())
+                        H = np.eye(covar_solver.n_theta + covar_solver.n_y)*1
+                        #H = np.eye(covar_solver.n_theta + covar_solver.n_y)*0
+                    else: 
+                        theta_hist.loc[delta_day] = np.nan
+                        theta_hist.loc[delta_day, list(theta_hist_orig_cols)] = covar_sol.values
+                        # swap P0 value in constraint:
+                        covar_solver.exchange_P0_value(P0x_next.flatten())
+                
+                    # for next iter:
+                    #Q_guess = Q_df.values.flatten()
+                    #R_guess = R.flatten()
+                    #P0_guess = P0x_next.flatten()
+                    
+                    theta_hist.loc[delta_day, _Q_df.columns] = _Q_df.values
+                    #########################################################
+                    
+                    x0_filt = covar_sol[covar_solver.ekf.dae.x].values.flatten()
+                    Q = Q_df.values.flatten()
+                else:
+                    theta_hist = pd.DataFrame()
+                    x0_filt = sol[covar_solver.ekf.dae.x].values[-1].flatten()
+                    Q = Q_guess
+                    R = R_guess
+                    P0x = P0_guess.reshape((
+                        self.covar_solver.ekf.n_x,
+                        self.covar_solver.ekf.n_x
+                                            ))
+                                
                 self.simple_one_step_plot(
-                                                y_data,
-                                                x0, 
-                                                p_base=params,
-                                                #p_mod=p_mod,
-                                                p_tvp=params.values,
-                                                tvp=False,
-                                                ekf_config=ekf_config,
-                                                cond_series=y_data.vent,
-                                                plot=False,
-                                                map_eval=True,
-                                                switch=None,
-                                                symbolic_estimate=True
-                                                )   
+                                            y_data,
+                                            x0_filt,
+                                            p_base=params,
+                                            #p_mod=p_mod,
+                                            p_tvp=params.values,
+                                            tvp=False,
+                                            ekf_config=ekf_config,
+                                            cond_series=y_data.vent,
+                                            plot=plot,
+                                            map_eval=True,
+                                            switch=None,
+                                            symbolic_estimate=True,
+                                            R=R,
+                                            Q=Q,
+                                            P0=P0,
+                                            P0x=P0x
+                                            )   
+                sol["Ti_onestep"] = self.filtered["y_pred"].values
+                sol["Ti_sim"] = sol["Ti"]
+                
+                residual_normalized = self.filtered["res"]/np.sqrt(self.one_step_res["V_k"])
+                
                 if delta_day == 0:
-                    sol["Ti_onestep"] = self.filtered["y_pred"].values
-                    sol["Ti_sim"] = sol["Ti"]
                     sol["phi_int"] = sol["phi_int_plugs"] + sol["phi_int_lig"]
+                    # keep residuals:
+                    self.residuals = pd.DataFrame(
+                                             index=range(len(sol)),
+                                             data=residual_normalized.values,
+                                             columns=["0"]
+                                             )
+                    #
                     sol.index = y_data.dt_index
                     self.train_res = sol.copy()
                     self.train_res[y_data.columns] = y_data
+                    self.train_res["Pvent"] = params["alpha_vent_sup"]*sol["ahu_reaFloSupAir"]*(sol["T_sup_air"] - sol["Ti"])
+                    
+                    """
+                    ax = y_data[["y1", "Tset"]].plot(drawstyle="steps-post")
+                    ax1 = ax.twinx()
+                    #y_data[["phi_h"]].plot(color="r", drawstyle="steps-post", ax=ax1)
+                    y_data[["phi_s"]].plot(color="y", drawstyle="steps-post", ax=ax1)
+                    #y_data[["T_sup_air"]].plot(color="k", drawstyle="steps-post", ax=ax)
+                    #(y_data["vent"]*y_data["phi_h"].max()).plot(color="m", drawstyle="steps-post", ax=ax1)
+                    plt.show(block=False)
+                    """    
+                else: 
+                    # keep residuals:
+                    self.residuals[str(delta_day)] = residual_normalized.values
+                
+                month = str(y_data.index[0].month)
+                y_data.to_csv("to_CTSMR/ZEBLab_data_15min_%s_daytime_" % (month) + str(delta_day) +  ".csv")
+                params.to_csv("to_CTSMR/parameters_LTV_%s_2023_daytime_15min" % (month) + str(delta_day) +  ".csv")
+                sol.to_csv("to_CTSMR/solution_LTV_%s_2023_daytime_15min" % (month) + str(delta_day) + ".csv")
                 
                 train_metrics = self.report_metrics("training")
                 
                 """
-                Split validation in two:
+                Split validation in two:p
                 """
                 
                 y_data, dt, N = data.get_dataset(
                                                 start = stop,
-                                                stop = stop + pd.Timedelta(days=1),
+                                                stop = stop + pd.Timedelta(days=0.5),
                                                 sampling_rate=sampling_rate
                                                 )
                                 
@@ -738,7 +1737,14 @@ class ResultGenerator(object):
                 y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
                 """        
                 
-                x0 = self.filtered[self.x].iloc[-1]
+                # take filtered now: (check model pred)
+                x0 = self.one_step_res[self.x].iloc[-1]
+                P0x = np.array(self.one_step_res.iloc[-1][
+                    self.covar_solver.ekf.p_cols
+                    ].astype(float).values).reshape(
+                        (param_est.n_x, param_est.n_x)
+                    )
+                    
                 #x0 = sol[self.x].iloc[-1]
                 y_data.index.name = None
                 self.simple_sim_plot(
@@ -747,6 +1753,7 @@ class ResultGenerator(object):
                                     params,
                                     #plot=plot,
                                     plot=plot,
+                                    suff="+12hrs",
                                     map_eval=True,
                                     #symbolic_estimate=True
                                     #ax=axes[0, delta_day*2]
@@ -777,11 +1784,99 @@ class ResultGenerator(object):
                                         switch=None,
                                         symbolic_estimate=True,
                                         #ax=axes[1, delta_day*2]
+                                        R=R,
+                                        Q=Q,
+                                        P0=P0,
+                                        P0x=P0x,
+                                        suff="+12h"
                                         )   
                 # one-step:
                 result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
                 result["Ti_onestep"] = result["Ti_onestep"].ffill()
                 
+                #plt.show(block=True)
+                #plt.close()
+                train_metrics = self.report_metrics("training")
+                y_data, dt, N = data.get_dataset(
+                                                start = stop + pd.Timedelta(days=0.5),
+                                                stop = stop + pd.Timedelta(days=1), 
+                                                sampling_rate=sampling_rate
+                                                )  
+                                
+                """
+                if y_data.Ti.isna().any():
+                    # check what happens
+                    print(params)
+                    
+                y_data_raw = y_data.bfill()
+                y_data_raw.index.name = "time"
+                y_data = y_data_raw.groupby(pd.Grouper(freq=sampling_rate)).mean() #.dropna(axis=1)
+                y_data["vent"] = (y_data["V_sup_air"] > 10).astype(int) 
+                y_data.index.name = None
+                """        
+                
+                x0 = self.one_step_res[self.x].iloc[-1]
+                P0x = np.array(self.one_step_res.iloc[-1][
+                    self.covar_solver.ekf.p_cols
+                    ].astype(float).values).reshape(
+                        (param_est.n_x, param_est.n_x)
+                    )
+                #x0 = self.res[self.x].iloc[-1]
+                self.simple_sim_plot(
+                                    y_data,
+                                    x0,
+                                    params,
+                                    #plot=plot,
+                                    plot=plot,
+                                    suff="+12-24hrs",
+                                    map_eval=True,
+                                    #symbolic_estimate=True
+                                    #ax=axes[delta_day, 1]
+                                    #ax=axes[0, delta_day*2 + 1]
+                                    )
+                """
+                y_data_to_set = y_data[1:]
+                result.loc[y_data_to_set.index, y_data_to_set.columns] = y_data_to_set
+                new_index = y_data.index[1:]
+                new_first = y_data.index[0] + pd.Timedelta(seconds=1)
+                new_index = pd.DatetimeIndex.union(pd.DatetimeIndex([new_first]), new_index)
+                res_to_set = self.res["Ti"]
+                res_to_set.index = new_index
+                result.loc[new_index[0], y_data.columns] = result.loc[y_data.index[0], y_data.columns]
+                result.loc[new_index, "Ti_sim"] = self.res["Ti"].values
+                result = result.sort_index()
+                """
+                result, extra_ind = set_new_results(y_data, result, self.res)
+                extra_inds.append(extra_ind)
+                
+                test_metrics = self.report_metrics("validation (bic, aic not valid)")    
+                metrics.loc[delta_day+0.5, :] = test_metrics.loc[metrics.columns].values.flatten()       
+
+                self.simple_one_step_plot(
+                        y_data,
+                        x0, 
+                        p_base=params,
+                        #p_mod=p_mod,
+                        p_tvp=params.values,
+                        tvp=False,
+                        ekf_config=ekf_config,
+                        cond_series=y_data.vent,
+                        plot=plot,
+                        map_eval=True,
+                        switch=None,
+                        symbolic_estimate=True,
+                        R=R,
+                        Q=Q,
+                        P0=P0,
+                        P0x=P0x,
+                        suff="+12-24h"
+                        )  
+                # one-step:
+                result.loc[y_data.index, "Ti_onestep"] = self.filtered["y_pred"]
+                result["Ti_onestep"] = result["Ti_onestep"].ffill()
+                result["Pvent"] = params["alpha_vent_sup"]*result["ahu_reaFloSupAir"]*(result["T_sup_air"] - result["Ti"]) + params["alpha_vent_ext"]*result["ahu_reaFloExtAir"]*(result["Ti"] - result["T_ext_air"])
+                
+
                 param_guess = {
                     k: {
                         "init": params.loc[k],
@@ -803,9 +1898,9 @@ class ResultGenerator(object):
                0, \
                training_metrics, \
                metrics, \
-               params_hist
-                
-       
+               params_hist, \
+               theta_hist
+ 
     def mse(self, y, y_pred):
         """
         Report the mse.
@@ -868,6 +1963,8 @@ class ResultGenerator(object):
         try:
             y_one_step = self.one_step_res["Ti"]
             metrics.loc["one_step_mse", name] = self.mse(y, y_one_step)
+            metrics.loc["one_step_rmse", name] = self.rmse(y, y_one_step)
+            metrics.loc["one_step_nrmse", name] = self.nrmse(y, y_one_step)
         except: 
             pass
         metrics.loc["mse", name] = self.mse(y, y_pred)
@@ -948,9 +2045,10 @@ class ResultGenerator(object):
             _u = ca.MX.sym("u", self.dae.n_u)
             _p = ca.MX.sym("p", self.dae.n_p)
             _r = ca.MX.sym("r", self.dae.n_r)
+            #_d = ca.MX.sym("d", self.dae.n_d)
             # = ca.MX.sym("r", self.dae.n_r)
             z_expr = G(_z0, _x0, _u, _p, _r)
-            I_chained_expr = I(_x0, z_expr, _u, _p, _r)
+            I_chained_expr = I(_x0, z_expr, _u, _p, _r, 0)
             I = ca.Function("I_chained",
                                     [_x0, _z0, _u, _p, _r],
                                     [I_chained_expr, z_expr],
@@ -1017,11 +2115,14 @@ class ResultGenerator(object):
         """
         Simulate one-step ahead with Kalman feedback.
         """
-        ekf = KalmanDAE(ekf_config)
+        #ekf = KalmanDAE(ekf_config)
+        ekf = self.covar_solver.ekf
+        """
         if R is not None:
             ekf.set_R(R)
         if Q is not None:
             ekf.set_Q(Q)
+        """
         if P0x is None:
             P_prev = np.diag([1]*ekf.n_x)
         else:
@@ -1064,9 +2165,9 @@ class ResultGenerator(object):
         if cond_series is None:
             cond_series = pd.Series([0]*N)
             
-        result.loc[0, "y_meas"] = float(y_data[ekf.dae.y_names].iloc[0].values)
-        result.loc[0, "y_pred"] = float(np.array(x0)[0])
-        result.loc[0, ekf.dae.x] = x0
+        #result.loc[0, "y_meas"] = float(y_data[ekf.dae.y_names].iloc[0].values)
+        #result.loc[0, "y_pred"] = float(np.array(x0)[0])
+        #result.loc[0, ekf.dae.x] = x0
             
         if not map_eval:    
             if not symbolic_estimate:
@@ -1179,50 +2280,67 @@ class ResultGenerator(object):
             """
             Accumulate x_hat and P_prev:
             """
-            map_estimate = ekf.one_sample_feedback.mapaccum(
+            map_estimate = ekf.one_sample_feedback_adj.mapaccum(
                                                             "simulator",
-                                                            N-1,
-                                                            ["x0", "z0", "P_prev"],
-                                                            ["x_hat", "z", "P_hat"],
+                                                            N,
+                                                            ["x_0", "P_0"],
+                                                            ["x_10", "P_10"],
                                                             #[0,1,2],
                                                             #[0,1,2]
                                                             )
             res = map_estimate(
-                x0=x0,
-                z0=z_guess,
-                P_prev=np.diag([1]*ekf.n_x),
-                u=y_data[ekf.dae.u].values.T[:,:-1],
+                x_0=x0,
+                #z_0=z_guess,
+                #P_0=np.diag([1]*ekf.n_x),
+                P_0=P0x,
+                u=y_data[ekf.dae.u].values.T,
                 r=y_data[ekf.dae.r_names].values.T,
-                p=ca.repmat(p_base, 1, N-1),
+                p=ca.repmat(p_base, 1, N),
                 #y=y_data[ekf.dae.y_names].shift(-1).values.T[:,1:],
-                y=y_data[ekf.dae.y_names].values.T[:,1:],
-                Q=ca.repmat(ca.diag(ekf.Q), 1, N-1),
-                R=ca.repmat(ca.diag(ekf.R), 1, N-1),
-                dt=ca.repmat(ekf.dt, 1, N-1)
+                y=y_data[ekf.dae.y_names].values.T,
+                Q=ca.repmat(Q, 1, N), # Q, flat, must be passed
+                R=ca.repmat(R, 1, N), # R must be passed
             )
-            x_hat = res["x_hat"] #.reshape(((N-1), ekf.n_x))
+            x_hat = res["x_00"] #.reshape(((N-1), ekf.n_x))
+            x_pred = res["x_10"] #.reshape(((N-1), ekf.n_x))
+            P_hat = res["P_00"] #.reshape(((N-1), ekf.n_x))
+            P_pred = res["P_10"] #.reshape(((N-1), ekf.n_x))
             zs = np.array(res["z"]) #.reshape(((N-1), ekf.n_x))
-            x_pred = res["x_pred"].reshape(((N-1)*ekf.n_x, 1))
+            #x_pred = res["x_10"].reshape(((N)*ekf.n_x, 1))
             y_pred = res["h_x"]
+            # NOTE: x_hat, x_pred shifted
             xs = np.append(xs, np.array(x_pred))  
-            result.loc[1:, ekf.dae.x] = np.array(x_hat).T
-            result.loc[1:, "y_pred"] = np.array(y_pred).flatten()
-            result.loc[1:, "y_meas"] = y_data[ekf.dae.y_names].values[1:].flatten()
+            result.loc[:, ekf.dae.x] = np.array(x_hat).T
+            result.loc[:, "y_pred"] = np.array(y_pred).flatten()
+            result.loc[:, "y_meas"] = y_data[ekf.dae.y_names].values.flatten()
+            result.loc[:, ekf.p_cols] = np.array(P_hat).T.reshape((N,ekf.dae.n_x**2))
             #result.loc[1:, "res"] = result.loc[:, "y_meas"] - result.loc[:, "y_pred"]
             #xs = xs.reshape(ekf.n_x, N)
         
         # cannot filter last (no measurement)
         #xs = np.append(xs, np.array([np.nan, np.nan]))
         result.index = y_data.dt_index
+        """
         one_step, y_data = self._post_process_sim(
                                       #xs[:-self.dae.n_x],
                                       xs,
                                       zs,
-                                      y_data
+                                      y_data[:-1]
                                       )
-        self.one_step_res = one_step
+        """
+        result.index = y_data.index
+        result["res"] = result["y_meas"] - result["y_pred"]  
+        self.one_step_res = pd.DataFrame(result["res"])
+        self.one_step_res.columns = self.covar_solver.ekf.y
+        ####################### save model preds: #######################################
+        self.one_step_res.loc[:, ekf.p_cols] = np.array(P_pred).T.reshape((N, ekf.n_x**2))
+        self.one_step_res.loc[:, ekf.dae.x] = np.array(x_pred).T
+        #################################################################################
+        # save output prediction covariance:
+        self.one_step_res.loc[:, "V_k"] = np.array(res["V_k"]).T
+        ####################################
         self.filtered = result
-        return one_step, y_data, result
+        return self.one_step_res, y_data, result
        
     def _post_process_sim(
                           self,
@@ -1291,7 +2409,7 @@ class ResultGenerator(object):
                                             param_guess=p
                                              )
         """
-        res, y_data = self.simulate_full(
+        self.res, y_data = self.simulate_full(
                                          x0,
                                          y_data,
                                          p,
@@ -1307,19 +2425,24 @@ class ResultGenerator(object):
                     fig, ax = plt.subplots(1,1)
                     #res.Ti.plot(color="r", drawstyle="steps-post")
                 #else:
-                res.Ti.plot(color="r", drawstyle="steps-post", ax=ax)    
+                self.res.Ti.plot(color="r", linewidth=0.5, drawstyle="steps-post", ax=ax)    
                     
                 y_data.Ti.plot(color="k", linestyle="dashed", drawstyle="steps-post", linewidth=0.75, ax=ax)
+                y_data.Tset.plot(color="y", linestyle="dashed", drawstyle="steps-post", linewidth=0.75, ax=ax)
                 #y_data.Ta.plot(color="b", linestyle="dashed", linewidth=0.75, ax=ax, drawstyle="steps-post")
                 ax1 = ax.twinx()
                 #y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75, drawstyle="steps-post")
                 (y_data.phi_h/1000).plot(ax=ax1, color="g", linewidth=0.75, drawstyle="steps-post")
+                (y_data.phi_s/1000).plot(ax=ax1, color="y", linewidth=0.75, drawstyle="steps-post")
+                (y_data.phi_int_plugs/1000).plot(ax=ax1, color="m", linewidth=0.75, drawstyle="steps-post")
+                (y_data.phi_int_lig/1000).plot(ax=ax1, color="b", linewidth=0.75, drawstyle="steps-post")
+                y_data.vent.plot(ax=ax1, color="g", linewidth=0.75, drawstyle="steps-post")
                 ax1.set_ylim([0,2.5])
+                ax.set_ylim([18,25])
                 if ax is None:
                     ax.legend(["model", "measured"])
-                else:
-                    #ax.legend(["$\\hat{x}_{N} \\vert M", "y_{N}"])
-                    ax.set_ylim([18,25])
+                #else:
+                #    #ax.legend(["$\\hat{x}_{N} \\vert M", "y_{N}"])
                 fig.savefig("plots/" + str(y_data.index[-2]).split(" ")[0] + suff + ".pdf") 
             else:
                 y_map = self.param_est.dae.y
@@ -1328,7 +2451,7 @@ class ResultGenerator(object):
                     name = var.name()
                     ax = axes[i]
                     y_data[y].plot(color="k", linewidth=0.75, ax=ax)
-                    res[name].plot(color="r", linestyle="dashed", linewidth=0.75, ax=ax)
+                    self.res[name].plot(color="r", linestyle="dashed", linewidth=0.75, ax=ax)
                     ax.legend([y, name])
                 
             plt.close()
@@ -1351,7 +2474,8 @@ class ResultGenerator(object):
                             Q=None,
                             P0=None,
                             P0x=None,
-                            ax=None
+                            ax=None,
+                            suff=""
                             ):
         """
         Create a plot of one-step predictions,
@@ -1376,20 +2500,40 @@ class ResultGenerator(object):
                                                     # pass switch as anonymous func
                                                     )
         # need to cut out estimate of first state:
+        
+        SMALL_SIZE = 10
+        MEDIUM_SIZE = 10
+        BIGGER_SIZE = 10
+        self.MARKERSIZE = 2
+        self.LINEWIDTH=0.75
+
+        plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+        plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+        plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+        plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+        plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+        plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+        
         if plot:
             #res = res[1:]
             #y_data = y_data[1:]
             filtered.index = y_data.index
             # now, can plot:
-            if ax is None:
-                ax = res.Ti.plot(color="r", drawstyle="steps-post")
-            else:
-                res.Ti.plot(ax=ax, color="r", drawstyle="steps-post")
-            y_data.Ti.plot(
+            fig, ax = plt.subplots(1,1,sharex=True)
+            #if ax is None:
+            self.filtered.y_pred.plot(
+                                    color="r",
+                                    drawstyle="steps-post",
+                                    linewidth=0.5
+                                    )
+            #else:
+            #    res.Ti.plot(ax=ax, color="r", drawstyle="steps-post")
+            self.filtered.y_meas.plot(
                            color="k",
                            linestyle="dashed", 
                            drawstyle="steps-post",
-                           linewidth=0.75, 
+                           linewidth=0.5, 
                            ax=ax
                            )
             #filtered.Ti.plot(color="g", linestyle="dashed", linewidth=0.75, ax=ax)
@@ -1399,17 +2543,21 @@ class ResultGenerator(object):
             #y_data.vent_on.plot(ax=ax1, color="y", linewidth=0.75)
             #(y_data.phi_h/y_data.phi_h.max()).plot(ax=ax1, color="g", linewidth=0.75)
             (y_data.phi_h/1000).plot(ax=ax1, color="g", linewidth=0.75, drawstyle="steps-post")
+            y_data.vent.plot(ax=ax1, color="m", linewidth=0.75, drawstyle="steps-post")
             ax1.set_ylim([0,2.5])
             ax.set_ylim([18,25])
+            fig.savefig("plots/" + "one_step_" + str(y_data.index[0]).split(" ")[0] + suff + ".pdf")
             #ax.legend(["model", "measured", "filtered"])
             #plt.show()
+            
+            plt.close()
         
     def make_journal_plot(
                           self,
                           y_data,
                           x0,
                           name,
-                          res=None,
+                          res=None
                          ):
         
         # set various font sizes:
@@ -1438,7 +2586,8 @@ class ResultGenerator(object):
     def make_journal_plot_alt(
                           self,
                           name,
-                          training=True
+                          training=True,
+                          day=0
                          ):
         
         SMALL_SIZE = 14
@@ -1457,12 +2606,14 @@ class ResultGenerator(object):
         
         self.save_journal_plot_alt_alt(
                                 "plots/" + name + ".pdf",
-                                   training=training
+                                   training=training,
+                                   day=day
                                    )
     def make_data_plot_alt(
                           self,
                           name,
-                          training=True
+                          training=True,
+                          day=0
                          ):
         
         SMALL_SIZE = 14
@@ -1481,7 +2632,8 @@ class ResultGenerator(object):
         
         self.save_data_plot_alt(
                                 "plots/data_" + name + ".pdf",
-                                   training=training
+                                   training=training,
+                                   day=day
                                    )
           
     def plot_residual_dist(
@@ -1570,6 +2722,7 @@ class ResultGenerator(object):
         ax.set_ylabel("Temperature $[^\circ C]$")
         #ax.legend(["$T_i$", "$T_{i}^{meas}$", "$T_{sup}^{v}$", "$T_{ext}^{v}$"], loc="upper left", ncol=4)
         ylim = ax.get_ylim()
+        #ax.set_ylim([ylim[0], ylim[1]*1.05])
         ax.set_ylim([ylim[0], ylim[1]*1.05])
         ax.legend(
                   [
@@ -1713,7 +2866,7 @@ class ResultGenerator(object):
         plt.savefig(name.replace(".pdf", ".png"))
         plt.close()
         
-    def save_journal_plot_alt_alt(self, name, training=True):
+    def save_journal_plot_alt_alt(self, name, training=True, day=0):
         """
         Make a nicely formatted plot of
         simulation result, boundary conditions.
@@ -1722,7 +2875,7 @@ class ResultGenerator(object):
         
         """
         if training:
-            data = self.train_res
+            data = self.train_res[day]
             markevery = 1E6
         else:
             data = self.val_res
@@ -1766,7 +2919,7 @@ class ResultGenerator(object):
         ax.set_ylabel("Temperature $[^\circ C]$")
         #ax.legend(["$T_i$", "$T_{i}^{meas}$", "$T_{sup}^{v}$", "$T_{ext}^{v}$"], loc="upper left", ncol=4)
         ylim = ax.get_ylim()
-        #ax.set_ylim([ylim[0], ylim[1]*1.05])
+        ax.set_ylim([ylim[0], ylim[1]*1.05])
         ax.legend(
                   [
                    "$\\hat{x}_{k|k-1}$", 
@@ -1855,7 +3008,8 @@ class ResultGenerator(object):
         #ax.set_ylabel("Airflow [$\\frac{kg}{s}$]")
         ax.set_xlabel("")
         ylim = ax.get_ylim()
-        ax.set_ylim([ylim[0], ylim[1]*1.2])
+        #ax.set_ylim([ylim[0], ylim[1]*1.2])
+        #ax.set_ylim([18,25])
         
         
         ax1 = ax.twinx()
@@ -1875,6 +3029,33 @@ class ResultGenerator(object):
         ax.set_xlabel("")
         ylim = ax.get_ylim()
 
+        """
+        ax = axes[2]
+        ax.plot(index.to_numpy(),
+        (data["ahu_reaFloSupAir"]).to_numpy(),
+                            #color="k",
+                            linestyle="dashed",
+                            #ax=ax,
+                            c=color_map_custom["vent_in"],
+                            linewidth=0.75
+                            )
+        ax.plot(index.to_numpy(),
+                (data["ahu_reaFloExtAir"]).to_numpy(),
+                                 #color="g",
+                                 linestyle="dashed",
+                                 c=color_map_custom["vent_out"],
+                                 #ax=ax,
+                                 linewidth=0.75
+                                 )
+        #(data["T_321"]).plot(color="b", ax=ax, linewidth=0.75)
+        #(data["T_320"]).plot(color="y", ax=ax, linewidth=0.75)
+        #ax.legend(["$T_{sup}^{v}$", "$T_{321}$", "$T_{320}$"], loc="upper right", ncol=3)
+        ax.legend(["$V_{sup}^{v}$", "$V_{ext}^{v}$"], loc="upper right", ncol=1)
+        ax.set_ylabel("Airflow [$\\frac{kg}{s}$]")
+        ax.set_xlabel("")
+        ylim = ax.get_ylim()
+        ax.set_ylim([ylim[0], ylim[1]*1.2])
+        """
         # set formatter
         #plt.show()
         #ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
@@ -1889,7 +3070,7 @@ class ResultGenerator(object):
         plt.savefig(name.replace(".pdf", ".png"))
         plt.close()
         
-    def save_data_plot_alt(self, name, training=True):
+    def save_data_plot_alt(self, name, training=True,day=0):
         """
         Make a nicely formatted plot of
         simulation result, boundary conditions.
@@ -1898,7 +3079,7 @@ class ResultGenerator(object):
         
         """
         if training:
-            data = self.train_res
+            data = self.train_res[day]
             markevery = 1E6
         else:
             data = self.val_res
@@ -2121,14 +3302,15 @@ def save_journal_plot(data, name):
     ax = axes[0]
     #(data["Ti"]- 273.15).plot(color="r", linestyle="dashed", ax=ax, linewidth=0.75)
     #(data["y1"] - 273.15).plot(color="k", ax=ax, linewidth=0.75)
-    (data["Ti"]).plot(color="r", linestyle="dashed", ax=ax, linewidth=0.75)
-    (data["y1"]).plot(color="k", ax=ax, linewidth=0.75)
+    (data["Ti"]).plot(color="r", linestyle="dashed", drawstyle="steps-post", ax=ax, linewidth=0.75)
+    (data["y1"]).plot(color="k", ax=ax, linewidth=0.75,  drawstyle="steps-post")
     (data["T_sup_air"]).plot(color="k", linestyle="dashed", ax=ax, linewidth=0.75)
     (data["T_ext_air"]).plot(color="g", linestyle="dashed", ax=ax, linewidth=0.75)
     ax.set_ylabel("Temperature $[^\circ C]$")
     ax.legend(["$T_i$", "$T_{i}^{meas}$", "$T_{sup}^{v}$", "$T_{ext}^{v}$"], loc="upper left", ncol=4)
     ylim = ax.get_ylim()
-    ax.set_ylim([ylim[0], ylim[1]*1.3])
+    #ax.set_ylim([ylim[0], ylim[1]*1.3])
+    ax.set_ylim([18,25])
     ax1 = ax.twinx()
     ax = ax1
     #data["weeknd"].plot(color="m", ax=ax, drawstyle="steps-post", linewidth=0.75)
@@ -2137,6 +3319,7 @@ def save_journal_plot(data, name):
     ax.set_yticks([0,1])
     ylim = ax.get_ylim()
     ax.set_ylim([ylim[0], ylim[1]*1.35])
+    #ax.set_ylim([18,25])
     
     ax = axes[1]
     
@@ -2257,7 +3440,7 @@ def plot_residuals(one_step_df, sim_df, name):
     #df1 = one_step_df[["res"]].copy()
     df1 = one_step_df[["Ti_res"]].copy()
     df1.columns = ["gap"]
-    df2 = sim_df[["v1"]][1:].copy()
+    df2 = sim_df[["v1"]].copy()
     df2.index = df1.index
     df2.columns = ["gap"]
 

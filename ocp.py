@@ -166,6 +166,7 @@ class OCP(metaclass=ABCMeta):
         #    self.gauss_newton = True
         #data = kwargs.pop("data")
         self.slack = slack = kwargs.pop("slack", False)
+        truncate_scaling = kwargs.pop("truncate_scaling", False)
         self.N = N = kwargs.pop("N", None)
         self.dt = dt = kwargs.pop("dt", None)
         # new:
@@ -243,6 +244,8 @@ class OCP(metaclass=ABCMeta):
         self.r_nom_b = kwargs.pop("r_nom_b", 0)
         self.u_nom = kwargs.pop("u_nom", 1)
         self.u_nom_b = kwargs.pop("u_nom_b", 0)
+        self.d_nom = kwargs.pop("d_nom", 1)
+        self.d_nom_b = kwargs.pop("d_nom_b", 0)
         self.sl_nom = kwargs.pop("sl_nom", 1)
         self.v_nom = kwargs.pop("v_nom", 1)
         self.v_nom_b = kwargs.pop("v_nom_b", 0)
@@ -257,7 +260,10 @@ class OCP(metaclass=ABCMeta):
             self.p_nom = self.scale = [1]
         """ 
         if p0 is not None and self.p_nom is None:
-            self.p_nom = self.scale = self.get_scale(p0)
+            self.p_nom = self.scale = self.get_scale(
+                                                     p0, 
+                                                     truncate=truncate_scaling
+                                                     )
         elif param_guess is None:
             #self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
             self.p_nom = self.scale = [1]
@@ -277,6 +283,8 @@ class OCP(metaclass=ABCMeta):
         self.scale_dict["u_nom_b"] = self.u_nom_b
         self.scale_dict["v_nom"] = self.v_nom
         self.scale_dict["v_nom_b"] = self.v_nom_b
+        self.scale_dict["d_nom"] = self.d_nom
+        self.scale_dict["d_nom_b"] = self.d_nom_b
         self.scale_dict["p_nom"] = list(self.p_nom)
         self.scale_dict["p_nom_b"] = self.p_nom_b
         
@@ -303,65 +311,9 @@ class OCP(metaclass=ABCMeta):
         # ocp constraints (e.g. to enforce physical solutions)
         
         ################ TO OWN METHOD #######################
-        _ocp = config.pop("ocp", None)
-        # only deal in inequality constraints for now:
-        self.h_exprs = dict()
-        if _ocp is not None:
-            h = _ocp.pop("h")
-            """
-            self.h_exprs = {
-                            "lhs": [],
-                            "body": [],
-                            "symbols": [],
-                            "rhs": []
-                            }
-            """
-            for i, expr in enumerate(h):
-                self.h_exprs[i] = {}
-                # find sign. only handle one:
-                if "==" in expr:
-                    sign = "=="
-                elif ">=" in expr:
-                    sign = ">="
-                elif "<=" in expr:
-                    sign = "<="
-                else:
-                    raise ValueError("Ill-defined constraint h(x). Missing sign.")
-                
-                #elems = expr.split("<=")
-                #if len(elems) < 2: # we picked up the the wrong sign 
-                #    elems = expr.split(">=")
-                #    elems = elems.reverse()
-                #elif elems is None: # == sign
-                #    elems = expr.split("==")
-                #elems = elems.reverse()
-                    
-                elems = expr.split(sign)
-                
-                #elif len(elems) == 2: # 'standard' case
-                """     
-                else:
-                    raise ValueError("Improve handling " + \
-                                    "of inequality constraints")
-                """                
-                elems = list(map(lambda x: x.strip(), elems))
-                matchers = self.dae.all_names
-                symbols = set([s for s in matchers if s in elems[1]])
-                #symbols = re.findall("|".join(self.dae.all_names), elems[1])
-                
-                self.h_exprs[i]["lhs"] = float(elems[0]) # needs to be a number ??
-                self.h_exprs[i]["body"] = elems[1]
-                self.h_exprs[i]["symbols"] = symbols
-                if sign != "==":
-                    if len(elems) == 3:
-                        self.h_exprs[i]["rhs"] = float(elems[2])
-                    elif len(elems) == 2:
-                        self.h_exprs[i]["rhs"] = np.inf
-                    else:
-                        raise ValueError("OCP constraint error.")
-                else:
-                    assert len(elems) == 2
-                    self.h_exprs[i]["rhs"] = self.h_exprs[i]["lhs"]
+        
+        self._ocp = config.pop("ocp", None)
+
                     
             #########################################################    
 
@@ -431,6 +383,8 @@ class OCP(metaclass=ABCMeta):
                                                 "r_nom_b": self.r_nom_b,
                                                 "u_nom": self.u_nom,
                                                 "u_nom_b": self.u_nom_b,
+                                                "d_nom": self.d_nom,
+                                                "d_nom_b": self.d_nom_b,
                                                 #"s_nom": self.s_nom,
                                                 "v_nom": self.v_nom, 
                                                 "v_nom_b": self.v_nom_b, 
@@ -503,6 +457,67 @@ class OCP(metaclass=ABCMeta):
             pass
         # get duals:
         #self.opt["calc_multipliers"] = True
+    
+    def prepare_h(self):
+                # only deal in inequality constraints for now:
+        self.h_exprs = dict()
+        if self._ocp is not None:
+            h = self._ocp.pop("h")
+            """
+            self.h_exprs = {
+                            "lhs": [],
+                            "body": [],
+                            "symbols": [],
+                            "rhs": []
+                            }
+            """
+            for i, expr in enumerate(h):
+                self.h_exprs[i] = {}
+                # find sign. only handle one:
+                if "==" in expr:
+                    sign = "=="
+                elif ">=" in expr:
+                    sign = ">="
+                elif "<=" in expr:
+                    sign = "<="
+                else:
+                    raise ValueError("Ill-defined constraint h(x). Missing sign.")
+                
+                #elems = expr.split("<=")
+                #if len(elems) < 2: # we picked up the the wrong sign 
+                #    elems = expr.split(">=")
+                #    elems = elems.reverse()
+                #elif elems is None: # == sign
+                #    elems = expr.split("==")
+                #elems = elems.reverse()
+                    
+                elems = expr.split(sign)
+                
+                #elif len(elems) == 2: # 'standard' case
+                """     
+                else:
+                    raise ValueError("Improve handling " + \
+                                    "of inequality constraints")
+                """                
+                elems = list(map(lambda x: x.strip(), elems))
+                matchers = self.dae.all_names + self.slack_names
+                symbols = set([s for s in matchers if s in elems[1]])
+                #symbols = re.findall("|".join(self.dae.all_names), elems[1])
+                
+                self.h_exprs[i]["lhs"] = float(elems[0]) # needs to be a number ??
+                self.h_exprs[i]["body"] = elems[1]
+                self.h_exprs[i]["symbols"] = symbols
+                if sign != "==":
+                    if len(elems) == 3:
+                        self.h_exprs[i]["rhs"] = float(elems[2])
+                    elif len(elems) == 2:
+                        self.h_exprs[i]["rhs"] = np.inf
+                    else:
+                        raise ValueError("OCP constraint error.")
+                else:
+                    assert len(elems) == 2
+                    self.h_exprs[i]["rhs"] = self.h_exprs[i]["lhs"]
+    
     
     def generate_x_guess(self):
         """
@@ -646,13 +661,14 @@ class OCP(metaclass=ABCMeta):
         y = bounds.pop("y")
         r = bounds.pop("r")
         w = bounds.pop("w")
+        d = bounds.pop("d")
         
         # use this and fill rest with -inf and inf
         lbx = np.array([])
         ubx = np.array([])
         x0 = np.array([])
         
-        for bound_dict, (k, v) in zip((x, z, u, p, v, y, r, w), self.nlp_parser.vars.items()):
+        for bound_dict, (k, v) in zip((x, z, u, p, v, y, r, w, d), self.nlp_parser.vars.items()):
         #for arr, (k, v) in zip((x, z, p, w, v), self.nlp_parser.vars.items()):
             # TODO: check also lb
             #if bound_dict["ub"] is None:
@@ -724,6 +740,7 @@ class OCP(metaclass=ABCMeta):
         """
         Inequality constraints independent of external data.
         """
+        self.prepare_h()
         expr_dict = {}
         for i, elem in self.h_exprs.items():
             expr_string = elem["body"]
@@ -785,42 +802,56 @@ class OCP(metaclass=ABCMeta):
         raise NotImplementedError("ERROR.")
         
     @classmethod
-    def get_scale(self, param_guess):
+    def get_scale(self, param_guess, truncate=False):
         """
         For numerical conditioning.
         """
-        dec_scale = np.array(
-                        list(
-                            map(
-                                lambda x: 10**x,
-                                        #np.floor(
-                                        np.round(
-                                                np.log10(
-                                                        #param_guess
-                                                        np.abs(param_guess)
-                                                        )
-                                                )
+        
+        def _truncate(number) -> float:
+            return float(f"{number:.2g}")
+        
+        if truncate:
+            scale = np.array(
+                list(
+                        map(lambda x: _truncate(x),
+                        param_guess)
+                    )
+                )
+            return scale
+        else:
+            dec_scale = np.array(
+                            list(
+                                map(
+                                    lambda x: 10**x,
+                                            np.floor(
+                                                np.round(
+                                                    np.log10(
+                                                            #param_guess
+                                                            np.abs(param_guess)
+                                                            )
+                                                    )
+                                        )
                                     )
                                 )
-                        ).flatten()
+                            ).flatten()
+            
+            """
+            -inf appears if parameter guess is
+            zero. Replace it with 1.
+            """
+            dec_scale[dec_scale == -np.inf] = 1
+            
+            prefix = param_guess/dec_scale
+            ceiled = np.ceil(prefix)
+            
+            """
+            Replace nan with 0.
+            """
+            #ceiled = np.nan_to_num(ceiled)
+            #return np.multiply(ceiled, dec_scale)
+            #return np.array(np.multiply(ceiled, dec_scale)).flatten()
+            return dec_scale
         
-        """
-        -inf appears if parameter guess is
-        zero. Replace it with 0.
-        """
-        dec_scale[dec_scale == -np.inf] = 0
-        
-        prefix = param_guess/dec_scale
-        ceiled = np.ceil(prefix)
-        
-        """
-        Replace nan with 0.
-        """
-        #ceiled = np.nan_to_num(ceiled)
-        #return np.multiply(ceiled, dec_scale)
-        #return np.array(np.multiply(ceiled, dec_scale)).flatten()
-        return dec_scale
-    
     def __del__(self):
         pass
         """
@@ -972,15 +1003,17 @@ class OCP(metaclass=ABCMeta):
     
     def get_ocp_name_and_offset(self, name):
         # TODO: include all:
-        for varname in ("x", "u", "z", "p", "s", "v", "w", "r"):
+        for varname in ("x", "u", "z", "p", "s", "v", "w", "r", "d", "sl"):
             if varname in ("x", "u", "z", "p", "w"):
                 varlist = getattr(self.dae.dae, varname)()
-            elif varname in ("s", "v", "r"): # TODO: add v, r
+            elif varname in ("s", "v", "r", "d"): # TODO: add v, r
                 #varlist = getattr(self.dae, name[0] + "_names")
                 varlist = getattr(self.dae, varname + "_names")
                 #varname = name[0]
                 if varname == "r":
                     print(name)
+            elif varname == "sl":
+                varlist = getattr(self, "slack_names")
             offset = 0
             for _name in varlist:
                 if _name == name:
@@ -992,8 +1025,12 @@ class OCP(metaclass=ABCMeta):
         
     def get(self, name):
         ocp_name, offset = self.get_ocp_name_and_offset(name)
-        n_ocp_var = getattr(self.dae, "n_" + ocp_name)
-        nlp_var = self.get_nlp_var(ocp_name)
+        if ocp_name == "sl":
+            n_ocp_var = self.n_x
+            nlp_var = self.sigma
+        else:
+            n_ocp_var = getattr(self.dae, "n_" + ocp_name)
+            nlp_var = self.get_nlp_var(ocp_name)
         
         if n_ocp_var == 1:
             #ret_val = nlp_var.T
@@ -1118,6 +1155,10 @@ class OCP(metaclass=ABCMeta):
         return self.dae.n_w
     
     @property
+    def n_d(self):
+        return self.dae.n_d
+    
+    @property
     def n_v(self):
         return self.dae.n_v
 
@@ -1159,6 +1200,11 @@ class OCP(metaclass=ABCMeta):
     def x_names(self):
         #return list(map(lambda x: x.name(), self.dae.dae.x))
         return self.dae.x
+    
+    @property
+    def d_names(self):
+        #return list(map(lambda x: x.name(), self.dae.dae.x))
+        return self.dae.d_names
      
     @property
     def z_names(self):
@@ -1353,8 +1399,8 @@ class OCP(metaclass=ABCMeta):
                 scale = self.x_nom = np.tile(self.x_nom, self.N)
                 """
                 # 'arrayify':
-                bias = np.repeat(self.x_nom_b, self.N).reshape(self.n_x, self.N)
-                scale = np.repeat(self.x_nom, self.N).reshape(self.n_x, self.N)
+                bias = np.repeat(self.x_nom_b, self.N) #.reshape(self.n_x, self.N)
+                scale = np.repeat(self.x_nom, self.N) #.reshape(self.n_x, self.N)
                 
             else:
                 bias = self.x_nom_b
@@ -1732,6 +1778,8 @@ class OCP(metaclass=ABCMeta):
                         _vals = np.array(sol_x[start:stop]*scale).reshape(((self.N-1)*(d+1) + 1, self.n_x)) + self.x_nom_b
                         _vals = _vals[start:stop:(d+1)]
                 else:
+                    if name == "d":
+                        print(name)
                     n_name = getattr(self, "n_" + name)
                     _vals = sol_x[start:stop]
                     if n_name == 0:

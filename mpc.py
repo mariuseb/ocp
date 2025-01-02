@@ -93,6 +93,7 @@ class MPC(OCP):
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
+        self.prepare_h()
         self.add_h() 
         self.add_path_constraints_symbolically()
         # TOOD: add settings:

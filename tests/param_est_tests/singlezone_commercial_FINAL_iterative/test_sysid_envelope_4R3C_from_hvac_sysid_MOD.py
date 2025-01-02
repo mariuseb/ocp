@@ -62,7 +62,7 @@ if __name__ == "__main__":
     
     if GENERATE_DATA:
         
-        sampling_time = "1min"
+        sampling_time = "15min"
         prbs = pd.read_csv(os.path.join(get_data_path(), "inputPRBS1.csv"), sep=";")
         prbs.index = pd.TimedeltaIndex(prbs.t, unit="H").round(freq="S")
         dt_index = prbs.index

@@ -73,10 +73,8 @@ if __name__ == "__main__":
     data.P_rad_219.plot(ax=ax, drawstyle="steps-post")
     
     plt.show()
-    
-    
+      
     data = prepare_data(data)
-
 
     val_219 = data["val_pos_219"].sort_values(ascending=True)
     flow_219 = data["V_flow_219"][val_219.index]
@@ -315,8 +313,8 @@ if __name__ == "__main__":
                                       lbp=lbp,
                                       ubp=ubp,
                                       x_guess=x_guess,
-                                      #lbx=lbx,
-                                      #ubx=ubx,
+                                      lbx=lbx,
+                                      ubx=ubx,
                                       covar=ca.veccat(Q,R),
                                       codegen=True
                                       )

@@ -32,6 +32,7 @@ class DAE(object):
         self.add_refs()
         self.add_meas()
         self.add_process_noise()
+        self.add_disturbances()
         #self.add_meas_noise()
         self.add_w()
         #self.add_meas()
@@ -51,7 +52,7 @@ class DAE(object):
         return method(*mxs)
     
     def var(self, var: str):
-        if var in ("r", "w", "v", "theta"): 
+        if var in ("r", "w", "v", "d", "theta"): 
             if var == "theta":
                 stoch = True
             else:
@@ -127,6 +128,22 @@ class DAE(object):
             self.__setattr__("r_names", self.config["r"])
         except KeyError:
             self.__setattr__("r_names", [])
+    
+    def add_disturbances(self):
+        """
+        Add:
+            - external disturbances
+        """
+        try:
+            for name in self.config["d"]:
+                # can't add to dae:
+                # state = self.dae.add_x(name)
+                noise = ca.MX.sym(name)
+                self.__setattr__(name, noise)
+
+            self.__setattr__("d_names", self.config["d"])
+        except KeyError:
+            self.__setattr__("d_names", [])
 
 
     def add_controls(self):
@@ -282,6 +299,10 @@ class DAE(object):
     @property
     def n_r(self):
         return len(self.r_names)
+    
+    @property
+    def n_d(self):
+        return len(self.d_names)
 
     @property
     def n_u(self):
@@ -297,13 +318,13 @@ class DAE(object):
     
     @property
     def order(self):
-        return ("x", "z", "u", "p", "v", "y", "r", "w")
+        return ("x", "z", "u", "p", "v", "y", "r", "w", "d")
     
     @property
     def all_names(self):
         """
         Order:
-            x, z, u, p, s, v, y, r
+            x, z, u, p, s, v, y, r, d
         """
         return self.x + \
                self.z + \
@@ -313,7 +334,8 @@ class DAE(object):
                self.v_names + \
                self.w_names + \
                list(self.y.keys()) + \
-               self.r_names
+               self.r_names + \
+               self.d_names
 
     @property
     def g(self):

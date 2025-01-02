@@ -26,6 +26,7 @@ from ocp.filters import KalmanBucy, KalmanDAE
 from ocp.utils import prepare_data, ZEBData, quick_plot
 from result_generator import ResultGenerator
 from ocp.covar_solver_cont import CovarianceSolverContinuous
+from ocp.c_code_generator import CcodeGenerator
 # text:
 #rc('mathtext', default='regular')
 rc('text', usetex=True)
@@ -64,7 +65,7 @@ if __name__ == "__main__":
         param_guess[k] = {"init": v}
     
     start = pd.Timestamp("2023-11-15 00:00")
-    stop = start + pd.Timedelta(days=1) 
+    stop = start + pd.Timedelta(days=14) 
     y_data, dt, N  = Data.get_dataset(
                               start=start,
                               stop=stop,
@@ -84,8 +85,10 @@ if __name__ == "__main__":
     # set stepQi:
     y_data["stepQi"] = y_data_R["stepQi"]
     
-    P0 = np.diag(one_step_pred_sd.iloc[0].values**2) + 1e-6
-    #P0 = np.eye(2)*1e-3 + 1e-2
+    #P0 = np.diag(one_step_pred_sd.iloc[0].values**2) + 1e-6
+    P0 = np.ones((2,2))*1e-3
+    #P0 = np.eye(2)*1e-3
+    #P0 = np.array([[1e-5,1e-6],[1e-6,1e-2]])
     
     one_step_pred_sd = one_step_pred_sd.shift(-1)
     one_step_pred_sd.index = range(len(one_step_pred_sd))
@@ -172,16 +175,30 @@ if __name__ == "__main__":
     
     kwargs = {
         "x_nom": 12,
-        "x_nom_b": 289.15,
+        "x_nom_b": 0,
         "z_nom": [1e-2,1e-1,1E6,1E6],
         "z_nom_b": [0]*4,
         #"p_nom": OCP.get_scale(_params),
         "p_nom": [1e-2]*4 + [1e6]*4 + [1,1,1e-3,1,1],
         "u_nom": [12]*7 + [1E3,1E3,1E3,1E3,10,10,1,1,1],
-        "u_nom_b ": [289.15]*7 + [0]*9,
+        "u_nom_b": [0]*7 + [0]*9,
         "y_nom": [12],
-        "y_nom_b": [289.15],
-        "P_nom": [[1e-6,1e-6],[1e-6,1e-2]]
+        "y_nom_b": [0],
+        "P_nom": [[1e-3,1e-3],[1e-3,1e-3]]
+    }
+    
+    kwargs = {
+        "x_nom": 1,
+        "x_nom_b": 0,
+        "z_nom": 1,
+        "z_nom_b": 0,
+        #"p_nom": OCP.get_scale(_params),
+        "p_nom": [1e-2]*4 + [1e6]*4 + [1,1,1e-3,1,1],
+        "u_nom": 1,
+        "u_nom_b": 0,
+        "y_nom": 1,
+        "y_nom_b": 0,
+        "P_nom": [[1e-3,1e-3],[1e-3,1e-3]]
     }
     
     covar_solver = CovarianceSolverContinuous(
@@ -195,7 +212,8 @@ if __name__ == "__main__":
     # set z vals:
     sol = sol[:len(y_data)]
     sol.index = y_data.index
-    y_data[covar_solver.param_est.z_names] = sol[covar_solver.param_est.z_names]
+    y_data[covar_solver.ekf.dae.z] = \
+        sol[covar_solver.ekf.dae.z]
     
     #one_step_pred_sd = pd.read_csv("tvp_one_step_pred_sd.csv", index_col=0)
     # needed for P0 guess:
@@ -218,10 +236,24 @@ if __name__ == "__main__":
                   ca.DM.eye(ekf.dae.n_x),
                   ca.DM.eye(ekf.dae.n_x)
                   )
-        ).flatten()*-1
-    R_guess = np.array(ca.DM.eye(ekf.dae.n_y)).flatten()*-1
+        ).flatten()*-5
+    R_guess = np.array(ca.DM.eye(ekf.dae.n_y)).flatten()*-5
     
-    _params = params.loc[covar_solver.param_est.dae.p].values
+    _params = params.loc[covar_solver.ekf.dae.p].values
+    
+    """
+    Rudimentary C-code generation:
+    c_code_gen = CcodeGenerator(
+        covar_solver.ll_solver, \
+        {
+         "N": covar_solver.M,
+         "dt": covar_solver.ekf.dt
+        }
+        )
+    c_solver = c_code_gen.prepare_solver(codegen=True)
+    covar_solver.ll_solver = c_solver
+    """
+    
     sol, Q_df, R = covar_solver.solve(
                                     y_data, 
                                     _params,

@@ -1,0 +1,74 @@
+{
+    "model": {
+        "ode": {
+            "E": "Tdev/ki",
+            "aw": "(k_aw/ki)*(u_sat - u_val)"
+
+        },
+        "alg": {
+            "u_val_cmd": "u_val - (kp*Tdev + u_int)",
+            "u_val": "u_val - (1/(1 - ca.exp(-u_val_cmd)))",
+            "u_int": "u_int - (E + aw)",
+            "u_sat": "u_sat - (1/(1 - ca.exp(-a*Tdev + b)))"
+        },
+        "w": {
+            "v2": "y2 - u_val"
+        },
+        "p": [
+            "kp",
+            "ki",
+            "k_aw",
+            "a",
+            "b"
+        ],
+        "u": [
+            "Tset",
+            "Ti",
+            "Tdev"
+        ],
+        "x": [
+            "E",
+            "aw"
+        ],
+        "z": [
+            "u_val_cmd",
+            "u_val",
+            "u_int",
+            "u_sat"
+        ],
+        "r": [
+        ],
+        "y": [
+            ["y2", "u_val"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [-100,-1e-2,-100,-1e-2],
+            "ubz": [100,1.1,100,1.1]
+        },
+        "x": {
+            "lbx": [-100,-100],
+            "ubx": [100,100]
+        }
+    },
+    "objective": "dot(v2, v2)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+    {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": true,
+        "ipopt.linear_solver": "ma86",
+        "ipopt.ma57_pre_alloc": 1,
+        "ipopt.max_cpu_time": 200,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

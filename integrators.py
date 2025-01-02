@@ -147,13 +147,14 @@ class Integrator(metaclass=ABCMeta):
         _u = ca.MX.sym("u", self.dae.n_u)
         _p = ca.MX.sym("p", self.dae.n_p)
         _r = ca.MX.sym("r", self.dae.n_r)
+        _d = ca.MX.sym("d", self.dae.n_d)
         # = ca.MX.sym("r", self.dae.n_r)
         z_expr = self.G(_z0, _x0, _u, _p, _r)
-        I_chained_expr = self.one_sample(_x0, z_expr, _u, _p, _r)
+        I_chained_expr = self.one_sample(_x0, z_expr, _u, _p, _r, _d)
         return ca.Function("I_chained",
-                            [_x0, _z0, _u, _p, _r],
+                            [_x0, _z0, _u, _p, _r, _d],
                             [I_chained_expr, z_expr],
-                            ["x0","z0","u","p","r"],
+                            ["x0","z0","u","p","r","d"],
                             ["xf", "z"])
         
     
@@ -239,6 +240,10 @@ class Integrator(metaclass=ABCMeta):
     def theta(self):
         return self.var("theta")
     
+    @property
+    def d(self):
+        return self.var("d")
+    
     
     """
     TODO: clean up r:
@@ -255,7 +260,7 @@ class Integrator(metaclass=ABCMeta):
     @property
     def all_vars(self):
         #return [getattr(self, name) for name in self.dae.order]
-        return ("x","z","u","p","r","y","w","v")
+        return ("x","z","u","p","r","y","w","v","d")
     
     """
     @property
@@ -516,7 +521,7 @@ class IRK(Integrator):
         self.method = method   
         else: # assume all params to come from kwds 
         '''
-        self.d = kwds.pop("degree")
+        self.degree = kwds.pop("degree")
         self.dt = kwds.pop("dt")
         self.n = kwds.pop("n_steps") # finite elements
         self.dt_n = self.dt/self.n # dt on finite elements -> for use in collocation equations
@@ -709,9 +714,9 @@ class IRK(Integrator):
         
     def set_ode_func(self):
         self.f = ca.Function('f',
-                          [self.x, self.z, self.u, self.p, self.r],
+                          [self.x, self.z, self.u, self.p, self.r, self.d],
                           [self.ode],
-                          ["x", "z", "u", "p", "r"],
+                          ["x", "z", "u", "p", "r", "d"],
                           ["f"])
         
     def set_coll_coeffs(self):
@@ -721,7 +726,7 @@ class IRK(Integrator):
         """
         
         # degree
-        d = self.d
+        d = self.degree
         
         tau_root = [0] + ca.collocation_points(d, self.method)
 
@@ -757,7 +762,7 @@ class IRK(Integrator):
     def init_integrator(self):
         
         # improve handling:
-        d, C, D, h, n, f = self.d, self.C, self.D, self.dt_n, self.n, self.f
+        d, C, D, h, n, f = self.degree, self.C, self.D, self.dt_n, self.n, self.f
         
         """
         nx = len(self.dae.dae.x())
@@ -774,6 +779,7 @@ class IRK(Integrator):
         np = self.np
         #ns = self.ns
         nr = self.nr
+        nd = self.nd
         #nw = self.nw
         
         # x0, p, u, r, z, w, v:
@@ -783,6 +789,7 @@ class IRK(Integrator):
         R = ca.MX.sym('U',nr)
         #_Z = ca.MX.sym('Z',d*nz)
         Z = ca.MX.sym('Z',nz)
+        _D = ca.MX.sym('D',nd)
         #S = ca.MX.sym('S',ns)
         #W = ca.MX.sym('W',nw)
         V = ca.MX.sym('V', d*nx)
@@ -806,7 +813,7 @@ class IRK(Integrator):
 
             # TODO: needs re-formulation, algebraic variables only defined on collocation points
             #f_j = f(X[j], Z, U, P, S, R, W)
-            f_j = f(X[j], Z, U, P, R)
+            f_j = f(X[j], Z, U, P, R, _D)
             #g_j = g(X[j], Z, U, P, S, R)
             #f_j = f(X[j], Z[j-1], U, P, S, R)
             #g_j = g(X[j], Z[j-1], U, P, S, R)
@@ -823,7 +830,7 @@ class IRK(Integrator):
         # Root-finding function, implicitly defines V as a function of X0 and P
         vfcn = ca.Function(
                         'vfcn',
-                        [V, X0, Z, U, P, R],
+                        [V, X0, Z, U, P, R, _D],
                         #[V, X0, _Z, U, P, S, R],
                         #[ca.vertcat(V, _Z), X0, U, P, S, R],
                         [V_eq]
@@ -848,7 +855,7 @@ class IRK(Integrator):
         ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn, opts)
 
         
-        V = ifcn(ca.MX(), X0, Z, U, P, R)
+        V = ifcn(ca.MX(), X0, Z, U, P, R, _D)
         
         #V = ifcn(ca.MX(), X0, U, P, S, R)
         X = [X0 if r==0 else V[(r-1)*nx:r*nx] for r in range(d+1)]
@@ -866,7 +873,7 @@ class IRK(Integrator):
                 
 
         # Get the discrete time dynamics
-        F = ca.Function('F', [X0, Z, U, P, R], [XF])
+        F = ca.Function('F', [X0, Z, U, P, R, _D], [XF])
         #F = ca.Function('F', [X0, _Z, U, P, S, R], [XF])
         #F = ca.Function('F', [X0, U, P, S, R], [XF])
         #F_Z = ca.Function('F_Z', [X0, U, P, S, R], [ZF])
@@ -874,18 +881,18 @@ class IRK(Integrator):
         # Do this iteratively for all finite elements
         X = X0
         for i in range(n):
-            X = F(X, Z, U, P, R)       
+            X = F(X, Z, U, P, R, _D)       
             #X = F(X, U, P, S, R)       
             #Z = F_Z(X, U, P, S, R)       
         
         self.one_sample = ca.Function(
                                    'irk_integrator',
-                                   [X0, Z, U, P, R],
+                                   [X0, Z, U, P, R, _D],
                                    #[X0, _Z, U, P, S, R],
                                    #[X0, U, P, S, R],
                                    #[X, Z],
                                    [X],
-                                   ["x0", "z", "u", "p", "r",],
+                                   ["x0", "z", "u", "p", "r", "d"],
                                    #["x", "u", "p", "s", "r"],
                                    ["xf"]
                                    )
@@ -1000,9 +1007,9 @@ class RK4(Integrator):
         
     def set_h(self):
         self.h = ca.Function('h',
-                          [self.v, self.y, self.x, self.z, self.u, self.p, self.r],
+                          [self.v, self.y, self.x, self.z, self.u, self.p, self.r, self.d],
                           [self.h_expr],
-                          ["v", "y", "x", "z", "u", "p", "r"],
+                          ["v", "y", "x", "z", "u", "p", "r", "d"],
                           ["h"])
         
     def set_H(self):
@@ -1030,26 +1037,26 @@ class RK4(Integrator):
         
     def set_ode_func(self):
         self.f = ca.Function('f',
-                          [self.x, self.z, self.u, self.p, self.r],
+                          [self.x, self.z, self.u, self.p, self.r, self.d],
                           [self.ode],
-                          ["x", "z", "u", "p", "r"],
+                          ["x", "z", "u", "p", "r", "d"],
                           ["f"])
         
     @property
     def k1(self):
-        return self.f(self.x, self.z, self.u, self.p, self.r)
+        return self.f(self.x, self.z, self.u, self.p, self.r, self.d)
 
     @property
     def k2(self):
-        return self.f(self.x + self.dt/2.0*self.k1, self.z, self.u, self.p, self.r)
+        return self.f(self.x + self.dt/2.0*self.k1, self.z, self.u, self.p, self.r, self.d)
 
     @property
     def k3(self):
-        return self.f(self.x + self.dt/2.0*self.k2, self.z, self.u, self.p, self.r)
+        return self.f(self.x + self.dt/2.0*self.k2, self.z, self.u, self.p, self.r, self.d)
     #X = self.x
     @property
     def k4(self):
-        return self.f(self.x + self.dt*self.k3, self.z, self.u, self.p, self.r)
+        return self.f(self.x + self.dt*self.k3, self.z, self.u, self.p, self.r, self.d)
     
     @property
     def states_final(self):
@@ -1059,22 +1066,22 @@ class RK4(Integrator):
     def final_expr(self):
         X = self.x
         for i in range(self.n_steps):
-            X = self.one_step(X, self.z, self.u, self.p, self.r)
+            X = self.one_step(X, self.z, self.u, self.p, self.r, self.d)
         return X
 
     def get_one_sample(self):
         return ca.Function('one_sample',
-                        [self.x, self.z, self.u, self.p, self.r],
+                        [self.x, self.z, self.u, self.p, self.r, self.d],
                         [self.final_expr],
-                        ["x0", "z", "u", "p", "r"],
+                        ["x0", "z", "u", "p", "r", "d"],
                         ["xf"])  
     
 
     def get_one_step(self): # return Function-object
         return ca.Function('one_step',
-                        [self.x, self.z, self.u, self.p, self.r],
+                        [self.x, self.z, self.u, self.p, self.r, self.d],
                         [self.states_final],
-                        ["x", "z", "u", "p", "r"],
+                        ["x", "z", "u", "p", "r", "d"],
                         ["xf"]) 
 
     def simulate(self, 

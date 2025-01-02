@@ -28,8 +28,18 @@ class CovarianceSolverContinuous(object):
                  param_guess,
                  **kwargs
                  ):
+        # unpack scaling:
         self.p_nom = kwargs.pop("p_nom", 1)
         self.P_nom = np.array(kwargs.pop("P_nom", 1))
+        self.x_nom = kwargs.pop("x_nom", 1)
+        self.x_nom_b = kwargs.pop("x_nom_b", 0)
+        self.u_nom = kwargs.pop("u_nom", 1)
+        self.u_nom_b = kwargs.pop("u_nom_b", 0)
+        self.y_nom = kwargs.pop("y_nom", 1)
+        self.y_nom_b = kwargs.pop("y_nom_b", 0)
+        self.z_nom = kwargs.pop("z_nom", 1)
+        self.z_nom_b = kwargs.pop("z_nom_b", 0)
+        # set up problem:
         self.setup_problem(
                            ekf_config,
                            param_est_cfg,
@@ -44,7 +54,8 @@ class CovarianceSolverContinuous(object):
               x_guess,
               P_guess,
               Q_guess,
-              R_guess
+              R_guess,
+              H=None,
               ):
         """
         Solve covariance estimation 
@@ -53,25 +64,54 @@ class CovarianceSolverContinuous(object):
         TODO: modularize depending
         on shooting method.
         """
-        param_est = self.param_est
+        if H is None:
+            H = np.eye(self.n_theta + self.n_y)*0
+        else:
+            assert H.shape[0] == (self.n_theta + self.n_y)
+            
+        #param_est = self.param_est
+        dae = self.ekf.dae
         M = self.M
         # construct numerical bounds for ll-opt:
+        """
         p_val = np.concatenate([
-            y_data[param_est.u_names][0:M].values.flatten(),
-            y_data[param_est.r_names][0:M].values.flatten(),
+            (y_data[dae.u][0:M].values/self.u_nom).flatten(),
+            y_data[dae.r_names][0:M].values.flatten(),
             params/self.p_nom, # physical parameters
-            y_data[param_est.y_names][0:M].values.flatten(),
-            y_data[param_est.z_names][0:M].values.flatten(),
+            (y_data[dae.y_names][0:M].values/self.y_nom).flatten(),
+            (y_data[dae.z][0:M].values/self.z_nom).flatten(),
+            Q_guess,
+            R_guess,
+            H.flatten()
         ])
+        """
+        p_val = np.concatenate([
+            (y_data[dae.u][0:M].values).flatten(),
+            y_data[dae.r_names][0:M].values.flatten(),
+            params/self.p_nom, # physical parameters
+            (y_data[dae.y_names][0:M].values).flatten(),
+            (y_data[dae.z][0:M].values).flatten(),
+            Q_guess,
+            R_guess,
+            H.flatten()
+        ])
+        # scale x_guess:
+        #x_guess = x_guess/self.x_nom
         # bounds for x0_guess:
         lbx0 = 1*x_guess
         ubx0 = 1*x_guess
-        
-        P_nom_flat = self.P_nom_flat = np.tile(self.P_nom.flatten(), self.M+1)
+       
+        if self.method == "multiple_shooting":
+            N = self.M+1
+        else: # single:
+            N = 1
+            
+        P_nom_flat = self.P_nom_flat = np.tile(self.P_nom.flatten(), N)
         P_guess = P_guess/P_nom_flat
         # concatenate variable guesses in correct order:
         x0 = np.concatenate([
                               x_guess,
+                              #y_data[param_est.z_names][0:M].values.flatten(),
                               P_guess,
                               Q_guess, 
                               R_guess
@@ -90,22 +130,59 @@ class CovarianceSolverContinuous(object):
                               -10*Q_guess,
                               -10*R_guess
                               ])
-        """
         lbx = np.concatenate([
                               0.5*lbx0,
                               1E-3*P_guess,
-                              10*Q_guess,
+                              1E-3*Q_guess,
                               #1*Q_guess,
-                              10*R_guess
+                              1E-3*R_guess
                               ])
         ubx = np.concatenate([
                               1.5*ubx0, 
                               1E3*P_guess,
-                              -10*Q_guess,
+                              1E3*Q_guess,
                               #1*Q_guess,
-                              -10*R_guess
+                              1E3*R_guess
                               ])
-        
+        """
+        if self.method == "single_shooting":
+            """
+            Static bounds.
+            """
+            lbx = np.concatenate([
+                                0.5*lbx0,
+                                #0.1*y_data[param_est.z_names][0:M].values.flatten(),
+                                1E-3*P_guess,
+                                np.ones(Q_guess.shape)*-25,
+                                #1*Q_guess,
+                                np.ones(R_guess.shape)*-25
+                                ])
+            ubx = np.concatenate([
+                                1.5*ubx0, 
+                                #10*y_data[param_est.z_names][0:M].values.flatten(),
+                                1E3*P_guess,
+                                np.ones(Q_guess.shape)*10,
+                                #1*Q_guess,
+                                np.ones(R_guess.shape)*10
+                                ])
+        elif self.method == "multiple_shooting":
+            lbx = np.concatenate([
+                                0.5*lbx0,
+                                #0.1*y_data[param_est.z_names][0:M].values.flatten(),
+                                1e-3*P_guess,
+                                4*Q_guess,
+                                #1*Q_guess,
+                                4*R_guess
+                                ])
+            ubx = np.concatenate([
+                                1.5*ubx0, 
+                                #10*y_data[param_est.z_names][0:M].values.flatten(),
+                                1E3*P_guess,
+                                -10*Q_guess,
+                                #1*Q_guess,
+                                -10*R_guess
+                                ])
+                        
         _sol = self.ll_solver(
                               x0=x0,
                               lbx=lbx,
@@ -155,7 +232,7 @@ class CovarianceSolverContinuous(object):
         Q_start = -self.n_theta - self.n_y
         Q_stop = Q_start + self.n_x**2
         # how many Q's?
-        nQs = int(self.n_theta/(self.n_x**2))
+        self.nQs = int(self.n_theta/(self.n_x**2))
         # Q_cols:
         Q_cols = [
                 "q" + str(j) + str(i)
@@ -163,14 +240,14 @@ class CovarianceSolverContinuous(object):
                 for i in range(1, self.n_x+1)
                 ]
         Q_df = pd.DataFrame(columns=Q_cols)
-        for n in range(nQs):
+        for n in range(self.nQs):
             Q_df.loc[n] =  np.array(_sol["x"][Q_start:Q_stop]).flatten()
             Q_start += self.n_x**2
             Q_stop += self.n_x**2
         
         R = np.array(_sol["x"][-self.n_y:])
         
-        return sol, Q_df, R
+        return sol, Q_df, R, _sol
         
         
     def setup_problem(
@@ -197,7 +274,7 @@ class CovarianceSolverContinuous(object):
             dt = (y_data.index[1] - y_data.index[0]).seconds
         except: # RangeIndex
             dt = (y_data.index[1] - y_data.index[0])
-            
+        """    
         self.param_est = param_est = Estimation(config=param_est_cfg,
                                                 N=N,
                                                 dt=dt,
@@ -205,9 +282,10 @@ class CovarianceSolverContinuous(object):
                                                 arrival_cost=True,
                                                 **kwargs,
                                                 )
+        """
         self.ekf = ekf = KalmanBucy(ekf_config)
         F = ekf.one_sample_feedback_adj
-        self.M = M = param_est.N - 1
+        self.M = M = N - 1
         
         self.method = method = kwargs.pop("method", "single_shooting")
         
@@ -223,9 +301,9 @@ class CovarianceSolverContinuous(object):
         #R = ca.MX.sym("R", ca.Sparsity.diag(ekf.n_y))
         #Q = ca.MX.sym("Q", (ekf.n_x, ekf.n_x))
         Q_mxs = ekf.reinit_symbolic_Q()
-        Q = ca.veccat(*Q_mxs)
+        self.Q = Q = ca.veccat(*Q_mxs)
         # TODO: concat Q, Q_1, ... ,Q_N
-        R = ca.MX.sym("R", (ekf.n_y, ekf.n_y))
+        self.R = R = ca.MX.sym("R", (ekf.n_y, ekf.n_y))
         
         if method == "single_shooting":
             F_map = F.mapaccum(
@@ -236,7 +314,7 @@ class CovarianceSolverContinuous(object):
                             )
             # accumulate differential variables:
             X = X0 = ca.MX.sym("X0", (ekf.n_x, 1))
-            P = P0 = ca.MX.sym("P", (ekf.n_x, ekf.n_x))
+            self.P = P = P0 = ca.MX.sym("P", (ekf.n_x, ekf.n_x))
         elif method == "multiple_shooting":
             # do not want to accumulate:
             F_map = F.map(M, "openmp")
@@ -250,7 +328,37 @@ class CovarianceSolverContinuous(object):
 
 
         W = ekf.one_sample_wiener
+        """
         # propagate dynamics through wiener process:
+        _P0 = W(
+            P0=0,
+            z0=Z[:,:1]*self.z_nom + self.z_nom_b,
+            r=r[:,:1],
+            p=self.p_nom*p,
+            y=Y[:,:1]*self.y_nom + self.y_nom_b,
+            x0=X[:,:1]*self.x_nom + self.x_nom_b,
+            u=U[:,:1]*self.u_nom + self.u_nom_b,
+            Ps=1,
+            sigma=ekf.Q_function(Q, U[:,:1]),
+            dt=ekf.dt
+        )["P"]
+       
+        # propagate through kalman simulator:
+        res = F_map(
+            x_0=X0*self.x_nom + self.x_nom_b,
+            z_0=Z*self.z_nom + self.z_nom_b,
+            #P_0=P[:, :-end_P],
+            P_0=self.P_nom*P0,
+            #P_prev=P,
+            u=U*self.u_nom + self.u_nom_b,
+            r=r, #*self.r_nom + self.r_nom_b,
+            p=self.p_nom*ca.repmat(p,1,M),
+            y=Y*self.y_nom + self.y_nom_b ,
+            Q=ca.repmat(Q,1,M),
+            R=ca.repmat(R,1,M),
+            #dt=300
+        )
+        """
         _P0 = W(
             P0=0,
             z0=Z[:,:1],
@@ -267,12 +375,12 @@ class CovarianceSolverContinuous(object):
         # propagate through kalman simulator:
         res = F_map(
             x_0=X0,
-            #z_0=Z,
+            z_0=Z,
             #P_0=P[:, :-end_P],
             P_0=self.P_nom*P0,
             #P_prev=P,
             u=U,
-            r=r,
+            r=r, #*self.r_nom + self.r_nom_b,
             p=self.p_nom*ca.repmat(p,1,M),
             y=Y,
             Q=ca.repmat(Q,1,M),
@@ -291,10 +399,22 @@ class CovarianceSolverContinuous(object):
         for n in range(M): # only 1-dim:
             obj += loglik[n]
             
+        # create theta_prior:
+        theta = ca.vertcat(Q, R)
+        theta_prior_shape = Q.shape[0] + self.R.shape[0]
+        theta_prior = ca.MX.sym("theta_prior", theta_prior_shape)
+        # weighting:
+        H = ca.MX.sym("H", (theta_prior_shape, theta_prior_shape))
+        # add to objective:
+        arrival_cost = (theta - theta_prior).T@H@(theta - theta_prior)
+        obj += arrival_cost
+        self.obj = obj
+        
         # problem parameters:
-        _p = ca.veccat(U,r,p,Y,Z)
+        self._p = _p = ca.veccat(U,r,p,Y,Z,theta_prior,H)
+        #_p = ca.veccat(U,r,p,Y,theta_prior,H)
         # problem variables
-        V = ca.veccat(X,P,Q,R)
+        self.V = V = ca.veccat(X,P,Q,R)
         #g = ca.vertcat(x_constr, P_constr, Q[1,0], Q[0,1])
         # add constraints on off-diagonal elems for Q:
         """
@@ -308,41 +428,110 @@ class CovarianceSolverContinuous(object):
                     if j != i:
                         Q_off_diag.append(q[i,j])
                         
-        g = []
+        self.g = g = []
         if method == "multiple_shooting":
             P_10 = res["P_10"]
             x_10 = res["x_10"]
             # shooting gaps:
-            x_constr = ca.veccat(x_10 - X[:, 1:])
+            #x_constr = ca.veccat(x_10 - (X[:, 1:]*self.x_nom + self.x_nom_b))
+            x_constr = ca.veccat(x_10 - (X[:, 1:]))
             P_constr = ca.veccat(P_10 - self.P_nom*P[:, ekf.n_x:])
             # add to constraints:
             g.append(x_constr)
             g.append(P_constr)
          
         P0_constr = ca.veccat(self.P_nom*P[:, :ekf.n_x] - _P0)
-        g.append(P0_constr)
         g.extend(Q_off_diag)
+        g.append(P0_constr)
         #g = ca.vertcat(*Q_off_diag) 
+        # prepare the solver:
         g = ca.vertcat(*g)
-        #self.lbg = np.ones(g.shape[0])*-1000
-        #self.ubg = np.ones(g.shape[0])*1000
+        # equality constr.
         self.lbg = np.zeros(g.shape[0])
         self.ubg = np.zeros(g.shape[0])
+        self.prepare_solver(
+                            obj,
+                            V,
+                            g,
+                            _p
+                            )
         
-        ll_nlp = {
+    def exchange_P0_constraint(self, P0_val):
+        """
+        Only need to estimate P0 the first time.
+        """
+        self.g.pop(-1)
+        
+        # need shape of g:
+        g = ca.vertcat(*self.g)
+        # new bounds:
+        lbg = np.zeros(g.shape[0])
+        ubg = np.zeros(g.shape[0])
+        self.lbg = np.concatenate(
+            [
+            lbg,
+            P0_val
+            ]
+        )
+        self.ubg = np.concatenate(
+            [
+            ubg,
+            P0_val
+            ]
+        )
+        self.g.append(ca.veccat(self.P_nom*self.P[:, :self.ekf.n_x]))
+        g = ca.vertcat(*self.g)
+        self.prepare_solver(
+            self.obj,
+            self.V,
+            g,
+            self._p,
+            #lbg=lbg,
+            #ubg=ubg
+        )
+        
+    def exchange_P0_value(self, P0_val):
+        """
+        Moving the estimation one day
+        forward.
+        """
+        P0_shape = self.P.shape[0]*self.P.shape[1]
+        self.lbg[-P0_shape:] = P0_val
+        self.ubg[-P0_shape:] = P0_val
+        
+        
+    def prepare_solver(self, obj, V, g, _p, lbg = None, ubg = None):
+        """
+        Prepare the solver.
+        """
+        #self.lbg = np.ones(g.shape[0])*-1000
+        #self.ubg = np.ones(g.shape[0])*1000
+        #if lbg is None:
+        #    self.lbg = np.zeros(g.shape[0])
+        #if ubg is None:
+        #    self.ubg = np.zeros(g.shape[0])
+           
+        self.ll_nlp = {
             "f": obj,
             "x": V,
             "g": g,
             "p": _p
         }
-        opts = param_est.opt
+        opts = dict()
         #opts["ipopt.tol"] = 1e-10
         opts["verbose"] = False
         opts["ipopt.linear_solver"] = "ma57"
-        opts["ipopt.tol"] = 3e-5
+        #opts["ipopt.tol"] = 3e-2
+        opts["ipopt.tol"] = 3e-2
+        #opts["ipopt.tol"] = 1e-6
         opts["ipopt.ma57_pre_alloc"] = 10
         opts["ipopt.ma57_automatic_scaling"] = "yes"
-        self.ll_solver = ca.nlpsol("ll_solver",  "ipopt", ll_nlp, opts)
+        self.ll_solver = ca.nlpsol(
+                                "ll_solver",
+                                "ipopt",
+                                self.ll_nlp,
+                                opts
+                                )
         
     @property
     def n_x(self):

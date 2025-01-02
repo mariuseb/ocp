@@ -250,9 +250,18 @@ class MHE(OCP):
         self.nlp["f"] = self.f_orig + arrival_cost
         self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
         
+    #def store_param_and_state(self, params, state, z, k):
+    #    self.df.loc[k*self.dt:(k+self.N*self.dt), :] = np.concatenate([params, state, z])
     
-    def store_param_and_state(self, params, state, z, k):
-        self.df.loc[k*self.dt, :] = np.concatenate([params, state, z])
+    def store_param_and_state(self, sol_df, k):
+        names = self.dae.p + self.dae.x + self.dae.z
+        #sol_df.index = np.arange(k*self.dt, int(k + self.N)*self.dt, self.dt)
+        sol_df.index = np.linspace(k*self.dt, (k + self.N - 1)*self.dt, self.N)
+        if k == 0:
+            self.df = sol_df[names]
+        else:
+            self.df.loc[(k+self.N - 1)*self.dt] = np.nan
+            self.df.loc[k*self.dt:(k+self.N)*self.dt] = sol_df[names]
         
     def solve(
               self,
@@ -340,6 +349,11 @@ class MHE(OCP):
         except:
             pass
         """
+        if self.slack:
+            start, stop = self.nlp_parser.vars["sl"]["range"]["a"], \
+                self.nlp_parser.vars["sl"]["range"]["b"]
+            
+            self.lbx[start:stop] = [-np.inf]*(stop-start)
     
         solution = self.solver(
                             x0=self.x0,
@@ -355,16 +369,18 @@ class MHE(OCP):
         self.sol_df, params = self.parse_solution(solution)
         
         # k given by history thus far:
-        k = len(self.df) + self.N - 1
+        #k = len(self.df) + self.N - 2
+        k = max(0, len(self.df) - self.N + 1)
         #self.df.loc[k*self.dt, :] = np.append(params.values, self.sol_df[self.x_names].iloc[-1])
         self.store_param_and_state(
-                                   params.values, 
-                                   self.sol_df[self.x_names].iloc[-1].values,
-                                   self.sol_df[self.z_names].iloc[-2].values,
-                                   k + 1
+                                   #params.values, 
+                                   #self.sol_df[self.x_names].values,
+                                   #self.sol_df[self.z_names].values,
+                                   self.sol_df,
+                                   k
                                    )
                 
-        self.sol_df.index = np.arange(k*self.dt, (k + self.N)*self.dt, self.dt)
+        #self.sol_df.index = np.arange((k-1)*self.dt, (k - 1 + self.N)*self.dt, self.dt)
         if not return_raw_sol:
             return self.sol_df, params
         else:

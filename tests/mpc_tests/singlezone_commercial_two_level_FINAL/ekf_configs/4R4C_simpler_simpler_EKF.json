@@ -1,0 +1,82 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*(Trad_ENV - Ti)/Rirad + w1",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce) + w2",
+            "Trad_ENV": "rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)*cp_water*(dh_Tsup - Trad_ENV)/Crad + (Ti - Trad_ENV)/(Rirad*Crad) + w3",
+            "Tret": "(a1*rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)*(Trad_ENV - Tret))/(Rrr*Cret) + w4"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "sde": {
+            "all" :"ca.expm(Q)"
+        },
+        "theta":
+         [
+            "Q"
+         ],
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Rrr",
+            "Rsr",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Cret",
+            "Csup_nom",
+            "Ai",
+            "cp_water",
+            "cp_air",
+            "alpha_vent1",
+            "alpha_vent2",
+            "Tret_offset",
+            "dh_Tsup",
+            "a1",
+            "rad_flo_nom",
+            "n1",
+            "eta_hex_rad"
+
+        ],
+        "u": [
+            "rad_val"
+        ],
+        "d": [
+            "w1",
+            "w2",
+            "w3",
+            "w4"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad_ENV",
+            "Tret"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    }, 
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        },
+    "Q": [1,1,1,1],
+    "R": [1]
+}
