@@ -134,6 +134,20 @@ if __name__ == "__main__":
         "p_nom": mpc.p_nom
     }
     """
+    x0_env = np.array([293.15]*4)
+    A = ekf_env.jac_f_x(x0_env,0,0,mpc_env.p0,0,0,0,0,0)
+    Ad = np.array(ca.expm(A))
+    C = np.array([1,0,0,1])
+    
+    O = np.array([
+        C,
+        C@Ad,
+        C@Ad**2,
+        C@Ad**3,
+    ]
+    )
+    print(np.linalg.matrix_rank(O))
+     
     #kwargs["slack"] = False
     mhe = MHE(config=mhe_cfg,
               functions=deepcopy(functions),

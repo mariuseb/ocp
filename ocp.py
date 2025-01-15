@@ -586,7 +586,7 @@ class OCP(metaclass=ABCMeta):
                                 dict(jit=self.with_jit, compiler=self.compiler))
         return hess_lag
             
-    def _init_solver(self, init_qp_solver=True):
+    def _init_solver(self, init_qp_solver=False):
         
         # TODO: fix residual:
         if self.gauss_newton:
@@ -1416,8 +1416,8 @@ class OCP(metaclass=ABCMeta):
                     dim = int(self.nlp_parser["x"]["dim"]/self.n_x)
                     #lbx = np.hstack([bounds_cfg["x"]["lbx"] for n in range(dim)])
                     #ubx = np.hstack([bounds_cfg["x"]["ubx"] for n in range(dim)])
-                    lbx = np.repeat(bounds_cfg["x"]["lbx"], self.N).reshape(self.n_x, self.N)
-                    ubx = np.repeat(bounds_cfg["x"]["ubx"], self.N).reshape(self.n_x, self.N)
+                    lbx = np.repeat(bounds_cfg["x"]["lbx"], self.N).reshape(self.n_x, self.N).T.flatten()
+                    ubx = np.repeat(bounds_cfg["x"]["ubx"], self.N).reshape(self.n_x, self.N).T.flatten()
                     bounds["x"]["lb"] = (lbx - bias)/scale
                     bounds["x"]["ub"] = (ubx - bias)/scale
                 else:

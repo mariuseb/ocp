@@ -18,7 +18,7 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from scipy.stats import norm
-from hampel import hampel
+#from hampel import hampel
 # text:
 
 pd.options.mode.chained_assignment = None
@@ -30,8 +30,8 @@ def prepare_data(data, room=219):
     
     temps_219_cols = [col for col in data.columns if "T_" + str(room) in col]
     #temps_219_cols = ["T_219_TR3"]
-    temps_219 = data[temps_219_cols].mean(axis=1)
-    #temps_219 = data["T_219_TR3"]
+    #temps_219 = data[temps_219_cols].mean(axis=1)
+    temps_219 = data["T_219_TR3"]
     y_data = data[["P_rad_" + str(room)]]*1000
     y_data.columns = ["phi_h"]
     #y_data["phi_int"] = data["phi_int_219"]
@@ -49,8 +49,8 @@ def prepare_data(data, room=219):
     y_data["Ti"] = temps_219
     y_data.loc[y_data.Ti > 30, "Ti"] = 30
     
-    y_data["phi_s"] = data["I_ver"]
-    #y_data["phi_s"] = data["I_hor"]
+    #y_data["phi_s"] = data["I_ver"]
+    y_data["phi_s"] = data["I_hor"]
     #y_data["I_hor"] = data["I_hor"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_" + str(room)]*1000
@@ -242,7 +242,21 @@ class ZEBData(object):
         data[["T_sup_air", "T_ext_air"]] = data[["T_sup_air", "T_ext_air"]].interpolate()
         # then backfill:
         data = data.bfill()
-        data = data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
+        # point-sample temperatures, integrate power measurements
+        # except Tsup, Tret -> integrate
+        temps = [col for col in data.columns if col.startswith("T") \
+            and col not in ("Tsup", "Tret")]
+        powers = [col for col in data.columns if col not in temps]        
+        power = data[powers].resample(rule=sampling_rate).mean()
+        temperature = data[temps].resample(rule=sampling_rate).asfreq()
+        #data = data.groupby(pd.Grouper(freq=sampling_rate)).asfreq().dropna()
+        data = pd.merge(
+                        power, 
+                        temperature,
+                        left_index=True,
+                        right_index=True
+                        )
+        
         data["delta_phi_h"] = data["phi_h"] - data["phi_h"].shift(-1)
         data["delta_phi_s"] = data["phi_s"] - data["phi_s"].shift(-1)
         data["delta_phi_int"] = data["phi_int_plugs"] - data["phi_int_plugs"].shift(-1)

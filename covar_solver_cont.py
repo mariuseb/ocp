@@ -152,18 +152,25 @@ class CovarianceSolverContinuous(object):
             lbx = np.concatenate([
                                 0.5*lbx0,
                                 #0.1*y_data[param_est.z_names][0:M].values.flatten(),
-                                1E-3*P_guess,
-                                np.ones(Q_guess.shape)*-25,
-                                #1*Q_guess,
-                                np.ones(R_guess.shape)*-25
+                                0.01*P_guess,
+                                #0.99*P_guess,
+                                #np.ones(Q_guess.shape)*-25,
+                                #(np.eye(self.n_x)*-25).flatten(),
+                                1e-7*Q_guess,
+                                #np.ones(R_guess.shape)*-25
+                                1e-3*R_guess,
                                 ])
             ubx = np.concatenate([
                                 1.5*ubx0, 
                                 #10*y_data[param_est.z_names][0:M].values.flatten(),
-                                1E3*P_guess,
-                                np.ones(Q_guess.shape)*10,
-                                #1*Q_guess,
-                                np.ones(R_guess.shape)*10
+                                100*P_guess,
+                                #1.01*P_guess,
+                                #(np.eye(self.n_x)*10).flatten(),
+                                #np.ones(Q_guess.shape)*10,
+                                1e4*Q_guess,
+                                #0.99*Q_guess,
+                                #np.ones(R_guess.shape)*10
+                                1e3*R_guess,
                                 ])
         elif self.method == "multiple_shooting":
             lbx = np.concatenate([
@@ -283,7 +290,8 @@ class CovarianceSolverContinuous(object):
                                                 **kwargs,
                                                 )
         """
-        self.ekf = ekf = KalmanBucy(ekf_config)
+        #self.ekf = ekf = KalmanBucy(ekf_config)
+        self.ekf = ekf = KalmanDAE(ekf_config)
         F = ekf.one_sample_feedback_adj
         self.M = M = N - 1
         
@@ -299,9 +307,9 @@ class CovarianceSolverContinuous(object):
         # start with non-tvp Q, R
         #Q = ca.MX.sym("Q", ca.Sparsity.diag(ekf.n_x))
         #R = ca.MX.sym("R", ca.Sparsity.diag(ekf.n_y))
-        #Q = ca.MX.sym("Q", (ekf.n_x, ekf.n_x))
-        Q_mxs = ekf.reinit_symbolic_Q()
-        self.Q = Q = ca.veccat(*Q_mxs)
+        Q = ca.MX.sym("Q", (ekf.n_x, ekf.n_x))
+        #Q_mxs = ekf.reinit_symbolic_Q()
+        #self.Q = Q = ca.veccat(*Q_mxs)
         # TODO: concat Q, Q_1, ... ,Q_N
         self.R = R = ca.MX.sym("R", (ekf.n_y, ekf.n_y))
         
@@ -328,36 +336,6 @@ class CovarianceSolverContinuous(object):
 
 
         W = ekf.one_sample_wiener
-        """
-        # propagate dynamics through wiener process:
-        _P0 = W(
-            P0=0,
-            z0=Z[:,:1]*self.z_nom + self.z_nom_b,
-            r=r[:,:1],
-            p=self.p_nom*p,
-            y=Y[:,:1]*self.y_nom + self.y_nom_b,
-            x0=X[:,:1]*self.x_nom + self.x_nom_b,
-            u=U[:,:1]*self.u_nom + self.u_nom_b,
-            Ps=1,
-            sigma=ekf.Q_function(Q, U[:,:1]),
-            dt=ekf.dt
-        )["P"]
-       
-        # propagate through kalman simulator:
-        res = F_map(
-            x_0=X0*self.x_nom + self.x_nom_b,
-            z_0=Z*self.z_nom + self.z_nom_b,
-            #P_0=P[:, :-end_P],
-            P_0=self.P_nom*P0,
-            #P_prev=P,
-            u=U*self.u_nom + self.u_nom_b,
-            r=r, #*self.r_nom + self.r_nom_b,
-            p=self.p_nom*ca.repmat(p,1,M),
-            y=Y*self.y_nom + self.y_nom_b ,
-            Q=ca.repmat(Q,1,M),
-            R=ca.repmat(R,1,M),
-            #dt=300
-        )
         """
         _P0 = W(
             P0=0,
@@ -387,6 +365,36 @@ class CovarianceSolverContinuous(object):
             R=ca.repmat(R,1,M),
             #dt=300
         )
+        """
+        _P0 = W(
+            P0=0,
+            z0=Z[:,:1]*self.z_nom + self.z_nom_b,
+            r=r[:,:1],
+            p=self.p_nom*p,
+            y=Y[:,:1]*self.y_nom + self.y_nom_b,
+            x0=X[:,:1]*self.x_nom + self.x_nom_b,
+            u=U[:,:1]*self.u_nom + self.u_nom_b,
+            Ps=1,
+            sigma=Q,
+            dt=ekf.dt
+        )["P"]
+        # propagate dynamics through wiener process:
+       
+        # propagate through kalman simulator:
+        res = F_map(
+            x_0=X0*self.x_nom + self.x_nom_b,
+            z_0=Z*self.z_nom + self.z_nom_b,
+            #P_0=P[:, :-end_P],
+            P_0=self.P_nom*P0,
+            #P_prev=P,
+            u=U*self.u_nom + self.u_nom_b,
+            r=r, #*self.r_nom + self.r_nom_b,
+            p=self.p_nom*ca.repmat(p,1,M),
+            y=Y*self.y_nom + self.y_nom_b ,
+            Q=ca.repmat(Q,1,M),
+            R=ca.repmat(R,1,M),
+            dt=ekf.dt
+        )
         
         # for objective function:
         #V_N = res["V_k"]
@@ -400,6 +408,7 @@ class CovarianceSolverContinuous(object):
             obj += loglik[n]
             
         # create theta_prior:
+        Q = ca.veccat(Q)
         theta = ca.vertcat(Q, R)
         theta_prior_shape = Q.shape[0] + self.R.shape[0]
         theta_prior = ca.MX.sym("theta_prior", theta_prior_shape)
@@ -419,7 +428,6 @@ class CovarianceSolverContinuous(object):
         # add constraints on off-diagonal elems for Q:
         """
         Extract off-diagonal matrices of Q:
-        """
         Q_off_diag = []
         nx = ekf.dae.n_x
         for q in Q_mxs:
@@ -427,21 +435,22 @@ class CovarianceSolverContinuous(object):
                 for j in range(nx):
                     if j != i:
                         Q_off_diag.append(q[i,j])
+        """
                         
         self.g = g = []
         if method == "multiple_shooting":
             P_10 = res["P_10"]
             x_10 = res["x_10"]
             # shooting gaps:
-            #x_constr = ca.veccat(x_10 - (X[:, 1:]*self.x_nom + self.x_nom_b))
-            x_constr = ca.veccat(x_10 - (X[:, 1:]))
+            x_constr = ca.veccat(x_10 - (X[:, 1:]*self.x_nom + self.x_nom_b))
+            #x_constr = ca.veccat(x_10 - (X[:, 1:]))
             P_constr = ca.veccat(P_10 - self.P_nom*P[:, ekf.n_x:])
             # add to constraints:
             g.append(x_constr)
             g.append(P_constr)
          
         P0_constr = ca.veccat(self.P_nom*P[:, :ekf.n_x] - _P0)
-        g.extend(Q_off_diag)
+        #g.extend(Q_off_diag)
         g.append(P0_constr)
         #g = ca.vertcat(*Q_off_diag) 
         # prepare the solver:
@@ -521,9 +530,9 @@ class CovarianceSolverContinuous(object):
         #opts["ipopt.tol"] = 1e-10
         opts["verbose"] = False
         opts["ipopt.linear_solver"] = "ma57"
+        #opts["ipopt.tol"] = 1e-4
         #opts["ipopt.tol"] = 3e-2
-        opts["ipopt.tol"] = 3e-2
-        #opts["ipopt.tol"] = 1e-6
+        ##opts["ipopt.tol"] = 1e-6
         opts["ipopt.ma57_pre_alloc"] = 10
         opts["ipopt.ma57_automatic_scaling"] = "yes"
         self.ll_solver = ca.nlpsol(

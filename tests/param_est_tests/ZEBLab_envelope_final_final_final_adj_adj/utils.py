@@ -27,7 +27,7 @@ def prepare_data(data, room=219):
     """
     
     temps_219_cols = [col for col in data.columns if "T_" + str(room) in col]
-    temps_219_cols = ["T_219_TR3"]
+    #temps_219_cols = ["T_219_TR3"]
     temps_219 = data[temps_219_cols].mean(axis=1)
     y_data = data[["P_rad_" + str(room)]]*1000
     y_data.columns = ["phi_h"]
@@ -46,7 +46,7 @@ def prepare_data(data, room=219):
     y_data["Ti"] = temps_219
     y_data.Ti[y_data.Ti > 30] = 30
     
-    y_data["phi_s"] = data["I_hor"]
+    y_data["phi_s"] = data["I_ver"]
     y_data["I_hor"] = data["I_hor"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_" + str(room)]*1000
@@ -142,10 +142,10 @@ class ZEBData(object):
         data.index = pd.to_datetime(data.index).tz_localize(None)
         # filter power outliers:
         #data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
-        data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
+        #data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
         data["P_rad_219"][data["P_rad_219"] < 0] = 0
-        data["P_rad_220"][data["P_rad_220"] > 2.0] = 2.0
-        data["P_rad_220"][data["P_rad_220"] < 0] = 0
+        #data["P_rad_220"][data["P_rad_220"] > 2.0] = 2.0
+        #data["P_rad_220"][data["P_rad_220"] < 0] = 0
         #data.P_rad_219[Data.data.P_rad_219 < 0] = 0
         # TODO: add more filters
         self.data = data
@@ -175,8 +175,11 @@ class ZEBData(object):
         data = data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
         data["vent"] = (data["V_sup_air"] > 10).astype(int) 
         #data["vent"] = data["daytime"]
-        data["Tset_high"] = (data["Tset"] > 18).astype(int)
-        data["Tset"] = 22
+        try:
+            data["Tset_high"] = (data["Tset"] > 18).astype(int)
+        except:
+            data["Tset_high"] = 0
+        #data["Tset"] = 22
         data["heat_on"] = (data["phi_h"] > 10).astype(int)
         #data["vent"] = data["Tset_high"]
         data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)

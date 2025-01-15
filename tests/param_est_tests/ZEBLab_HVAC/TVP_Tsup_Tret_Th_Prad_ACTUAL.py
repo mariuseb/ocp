@@ -35,15 +35,16 @@ if __name__ == "__main__":
     Use room 219 first.
     """
 
-    cfg_path = os.path.join("configs", "Tret_Tsup_Th_Prad_flow_TVP.json")
+    cfg_path = os.path.join("configs", "Tret_Tsup_Th_Prad.json")
     #data_path = os.path.join("ZEBLab_year_15m_T_last.csv")
     data = pd.read_csv("ZEBLab_2024_1m.csv", index_col=0)
     # bfill:
     data.index = pd.to_datetime(data.index)
     data.index = data.index.tz_localize(None)
+    data = data.fillna(0)
     # take subset of data:
-    start = pd.Timestamp("2023-12-14 00:00")
-    stop = pd.Timestamp("2023-12-20 00:00")
+    start = pd.Timestamp("2023-12-08 00:00")
+    stop = pd.Timestamp("2023-12-25 00:00")
     data = data.loc[start:stop]
     
     #data.drop(coumns=["_time"], inplace=True)
@@ -110,11 +111,11 @@ if __name__ == "__main__":
                        if 
                        ndx.floor("1H") in gt_zero_index
                        ]
-    data = data.loc[index_selection]
+    #data = data.loc[index_selection]
       
-    start_train = pd.Timestamp("2023-12-14 00:00")
-    stop_train = pd.Timestamp("2023-12-17 00:00")
-    stop_val = pd.Timestamp("2023-12-20 00:00")
+    start_train = pd.Timestamp("2023-12-08 00:00")
+    stop_train = pd.Timestamp("2023-12-22 00:00")
+    stop_val = pd.Timestamp("2023-12-25 00:00")
     validation_data = data.loc[stop_train:stop_val]
     data = data.loc[start_train:stop_train]
 
@@ -225,7 +226,7 @@ if __name__ == "__main__":
                     {
                         "init":  2,
                         "lb": -10,
-                        "ub": 10
+                        "ub": 50
                     },
                     "tau": 
                     {
@@ -245,8 +246,8 @@ if __name__ == "__main__":
                     },
     }
 
-    x_guess = data[["Tret", "Tsup", "Tsup","u_val_set"]]
-    x_guess.columns = ["Tret", "Tsup", "Th", "u_val"]
+    x_guess = data[["Tret", "Tsup", "Tsup"]]
+    x_guess.columns = ["Tret", "Tsup", "Th"]
     #x_guess = data[["Tret", "Tsup", "Tsup"]]
     #x_guess.columns = ["Tret", "Tsup", "Th"]
     x_guess["Th"] = (x_guess["Tsup"] + x_guess["Tret"])/2
@@ -263,22 +264,24 @@ if __name__ == "__main__":
     ubx = ubx.values.flatten()
     
     kwargs = {
-        "x_nom": [12,12,12,1],
-        "x_nom_b": [289.15,289.15,289.15,0],
-        "z_nom": [12,1E3,1E-2], 
-        "z_nom_b": [289.15,0,0],
-        "u_nom": [12,12,1,1,1,1],
-        "u_nom_b": [289.15,289.15,0,0,0,0],
+        "x_nom": [12,12,12],
+        "x_nom_b": [289.15,289.15,289.15],
+        "z_nom": [12,1E3], 
+        "z_nom_b": [289.15,0],
+        "u_nom": [12,12,1,1,1],
+        "u_nom_b": [289.15,289.15,0,0,0],
         #"r_nom": [12,300,1E6,1E6,1E6],
         #"r_nom_b": [289.15,0,0,0,0],
         #"p_nom": [1E-5,1E-4,1E8,1E9,1E2,1,1E3,1,12],
         #"p_nom_b": [0,0,0,0,0,0,0,0,289.15],
-        "y_nom": [12,12,1E3,1E-2],
-        "y_nom_b": [289.15,289.15,0,0]
+        "y_nom": [12,12,1E3],
+        "y_nom_b": [289.15,289.15,0]
     }
 
     x_guess = x_guess.flatten()
-    
+    data["y2"] = data["Tret"]
+    data["y3"] = data["Tsup"]
+    data["y4"] = data["Prad"]
     
     with Estimation(config=cfg_path,
                     N=N,
@@ -290,26 +293,27 @@ if __name__ == "__main__":
 
         params_init = param_est.p0
 
-        Q = ca.DM.eye(4)
-        R = ca.DM.eye(4)
+        Q = ca.DM.eye(3)
+        R = ca.DM.eye(3)
         R[0,0] = 1E-2
         R[1,1] = 1E-2
         R[2,2] = 1E-4
-        R[3,3] = 1E-1
+        #R[3,3] = 1E-1
         
         v2 = param_est.get("v2")
         v3 = param_est.get("v3")
-        v4 = param_est.get("v4")
-        v5 = param_est.get("v5")
+        #v4 = param_est.get("v4")
+        #v5 = param_est.get("v5")
         
         R_MX = param_est.R
-        
-        param_est.res = ca.vertcat(
+           
+        #param_est.res = ca.vertcat(
             #ca.sqrt(R_MX[0,0])*v1,
             #ca.sqrt(R_MX[1,1])*v2,
-            ca.sqrt(R_MX[2,2])*v4
+            #ca.sqrt(R_MX[2,2])*v4
             #ca.sqrt(R_MX[3,3])*v4
-        ).T
+        #).T
+        
         lbp = param_est.get_lbp(1e-3)
         ubp = param_est.get_ubp(1e3)
         sol, params = param_est.solve(
@@ -343,91 +347,33 @@ if __name__ == "__main__":
         sol["Ti"].plot(color="m", linewidth=0.5, linestyle="dashed", ax=ax)
         sol["Ta"].plot(color="b", linewidth=0.5, linestyle="dashed", ax=ax)
         ax1 = ax.twinx()
-        #sol["u_val"].plot(ax=ax1, drawstyle="steps-post")
-        #sol["rise"].plot(ax=ax1, linestyle="dashed", drawstyle="steps-post")
-        #sol["hold"].plot(ax=ax1, marker="v", drawstyle="steps-post")
-        #sol["fall"].plot(ax=ax1, drawstyle="steps-post")
-        """
-        plot delta_m_flow.
-        sol["rise"].plot(ax=ax1, color="y", linewidth=0.75, linestyle="dashed", drawstyle="steps-post")
-        ax1.legend(["rise","hold","fall","delta_m_flow"])
-        """
 
         plt.show()
-        print(params)
         
-        ax = sol[["Tret", "Th", "Tsup", "Ti"]].plot()
-        plt.show()
-        
-        autocorrelation_plot(sol.v2)
-        plt.show()
-        """
-        Plot (sorted) heating curve.
-        """
-        
-        Tsup = sol["Tsup"].sort_values(ascending=False)
-        Tsup_act = sol["y3"][Tsup.index]
-        Tsup.index = range(len(Tsup.index))
-        Tsup_act.index = range(len(Tsup_act.index))
-        Tsup_act = pd.DataFrame(Tsup_act)
-        Tsup_act["time"] = Tsup_act.index
-        ax = Tsup.plot(color="k", linewidth=0.5)
-        Tsup_act.plot(kind="scatter" ,x="time", y="y3", ax=ax, color="r")
-        ax.legend()
-        plt.show()
-        
-        
-        fig, axes = plt.subplots(3,1, sharex=True)
-        ax = axes[0]
-        sol["Prad"].plot(ax=ax,linewidth=0.75, drawstyle="steps-post", color="k")
-        data["y4"].plot(ax=ax, linewidth=0.75, drawstyle="steps-post", color="r", linestyle="dashed")
-        
-        deltaT = sol["Tsup"] - sol["Tret"]
-        truth = sol["y3"] - sol["y2"]
-        ax = axes[1]
-        deltaT.plot(ax=ax, drawstyle="steps-post")
-        truth.plot(ax=ax, drawstyle="steps-post", color="r")
-        ax.legend(["model","truth"])
-        
-        ax = axes[2]
-        sol["m_flow"].plot(ax=ax, drawstyle="steps-post")
-        plt.show()
-        
-        """
-        Resampled plot.
-        """
         sol.index = data.dt_index
-        data.index = data.dt_index
-        ax = sol.Prad.resample(rule="1H").mean().plot(drawstyle="steps-post")
-        sol.y4.resample(rule="1H").mean().plot(drawstyle="steps-post", color="m")
-        plt.show()
+        sol_resampled = sol.resample(rule="15min").mean()
         
-        autocorrelation_plot(sol.v4)
+        ax = sol_resampled["Prad"].plot(color="r", drawstyle="steps-post")
+        sol_resampled["y4"].plot(color="k", ax=ax, drawstyle="steps-post")
+        #sol["Tset_sup"].plot(color="y", ax=ax)
+        #sol["Ti"].plot(color="m", linewidth=0.5, linestyle="dashed", ax=ax)
+        #sol["Ta"].plot(color="b", linewidth=0.5, linestyle="dashed", ax=ax)
+        #ax1 = ax.twinx()
+
         plt.show()
-        
-        autocorrelation_plot(sol.v4.resample(rule="1H").mean())
-        plt.show()
-        
-        sol.v4.resample(rule="1H").mean().hist()
-        plt.show()
-        
-        params.to_csv("results_HVAC/params_HVAC_model_tvp.csv", index=True)
-        sol.to_csv("results_HVAC/sol_HVAC_model_tvp.csv", index=True)
         
         print(params)
-        
-        
+         
     """
     Need to test in-sample to
     verify that root-finding of
     z works.
     """
-    
-    param_est = ParameterEstimation(config=cfg_path,
-                             N=N,
-                             dt=dt,
-                             functions=functions,
-                             param_guess=param_guess)
+    param_est = Estimation(config=cfg_path,
+                           N=N,
+                           dt=dt,
+                           functions=functions,
+                           param_guess=param_guess)
     I = param_est.integrator
     print(I)
     #x0 = [293.15,293.15,0]
@@ -439,8 +385,8 @@ if __name__ == "__main__":
     g = I.g
     G = I.G # Newton-solver for algebraic system of equations
     # guess for z for the Newton-solver:
-    z_guess = [310, 0, 0]
-    v = [0,0,0,0]
+    z_guess = [310]
+    v = [0,0,0]
     # "set" dataset
     data = validation_data
     N = len(data)
@@ -451,25 +397,54 @@ if __name__ == "__main__":
         
         #z = sol[I.dae.z].iloc[n].values
         # separate root-finding problem for values of z:
-        z = G(z_guess, x0, u, p, v, r)
+        z = G(z_guess, x0, u, p, r)
         zs = np.append(zs, np.array(z))
-        x0 = I.one_sample(x0,z,u,p,r)
+        x0 = I.one_sample(x0,z,u,p,r,0)
         z_guess = z
         #x0 = I.one_sample(x0,0,ca.vertcat(p, r),u,0,0,0)[0]
-    res_x = pd.DataFrame(data=xs.reshape(N, 4), columns=["Tret", "Tsup", "Th", "u_val"])
-    res_z = pd.DataFrame(data=zs.reshape(N, 3), columns=["T_set_sup", "Prad", "m_flow"])
+    res_x = pd.DataFrame(data=xs.reshape(N, 3), columns=["Tret", "Tsup", "Th"])
+    res_z = pd.DataFrame(data=zs.reshape(N, 2), columns=["T_set_sup", "Prad"])
     #res = pd.DataFrame(data=xs.reshape(N,2), columns=["Ti", "Te"])
-    res = pd.merge(res_x, res_z, left_index=True, right_index=True)
-    res.index = data.index
-    ax = res.Prad.plot(color="k", linewidth=0.5, drawstyle="steps-post")
-    #sol.Prad.plot(color="k", linestyle="dashed", ax=ax, linewidth=0.5, drawstyle="steps-post")
-    (data.y4).plot(color="r", linestyle="dashed", ax=ax, linewidth=0.5, drawstyle="steps-post")
+    sol = pd.merge(res_x, res_z, left_index=True, right_index=True)
+    sol.index = data.index
+    sol["y2"] = data["Tret"]
+    sol["y3"] = data["Tsup"]
+    sol["y4"] = data["Prad"]
+    #sol["Ti"] = data["Ti"]
+    
+    ax = sol["Tret"].plot(color="r")
+    sol["y2"].plot(color="k", ax=ax)
+    #sol["Tset_sup"].plot(color="y", ax=ax)
+    data["Ti"].plot(color="m", linewidth=0.5, linestyle="dashed", ax=ax)
+    data["Ta"].plot(color="b", linewidth=0.5, linestyle="dashed", ax=ax)
+    ax1 = ax.twinx()
+    (data["m_flow_bool"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
+    #(sol["m_flow_bool"] - sol["fall"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
+    #(sol["fall"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
     plt.show()
     
-    #sol.index = data.dt_index
-    #data.index = data.dt_index
-    ax = res.Prad.resample(rule="1H").mean().plot(drawstyle="steps-post")
-    data.y4.resample(rule="1H").mean().plot(drawstyle="steps-post", color="m")
+    ax = sol["Tsup"].plot(color="r")
+    sol["y3"].plot(color="k", ax=ax)
+    #sol["Tset_sup"].plot(color="y", ax=ax)
+    data["Ti"].plot(color="m", linewidth=0.5, linestyle="dashed", ax=ax)
+    data["Ta"].plot(color="b", linewidth=0.5, linestyle="dashed", ax=ax)
+    ax1 = ax.twinx()
+    (data["m_flow_bool"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
+    #(sol["m_flow_bool"] - sol["fall"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
+    #(sol["fall"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
     plt.show()
     
+    
+    sol_resampled = sol.resample(rule="15min").mean()
+    ax = sol_resampled["Prad"].plot(color="r", drawstyle="steps-post")
+    sol_resampled["y4"].plot(color="k", ax=ax, drawstyle="steps-post")
+    #sol["Tset_sup"].plot(color="y", ax=ax)
+    #data["Ti"].plot(color="m", linewidth=0.5, linestyle="dashed", ax=ax)
+    #data["Ta"].plot(color="b", linewidth=0.5, linestyle="dashed", ax=ax)
+    ax1 = ax.twinx()
+    (data["m_flow_bool"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
+    #(sol["m_flow_bool"] - sol["fall"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
+    #(sol["fall"]).plot(ax=ax1, color="m", linewidth=0.5, linestyle="dashed", drawstyle="steps-post")
+    plt.show()
+        
     print(p)

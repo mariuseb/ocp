@@ -227,17 +227,17 @@ class ResultGenerator(object):
         """
         ##########################################################
         covar_kwargs = {
-            "x_nom": 12,
-            "x_nom_b": 289.15,
-            "z_nom": [1e-2,1e-2,1E6,1E6,1],
-            "z_nom_b": [0]*5,
+            #"x_nom": 12,
+            #"x_nom_b": 289.15,
+            #"z_nom": [1e-2,1e-2,1E6,1E6,1],
+            #"z_nom_b": [0]*5,
             #"p_nom": OCP.get_scale(_params),
             "p_nom": self.param_est.p_nom,
             #"p_nom": [1e-2]*4 + [1e6]*4 + [1,1,1,1e-3,1,1],
-            "u_nom": [12]*7 + [1E3,1E3,1E3,1E3,10,10,1,1,1],
-            "u_nom_b ": [289.15]*7 + [0]*9,
-            "y_nom": [12],
-            "y_nom_b": [289.15],
+            #"u_nom": [12]*7 + [1E3,1E3,1E3,1E3,10,10,1,1,1],
+            #"u_nom_b ": [289.15]*7 + [0]*9,
+            #"y_nom": [12],
+            #"y_nom_b": [289.15],
             #"P_nom": [[1e-6,1e-6],[1e-6,1e-2]]  
             "P_nom": [[1e-3,1e-3],[1e-3,1e-3]]  
         }
@@ -996,7 +996,10 @@ class ResultGenerator(object):
         Simulate one-step ahead with Kalman feedback.
         """
         #ekf = KalmanDAE(ekf_config)
-        ekf = self.covar_solver.ekf
+        try:
+            ekf = self.covar_solver.ekf
+        except AttributeError:
+            ekf = KalmanDAE(ekf_config)
         """
         if R is not None:
             ekf.set_R(R)
@@ -1026,12 +1029,12 @@ class ResultGenerator(object):
         #z_guess = self.z_guess
         tvp = list(map(lambda x: x.split("_")[0], [p for p in self.dae.p if p.endswith("_w") or p.endswith("_low") or p.endswith("_high")]))
         if self.z_guess is None:
-            z_guess = self.params.loc[tvp].values
+            z_guess = p_base.loc[tvp].values
         else:
             z_guess = self.z_guess
         
-        if not tvp:
-            p_base = p_tvp
+        #if not tvp:
+        #    p_base = p_tvp
             
         # get correct order for ekf:
         if isinstance(p_base, (pd.Series, pd.DataFrame)):
@@ -1159,7 +1162,6 @@ class ResultGenerator(object):
         else:
             """
             Accumulate x_hat and P_prev:
-            """
             map_estimate = ekf.one_sample_feedback.mapaccum(
                                                             "simulator",
                                                             N-1,
@@ -1168,30 +1170,40 @@ class ResultGenerator(object):
                                                             #[0,1,2],
                                                             #[0,1,2]
                                                             )
+            """
+            map_estimate = ekf.one_sample_feedback_adj.mapaccum(
+                                                            "simulator",
+                                                            N,
+                                                            [0,1],
+                                                            [3,7]
+                                                            )
             
             # before filtering, we know x0:
-            result.loc[0, ekf.dae.x] = x0
+            result.loc[0, ekf.dae.x] = x0.values
             #y_to_x = [mx.name() for mx in list(ekf.dae.y.values())] 
             #x0_df = pd.DataFrame(columns=ekf.dae.x, data=x0)
             # TODO: generalize:
-            result.loc[0, "y_pred"] = x0["Ti"]
+            result.loc[0, "y_pred"] = x0["Ti"].values
             result.loc[0, ekf.p_cols] = np.array(P0x).flatten()
             
             res = map_estimate(
-                x_0=x0,
-                z0=ca.repmat(z_guess, 1, N-1),
+                x_0=x0.values,
+                z_0=ca.repmat(z_guess, 1, N),
                 #P_0=np.diag([1]*ekf.n_x),
                 P_0=P0x,
-                u=y_data[ekf.dae.u].values[0:N-1].T,
-                r=y_data[ekf.dae.r_names].values[0:N-1].T,
-                p=ca.repmat(p_base, 1, N-1),
+                u=y_data[ekf.dae.u].values[0:N].T,
+                r=y_data[ekf.dae.r_names].values[0:N].T,
+                p=ca.repmat(p_base, 1, N),
                 #y=y_data[ekf.dae.y_names].shift(-1).values.T[:,1:],
-                y=y_data[ekf.dae.y_names].values[1:].T,
-                Q=ca.repmat(Q, 1, N-1), # Q, flat, must be passed
-                R=ca.repmat(R, 1, N-1), # R must be passed
+                #y=y_data[ekf.dae.y_names].values[1:].T,
+                y=y_data[ekf.dae.y_names].values[:].T,
+                Q=ca.repmat(Q, 1, N), # Q, flat, must be passed
+                R=ca.repmat(R, 1, N), # R must be passed
+                dt=self.dt
             )
                  
             # use filtering form:
+            """
             x_hat = res["x_11"] #.reshape(((N-1), ekf.n_x))
             x_pred = res["x_10"] #.reshape(((N-1), ekf.n_x))
             P_hat = res["P_11"] #.reshape(((N-1), ekf.n_x))
@@ -1205,6 +1217,20 @@ class ResultGenerator(object):
             result.loc[1:N-1, "y_pred"] = np.array(y_pred).flatten()
             result.loc[:, "y_meas"] = y_data[ekf.dae.y_names].values.flatten()
             result.loc[1:N-1, ekf.p_cols] = np.array(P_hat).T.reshape((N-1,ekf.dae.n_x**2))
+            """
+            x_hat = res["x_00"] #.reshape(((N-1), ekf.n_x))
+            x_pred = res["x_10"] #.reshape(((N-1), ekf.n_x))
+            P_hat = res["P_00"] #.reshape(((N-1), ekf.n_x))
+            P_pred = res["P_10"] #.reshape(((N-1), ekf.n_x))
+            zs = np.array(res["z"]) #.reshape(((N-1), ekf.n_x))
+            #x_pred = res["x_10"].reshape(((N)*ekf.n_x, 1))
+            y_pred = res["h_x"]
+            # NOTE: x_hat, x_pred shifted
+            xs = np.append(xs, np.array(x_pred))  
+            result.loc[0:N-1, ekf.dae.x] = np.array(x_hat).T
+            result.loc[0:N-1, "y_pred"] = np.array(y_pred).flatten()
+            result.loc[:, "y_meas"] = y_data[ekf.dae.y_names].values.flatten()
+            result.loc[0:N, ekf.p_cols] = np.array(P_hat).T.reshape((N,ekf.dae.n_x**2))
             #result.loc[1:, "res"] = result.loc[:, "y_meas"] - result.loc[:, "y_pred"]
             #xs = xs.reshape(ekf.n_x, N)
         
@@ -1221,16 +1247,16 @@ class ResultGenerator(object):
         """
         result["res"] = result["y_meas"] - result["y_pred"]  
         self.one_step_res = pd.DataFrame(result["res"])
-        self.one_step_res.columns = map(lambda x: x + "_res", self.covar_solver.ekf.y)
+        self.one_step_res.columns = map(lambda x: x + "_res", ekf.y)
         self.one_step_res[ekf.p_cols] = np.nan
         self.one_step_res[ekf.dae.x] = np.nan
         self.one_step_res["V_k"] = np.nan
         ####################### save model preds: #######################################
         self.one_step_res.loc[0, ekf.p_cols] = np.array(P0x).flatten()
-        self.one_step_res.loc[0, ekf.dae.x] = x0
-        self.one_step_res.loc[1:,ekf.p_cols] = np.array(P_pred).T.reshape((N-1, ekf.n_x**2))
-        self.one_step_res.loc[1:, ekf.dae.x] = np.array(x_pred).T.reshape(((N-1), ekf.n_x))
-        self.one_step_res.loc[1:, "V_k"] = np.array(res["V_k"]).T
+        self.one_step_res.loc[0, ekf.dae.x] = x0.values
+        self.one_step_res.loc[0:,ekf.p_cols] = np.array(P_pred).T.reshape((N, ekf.n_x**2))
+        self.one_step_res.loc[0:, ekf.dae.x] = np.array(x_pred).T.reshape(((N), ekf.n_x))
+        self.one_step_res.loc[0:, "V_k"] = np.array(res["V_k"]).T
         #################################################################################
         # save output prediction covariance:
         result.index = y_data.dt_index
@@ -1419,6 +1445,7 @@ class ResultGenerator(object):
             # now, can plot:
             fig, ax = plt.subplots(1,1,sharex=True)
             #if ax is None:
+            self.filtered = self.filtered.astype(float)
             self.filtered.y_pred.plot(
                                     color="r",
                                     drawstyle="steps-post",
@@ -1445,9 +1472,9 @@ class ResultGenerator(object):
             ax.set_ylim([18,25])
             fig.savefig("plots/" + "one_step_" + str(y_data.index[0]).split(" ")[0] + suff + ".pdf")
             #ax.legend(["model", "measured", "filtered"])
-            #plt.show()
+            plt.show()
             
-            plt.close()
+            #plt.close()
         
     def make_journal_plot(
                           self,
