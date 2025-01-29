@@ -17,7 +17,7 @@ pd.set_option('display.width', 1000)
 if __name__ == "__main__":
     
     
-    cfg_path = os.path.join(get_opt_config_path(), "2R2C_MPC.json")
+    cfg_path = os.path.join("2R2C_MPC.json")
     data_path = os.path.join(ocp.__path__[0], "tests", "data", "MPC_open_loop_test.csv")
     
     data = pd.read_csv(data_path, index_col=0)
@@ -76,12 +76,19 @@ if __name__ == "__main__":
                     2E7,
                     12])
         
-    """
     params = ca.DM([0.0015,
                     0.0116,
                     1.33E6,
                     6.64E6,
                     5.53])
+    """
+    
+    params = {'Ai': 69.06802862429473,
+            'Ce': 17850476.345011726,
+            'Ci': 25668359.385177102,
+            'Rea': 0.17388954066535392,
+            'Rie': 0.13935995905515083}
+    
     
     #param_est = ParameterEstimation(cfg_path, y_data, param_guess)
     
@@ -90,6 +97,7 @@ if __name__ == "__main__":
     #data = data.iloc[0:2]
     
     mpc = MPC(
+              params=params,
               config=cfg_path,
               N=N,
               dt=dt

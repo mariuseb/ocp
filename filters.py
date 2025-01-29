@@ -63,7 +63,7 @@ class Filter(object):
             self.R = R
         # easy access for y:
         
-        self.P_prev = kwds.pop("P0", None)
+        self.P_prev = cfg.pop("P0", None)
         #if P_prev is None:
         #    self.P_prev = ca.DM.eye(self.dae.n_x)
 
