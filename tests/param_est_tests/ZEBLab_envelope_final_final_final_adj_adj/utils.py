@@ -46,8 +46,8 @@ def prepare_data(data, room=219):
     y_data["Ti"] = temps_219
     y_data.Ti[y_data.Ti > 30] = 30
     
-    y_data["phi_s"] = data["I_ver"]
-    y_data["I_hor"] = data["I_hor"]
+    y_data["phi_s"] = data["I_hor"]
+    #y_data["I_hor"] = data["I_hor"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_" + str(room)]*1000
     #y_data["CO2_in"] = data["CO2_219"]

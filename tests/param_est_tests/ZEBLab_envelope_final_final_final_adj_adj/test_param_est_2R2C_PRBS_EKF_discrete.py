@@ -252,6 +252,9 @@ if __name__ == "__main__":
     lbx = 0.7*x_guess
     ubx = 2.0*x_guess
 
+    params_start = pd.DataFrame.from_dict(data=priors, orient="index")
+    params_start.loc[["Rie", "Rea", "Ci", "Ce", "Ai"]].to_csv("2R2C_start.csv")
+
     with Estimation(
                     config=cfg_path,
                     N=N,
