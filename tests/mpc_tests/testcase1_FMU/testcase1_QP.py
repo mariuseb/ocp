@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('pdf')
-from ocp.boptest_api import Boptest
+from ocp.boptest_api_old import Boptest
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
 import os

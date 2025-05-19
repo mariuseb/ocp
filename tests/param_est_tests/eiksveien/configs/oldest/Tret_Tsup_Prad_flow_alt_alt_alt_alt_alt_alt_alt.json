@@ -1,0 +1,101 @@
+{
+    "model": {
+        "ode": {
+            "Tret": "((Tset_ret - Tret)/(Rret*Cret))",
+            "Tsup": "((Tset_sup - Tsup)/(Rsup*Csup))",
+            "Th": "Prad/Ch + (Tret - Th)/(Rrh*Ch) + (Ti - Th)/(Rih*Ch)",
+            "u_val": "(u_val_set - u_val)*(1/tau)"
+        },
+        "alg": {
+            "Tset_ret": "Tset_ret - Th*m_flow_bool - (Ti - deltaT_ss_b)*(1 - m_flow_bool)",
+            "Tset_sup": "Tset_sup - (T_set_sup_b - T_set_ret_a*(Ta - Ta_dim))*m_flow_bool - Ti*(1 - m_flow_bool)",
+            "Prad": "Prad - m_flow*cp_water*(Tsup - Tret)",
+            "m_flow": "m_flow - m_flow_nom*u_val",
+            "deltaT_ss": "deltaT_ss - (deltaT_ss_b + deltaT_ss_a*m_flow_ss)"
+        },
+        "w": {
+            "v1": "m_flow_weight*(Tret - y1)",
+            "v2": "m_flow_weight*(Tsup - y2)",
+            "v3": "Prad - y3",
+            "v4": "m_flow - y4"
+        },
+        "p": [
+            "Ta_dim",
+            "T_set_sup_b",
+            "T_set_sup_a",
+            "Ta_max",
+            "Rsup",
+            "Csup",
+            "Rih",
+            "Csup_hold",
+            "T_set_ret_b",
+            "T_set_ret_a",
+            "Rret",
+            "Cret",
+            "Rrh",
+            "Ch",
+            "deltaT_ss_b",
+            "deltaT_ss_a",
+            "delta_Tret",
+            "tau",
+            "m_flow_nom",
+            "cp_water"
+        ],
+        "u": [
+            "Ta",
+            "Ti",
+            "m_flow_bool",
+            "m_flow_weight",
+            "delta_m_flow",
+            "u_val_set",
+            "Tret_rise",
+            "rise",
+            "m_flow_ss",
+            "fall"
+        ],
+        "z": [
+            "Tset_ret",
+            "Tset_sup",
+            "Prad",
+            "m_flow",
+            "deltaT_ss"
+        ],
+        "x": [
+          "Tret",
+          "Tsup",
+          "Th",
+          "u_val"
+        ],
+        "y": [
+            ["y1", "Tret"],
+            ["y2", "Tsup"],
+            ["y3", "Prad"],
+            ["y4", "m_flow"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [280,280,-500,0,-20],
+            "ubz": [400,400,3000,0.01,20]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(v4, v4)@R[3,3]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": true
+}

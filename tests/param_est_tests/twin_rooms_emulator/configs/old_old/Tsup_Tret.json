@@ -1,0 +1,82 @@
+{
+    "model": {
+        "ode": {
+            "Tret": "(Tret_set - Tret)/tau"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n1, 1E-6)",
+            "rad_val_on": "rad_val_on - (1/(1 + ca.exp(-(rad_val - rad_val_th)/k)))",
+            "Tret_set": "Tret_set - (Tsup_b + Tsup_a*rad_val)"
+        },
+        "w": {
+            "v6": "y6 - rad_flo",
+            "v9": "y9 - Tret"
+        },
+        "p": [
+            "cp_water",
+            "eta_hex3",
+            "eta_hex1",
+            "cp_air",
+            "tau",
+            "rad_val_th",
+            "k",
+            "n1",
+            "Tsup_b",
+            "Tsup_a",
+            "rad_flo_nom"
+        ],
+        "u": [
+            "rad_val",
+            "coi_val",
+            "rad_val_weight"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "x": [
+            "Tret"
+        ],
+        "z": [
+            "rad_flo",
+            "rad_val_on",
+            "Tret_set"
+        ],
+        "y": [
+            ["y6", "rad_flo"],
+            ["y9", "Tret"]
+            
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [0,0,200],
+            "ubz": [10,1,400]
+        },
+        "x": {
+            "lbx": [280],
+            "ubx": [340]
+        }
+    },
+    "objective": "dot(v6, v6)@R[0,0] + dot(rad_val_weight*v9, rad_val_weight*v9)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

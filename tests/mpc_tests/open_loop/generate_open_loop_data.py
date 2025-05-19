@@ -1,4 +1,4 @@
-from boptest_api import Boptest
+from ocp.boptest_api_old import Boptest
 import casadi as ca
 import matplotlib.pyplot as plt
 import pandas as pd

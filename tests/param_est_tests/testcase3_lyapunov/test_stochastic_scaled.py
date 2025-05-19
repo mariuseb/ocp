@@ -16,7 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
 from matplotlib import rc
-from ocp.boptest_api import Boptest
+from ocp.boptest_api_old import Boptest
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from ocp.filters import KalmanBucy, KalmanDAE

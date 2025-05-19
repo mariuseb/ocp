@@ -30,8 +30,8 @@ def prepare_data(data, room=219):
     
     temps_219_cols = [col for col in data.columns if "T_" + str(room) in col]
     #temps_219_cols = ["T_219_TR3"]
-    #temps_219 = data[temps_219_cols].mean(axis=1)
-    temps_219 = data["T_219_TR3"]
+    temps_219 = data[temps_219_cols].mean(axis=1)
+    #temps_219 = data["T_219_TR3"]
     y_data = data[["P_rad_" + str(room)]]*1000
     y_data.columns = ["phi_h"]
     #y_data["phi_int"] = data["phi_int_219"]
@@ -49,8 +49,8 @@ def prepare_data(data, room=219):
     y_data["Ti"] = temps_219
     y_data.loc[y_data.Ti > 30, "Ti"] = 30
     
-    y_data["phi_s"] = data["I_ver"]
-    #y_data["phi_s"] = data["I_hor"]
+    #y_data["phi_s"] = data["I_ver"]
+    y_data["phi_s"] = data["I_hor"]
     #y_data["I_hor"] = data["I_hor"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_" + str(room)]*1000

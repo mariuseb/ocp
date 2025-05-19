@@ -47,8 +47,11 @@ class Forecaster(object):
 class RestApi(object):
     ''' Abstract class. '''
     def __init__(self):
-        self.url = 'http://bacssaas_boptest:5000'
+        self.url = 'http://127.0.0.1:80'
         self.name = self.get_name()['payload']['name']
+
+    def get_testcases(self):
+        return requests.get('testcases').json()
 
     def initialize(self):
         return requests.put('{0}/initialize'.format(self.url), data={'start_time': self.start_time, 'warmup_period': self.warmup_period})

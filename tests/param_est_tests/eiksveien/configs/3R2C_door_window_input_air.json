@@ -1,0 +1,75 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai*(phi_s/Ci) + (Tbath - Ti)/(Rbi*Ci) + (Ta - Ti)/(Ria_TVP*Ce)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ria_TVP": "(Ria - door*Ria_d - window*Ria_w)  - Ria_TVP"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Ria_d",
+            "Ria_w",
+            "Rbi",
+            "Ci",
+            "Ce",
+            "Ai"
+        ],
+        "u": [
+            "Ta",
+            "Tbath",
+            "phi_h",
+            "phi_s",
+            "door",
+            "window"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "Ria_TVP"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 <= Ria - Ria_d"
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [1e-6],
+            "ubz": [1e1]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 1.05,
+        "ipopt.max_iter": 30000,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

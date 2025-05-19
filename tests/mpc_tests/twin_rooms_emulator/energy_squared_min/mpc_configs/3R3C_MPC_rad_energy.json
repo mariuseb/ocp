@@ -1,0 +1,100 @@
+{
+    "model": {
+        "ode": {
+            "Trad": "P_to_rad/Crad - Prad_to_env/Crad",
+            "Tret": "Prad/Cret + (Ti_ENV + Tret_offset - Tret)/(Riret*Cret)",
+            "Tsup": "rad_219*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_219)*(Ti_ENV + Tsup_offset - Tsup)/(Risup*Csup)"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_219, n, 1E-6)",
+            "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))",
+            "Prad": "Prad - (Tsup - Tret)*cp_water*rad_flo",
+            "P_to_rad": "P_to_rad - (Tsup - Trad)*cp_water*rad_flo",
+            "Prad_to_env": "Prad_to_env - (Trad - Ti_ENV)/Rirad"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Ai",
+            "n",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Riret",
+            "Risup",
+            "Cret",
+            "Tsup_offset",
+            "Tret_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim",
+            "Trad_zero"
+
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "Prad_to_env_ENV",
+            "Ti_ENV"
+        ],
+        "x": [
+            "Trad",
+            "Tret",
+            "Tsup"
+        ],
+        "z": [
+          "rad_flo",
+          "Tset_sup",
+          "Prad",
+          "P_to_rad",
+          "Prad_to_env"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0],
+            "ubu": [1]
+        },
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        },
+        "z": {
+            "lbz": [0,280,0,0,0],
+            "ubz": [1,340,1E4,1E4,1E4]
+        }
+    },
+    "objective": "dot(Prad_to_env_ENV - Prad_to_env, Prad_to_env_ENV - Prad_to_env) + dot(Prad, Prad) + 1E3*dot(sl, sl)",
+    "N": 96,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

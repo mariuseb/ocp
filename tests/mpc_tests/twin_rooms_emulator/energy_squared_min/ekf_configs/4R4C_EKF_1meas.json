@@ -1,0 +1,63 @@
+{
+    "model": {
+        "w": {
+            "v1": "Ti - y1"   
+        },
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + Prad_to_env/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "Prad/Crad - Prad_to_env/Crad",
+            "Tsup": "rad_219*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_219)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Ai",
+            "n",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Risup",
+            "Tsup_offset",
+            "Tret_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim",
+            "Prad_to_env_zero"
+        ],
+        "u": [
+            "rad_219",
+            "Prad",
+            "Prad_to_env",
+            "Tset_sup"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad",
+            "Tsup"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+}

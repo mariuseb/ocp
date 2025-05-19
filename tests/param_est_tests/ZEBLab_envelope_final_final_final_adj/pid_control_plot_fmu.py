@@ -59,7 +59,7 @@ if __name__ == "__main__":
     Check of resampling facilities.
     """
     
-    data_path = os.path.join("ZEBLab_nov23_feb24_1m.csv")
+    data_path = os.path.join("ZEBLab_nov23_1m.csv")
     Data = ZEBData(data_path)
     """
     Hyper-parameters for run:
@@ -91,7 +91,8 @@ if __name__ == "__main__":
     test["delT"] = test.Ti - test.Tset
     #test["delT"][start:(start + pd.Timedelta(hours=2))] = np.nan
     #test["delT"].loc[test.val_pos_219 == 0]
-    test["delT"].loc[test.val_pos_219 == 0] = 0
+    #test["delT"].loc[test.val_pos_219 == 0] = 0
+    test["delT"].loc[test["delT"] > 0] = 0
     
     # PID simulation test
     mpc_cfg = os.path.join("mpc_configs", "LimPID.json")
@@ -250,9 +251,8 @@ if __name__ == "__main__":
     """
     fig.tight_layout()
     #plt.gcf().autofmt_xdate()
-    plt.savefig("plots/existing_control.pdf")
+    plt.savefig("plots/existing_control.png")
     plt.show()
-    
     
     print("head")
 

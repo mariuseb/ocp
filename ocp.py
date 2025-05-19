@@ -297,9 +297,8 @@ class OCP(metaclass=ABCMeta):
             self.gauss_newton = True
         else:
             self.gauss_newton = False
-            
+        self._solver = config.pop("_solver", "ipopt")
 
-        
         #if isinstance(data, pd.DataFrame):
         #    self.dt = dt = data.index[1] - data.index[0]
             # need?
@@ -593,21 +592,31 @@ class OCP(metaclass=ABCMeta):
             hess_lag = self.get_hess_lag(self.res, self.nlp["x"])
         else:
             hess_lag = None
-
+        discrete = [False]*self.nlp["x"].shape[0]
+        if self._solver == "bonmin":
+            opt = dict()
+            discrete = np.array([False]*self.nlp["x"].shape[0])
+            for disc_var in self.config["discrete"]:
+                inds = self.get_inds_of_dae_var(disc_var)
+                discrete[inds] = True
+        else:
+            opt = self.opt    
         self.solver = ca.nlpsol(
-                                "solver", \
-                                "ipopt", \
-                                self.nlp, \
-                                #dict(hess_lag=hessLag, \
-                                dict(
-                                    hess_lag=hess_lag,
-                                    jit=self.with_jit, \
-                                    compiler=self.compiler, \
-                                    #ad_weight=0,
-                                    **self.opt
-                                    )
-                            )
-        #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
+                            "solver", \
+                            self._solver, \
+                            self.nlp, \
+                            #dict(hess_lag=hessLag, \
+                            dict(
+                                hess_lag=hess_lag, \
+                                jit=self.with_jit, \
+                                compiler=self.compiler, \
+                                discrete=discrete, \
+                                #ad_weight=0,
+                                **opt
+                                ),
+                            #discrete=discrete
+                        )
+    #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
         #self.hsolver_ipopt = self.jsolver_ipopt.factory('h', self.solver.name_in(), ['jac:jac_f_p:p'])
         #self.hsolver_ipopt = self.solver.factory('h', self.solver.name_in(), ['hess:f:p:p'])
         #self.sqp_adj = self.solver.reverse(1)
@@ -772,7 +781,7 @@ class OCP(metaclass=ABCMeta):
                     for x_ in x_symbols:
                         vals[x_] = vals[x_][0::(self.integrator.d+1)]
                     
-                    
+            vals["ca"] = ca     
             vals["expr_dict"] = expr_dict
             exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
             #exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
@@ -1046,6 +1055,27 @@ class OCP(metaclass=ABCMeta):
         #    ret_val = ret_val[:-1]
             
         return ret_val
+
+    def get_inds_of_dae_var(self, varname):
+        """
+        Get indices of dae var 
+        in ocp for integer marking.
+        """
+        ocp_name, offset = self.get_ocp_name_and_offset(varname)
+        start, stop = \
+            self.nlp_parser[ocp_name]["range"]["a"], \
+        self.nlp_parser[ocp_name]["range"]["b"]
+        # step:
+        dae_dim = getattr(self, "n_" + ocp_name)
+        # inds for marking:
+        inds = np.arange(
+            start=start + offset,
+            stop=stop + dae_dim,
+            step=dae_dim
+        )        
+        return list(inds)
+        
+        
     
     def get_var_at_stage(self, name, stage: int):
         """
@@ -1437,6 +1467,19 @@ class OCP(metaclass=ABCMeta):
             """
             #bounds["x"]["x0"] = x_init/self.x_nom
             #bounds["x"]["x0"] = (x_init - self.x_nom_b)/self.x_nom
+            """
+            try:
+                try:
+                    b_dim = bias.shape[0]*bias.shape[1]    
+                except IndexError:
+                    b_dim = bias.shape[0]
+                x_dim = x_init.shape[0]*x_init.shape[1]    
+                if b_dim == x_dim:
+                    bias = bias.reshape(x_init.shape)
+                    scale = scale.reshape(x_init.shape)
+            except AttributeError: # is list, safe pass
+                pass
+            """
             bounds["x"]["x0"] = (x_init - bias)/scale
 
         # TODO: extend with lbz, ubz
@@ -1635,23 +1678,29 @@ class OCP(metaclass=ABCMeta):
                         bounds[varname]["lb"] = \
                             bounds[varname]["ub"] = \
                                 bounds[varname]["x0"] = \
-                                    None
-                                    
-                        
-                        
-                    
+                                    None    
         # TODO: handle better. Iterate on num states.
         #if lbx is not None and ubx is not None:
         #    bounds["x"]["lb"] = np.append(x0, lbx)
         #    bounds["x"]["ub"] = np.append(x0, ubx)
             #bounds["x"]["lb"] = lbx
             #bounds["x"]["ub"] = ubx
-        #return ca.DM(data[self.u_names].values), ca.DM(data[self.y_names].values)
-        
+        #return ca.DM(data[self.u_names].values), ca.DM(data[self.y_names].values) 
+        if "r" in bounds_cfg and sum(data.isna().sum()): # parts of disturbance are 'free'
+            # where?
+            pos = np.argwhere(np.isnan(bounds["r"]["x0"])) % self.n_r
+            # TODO: fix for potentially more variables:
+            unique_pos = np.unique(pos)[1]
+            scale = self.r_nom
+            bias = self.r_nom_b
+            scaled_lb = (bounds_cfg["r"]["lbr"][unique_pos] - bias[unique_pos])/scale[unique_pos]
+            scaled_ub = (bounds_cfg["r"]["ubr"][unique_pos] - bias[unique_pos])/scale[unique_pos]
+            bounds["r"]["x0"] = np.nan_to_num(bounds["r"]["x0"], nan=scaled_lb)
+            bounds["r"]["lb"] = np.nan_to_num(bounds["r"]["lb"], nan=scaled_lb)
+            bounds["r"]["ub"] = np.nan_to_num(bounds["r"]["ub"], nan=scaled_ub)   
         # bounds overwrite:
         self.bounds = bounds
-    
-        
+            
     def get_files_before(self):
         """
         Get files in $PWD before jitting.

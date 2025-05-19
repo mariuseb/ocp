@@ -1,0 +1,62 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*UA_nom*(Tsup - Ti)**2  + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ph": "UA_nom*(Tsup - Ti)**2 - Ph*eta"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n",
+            "UA_nom",
+            "eta"
+        ],
+        "u": [
+            "Tsup"
+        ],
+        "z": [
+            "Ph"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 <= Tsup - Ti"        
+        ]
+    },
+    "N": 24,
+    "dt": 3600,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma27",
+        "ipopt.ma57_pre_alloc": 3, 
+        "ipopt.max_cpu_time": 1,
+        "ipopt.hessian_approximation": "limited-memory",
+        "ipopt.nlp_scaling_method": "gradient-based"
+    },
+    "codegen": false
+}

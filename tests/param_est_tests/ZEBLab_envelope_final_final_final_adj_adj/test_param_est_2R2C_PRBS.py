@@ -60,7 +60,7 @@ if __name__ == "__main__":
     
     start = pd.Timestamp("2024-12-21 09:30")
     stop = pd.Timestamp("2024-12-31 00:00")
-    sampling_rate = "5min"
+    sampling_rate = "15min"
     
     y_data, dt, N = zeb_data.get_dataset(
                                         start=start, 
@@ -254,7 +254,7 @@ if __name__ == "__main__":
                                       ubx=ubx,
                                       x_guess=x_guess,
                                       covar=ca.veccat(Q, R),
-                                      codegen=True
+                                      codegen=False
                                       )
 
         sol.index = y_data.dt_index

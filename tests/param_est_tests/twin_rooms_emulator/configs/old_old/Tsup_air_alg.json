@@ -1,0 +1,68 @@
+{
+    "model": {
+        "alg": {
+            "Tsup_air": "Tsup_air - ((ahu_reaTHeaRec + Rsr*Pvent)*ahu_pump_sup_on + Tsup_air_ss*(1 - ahu_pump_sup_on))",
+            "Rsr": "Rsr - ca.if_else(ahu_pump_sup > 0.5, (Rsr_b + Rsr_a*regNonZeroPower((1-ahu_pump_sup), n2, 0.01)), Rs_low)"
+        },
+        "w": {
+            "v8": "y8 - Tsup_air"
+        },
+        "p": [
+            "Rs",
+            "Rsr_b",
+            "Rsr_a",
+            "Rs_low",
+            "n2",
+            "Tsup_air_ss"
+        ],
+        "u": [
+            "Tsup",
+            "Tret",
+            "rad_val",
+            "coi_val",
+            "ahu_reaTHeaRec",
+            "ahu_pump_sup",
+            "ahu_pump_sup_on",
+            "Pvent"
+            
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "z": [
+          "Tsup_air",
+          "Rsr"
+        ],
+        "y": [
+            ["y8", "Tsup_air"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [250,1E-10],
+            "ubz": [350,1]
+        }
+    },
+    "objective": "dot(v8, v8)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

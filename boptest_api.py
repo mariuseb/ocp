@@ -53,17 +53,25 @@ class Forecaster(object):
 
         
 # BOPTEST subclass of RESTApi
-
 class RestApi(object):
     ''' Abstract class. '''
     def __init__(self):
-        self.url = 'http://bacssaas_boptest:5000'
-        self.name = self.get_name()['name']
-        self.forecast_points = list(requests.get('{0}/forecast_points'.format(self.url)).json()["payload"].keys())
+        #self.url = 'http://docker-web-1:80'
+        self.url = 'http://docker-boptest-1:5000'
+        #self.name = self.get_name()['name']
+        #self.forecast_points = list(requests.get('{0}/forecast_points'.format(self.url)).json()["payload"].keys())
+    
+    def initialize(self):
+        return requests.put('{0}/initialize/{1}'.format(self.url, self.testid), data={
+            'start_time': self.start_time, 
+            'warmup_period': self.warmup_period
+            }
+        )
 
+    '''
     def initialize(self):
         return requests.put('{0}/initialize'.format(self.url), data={'start_time': self.start_time, 'warmup_period': self.warmup_period})
-        
+      
     def get_name(self) -> dict:
         return requests.get('{0}/name'.format(self.url)).json()["payload"]
     
@@ -90,7 +98,7 @@ class RestApi(object):
          
     def set_step(self, step):
         return requests.put('{0}/step'.format(self.url), data={'step':step})
-        
+    
     def get_step(self, step):
         return requests.get('{0}/step'.format(self.url)).json()["payload"]
     
@@ -99,22 +107,87 @@ class RestApi(object):
    
     def advance(self, u={}) -> dict:
         return requests.post('{0}/advance'.format(self.url), json=u).json()["payload"]
+    '''
+    
+    def get_forecast(
+            self, 
+            N: int, 
+            dt: int
+        ):
+        return requests.put('{0}/forecast/{1}'.format(self.url, self.testid), 
+                            data={'point_names': self.forecast_points,
+                                  'horizon': dt*(N-1),
+                                  'interval': dt}
+                            ).json()["payload"]
+    
+    def set_forecast_params(self, u={}):
+        return requests.put('{0}/forecast_parameters/{1}'.format(self.url, self.testid), data=u)
+    
+    def get_measurement_info(self):
+        return requests.get('{0}/measurements/{1}'.format(self.url, self.testid)).json()["payload"]
+
+    def get_forecast_info(self):
+        return requests.get('{0}/forecast_points/{1}'.format(self.url, self.testid)).json()["payload"]
+    
+    def get_input_info(self):
+        return requests.get('{0}/inputs/{1}'.format(self.url, self.testid)).json()["payload"]
+         
+    def set_step(self, step):
+        return requests.put('{0}/step/{1}'.format(self.url, self.testid), data={'step':step})
+    
+    def get_step(self, step):
+        return requests.get('{0}/step/{1}'.format(self.url, self.testid)).json()["payload"]
+    
+    def put_results(self, ts, tf, points):
+        requests.put('{0}/results/{1}'.format(self.url, self.testid),
+                        json={
+                            'point_names': points,
+                            'start_time': ts,
+                            'final_time': tf
+                    }).json()["payload"]
+    
+    def get_kpis(self):
+        return requests.get('{0}/kpi/{1}'.format(self.url, self.testid)).json()["payload"]
+   
+    def advance(self, u={}):
+        return requests.post('{0}/advance/{1}'.format(self.url, self.testid), json=u).json()["payload"]
+    
+    def get_testcases(self):
+        return [case["testcaseid"] for case in requests.get('{0}/testcases'.format(self.url)).json()]
+    
+    def stop_testcase(self, testid):
+        return requests.put('{0}/stop/{1}'.format(self.url, testid))
+    
+    def select_testcase(self, name):
+        resp = requests.post('{0}/testcases/{1}/select'.format(self.url, name)).json()
+        return resp["testid"]
+
     
 
 class Boptest(RestApi):
     ''' Wrapper for Restful-API to BOPTEST. '''
     def __init__(self, cfg, name=None, bypass_forecast=False):
         RestApi.__init__(self)
-        
+        self.name = name
+        try: # if file exists
+            with open("testid.txt", "r") as f:
+                old_testid = f.read()
+            self.stop_testcase(old_testid)
+        except FileNotFoundError:
+            pass
         if isinstance(cfg, str) or isinstance(cfg, os.PathLike):
             with open(cfg, "r") as f:
                 cfg = json.load(f)
-                
         cfg = cfg[name]
-        
+        # spin up testcase worker:
+        testcases = self.get_testcases()
+        assert name in testcases
+        self.testid = self.select_testcase(name)
+        # write testid to file in current folder:
+        with open("testid.txt", "w+") as f:
+            f.write(self.testid)
         self.maps = cfg.pop("maps")
         #self.var = cfg['mosiop']['var_info']
-
         #self.h = h = cfg['mosiop']['MPC']['temporal']['h']
         #N = cfg['mosiop']['MPC']['temporal']['N']
         self.h = h = cfg["misc"].pop("h")
@@ -124,18 +197,14 @@ class Boptest(RestApi):
         if bypass_forecast:
             # read resource folder:s
             self.get_forecast_df() # path?
-        
         if self.noise:
-            np.random.seed(seed=42)    
-
+            np.random.seed(seed=42)
         self.set_step(h)
         self.set_forecast_params({"horizon": h*(N-1), "interval": h})
-
+        # start time
         self.start_time = self.time = cfg["misc"].pop("start_time")
         self.warmup_period = cfg["misc"].pop("warmup_period")
-        
-        # write info to text files in current dir
-        
+        # write info to text files in current dir        
         if not os.path.exists(self.name + "_meas_info.txt"):
             with open(self.name + "_meas_info.txt", "w+") as f:
                 pprint(self.get_measurement_info(), stream=f)
@@ -168,7 +237,6 @@ class Boptest(RestApi):
             
         self.forecast_df = pd.DataFrame(columns=list(self.r.keys()))
         
-        
         #self.result_df = pd.DataFrame(columns = \
         #    list(set(list(map(lambda x: x + "_u", list(self.u.values()))) + \
         #    list(self.boptest_to_ocp.values()))))
@@ -178,7 +246,7 @@ class Boptest(RestApi):
         
         self.initialize()
         # get initial temperature:
-        res = self.get_results(tf=self.start_time+self.h, ts=self.start_time)
+        #res = self.get_results(tf=self.start_time+self.h, ts=self.start_time)
                        
         self.y_names = list(self.y.values())
         
@@ -187,13 +255,15 @@ class Boptest(RestApi):
         #                            [v for k, v in self.boptest_to_ocp.items() if v not in self.y_names]
         self.u_names = [col for col in self.result_df.columns if col not in self.y_names]
         
+        self.result_df = pd.DataFrame() # empty frame
+        
         #self.result_df.loc[int(res.index[0]), self.y_names] = res.loc[res.index[0], self.y_names]
-        self.result_df.loc[int(res.index[0])] = res.loc[res.index[0], self.y_names]
+        #self.result_df.loc[int(res.index[0])] = res.loc[res.index[0], self.y_names]
         
             #list(self.boptest_to_ocp[k] for k, v in self.u.items()))
         #self.forecast = pd.DataFrame(columns=list(self.r.values()))
         
-        self.initialize()
+        #self.initialize()
 
         # invert map for forecast:
         self.forecast_map = {v: k for k, v in self.maps["r"].items()}
@@ -238,6 +308,11 @@ class Boptest(RestApi):
                     how='outer'), dfs)
         df.index = df.time
         self.whole_forecast_df = df.ffill()
+
+    @property
+    def forecast_points(self):
+        forecast_info = self.get_forecast_info()
+        return list(forecast_info.keys())
 
     def evolve(self,
                u={},
@@ -369,24 +444,15 @@ class Boptest(RestApi):
     def get_results(self, tf, ts=0):
         ''' Get results. '''
         measurements, inputs = self.get_measurement_info(), self.get_input_info()
-
         #forecasts = self.maps["r"].values()
-
         points = list(measurements.keys()) + list(inputs.keys())
-        
         #for point in points:
-        res = requests.put('{0}/results'.format(self.url),
-                              json={
-                                  'point_names': points,
-                                  'start_time': ts,
-                                  'final_time': tf
-                                  }).json()["payload"]
+        res = self.put_results(ts, tf, points)
         df_res = pd.DataFrame().from_dict(res)
         #df_res = pd.concat((df_res,pd.DataFrame(data=res[point], index=res['time'],columns=[point])), axis=1)
         # pdb.set_trace()    
         df_res.index.name = 'time'
         # df_res.index = df_res.index.values/3600 # convert s --> hr
-        
         return df_res
 
     def get_data(self, \

@@ -32,9 +32,9 @@ def prepare_data(data, room=219):
     y_data = data[["P_rad_" + str(room)]]*1000
     y_data.columns = ["phi_h"]
     #y_data["phi_int"] = data["phi_int_219"]
-    y_data["phi_int_plugs"] = data["phi_int_" + str(room) + "_plugs"]
-    y_data["phi_int_lig"] = data["phi_int_" + str(room) + "_lig"]
-    y_data["phi_int"] = data["phi_int_" + str(room) + "_lig"] + data["phi_int_" + str(room) + "_plugs"]
+    #y_data["phi_int_plugs"] = data["phi_int_" + str(room) + "_plugs"]
+    #y_data["phi_int_lig"] = data["phi_int_" + str(room) + "_lig"]
+    #y_data["phi_int"] = data["phi_int_" + str(room) + "_lig"] + data["phi_int_" + str(room) + "_plugs"]
     # ventilation:
     y_data["T_ext_air"] = data["T_ext_air_" + str(room)] # + 273.15
     y_data["T_sup_air"] = data["T_sup_air_" + str(room)] # + 273.15
@@ -144,8 +144,8 @@ class ZEBData(object):
         #data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
         data["P_rad_219"][data["P_rad_219"] > 2.0] = 2.0
         data["P_rad_219"][data["P_rad_219"] < 0] = 0
-        data["P_rad_220"][data["P_rad_220"] > 2.0] = 2.0
-        data["P_rad_220"][data["P_rad_220"] < 0] = 0
+        #data["P_rad_220"][data["P_rad_220"] > 2.0] = 2.0
+        #data["P_rad_220"][data["P_rad_220"] < 0] = 0
         #data.P_rad_219[Data.data.P_rad_219 < 0] = 0
         # TODO: add more filters
         self.data = data
@@ -175,11 +175,11 @@ class ZEBData(object):
         data = data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
         data["vent"] = (data["V_sup_air"] > 10).astype(int) 
         #data["vent"] = data["daytime"]
-        data["Tset_high"] = (data["Tset"] > 18).astype(int)
-        data["Tset"] = 22
+        #data["Tset_high"] = (data["Tset"] > 18).astype(int)
+        #data["Tset"] = 22
         data["heat_on"] = (data["phi_h"] > 10).astype(int)
         #data["vent"] = data["Tset_high"]
-        data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)
+        #data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)
         
         """
         for name in ("T_sup_air", "T_ext_air"):

@@ -21,7 +21,7 @@ from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 import torch
 from ocp.nn import ParamDataset, NN, Trainer, get_train_config
-from ocp.boptest_api import Boptest
+from ocp.boptest_api_old import Boptest
 import random
 # text:
 rc('mathtext', default='regular')

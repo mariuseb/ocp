@@ -1,0 +1,74 @@
+{
+    "model": {
+         "ode": {
+             "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*ahu_reaFloSupAir*cp_air*(oveTSupSet - Ti)",
+             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+         },
+         "alg": {
+             "ahu_reaTRetAir": "ahu_pump_ret*(ahu_reaTRetAir - Ti)",
+             "Pvent": "Pvent*eta_hex1 - (oveValCoi*m_flow_water_nom*cp_water*(reaTCoiSup - ahu_reaTCoiRet))",
+             "ahu_reaTCoiRet": "oveValCoi*m_flow_water_nom*cp_water*(reaTCoiSup - ahu_reaTCoiRet)*eta_hex2 - (m_flow_air_nom*ahu_pump_sup*cp_air*(oveTSupSet-ahu_reaTHeaRec))",
+             "ahu_reaTHeaRec": "ahu_pump_ret*(Ta + (ahu_reaTRetAir - Ta)*eta_hex3 - ahu_reaTHeaRec)",
+             "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom*ahu_pump_sup"
+         },
+         "p": [
+             "Rie",
+             "Rea",
+             "Ria",
+             "rho_int",
+             "Ci",
+             "Ce",
+             "Ai",
+             "reaTCoiSup",
+             "m_flow_water_nom",
+             "m_flow_air_nom",
+             "cp_water",
+             "cp_air",
+             "eta_hex1",
+             "eta_hex2",
+             "eta_hex3"
+         ],
+         "z": [
+             "ahu_reaTRetAir",
+             "Pvent",
+             "ahu_reaTCoiRet",
+             "ahu_reaTHeaRec",
+             "ahu_reaFloSupAir"
+         ],
+         "r": [
+             "Ta",
+             "phi_s",
+             "int_con",
+             "int_lat",
+             "int_rad"
+         ],
+         "u": [
+              "ahu_pump_ret",
+              "oveValCoi",
+              "ahu_pump_sup",
+              "oveTSupSet"
+         ],
+         "x": [
+             "Ti",
+             "Te"
+         ],
+         "y": [
+            ["y1", "Ti"],
+            ["y2", "ahu_reaTRetAir"],
+            ["y3", "Pvent"],
+            ["y4", "ahu_reaTCoiRet"],
+            ["y5", "ahu_reaTHeaRec"],
+            ["y6", "ahu_reaFloSupAir"]
+         ]
+     }, 
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1,1,1000,1,1,1],
+    "R": [1,1,1000,1,1,1]
+}

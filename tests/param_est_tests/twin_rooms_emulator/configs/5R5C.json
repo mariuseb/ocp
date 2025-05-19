@@ -1,0 +1,100 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + (Trad - Ti)/(Rirad*Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "Prad/Crad + (Ti - Trad)/(Rirad*Crad)",
+            "Tret": "Prad/Cret + (Ti + Tret_offset - Tret)/(Riret*Cret)",
+            "Tsup": "rad_val*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_val)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n, 1E-6)",
+            "Prad": "Prad - (Tsup - Tret)*cp_water*rad_flo",
+            "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))"
+        },
+        "w": {
+            "v1": "y1 - Ti",
+            "v2": "y2 - rad_flo",
+            "v3": "y3 - Prad",
+            "v4": "y4 - Tret",
+            "v5": "y5 - Tsup"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Ai",
+            "n",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Riret",
+            "Risup",
+            "Cret",
+            "Tsup_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim"
+        ],
+        "u": [
+            "phi_s",
+            "Ta",
+            "rad_val"
+        ],
+        "r": [
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad",
+            "Tret",
+            "Tsup"
+        ],
+        "z": [
+            "rad_flo",
+            "Prad",
+            "Tset_sup"
+          ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "rad_flo"],
+            ["y3", "Prad"],
+            ["y4", "Tret"],
+            ["y5", "Tsup"]
+
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280,280,280],
+            "ubx": [340,340,340,340,340]
+        },
+        "z": {
+            "lbz": [-0.05,-1000,290],
+            "ubz": [0.15,10000,330]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

@@ -8,7 +8,7 @@ import casadi as ca
 import pandas as pd
 pd.set_option('display.max_columns', 500)
 import matplotlib.pyplot as plt
-from ocp.boptest_api import Boptest
+from ocp.boptest_api_old import Boptest
 from pprint import pprint
 from ocp.filters import EKF, KalmanBucy
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path

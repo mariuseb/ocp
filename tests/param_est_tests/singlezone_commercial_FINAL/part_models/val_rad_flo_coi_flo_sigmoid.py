@@ -22,7 +22,7 @@ import os
 import torch
 from ocp.functions import functions
 from ocp.nn import ParamDataset, NN, Trainer, get_train_config
-from ocp.boptest_api import Boptest
+from ocp.boptest_api_old import Boptest
 # text:
 rc('mathtext', default='regular')
 # datetime:

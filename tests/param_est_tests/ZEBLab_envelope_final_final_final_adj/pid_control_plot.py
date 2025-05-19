@@ -59,7 +59,7 @@ if __name__ == "__main__":
     Check of resampling facilities.
     """
     
-    data_path = os.path.join("ZEBLab_nov23_feb24_1m.csv")
+    data_path = os.path.join("ZEBLab_nov23_1m.csv")
     Data = ZEBData(data_path)
     """
     Hyper-parameters for run:
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     # Rotates and right-aligns the x labels so they don't crowd each other.
     """
     fig.tight_layout()
-    plt.savefig("plots/existing_control.pdf")
+    plt.savefig("plots/existing_control.png")
     plt.show()
      
     # PID simulation test

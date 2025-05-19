@@ -7,7 +7,7 @@ import casadi as ca
 #import sysid.integrators as integrators
 import pandas as pd
 import matplotlib.pyplot as plt
-from ocp.boptest_api import Boptest
+from ocp.boptest_api_old import Boptest
 from pprint import pprint
 from ocp.filters import EKF
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path

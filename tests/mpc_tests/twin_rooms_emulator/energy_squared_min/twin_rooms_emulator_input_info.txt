@@ -1,0 +1,204 @@
+{'AHU219_oveFanRet_activate': {'Description': 'Activation for AHU return fan '
+                                              'speed control signal',
+                               'Maximum': None,
+                               'Minimum': None,
+                               'Unit': None},
+ 'AHU219_oveFanRet_u': {'Description': 'AHU return fan speed control signal',
+                        'Maximum': 1.0,
+                        'Minimum': 0.0,
+                        'Unit': '1'},
+ 'AHU219_oveFanSupSpe_activate': {'Description': 'Activation for AHU supply '
+                                                 'fan speed control signal',
+                                  'Maximum': None,
+                                  'Minimum': None,
+                                  'Unit': None},
+ 'AHU219_oveFanSupSpe_u': {'Description': 'AHU supply fan speed control signal',
+                           'Maximum': 1.0,
+                           'Minimum': 0.0,
+                           'Unit': '1'},
+ 'AHU219_oveFanSup_activate': {'Description': 'Activation for AHU supply fan '
+                                              'speed control signal',
+                               'Maximum': None,
+                               'Minimum': None,
+                               'Unit': None},
+ 'AHU219_oveFanSup_u': {'Description': 'AHU supply fan speed control signal',
+                        'Maximum': 1.0,
+                        'Minimum': 0.0,
+                        'Unit': '1'},
+ 'AHU220_oveFanRet_activate': {'Description': 'Activation for AHU return fan '
+                                              'speed control signal',
+                               'Maximum': None,
+                               'Minimum': None,
+                               'Unit': None},
+ 'AHU220_oveFanRet_u': {'Description': 'AHU return fan speed control signal',
+                        'Maximum': 1.0,
+                        'Minimum': 0.0,
+                        'Unit': '1'},
+ 'AHU220_oveFanSupSpe_activate': {'Description': 'Activation for AHU supply '
+                                                 'fan speed control signal',
+                                  'Maximum': None,
+                                  'Minimum': None,
+                                  'Unit': None},
+ 'AHU220_oveFanSupSpe_u': {'Description': 'AHU supply fan speed control signal',
+                           'Maximum': 1.0,
+                           'Minimum': 0.0,
+                           'Unit': '1'},
+ 'AHU220_oveFanSup_activate': {'Description': 'Activation for AHU supply fan '
+                                              'speed control signal',
+                               'Maximum': None,
+                               'Minimum': None,
+                               'Unit': None},
+ 'AHU220_oveFanSup_u': {'Description': 'AHU supply fan speed control signal',
+                        'Maximum': 1.0,
+                        'Minimum': 0.0,
+                        'Unit': '1'},
+ 'districtHeating_oveTSupSetHea_activate': {'Description': 'Activation for '
+                                                           'Supply temperature '
+                                                           'set point for '
+                                                           'heating',
+                                            'Maximum': None,
+                                            'Minimum': None,
+                                            'Unit': None},
+ 'districtHeating_oveTSupSetHea_u': {'Description': 'Supply temperature set '
+                                                    'point for heating',
+                                     'Maximum': 333.15,
+                                     'Minimum': 283.15,
+                                     'Unit': 'K'},
+ 'floor5Zone_Shading_oveSha219_activate': {'Description': 'Activation for '
+                                                          'Overwrite shading '
+                                                          'position for 2.19',
+                                           'Maximum': None,
+                                           'Minimum': None,
+                                           'Unit': None},
+ 'floor5Zone_Shading_oveSha219_u': {'Description': 'Overwrite shading position '
+                                                   'for 2.19',
+                                    'Maximum': 1.0,
+                                    'Minimum': 0.0,
+                                    'Unit': '1'},
+ 'floor5Zone_Shading_oveSha220_activate': {'Description': 'Activation for '
+                                                          'Overwrite shading '
+                                                          'position for 2.20',
+                                           'Maximum': None,
+                                           'Minimum': None,
+                                           'Unit': None},
+ 'floor5Zone_Shading_oveSha220_u': {'Description': 'Overwrite shading position '
+                                                   'for 2.20',
+                                    'Maximum': 1.0,
+                                    'Minimum': 0.0,
+                                    'Unit': '1'},
+ 'floor5Zone_Shading_oveShaSecFloorEas_activate': {'Description': 'Activation '
+                                                                  'for '
+                                                                  'Overwrite '
+                                                                  'shading '
+                                                                  'position '
+                                                                  'for second '
+                                                                  'floor',
+                                                   'Maximum': None,
+                                                   'Minimum': None,
+                                                   'Unit': None},
+ 'floor5Zone_Shading_oveShaSecFloorEas_u': {'Description': 'Overwrite shading '
+                                                           'position for '
+                                                           'second floor',
+                                            'Maximum': 1.0,
+                                            'Minimum': 0.0,
+                                            'Unit': '1'},
+ 'floor5Zone_Shading_oveShaSecFloorNor_activate': {'Description': 'Activation '
+                                                                  'for '
+                                                                  'Overwrite '
+                                                                  'shading '
+                                                                  'position '
+                                                                  'for second '
+                                                                  'floor',
+                                                   'Maximum': None,
+                                                   'Minimum': None,
+                                                   'Unit': None},
+ 'floor5Zone_Shading_oveShaSecFloorNor_u': {'Description': 'Overwrite shading '
+                                                           'position for '
+                                                           'second floor',
+                                            'Maximum': 1.0,
+                                            'Minimum': 0.0,
+                                            'Unit': '1'},
+ 'floor5Zone_Shading_oveShaSecFloorWes_activate': {'Description': 'Activation '
+                                                                  'for '
+                                                                  'Overwrite '
+                                                                  'shading '
+                                                                  'position '
+                                                                  'for second '
+                                                                  'floor',
+                                                   'Maximum': None,
+                                                   'Minimum': None,
+                                                   'Unit': None},
+ 'floor5Zone_Shading_oveShaSecFloorWes_u': {'Description': 'Overwrite shading '
+                                                           'position for '
+                                                           'second floor',
+                                            'Maximum': 1.0,
+                                            'Minimum': 0.0,
+                                            'Unit': '1'},
+ 'waterTRVSplitterManifold2Zone_TSetRadNor_activate': {'Description': 'Activation '
+                                                                      'for '
+                                                                      'Radiator '
+                                                                      'setpoint '
+                                                                      'for '
+                                                                      'zone '
+                                                                      'north',
+                                                       'Maximum': None,
+                                                       'Minimum': None,
+                                                       'Unit': None},
+ 'waterTRVSplitterManifold2Zone_TSetRadNor_u': {'Description': 'Radiator '
+                                                               'setpoint for '
+                                                               'zone north',
+                                                'Maximum': 313.15,
+                                                'Minimum': 285.15,
+                                                'Unit': 'K'},
+ 'waterTRVSplitterManifold2Zone_TSetRadWes_activate': {'Description': 'Activation '
+                                                                      'for '
+                                                                      'Radiator '
+                                                                      'setpoint '
+                                                                      'for '
+                                                                      'zone '
+                                                                      'west',
+                                                       'Maximum': None,
+                                                       'Minimum': None,
+                                                       'Unit': None},
+ 'waterTRVSplitterManifold2Zone_TSetRadWes_u': {'Description': 'Radiator '
+                                                               'setpoint for '
+                                                               'zone west',
+                                                'Maximum': 313.15,
+                                                'Minimum': 285.15,
+                                                'Unit': 'K'},
+ 'waterTRVSplitterManifold2Zone_val219_oveValRad_activate': {'Description': 'Activation '
+                                                                            'for '
+                                                                            'Radiator '
+                                                                            'valve '
+                                                                            'control '
+                                                                            'signal '
+                                                                            '[0-1]',
+                                                             'Maximum': None,
+                                                             'Minimum': None,
+                                                             'Unit': None},
+ 'waterTRVSplitterManifold2Zone_val219_oveValRad_u': {'Description': 'Radiator '
+                                                                     'valve '
+                                                                     'control '
+                                                                     'signal '
+                                                                     '[0-1]',
+                                                      'Maximum': 1.0,
+                                                      'Minimum': 0.0,
+                                                      'Unit': '1'},
+ 'waterTRVSplitterManifold2Zone_val220_oveValRad_activate': {'Description': 'Activation '
+                                                                            'for '
+                                                                            'Radiator '
+                                                                            'valve '
+                                                                            'control '
+                                                                            'signal '
+                                                                            '[0-1]',
+                                                             'Maximum': None,
+                                                             'Minimum': None,
+                                                             'Unit': None},
+ 'waterTRVSplitterManifold2Zone_val220_oveValRad_u': {'Description': 'Radiator '
+                                                                     'valve '
+                                                                     'control '
+                                                                     'signal '
+                                                                     '[0-1]',
+                                                      'Maximum': 1.0,
+                                                      'Minimum': 0.0,
+                                                      'Unit': '1'}}

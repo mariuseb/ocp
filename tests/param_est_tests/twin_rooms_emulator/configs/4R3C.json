@@ -1,0 +1,61 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + (Trad - Ti)/(Rirad*Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "Prad/Crad + (Ti - Trad)/(Rirad*Crad)"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Ai"
+        ],
+        "u": [
+            "Prad",
+            "phi_s",
+            "Ta"
+        ],
+        "r": [
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}
