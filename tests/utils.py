@@ -150,4 +150,5 @@ class Bounds(object):
         """
         df = pd.concat([self.df]*days)
         df.index = range(self.dt, (len(df.index)+1)*self.dt, self.dt)
-        return df
+        df.loc[0] = df.loc[self.dt]
+        return df.sort_index()

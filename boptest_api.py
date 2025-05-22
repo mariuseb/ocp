@@ -68,52 +68,12 @@ class RestApi(object):
             }
         )
 
-    '''
-    def initialize(self):
-        return requests.put('{0}/initialize'.format(self.url), data={'start_time': self.start_time, 'warmup_period': self.warmup_period})
-      
-    def get_name(self) -> dict:
-        return requests.get('{0}/name'.format(self.url)).json()["payload"]
-    
-    def get_forecast(self, N: int, dt: int) -> dict:
-        #return requests.get('{0}/forecast'.format(self.url)).json()["payload"]
-        #return requests.get('{0}/forecast_points'.format(self.url)).json()
-        return requests.put('{0}/forecast'.format(self.url), 
-                            data={'point_names': self.forecast_points,
-                                  'horizon': dt*(N-1),
-                                  'interval': dt}
-                            ).json()["payload"]
-    
-    def set_forecast_params(self, u={}):
-        return requests.put('{0}/forecast_parameters'.format(self.url), data=u)
-    
-    def get_measurement_info(self):
-        return requests.get('{0}/measurements'.format(self.url)).json()["payload"]
-
-    def get_forecast_info(self):
-        return requests.get('{0}/forecast_points'.format(self.url)).json()["payload"]
-    
-    def get_input_info(self):
-        return requests.get('{0}/inputs'.format(self.url)).json()["payload"]
-         
-    def set_step(self, step):
-        return requests.put('{0}/step'.format(self.url), data={'step':step})
-    
-    def get_step(self, step):
-        return requests.get('{0}/step'.format(self.url)).json()["payload"]
-    
-    def get_kpis(self) -> dict:
-        return requests.get('{0}/kpi'.format(self.url)).json()["payload"]
-   
-    def advance(self, u={}) -> dict:
-        return requests.post('{0}/advance'.format(self.url), json=u).json()["payload"]
-    '''
-    
-    def get_forecast(
+    def put_forecast(
             self, 
             N: int, 
             dt: int
         ):
+        
         return requests.put('{0}/forecast/{1}'.format(self.url, self.testid), 
                             data={'point_names': self.forecast_points,
                                   'horizon': dt*(N-1),
@@ -139,12 +99,12 @@ class RestApi(object):
         return requests.get('{0}/step/{1}'.format(self.url, self.testid)).json()["payload"]
     
     def put_results(self, ts, tf, points):
-        requests.put('{0}/results/{1}'.format(self.url, self.testid),
-                        json={
-                            'point_names': points,
-                            'start_time': ts,
-                            'final_time': tf
-                    }).json()["payload"]
+        return requests.put('{0}/results/{1}'.format(self.url, self.testid),
+                            json={
+                                'point_names': points,
+                                'start_time': ts,
+                                'final_time': tf
+                            }).json()["payload"]
     
     def get_kpis(self):
         return requests.get('{0}/kpi/{1}'.format(self.url, self.testid)).json()["payload"]
@@ -227,47 +187,30 @@ class Boptest(RestApi):
         "oveAct", while the actual variable that is overwritten by this 
         block is named "preHea".
         '''
-        
         # ocp-names
         self.var = {}
-        
+        self.boptest_to_ocp = dict()
         for k, v in self.maps.items():
             setattr(self, k, v) # maps accessed by self.maps[<name_of_map>]
             self.var[k] = list(v.keys())
-            
+            if k in ("u", "y"):
+                suffix = "_" + k
+            else:
+                suffix = ""
+            _map = {_k: _v + suffix  for _k, _v in v.items()}
+            self.boptest_to_ocp = {
+                **self.boptest_to_ocp,
+                **_map
+            }  
         self.forecast_df = pd.DataFrame(columns=list(self.r.keys()))
-        
-        #self.result_df = pd.DataFrame(columns = \
-        #    list(set(list(map(lambda x: x + "_u", list(self.u.values()))) + \
-        #    list(self.boptest_to_ocp.values()))))
-        self.result_df = pd.DataFrame(columns = list(self.boptest_to_ocp.values()))
-        
-        self.result_df.loc[0] = [0]*len(self.result_df.columns)
-        
+        # get first forecast:
+        data = self.get_forecast()
+        # set it:
+        self.forecast_df[0] = data.loc[0]
+        #self.result_df = pd.DataFrame()
         self.initialize()
-        # get initial temperature:
-        #res = self.get_results(tf=self.start_time+self.h, ts=self.start_time)
-                       
-        self.y_names = list(self.y.values())
-        
-        #self.u_names = list(map(lambda x: x + "_u", \
-        #                        list(self.u.values()))) + \
-        #                            [v for k, v in self.boptest_to_ocp.items() if v not in self.y_names]
-        self.u_names = [col for col in self.result_df.columns if col not in self.y_names]
-        
-        self.result_df = pd.DataFrame() # empty frame
-        
-        #self.result_df.loc[int(res.index[0]), self.y_names] = res.loc[res.index[0], self.y_names]
-        #self.result_df.loc[int(res.index[0])] = res.loc[res.index[0], self.y_names]
-        
-            #list(self.boptest_to_ocp[k] for k, v in self.u.items()))
-        #self.forecast = pd.DataFrame(columns=list(self.r.values()))
-        
-        #self.initialize()
-
         # invert map for forecast:
         self.forecast_map = {v: k for k, v in self.maps["r"].items()}
-
         cfg = {'boptest_map': self.forecast_map}# 'mosiop_map':self.var} # TODO to make this more generic boptest_map should have similar variables maps for y,u,z,r,p (latter empty if not applicable)
         self.forecaster = Forecaster(cfg)
 
@@ -325,27 +268,27 @@ class Boptest(RestApi):
             
         # get this to return df:
         '''
-        # get forecast:
-        forecast = self.forecast()
-        
+        # advance:
         y = self.advance(u=self.get_control(u))
+        # get forecast after advance:
+        forecast = self.get_forecast()
         # internal time:
         self.time = y["time"]
         # set next column empty:
-        self.result_df.loc[y["time"], :] = np.nan
-        #self.forecast_df.loc[y["time"]] = forecast.iloc[0]
-        self.forecast_df.loc[int(y["time"] - self.h)] = forecast.iloc[0]
+        #self.result_df.loc[y["time"], :] = np.nan
+        self.forecast_df.loc[y["time"]] = forecast.iloc[0]
+        #self.forecast_df.loc[int(y["time"] - self.h)] = forecast.iloc[0]
         #self.result_df.loc[y["time"] - self.h, self.u_names] = [y[k] for k in self.result_df.columns if k not in self.y_names]
         #self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.result_df if k in self.y_names]
         #self.result_df.loc[y["time"] - self.h, self.u_names] = [y[k] for k in self.u_names]
-        self.result_df.loc[y["time"], self.u_names] = [y[k] for k in self.u_names]
-        self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.y_names]
+        #self.result_df.loc[y["time"], self.u_names] = [y[k] for k in self.u_names]
+        #self.result_df.loc[y["time"], self.y_names] = [y[k] for k in self.y_names]
         
         if y_as_array:
             y_sorted = self.to_np_array(y, self.boptest_to_ocp, self.var["y"])
         else:
             # NOTE: changed this to return mapping of OCP-vars instead of BOPtest vars
-            y_sorted = {k_ocp: y[k_bop] for k_ocp, k_bop in self.y.items()}
+            y_sorted = {k_ocp: y[k_bop + "_y"] for k_ocp, k_bop in self.y.items()}
         
         if self.noise: # add meas noise
             y_sorted += np.random.normal(scale=0.1, size=len(y_sorted))
@@ -358,7 +301,7 @@ class Boptest(RestApi):
         # return actual u
         return forecast, y_sorted, u_sorted
 
-    def forecast(self):
+    def get_forecast(self):
         #return self.to_np_array(self.get_forecast(), self.r, self.var["r"])
         index = np.arange(0, self.h*(self.N), self.h)
         
@@ -369,7 +312,7 @@ class Boptest(RestApi):
             forecast = _forecast[self.var["r"]]
             forecast.index = index
         else:
-            _forecast = self.get_forecast(self.N, self.h)    
+            _forecast = self.put_forecast(self.N, self.h)    
             vals = self.to_np_array(_forecast,
                                     self.r,
                                     self.var["r"])
@@ -441,142 +384,41 @@ class Boptest(RestApi):
         '''
         return [y[meas] for state, meas in self.maps["state_map"].items()]
        
-    def get_results(self, tf, ts=0):
-        ''' Get results. '''
-        measurements, inputs = self.get_measurement_info(), self.get_input_info()
-        #forecasts = self.maps["r"].values()
-        points = list(measurements.keys()) + list(inputs.keys())
-        #for point in points:
+    def get_results(
+            self,
+            tf,
+            ts=0,
+            resample=True,
+            include_forecast=True
+        ) -> pd.DataFrame:
+        
+        measurements, inputs = \
+            self.get_measurement_info(), self.get_input_info()
+        points = list(measurements.keys()) + \
+                 list(inputs.keys())
+        
+        if ts == 0 and self.start_time != 0:
+            ts = self.start_time
+            tf = self.start_time + tf
+            
         res = self.put_results(ts, tf, points)
         df_res = pd.DataFrame().from_dict(res)
-        #df_res = pd.concat((df_res,pd.DataFrame(data=res[point], index=res['time'],columns=[point])), axis=1)
-        # pdb.set_trace()    
+        rev_map = {v: k for k, v in self.boptest_to_ocp.items()}
+        df_res.rename(columns=rev_map, inplace=True)
         df_res.index.name = 'time'
-        # df_res.index = df_res.index.values/3600 # convert s --> hr
-        return df_res
-
-    def get_data(self, \
-                ts=0, \
-                tf=0, \
-                mpc_names=True, \
-                downsample=True,
-                include_forecast=True
-                ):
-        ''' 
-        Get data for parameter estimation,
-        including forecasts.
-        '''
-
-        # ts adjusted? tf and ts are relative -> adjust
-        """
-
-        try:
-            # first
-            # include last forecast
-            #df_res_orig = self.get_results(tf + self.start_time, ts=ts)
-            forecast = self.forecast()
-            self.forecast_df.loc[self.forecast_df.index[-1] + self.h] = forecast.iloc[0]
-        except TypeError:
-            pass
-        
-        df_res = self.get_results(tf + self.start_time, ts=ts)
-        
+        df_res.index = pd.to_timedelta(df_res.index*30, unit="s")
+        if resample:
+            df_res = df_res.resample(rule=str(self.h/60) + "min").mean()
         if include_forecast:
-            forecast = self.forecast_df
-            forecast.index = pd.TimedeltaIndex(forecast.index, unit="s")
-            #df_res_orig.index = pd.TimedeltaIndex(df_res_orig.index, unit="s")
-            df_res.index = pd.TimedeltaIndex(df_res.index, unit="s")
-            #df_res_orig.index = pd.TimedeltaIndex(df_res_orig.index, unit="s")
-            
-            # shift (only heating):
-            u_names_bop = list(map(lambda x: x + "_u", list(self.u.values()))) + \
-                        list([v for k, v in self.boptest_to_ocp.items() if k in self.u])
-                        
-            rest = [col for col in df_res.columns if col not in u_names_bop]
-            
-            df_res_u = df_res[u_names_bop].iloc[1:]
-            df_rest = df_res[rest].iloc[:-1]
-            #df_res = df_res_orig[1:]
-            #df_res.index = df_res_orig.index[:-1]
-            
-            df_res_u.index = df_res.index[:-1]
-            df_rest.index = df_res.index[:-1]
-            
-            df_res = pd.merge(df_res_u, df_rest, left_index=True, right_index=True)
-            #df_res = df_res_orig.iloc[:-1]
-            
-            forecast = forecast.resample('30s').ffill()
-            #forecast = forecast.iloc[:-1]
-            #df_res = df_res_orig.merge(forecast, left_index=True, right_index=True)
-            df_res = df_res.merge(forecast, left_index=True, right_in                downsample=True,dex=True)
-        """
-        if ts < self.start_time:
-            ts += self.start_time
-            tf += self.start_time
-        
-        df_res = pd.merge(self.result_df, self.forecast_df, left_index=True, right_index=True)
-        # append last y:
-        df_res.loc[self.result_df.index[-1], self.y_names] = self.result_df.loc[self.result_df.index[-1], self.y_names]
-            
-        if mpc_names:
-            """
-            boptest_to_ocp = {}
-            # get map of all ocp/mpc names
-            for name, di in self.neuron.items():
-                # measurement name is not the same as overwrite name
-                boptest_to_ocp = {**boptest_to_ocp, **di}
-            # take rest from mosiop maps
-            for name, di in self.maps.items():
-                if name not in boptest_to_ocp:
-                    # reverse the dict added
-                    boptest_to_ocp = {**boptest_to_ocp, **{v: k for k, v in di.items()}} 
-            """
-            boptest_to_ocp = {v: k for k, v in self.boptest_to_ocp.items()}
-            df_res.rename(columns = boptest_to_ocp, inplace=True)
-        # downsample
-        """
-        if downsample:
-            #df_res = df_res.loc[[ndx for ndx in df_res.index if ndx % self.h == 0]]
-            int_cols = self.sampling["integrate"]
-            point_cols = self.sampling["point"]
-            
-            df_integrate = df_res[int_cols]
-            df_point = df_res[point_cols]
-            
-            rule = str(self.h) + "s"
-            df_integrate = df_integrate.resample(rule).mean()
-            df_point = df_point.resample(rule).asfreq()
-            
-            df_res = pd.merge(df_integrate, df_point, left_index=True, right_index=True)
-        """
-        return df_res.loc[ts:tf]
-
-    def plot_results(self, ts=0, tf=0, cols_to_plot=None, plot_ext=True):
-        ''' Plot results of boptest-interaction. '''
-
-        #res = self.get_results(tf, ts=ts)
-        if plot_ext:
-            res = self.get_data(tf, ts=ts, include_forecast=True)
-        else:
-            res = self.get_data(tf, ts=ts, include_forecast=False)
-
-        if cols_to_plot is None:
-            cols_to_plot = list(filter(lambda x: x != "time" \
-                                       and not x.endswith("activate"), \
-                                res.columns))
-        if len(cols_to_plot) > 5:
-            nrows, ncols = int(len(cols_to_plot)/2), 2
-        else:
-            nrows, ncols = len(cols_to_plot), 1
-
-        fig, axes = plt.subplots(nrows, ncols)
-        
-        for col, ax in zip(cols_to_plot, axes.flatten()):
-            latex_col = self.latexize(col)
-            ax.plot(res.index, res[col], label=latex_col)
-            ax.legend(loc='upper right', prop={'size': 10}, ncol=1)
-
-        return fig, axes
+            forecast_df = self.forecast_df.copy()
+            forecast_df.index = df_res.index    
+            df_res = pd.merge(
+                df_res,
+                forecast_df,
+                left_index=True,
+                right_index=True
+            )
+        return df_res
 
     @staticmethod
     def latexize(name):
@@ -594,85 +436,42 @@ class Boptest(RestApi):
         return f"${name}_{typ}$"
     
     
-    def plot_temperatures(self, K, days, bounds, solar=False, heat_key="phi_h"):
+    def plot_temperatures(self, K, days, bounds, solar=False, heat_key="phi_h", cost_key="cost"):
         """
         Plot temperatures.
         """
-        
         colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
-    
-        # get result
-        res = self.get_data(tf=(K+1)*self.h)
-        
-        # leave out last: 
-        res = res.iloc[:-1]
-        dt_index = pd.to_datetime(res.index, origin="2020-01-01 00:00", unit="s").round("s")
+        res = self.get_results(tf=(K+1)*self.h)
+        #dt_index = pd.to_datetime(res.index, origin="2020-01-01 00:00")
+        dt_index = pd.to_datetime(res.index.astype(np.int64))
         res.index = dt_index
-        
-        #y = list(self.y.keys())
-        y = [k for k in self.y.keys() if k.startswith("Ti")]
-        
-        #res.Ti.iloc[:-1] = res.Ti.iloc[1:] 
-        #res = res.iloc[:-1]
+        #res.index = dt_index
+        y = ["Ti"]
         fig = plt.figure(figsize=(8,6))
-        
-        # Add plots vertically:
-        
-        #ax = fig.add_subplot(2, 1, 1)
-        # plot for solar:
-        #ax2 = fig.add_subplot(2, 1, 2)
-        
         if solar:
             ax = fig.add_subplot(211)
         else:
             ax = fig.add_subplot(111)
-        
         #dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
         axes = []
-        
         for y_name in y:
-            
             prefix = y_name[0]
-            
             if len(y_name) == 2:
                 suffix = y_name[1]
             elif len(y_name) == 3:
                 suffix = y_name[1:2]
-            
-            #l1 = res.Ti.plot(ax=ax, color="k")
-            #l1 = ax.plot(res.index, res.Ti, color="k", label="$T_i$")
             if y_name.startswith("T"):
                 ser = (res[y_name]-273.15)
             else:
-                ser = res[y_name]
-                
+                ser = res[y_name]     
             index = np.array(res.index)
-                
-            #l1 = ax.plot(index, ser, color=next(colors), label="$%s_%s$" % (prefix, suffix))
             l1 = ax.plot(index, ser.values, drawstyle="steps-post", color=next(colors), label="$%s_%s$" % (prefix, suffix))
             ax1 = ax.twinx()
-            #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-            #l2 = res.phi_h.plot(ax=ax1, color="k", linestyle="--")
-            #try:
+            ax2 = ax.twinx()
             l2 = ax1.plot(index, res[[heat_key]].values, drawstyle="steps-post", color="k", linestyle="dashed", label="$\phi_h$")
-            #except KeyError:
-            #    pass
-            #l2 = ax1.plot(res.index, res.Ph, color="k", linestyle="dashed", label="$\phi_h$")
-            #l2 = ax1.plot(res.index, res.Ph, color="k", linestyle="dashed", label="$\phi_h$")
-            #l2 = ax1.plot(res.index, res.Ph, color=next(colors), linestyle="dashed", label="$\phi_h$")
-            
-            # TODO: map from temperature to heater:
-            #l2 = ax1.plot(dt_index, res.phi_h/1000, color=next(colors), linestyle="dashed", label="$\phi_h$")
-            #l2 = ax1.plot(dt_index, res.Tsup, color=next(colors), linestyle="dashed", label="$\phi_h$")
-            
-            #ax.legend([l1, l2], , loc=0)
-            #ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
-            fig.autofmt_xdate()
-            #ax.legend(["Ti"])
-            #ax1.legend(["phi_h"])
-            # plot bounds:
-            #bounds_plt = pd.concat([bounds]*days)
+            l3 = ax2.plot(index, res[[cost_key]].values, drawstyle="steps-post", color="b", linestyle="dashed", label="$c$")
+            ax2.spines["right"].set_position(("axes", 1.1))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
             post = bounds.get_full(days)
             pre = bounds.get_full(days)
             post -= 273.15
@@ -681,35 +480,33 @@ class Boptest(RestApi):
             pre.index = dt_index
             post.index = dt_index
             
-            post[post.index.hour >= 12] = np.nan
-            pre[(pre.index.hour <= 11) & (pre.index.hour > 0)] = np.nan
-            # split bounds in post and pre:
-            #post = bounds_plt.loc[[ndx for ndx in bounds_plt.index if ndx.hour < 12]]
-            #pre = bounds_plt.loc[[ndx for ndx in bounds_plt.index if ndx.hour >= 12]]
-            
-            #bounds_plt = bounds_plt.sort_index()
-            #bounds_plt[("lb", "Ti")].plot(ax=ax, drawstyle="steps")
-            #bounds_plt[("ub", "Ti")].plot(ax=ax, drawstyle="steps")
-            #l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{lb}$")
-            #l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]-273.15), drawstyle="steps", label="$T_{i}^{ub}$")
-            #l3 = ax.plot(dt_index, (bounds_plt[("lb", "Ti")]), drawstyle="steps", label="$T_{i}^{lb}$")
-            #l4 = ax.plot(dt_index, (bounds_plt[("ub", "Ti")]), drawstyle="steps", label="$T_{i}^{ub}$")
+            #post[post.index.hour >= 12] = np.nan
+            #pre[(pre.index.hour <= 11) & (pre.index.hour > 0)] = np.nan
             cols_bds = ["k", "k"]
-            #for i in range(2):
-            #    cols_bds.append(next(colors))
-            
             # lines
-            lns = l1+l2
+            lns = l1 + l2 + l3
             #except:
-            #    lns = [l1]
-                
+            l_upper = ax.plot(index,
+                            (post[("ub", y_name)].values), 
+                            drawstyle="steps-" + "post",
+                            color=cols_bds[0],
+                            label="$%s_{%s}^{ub}$" % (prefix, "i"))
+            
+            l_lower = ax.plot(index, 
+                            (post[("lb", y_name)].values),
+                            drawstyle="steps-" + "post",
+                            color=cols_bds[1],
+                            label="$%s_{%s}^{lb}$" % (prefix, "i"))
+            lns += l_upper
+            lns += l_lower
+            
+            """
+            #    lns = [l1]  
             for i, df in enumerate((post, pre)):
-                
                 if i == 0:
                     style = "post"
                 else:
                     style = "pre"
-                   
                 try: 
                     l_upper = ax.plot(index,
                                     (df[("ub", y_name)].values), 
@@ -723,24 +520,20 @@ class Boptest(RestApi):
                                     color=cols_bds[1],
                                     label="$%s_{%s}^{lb}$" % (prefix, suffix))
                 except:
-                    pass
-                
+                    pass 
                 if i == 0:
                     lns += l_upper
                     lns += l_lower
-            
+            """
             labs = [l.get_label() for l in lns]
-            ax.legend(lns, labs, loc='upper center', ncol=4)
+            ax.legend(lns, labs, loc='upper center', ncol=5)
             _min, _max = ax.get_ylim()
             ax.set_ylim([_min, _max+2])
-            
             ax.set_ylabel(r"Temperature [$^\circ$C]")
             ax1.set_ylabel(r"Power [W]")
-            
+            ax2.set_ylabel(r"Cost [EUR/kWh]")
             axes.append(ax)
             axes.append(ax1)
-        
-        
         if solar:
             # plot solar rad
             ax2 = fig.add_subplot(212, sharex=ax)
@@ -753,16 +546,11 @@ class Boptest(RestApi):
                 lns = l1 + l2
             except:
                 pass
-            
-            
             _min, _max = ax3.get_ylim()
             ax3.set_ylim([_min, _max*1.2])
-            
             labs = [l.get_label() for l in lns]
             ax.legend(lns, labs, loc='upper center', ncol=2)
-            
             axes.append(ax2)
             axes.append(ax3)
-        
-        fig.tight_layout()
+        #fig.tight_layout()
         return fig, axes, dt_index

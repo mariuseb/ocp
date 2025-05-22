@@ -1,0 +1,50 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Ta - Ti)/(Ria*Ci) + phi_h*(1/Ci)"
+        },
+        "p": [
+            "Ria",
+            "Ci"
+        ],
+        "u": [
+            "phi_h"
+        ],
+        "r": [
+            "Ta"
+        ],
+        "x": [
+            "Ti"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0],
+            "ubu": [5000]
+        }
+    },
+    "objective": "dot(phi_h, phi_h) +  1E3*dot(sl, sl)",
+    "N": 2,
+    "dt": 3600,
+    "method": "collocation",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1,
+        "quadrature": "TODO" 
+        }
+    ,
+    "solver": "gauss-newton",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma27",
+        "ipopt.ma57_pre_alloc": 3,
+        "bound_consistency": true,
+        "clip_inactive_lam": true,
+        "calc_lam_x": false,
+        "calc_lam_p": false
+    },
+    "codegen": false
+}

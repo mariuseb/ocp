@@ -131,7 +131,7 @@ if __name__ == "__main__":
     x_model.loc[0] = x0
     
     params = mpc_env.p0
-    
+    #K = 10
     for k in range(K):
         lbx, ubx, ref = bounds.get_bounds(k, mpc_env.N)
         
@@ -259,11 +259,12 @@ if __name__ == "__main__":
     Comparison z model and measured:
     """
     
-    fig, axes = plt.subplots(4,1, sharex=False)
-    res = boptest.get_data(tf=K*boptest.h)
+    fig, axes = plt.subplots(4,1, sharex=True)
+    #res = boptest.get_data(tf=K*boptest.h)
+    res = boptest.get_results(tf=K*boptest.h)
     #res = res.shift(-1)
     res.index = pd.to_timedelta(res.index, unit="s")
-    #res = res.iloc[:-1]
+    res = res.iloc[:-1]
     z_model.index = res.index
     
     z_names = mpc_env.z_names + mpc_rad.z_names
@@ -279,11 +280,11 @@ if __name__ == "__main__":
     plt.show()
     
     fig, axes = plt.subplots(4,1, sharex=False)
-    res = boptest.get_data(tf=K*boptest.h)
+    res = boptest.get_results(tf=K*boptest.h)
     res.index = pd.to_timedelta(res.index, unit="s")
     #res = res.iloc[:-2]
     #res = res.iloc[:-1]
-    _x_model = x_model[:-1].copy()
+    _x_model = x_model.copy()
     res["Trad"] = res["Tret"]
     _x_model.index = res.index
     
@@ -298,19 +299,16 @@ if __name__ == "__main__":
         ax.set_title(name)
         #ax.set_xticklabels([])
     ax1 = axes[0].twinx()
-    z_model["Prad"].plot(ax=ax1, drawstyle="steps-post", color="g")
-    res["Prad"].plot(ax=ax1, drawstyle="steps-post", color="m")
+    #z_model["Prad"].plot(ax=ax1, drawstyle="steps-post", color="g")
+    #res["Prad"].plot(ax=ax1, drawstyle="steps-post", color="m")
     #_x_model["Ti"].plot(ax=ax, drawstyle="steps-post", color="m")
     plt.show()
-     
     """
     res.to_csv("boptest_results_MPC_EKF_N=%s.csv" %
                (str(mpc.N, )))
     x_model.to_csv("model_predictions_MPC_EKF_N=%s.csv" %
                (str(mpc.N, )))
     """
-        
-        
     plt.rcParams.update({'font.size': 12})
     fig, axes, dt_index = boptest.plot_temperatures(K, days, bounds, heat_key="Prad")
     #ax1 = axes[0].twinx()
