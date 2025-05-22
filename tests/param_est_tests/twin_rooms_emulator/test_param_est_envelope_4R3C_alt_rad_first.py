@@ -49,7 +49,10 @@ if __name__ == "__main__":
     """
     sysid using PRBS.
     """
-    cfg_path = os.path.join("configs", "4R3C_alt.json")
+    cfg_path = os.path.join(
+        "configs", 
+        "4R3C_alt.json"
+    )
     data_path = os.path.join(
                             "twin_rooms_emulator_PRBS.csv"
                             )
@@ -70,10 +73,11 @@ if __name__ == "__main__":
     y_data["Prad_meas"] = y_data["Prad"]
     y_data["Tsup_meas"] = y_data["Tsup"]
     y_data["rad_flo_meas"] = y_data["rad_flo"]
-    rad_model = pd.read_csv("rad_model_output.csv", index_col=0)
+    rad_model = pd.read_csv("trajectory_rad_model_PRBS.csv", index_col=0)
+    rad_model.index = pd.to_timedelta(rad_model.index)
     y_data["Prad"] = rad_model["Prad"]
     y_data["rad_flo"] = rad_model["rad_flo"]
-    y_data["Tsup"] = rad_model["Tsup"]
+    y_data["Tsup"] = rad_model["Tsup"].shift(-1)
     y_data["y1"] = y_data["Ti"]
     y_data.index = pd.to_timedelta(y_data.index)
     y_data["dt_index"] = y_data.index
@@ -164,10 +168,16 @@ if __name__ == "__main__":
     x_guess = np.array([
                     y_data.y1.values.flatten(),
                     y_data.y1.values.flatten() - 2,
-                    y_data.y1.values.flatten() + 2
+                    #y_data.y1.values.flatten() + 2
+                    rad_model["Trad"].values.flatten()
                     ])
-    #lbx = 0.7*x_guess
-    #ubx = 2.0*x_guess
+    
+    lbx = 0.7*x_guess
+    ubx = 2.0*x_guess
+    
+    # fix Trad:
+    #lbx[2::3] = rad_model["Trad"].values.flatten()*0.99
+    #ubx[2::3] = rad_model["Trad"].values.flatten()*1.01
 
     params_hvac = pd.read_csv("hvac_model_PRBS.csv", index_col=0)
     #params_hvac.loc["Rirad"] = 0.00625
@@ -184,7 +194,7 @@ if __name__ == "__main__":
                     dt=dt,
                     param_guess=param_guess,
                     truncate_scaling=True,
-                    arrival_cost=True,
+                    arrival_cost=False,
                     **deepcopy(kwargs)
                     ) as param_est:
 
@@ -206,8 +216,8 @@ if __name__ == "__main__":
                                       p0,
                                       lbp=lbp,
                                       ubp=ubp,
-                                      #lbx=lbx,
-                                      #ubx=ubx,
+                                      lbx=lbx,
+                                      ubx=ubx,
                                       x_guess=x_guess,
                                       covar=ca.veccat(Q, R),
                                       codegen=True,
@@ -218,23 +228,52 @@ if __name__ == "__main__":
         sol.index = y_data.dt_index
         y_data.index = sol.index
         sol["Prad_meas"] = y_data["Prad_meas"]
+        sol["Trad_RAD"] = rad_model["Trad"]
+        sol["Prad_to_env_RAD"] = rad_model["Prad_to_env"]
         ax = sol["Ti"].plot(color="r", linewidth=0.75, drawstyle="steps-post")
         sol["y1"].plot(color="k", ax=ax, linewidth=0.75, drawstyle="steps-post")
         #sol["Trad"].plot(color="g", ax=ax, linewidth=0.75, drawstyle="steps-post")
         ax.legend(["model", "measured"], loc="upper left")
         ax1 = ax.twinx()
         # P_to_rad:
-        sol["Prad_meas"] = y_data["Prad_meas"]
-        sol["Prad_to_env"] = (sol["Trad"] - sol["Ti"])/sol["Rirad"]
-        sol["Psol"] = sol["Ai"]*sol["phi_s"]
-        sol["Prad_model"] = (sol["Tsup"] - sol["Trad"])*sol["rad_flo"]*4200
-        sol["Prad"].plot(drawstyle="steps-post",ax=ax1, linewidth=0.75)
-        sol["Psol"].plot(drawstyle="steps-post",ax=ax1, linewidth=0.75, color="y")
-        sol["Prad_to_env"].plot(drawstyle="steps-post",ax=ax1, color="g", linewidth=0.75)
-        sol["Prad_model"].plot(linestyle="dashed", drawstyle="steps-post",ax=ax1, color="m", linewidth=0.75)
-        ax1.legend(["Prad", "Prad_to_env", "Prad_model"], loc="upper right")
+        #sol["Prad_meas"] = y_data["Prad_meas"]
+        sol["Prad_to_env_ENV"] = (sol["Trad"] - sol["Ti"])/sol["Rirad"]
+        #sol["Psol"] = sol["Ai"]*sol["phi_s"]
+        sol["Prad_ENV"] = (sol["Tsup"] - sol["Trad"])*sol["rad_flo"]*4200
+        Prad_RAD = (rad_model["Tsup"] - rad_model["Trad"])*rad_model["rad_flo"]*4200
+        sol["Prad_RAD"] = Prad_RAD
+        #sol["Prad"].plot(drawstyle="steps-post",ax=ax1, linewidth=0.75)
+        #sol["Psol"].plot(drawstyle="steps-post",ax=ax1, linewidth=0.75, color="y")
+        """
+        sol["Prad_ENV"].plot(drawstyle="steps-post",ax=ax1, color="g", linewidth=0.75)
+        sol["Prad_RAD"].plot(drawstyle="steps-post",ax=ax1, color="m", linewidth=0.75)
+        sol["Prad_meas"].plot(drawstyle="steps-post",ax=ax1, color="b", linewidth=0.75)
+        sol["Prad"].plot(linestyle="dashed", drawstyle="steps-post",ax=ax1, color="k", linewidth=0.75)
+        ax1.legend(["Prad_ENV", "Prad_RAD", "Prad_meas", "Prad"], loc="upper right")
+        """
         plt.show()
+        
+        fig, axes = plt.subplots(4,1, sharex=True)
+        ax = axes[0]
+        sol["Prad_ENV"].plot(drawstyle="steps-post",ax=ax, color="g", linewidth=0.75)
+        sol["Prad_RAD"].plot(drawstyle="steps-post",ax=ax, color="m", linewidth=0.75)
+        ax.legend(["ENV", "RAD"])
+        ax = axes[1]
+        sol["Prad_to_env_ENV"].plot(drawstyle="steps-post",ax=ax, color="g", linewidth=0.75)
+        sol["Prad_to_env_RAD"].plot(drawstyle="steps-post",ax=ax, color="m", linewidth=0.75)
+        ax.legend(["ENV", "RAD"])
+        ax = axes[2]
+        sol["Ti"].plot(drawstyle="steps-post",ax=ax, color="g", linewidth=0.75)
+        sol["y1"].plot(drawstyle="steps-post",ax=ax, color="m", linewidth=0.75)
+        ax.legend(["ENV", "RAD"])
+        ax = axes[3]
+        sol["Trad"].plot(drawstyle="steps-post",ax=ax, color="g", linewidth=0.75)
+        sol["Trad_RAD"].plot(drawstyle="steps-post",ax=ax, color="m", linewidth=0.75)
+        ax.legend(["ENV", "RAD"])
+        plt.show()
+        
         params.to_csv("envelope_model_alt_rad_first.csv", index=True)
+        sol.to_csv("solution_alt_rad_first.csv", index=True)
         print(params) 
 
     

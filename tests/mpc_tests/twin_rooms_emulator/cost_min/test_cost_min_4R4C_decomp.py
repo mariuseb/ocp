@@ -122,7 +122,7 @@ if __name__ == "__main__":
     x0 = np.append(x0_env, x0_rad)
     
     # sim horizon: 2 days
-    days = 7
+    days = 1
     K = int(days*24*bounds.t_h)
     time = pd.DataFrame(columns=["time"])
 

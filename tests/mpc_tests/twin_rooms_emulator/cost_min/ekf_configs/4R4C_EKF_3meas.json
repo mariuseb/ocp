@@ -1,7 +1,9 @@
 {
     "model": {
         "w": {
-            "v1": "Ti - y1"   
+            "v1": "Ti - y1",
+            "v2": "Trad - y2",   
+            "v3": "Tsup - y3"
         },
         "ode": {
             "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + Prad_to_env/Ci",

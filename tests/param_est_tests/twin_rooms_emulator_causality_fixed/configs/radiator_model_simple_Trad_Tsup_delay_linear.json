@@ -1,0 +1,91 @@
+{
+    "model": {
+        "ode": {
+            "Trad": "Prad/Crad - Prad_to_env/Crad",
+            "Tsup": "rad_val*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_val)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)",
+            "rad_flo": "(rad_flo_set - rad_flo)/tau"
+        },
+        "alg": {
+            "rad_flo_set": "rad_flo_set - rad_flo_nom*rad_val",
+            "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))",
+            "Prad": "Prad - (Tsup - Trad)*cp_water*rad_flo",
+            "Prad_to_env": "Prad_to_env - (Trad - Ti)/Rirad"
+        },
+        "w": {
+            "v1": "y1 - rad_flo",
+            "v2": "y2 - Prad",
+            "v3": "y3 - Trad",
+            "v4": "y4 - Tsup"
+        },
+        "p": [
+            "n",
+            "tau", 
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Rirad",
+            "Risup",
+            "Crad",
+            "Tsup_offset",
+            "Tret_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim"
+        ],
+        "u": [
+            "rad_val",
+            "m_flow_bool",
+            "Ti",
+            "Ta"
+        ],
+        "r": [
+        ],
+        "x": [
+            "Trad",
+            "Tsup",
+            "rad_flo"
+        ],
+        "z": [
+            "rad_flo_set",
+            "Tset_sup",
+            "Prad",
+            "Prad_to_env"
+          ],
+        "y": [
+            ["y1", "rad_flo"],
+            ["y2", "Prad"],
+            ["y3", "Trad"],
+            ["y4", "Tsup"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [290,290,0],
+            "ubx": [330,330,1]
+        },
+        "z": {
+            "lbz": [0,280,-10000,-10000],
+            "ubz": [1,340,1E4,1E4]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2]+ dot(v4, v4)@R[3,3]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_iter": 5000,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

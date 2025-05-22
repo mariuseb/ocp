@@ -33,7 +33,7 @@ if __name__ == "__main__":
     ekf_cfg = os.path.join("ekf_configs", "4R4C_EKF_1meas.json")
     params_hvac = pd.read_csv("hvac_model_PRBS.csv", index_col=0)
     params_env = pd.read_csv("envelope_model_alt_rad_first.csv", index_col=0)
-    #params_env.loc["Ai"] = 1
+    params_env.loc["Prad_to_env_zero"] = 1
     params = pd.concat([params_hvac, params_env])
     params = params[~params.index.duplicated(keep='first')]
     params = params.to_dict()["0"]
@@ -44,8 +44,8 @@ if __name__ == "__main__":
         "x_nom_b": [289.15,289.15,289.15,289.15],
         "z_nom": [1,12,1E4,1E4],
         "z_nom_b": [0,289.15,0,0],
-        "r_nom": [12,1E4],
-        "r_nom_b": [289.15,0],
+        "r_nom": [12,1E4,1],
+        "r_nom_b": [289.15,0,0],
         "u_nom": [1],
         "u_nom_b ": [0],
         "slack": True
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     x0 = _x0 = np.array([293.15,293.15,293.15,293.15])
     
     # sim horizon: 2 days
-    days = 2
+    days = 1
     K = int(days*24*bounds.t_h)
     time = pd.DataFrame(columns=["time"])
 

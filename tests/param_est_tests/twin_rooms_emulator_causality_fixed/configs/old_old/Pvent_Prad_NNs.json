@@ -1,0 +1,71 @@
+{
+    "model": {
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_scale*NN(ca.veccat(rad_val, coi_val))[0]",
+            "coi_flo": "coi_flo - coi_flo_scale*NN(ca.veccat(rad_val, coi_val))[1]",
+            "Prad": "Prad - rad_flo*cp_water*(Tsup - Tret)*eta_hex3",
+            "Pvent": "Pvent - ahu_reaFloSupAir*cp_air*(Tsup_air-ahu_reaTHeaRec)*eta_hex1"
+        },
+        "w": {
+            "v1": "y1 - Prad",
+            "v2": "y2 - Pvent",
+            "v6": "y6 - rad_flo",
+            "v7": "y7 - coi_flo"
+        },
+        "p": [
+            "cp_water",
+            "eta_hex3",
+            "eta_hex1",
+            "cp_air",
+            "rad_flo_scale",
+            "coi_flo_scale"
+        ],
+        "u": [
+            "Tsup",
+            "Tret",
+            "rad_val",
+            "coi_val",
+            "ahu_reaFloSupAir",
+            "Tsup_air",
+            "ahu_reaTHeaRec"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad"
+        ],
+        "z": [
+            "rad_flo",
+            "coi_flo",
+            "Prad",
+            "Pvent"
+        ],
+        "y": [
+            ["y1", "Prad"],
+            ["y2", "Pvent"],
+            ["y6", "rad_flo"],
+            ["y7", "coi_flo"]
+            
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v6, v6)@R[2,2] + dot(v7, v7)@R[3,3]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

@@ -122,7 +122,7 @@ if __name__ == "__main__":
     x0 = np.append(x0_env, x0_rad)
     
     # sim horizon: 2 days
-    days = 7
+    days = 2
     K = int(days*24*bounds.t_h)
     time = pd.DataFrame(columns=["time"])
 
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     Comparison z model and measured:
     """
     
-    fig, axes = plt.subplots(4,1, sharex=False)
+    fig, axes = plt.subplots(4,1, sharex=True)
     res = boptest.get_data(tf=K*boptest.h)
     #res = res.shift(-1)
     res.index = pd.to_timedelta(res.index, unit="s")

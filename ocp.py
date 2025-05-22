@@ -1467,7 +1467,7 @@ class OCP(metaclass=ABCMeta):
             """
             #bounds["x"]["x0"] = x_init/self.x_nom
             #bounds["x"]["x0"] = (x_init - self.x_nom_b)/self.x_nom
-            """
+            
             try:
                 try:
                     b_dim = bias.shape[0]*bias.shape[1]    
@@ -1479,7 +1479,7 @@ class OCP(metaclass=ABCMeta):
                     scale = scale.reshape(x_init.shape)
             except AttributeError: # is list, safe pass
                 pass
-            """
+            
             bounds["x"]["x0"] = (x_init - bias)/scale
 
         # TODO: extend with lbz, ubz

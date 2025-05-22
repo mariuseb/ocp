@@ -250,8 +250,8 @@ if __name__ == "__main__":
         "x_nom_b": 289.15,
         "u_nom": [1,1,12,12],
         "u_nom_b ": [0,0,289.15,289.15],
-        "z_nom": [1e-1,1E3,12],
-        "z_nom_b ": [0,0,289.15],
+        "z_nom": [1e-1,1E3,1E3,12],
+        "z_nom_b ": [0,0,0,289.15],
         "y_nom": [1e-1,1E3,12,12],
         "y_nom_b": [0,0,289.15,289.15],
         "slack": False
@@ -346,8 +346,9 @@ if __name__ == "__main__":
         ax.legend(["model", "measured"])
         plt.show()
 
-        sol[["Prad","rad_flo","Tsup"]].to_csv("rad_model_output.csv", index=True)
-        params.to_csv("hvac_model_PRBS.csv", index=True)
+        #sol[["Prad","rad_flo","Tsup"]].to_csv("rad_model_output.csv", index=True)
+        sol.to_csv("trajectory_rad_model_PRBS.csv", index=True)
+        params.to_csv("rad_model_PRBS.csv", index=True)
         print(params) 
 
     

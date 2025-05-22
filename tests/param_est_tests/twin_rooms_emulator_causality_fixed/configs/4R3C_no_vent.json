@@ -1,0 +1,76 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + P_to_env/(Rirad*Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "P_to_rad/Crad - P_to_env/(Rirad*Crad)"
+        },
+        "alg": {
+            "P_to_rad": "P_to_rad - rad_flo*cp_water*(Tsup - Trad)",
+            "P_to_env": "P_to_env - (Trad - Ti)/Rirad"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Ci",
+            "Ce",
+            "Crad",
+            "Ai",
+            "cp_water"
+        ],
+        "u": [
+            "Prad",
+            "phi_s",
+            "rad_flo",
+            "Ta",
+            "Tsup"
+        ],
+        "r": [
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad"
+        ],
+        "z": [
+            "P_to_rad",
+            "P_to_env"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280],
+            "ubx": [340,340,340]
+        },
+        "z": {
+            "lbz": [-10000,-10000],
+            "ubz": [10000,10000]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

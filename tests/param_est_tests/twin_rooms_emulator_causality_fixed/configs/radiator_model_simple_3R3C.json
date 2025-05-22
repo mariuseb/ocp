@@ -1,0 +1,93 @@
+{
+    "model": {
+        "ode": {
+            "Trad": "Prad/Crad + rad_val*(Tret - Trad)/(Rradret*Crad) - Prad_to_env/Crad",
+            "Tsup": "rad_val*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_val)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)",
+            "Tret": "rad_val*(Trad - Tret)/(Rradret*Cret) + (1 - rad_val)*(Ti + Tret_offset - Tret)/(Riret*Cret)"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_val, n, 1E-6)",
+            "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))",
+            "Prad": "Prad - (Tsup - Tret)*cp_water*rad_flo",
+            "Prad_to_env": "Prad_to_env - (Trad - Ti)/Rirad"
+        },
+        "w": {
+            "v1": "y1 - rad_flo",
+            "v2": "y2 - Prad",
+            "v3": "y3 - Trad",
+            "v4": "y4 - Tsup"
+        },
+        "p": [
+            "n",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Rirad",
+            "Risup",
+            "Riret",
+            "Rradret",
+            "Cret",
+            "Crad",
+            "Tsup_offset",
+            "Tret_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim"
+        ],
+        "u": [
+            "rad_val",
+            "m_flow_bool",
+            "Ti",
+            "Ta"
+        ],
+        "r": [
+        ],
+        "x": [
+            "Trad",
+            "Tsup",
+            "Tret"
+        ],
+        "z": [
+            "rad_flo",
+            "Tset_sup",
+            "Prad",
+            "Prad_to_env"
+          ],
+        "y": [
+            ["y1", "rad_flo"],
+            ["y2", "Prad"],
+            ["y3", "Tret"],
+            ["y4", "Tsup"]
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [290,290,290],
+            "ubx": [330,330,330]
+        },
+        "z": {
+            "lbz": [0,280,-1000,-1000],
+            "ubz": [1,340,1E4,1E4]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(m_flow_bool*v3, m_flow_bool*v3)@R[2,2]+ dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_iter": 5000,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}
