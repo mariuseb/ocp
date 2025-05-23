@@ -2,7 +2,7 @@
 from ocp.mpc import MPC
 import numpy as np
 import matplotlib.pyplot as plt
-from ocp.boptest_api_old import Boptest
+from ocp.boptest_api import Boptest
 from pprint import pprint
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path
 from matplotlib import rc
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         "r_nom_b": 289.15,
         "y_nom": 12,
         "y_nom_b": 289.15,
-        "slack": False
+        "slack": True
         #"slack": False
     }
     
@@ -54,8 +54,8 @@ if __name__ == "__main__":
     # init conditions, state bounds:
     N = mpc.N
     #dt = mpc.dt
-    lb_night = {"Ti": 289.15}
-    ub_night = {"Ti": 301.15}
+    lb_night = {"Ti": 293.15}
+    ub_night = {"Ti": 296.15}
     lb_day = {"Ti": 293.15}
     ub_day = {"Ti": 296.15}
     
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # TODO: shouldn't have to fine-tune these:
     #x0 = np.array([293.05, 290.15])
     x0 = np.array([293.15])
-    days = 2
+    days = 1
     K = days*24*bounds.t_h
     
     for k in range(K):

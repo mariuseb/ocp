@@ -149,6 +149,6 @@ class Bounds(object):
         Get full bounds frame. 
         """
         df = pd.concat([self.df]*days)
-        df.index = range(self.dt, (len(df.index)+1)*self.dt, self.dt)
-        df.loc[0] = df.loc[self.dt]
+        df.index = range(0, (len(df.index))*self.dt, self.dt)
+        df.loc[df.index[-1] + self.dt] = df.loc[df.index[-1]]
         return df.sort_index()

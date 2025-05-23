@@ -436,7 +436,7 @@ class Boptest(RestApi):
         return f"${name}_{typ}$"
     
     
-    def plot_temperatures(self, K, days, bounds, solar=False, heat_key="phi_h", cost_key="cost"):
+    def plot_temperatures(self, K, days, bounds=None, solar=False, heat_key="phi_h", cost_key="cost"):
         """
         Plot temperatures.
         """
@@ -472,50 +472,65 @@ class Boptest(RestApi):
             l3 = ax2.plot(index, res[[cost_key]].values, drawstyle="steps-post", color="b", linestyle="dashed", label="$c$")
             ax2.spines["right"].set_position(("axes", 1.1))
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-            post = bounds.get_full(days)
-            pre = bounds.get_full(days)
+            if bounds is None:
+                forecast = self.forecast_df
+                bound_names = [y_name + "_lb", y_name + "_ub"]
+                bounds = forecast[bound_names]
+                new_cols = pd.MultiIndex.from_product(
+                    [["lb", "ub"], y],
+                    names=['bound', 'y']
+                )
+                bounds.columns = new_cols
+                post = bounds.copy()
+                pre = bounds.copy()
+            else:
+                post = bounds.get_full(days)
+                pre = bounds.get_full(days)
+                
             post -= 273.15
             pre -= 273.15
             #bounds_plt.loc[0] = [0]*len(bounds_plt.columns)
             pre.index = dt_index
             post.index = dt_index
             
-            #post[post.index.hour >= 12] = np.nan
-            #pre[(pre.index.hour <= 11) & (pre.index.hour > 0)] = np.nan
+            post[post.index.hour >= 12] = np.nan
+            pre[(pre.index.hour <= 11) & (pre.index.hour > 0)] = np.nan
             cols_bds = ["k", "k"]
             # lines
             lns = l1 + l2 + l3
             #except:
+            """
             l_upper = ax.plot(index,
                             (post[("ub", y_name)].values), 
-                            drawstyle="steps-" + "post",
+                            drawstyle="steps-" + "pre",
                             color=cols_bds[0],
                             label="$%s_{%s}^{ub}$" % (prefix, "i"))
             
             l_lower = ax.plot(index, 
                             (post[("lb", y_name)].values),
-                            drawstyle="steps-" + "post",
+                            drawstyle="steps-" + "pre",
                             color=cols_bds[1],
                             label="$%s_{%s}^{lb}$" % (prefix, "i"))
             lns += l_upper
             lns += l_lower
             
             """
-            #    lns = [l1]  
-            for i, df in enumerate((post, pre)):
+            for i, df in enumerate((pre, post)):
                 if i == 0:
-                    style = "post"
-                else:
                     style = "pre"
+                else:
+                    style = "post"
                 try: 
                     l_upper = ax.plot(index,
                                     (df[("ub", y_name)].values), 
+                                    #(df[y_name + "_ub"].values), 
                                     drawstyle="steps-" + style,
                                     color=cols_bds[0],
                                     label="$%s_{%s}^{ub}$" % (prefix, suffix))
                     
                     l_lower = ax.plot(index, 
-                                    (df[("lb", y_name)].values),
+                                    #(df[y_name + "_lb"].values),
+                                    (df[("lb", y_name)].values), 
                                     drawstyle="steps-" + style,
                                     color=cols_bds[1],
                                     label="$%s_{%s}^{lb}$" % (prefix, suffix))
@@ -524,10 +539,10 @@ class Boptest(RestApi):
                 if i == 0:
                     lns += l_upper
                     lns += l_lower
-            """
             labs = [l.get_label() for l in lns]
             ax.legend(lns, labs, loc='upper center', ncol=5)
             _min, _max = ax.get_ylim()
+            ax.tick_params(axis='x', labelrotation=45)
             ax.set_ylim([_min, _max+2])
             ax.set_ylabel(r"Temperature [$^\circ$C]")
             ax1.set_ylabel(r"Power [W]")

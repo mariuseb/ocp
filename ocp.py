@@ -13,6 +13,7 @@ import json
 from ocp.shooting import MultipleShooting, SingleShooting, Collocation
 import copy
 import re
+from pathlib import Path
 #from tables import Col
 #from integrators import RungeKutta4, Cvodes, IRK
 import ocp.integrators as integrators
@@ -90,6 +91,8 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if isinstance(obj, Path):
+            return str(obj)
         if isinstance(obj, ca.DM):
             assert (obj.shape[0] in (1, None)) \
                     or \

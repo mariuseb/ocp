@@ -59,31 +59,25 @@
     "testcase1":
     {
       "misc": {
-        "h": 900,
+        "h": 60,
         "N": 97,
         "start_time": 0,
-        "warmup_period": 604800
+        "warmup_period": 0
       },
       "maps" : {
         "r" : {"Ta": "TDryBul",
-               "LowerSetp[1]": "LowerSetp[1]",
-               "UpperSetp[1]": "UpperSetp[1]",
-               "PriceElectricPowerHighlyDynamic": "PriceElectricPowerHighlyDynamic"
+               "Ti_lb": "LowerSetp[1]",
+               "Ti_ub": "UpperSetp[1]",
+               "cost": "PriceElectricPowerHighlyDynamic"
               },
         "u" : {"phi_h": "oveAct"},
-        "y": {"Ti": "TRooAir_y"},
-        "boptest_to_ocp": {
-                          "phi_h": "QHea_y", "Ti": "TRooAir_y",
-                          "LowerSetp[1]": "LowerSetp[1]",
-                          "UpperSetp[1]": "UpperSetp[1]",
-                          "PriceElectricPowerHighlyDynamic": "PriceElectricPowerHighlyDynamic"
-                          },
-        "sampling": {
-                     "integrate": ["phi_h"],
-                     "point": ["Ta", "phi_s", "Ti"]
-                    }
-        }
-      },
+        "y": {"Ti": "TRooAir"}
+        },
+    "sampling": {
+                    "integrate": ["phi_h"],
+                    "point": ["Ta", "phi_s", "Ti"]
+                }
+    },
     "testcase3":
     {
       "misc": {
