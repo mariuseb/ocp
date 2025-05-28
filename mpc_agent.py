@@ -31,11 +31,11 @@ class MPCAgent(object):
         mpc_cfg: os.PathLike,
         ekf_cfg: os.PathLike,
         params: npt.NDArray[Any]
-        ) -> None:
+    ) -> None:
         self.params = params
         self.mpc = MPC(
             config=mpc_cfg,
-            param_guess=self.params, 
+            param_guess=self.params,
             **deepcopy(self.kwargs)
         )  # to remove, replace with N
         if ekf_cfg != "":
@@ -128,6 +128,8 @@ class MPCAgent(object):
         """
         Generally, dim(obs) < dim(x).
         Need filtering.
+        
+        TODO: filter "wrapper"
         """
         x_pred = self.preds[self.i-1].iloc[1][self.ekf.dae.x].values
         # Need to generalize the below:

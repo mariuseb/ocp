@@ -24,10 +24,11 @@ from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.callbacks import BaseCallback
 import matplotlib.dates as mdates
-
+from ocp.gym_utils import get_forecast_df, BoptestGymABC
+from ocp.maps import BoptestMaps
 from ocp.examples.test_and_plot import plot_results, test_agent
 
-class BoptestGymEnv(gym.Env):
+class BoptestGymEnv(gym.Env, BoptestGymABC):
     '''
     BOPTEST Environment that follows gym interface.
     This environment allows the interaction of RL agents with building
@@ -150,7 +151,7 @@ class BoptestGymEnv(gym.Env):
         self.warmup_period      = warmup_period
         self.reward             = reward
         self.predictive_period  = predictive_period
-        self.maps               = maps
+        self.maps               = BoptestMaps(maps)
         self.regressive_period  = regressive_period
         self.step_period        = step_period
         self.scenario           = scenario
@@ -334,8 +335,6 @@ class BoptestGymEnv(gym.Env):
         if self.render_episodes:
             plt.ion()
             self.fig = plt.gcf()
-            
-        self.set_boptest_to_ocp()
 
     def __str__(self):
         '''
@@ -532,23 +531,6 @@ class BoptestGymEnv(gym.Env):
         '''
 
         requests.put('{0}/stop/{1}'.format(self.url, self.testid))
-       
-    def set_boptest_to_ocp(self):
-        self.var = {}
-        self.boptest_to_ocp = dict()
-        for k, v in self.maps.items():
-            setattr(self, k, v) # maps accessed by self.maps[<name_of_map>]
-            self.var[k] = list(v.keys())
-            if k in ("u", "y"):
-                suffix = "_" + k
-            else:
-                suffix = ""
-            _map = {_k: _v + suffix  for _k, _v in v.items()}
-            self.boptest_to_ocp = {
-                **self.boptest_to_ocp,
-                **_map
-            }  
-       
         
     @staticmethod
     def to_np_array(y, mapping, var_labels):
@@ -565,19 +547,23 @@ class BoptestGymEnv(gym.Env):
         vars_sorted = {k: y[mapping[k]] for k in var_labels if k in mapping.keys()}
         return np.array(list(vars_sorted.values())).transpose()  
       
-    def get_forecast(self, dt, N):
+    def get_forecast(
+        self,
+        dt: int,
+        N: int
+    ):
             #return self.to_np_array(self.get_forecast(), self.r, self.var["r"])
         index = np.arange(0, dt*N, dt)
         _forecast = self.put_forecast(N, dt)    
         vals = self.to_np_array(
             _forecast,
-            self.r,
-            self.var["r"]
+            self.maps.r,
+            self.maps.var["r"]
         )
         forecast = pd.DataFrame(
             index=index,
             data=vals,
-            columns=self.var["r"]
+            columns=self.maps.var["r"]
         )
         return forecast
 
@@ -999,31 +985,33 @@ class BoptestGymEnv(gym.Env):
         return resp["testid"]
 
     
-    def get_results(
+    def _get_results(
             self,
             tf,
             ts=0,
-            resample=True,
-            include_forecast=True
+            resample=True
         ) -> pd.DataFrame:
-        
+        """
+        Get internal results.
+        """
         measurements, inputs = \
             self.get_measurement_info(), self.get_input_info()
         points = list(measurements.keys()) + \
                  list(inputs.keys())
-        
         if ts == 0 and self.start_time != 0:
             ts = self.start_time
-            tf = self.start_time + tf
-            
+            tf = self.start_time + tf            
         res = self.put_results(ts, tf, points)
         df_res = pd.DataFrame().from_dict(res)
         df_res.index.name = 'time'
         df_res.index = pd.to_timedelta(df_res.index*30, unit="s")
         if resample:
             df_res = df_res.resample(rule=str(self.step_period/60) + "min").asfreq()
+        return df_res
+
+        """
         if include_forecast:
-            forecast_df = self.get_forecast_df()
+            forecast_df = get_forecast_df()
             forecast_df = forecast_df.loc[df_res.time]
             forecast_df.index = df_res.index    
             df_res = pd.merge(
@@ -1036,173 +1024,8 @@ class BoptestGymEnv(gym.Env):
         rev_map = {v: k for k, v in self.boptest_to_ocp.items()}
         df_res.rename(columns=rev_map, inplace=True)
         return df_res
+        """
 
-    def get_forecast_df(self):
-        """
-        Get forecast df.
-        """
-        files = os.listdir("Resources")
-        dfs = []
-        for file in files:
-            path = os.path.join("Resources", file)
-            # first read:
-            df = pd.read_csv(path, 
-                        header=[100],
-                        index_col=0)
-            n_cols = len(df.columns)
-            header = 1
-            skiprows = list(
-                set(range(n_cols + 2)).difference(set([header]))
-            )
-            df = pd.read_csv(path, 
-                        header=[header],
-                        #header=[n_cols],
-                        skiprows=skiprows, 
-                        index_col=0)
-            if file.startswith("weather"):
-                indices = [
-                    ndx for ndx in df.index
-                    if ndx % self.step_period == 0
-                ]
-                df = df.loc[indices]
-            df["time"] = df.index
-            df.index.name = ""
-            dfs.append(df)
-        df = reduce(lambda left, right: 
-            pd.merge(
-                left, 
-                right, 
-                on=['time'],
-                how='outer'),
-                dfs
-            )
-        df.index = df.time.astype(int)
-        return df.ffill().drop_duplicates()
-
-    @staticmethod
-    def latexize(name):
-        try:
-            name, typ = name.split("_") # naming convention
-        except ValueError:
-            if "_" not in name:
-                # state variable?
-                assert len(name) == 2
-                return f"${name[0]}_{name[1]}$"
-            else:
-                name1, name2, typ = name.split("_") # naming convention
-                name = "_".join([name1, name2])
-        typ = "{" + typ + "}"
-        return f"${name}_{typ}$"
-    
-    
-    def plot_temperatures(self, K, bounds, solar=False, heat_key="phi_h", cost_key="cost"):
-        """
-        Plot temperatures.
-        """
-        colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
-        res = self.get_results(tf=(K+1)*self.step_period)
-        #dt_index = pd.to_datetime(res.index, origin="2020-01-01 00:00")
-        dt_index = pd.to_datetime(res.index.astype(np.int64))
-        res.index = dt_index
-        #res.index = dt_index
-        y = ["Ti"]
-        fig = plt.figure(figsize=(8,6))
-        if solar:
-            ax = fig.add_subplot(211)
-        else:
-            ax = fig.add_subplot(111)
-        #dt_index = pd.Timestamp("2020-01-01 00:00") + res.index
-        axes = []
-        for y_name in y:
-            prefix = y_name[0]
-            if len(y_name) == 2:
-                suffix = y_name[1]
-            elif len(y_name) == 3:
-                suffix = y_name[1:2]
-            if y_name.startswith("T"):
-                ser = (res[y_name]-273.15)
-            else:
-                ser = res[y_name]     
-            index = np.array(res.index)
-            l1 = ax.plot(index, ser.values, drawstyle="steps-post", color=next(colors), label="$%s_%s$" % (prefix, suffix))
-            ax1 = ax.twinx()
-            ax2 = ax.twinx()
-            l2 = ax1.plot(index, res[[heat_key]].values, drawstyle="steps-post", color="k", linestyle="dashed", label="$\phi_h$")
-            l3 = ax2.plot(index, res[[cost_key]].values, drawstyle="steps-post", color="b", linestyle="dashed", label="$c$")
-            ax2.spines["right"].set_position(("axes", 1.1))
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
-            
-            if bounds.shape[0] == 1: # then make periodic:
-                bounds = pd.concat([bounds]*(K+1))
-            
-            post = bounds.copy()
-            pre = bounds.copy()
-            post -= 273.15
-            pre -= 273.15
-                    
-            pre.index = dt_index
-            post.index = dt_index
-            post[post.index.hour >= 12] = np.nan
-            pre[(pre.index.hour <= 11) & (pre.index.hour > 0)] = np.nan
-                
-            cols_bds = ["k", "k"]
-            # lines
-            lns = l1 + l2 + l3
-            #except:
-            for i, df in enumerate((pre, post)):
-                if i == 0:
-                    style = "pre"
-                else:
-                    style = "post"
-                try: 
-                    l_upper = ax.plot(index,
-                                    (df[("ub", y_name)].values), 
-                                    #(df[y_name + "_ub"].values), 
-                                    drawstyle="steps-" + style,
-                                    color=cols_bds[0],
-                                    label="$%s_{%s}^{ub}$" % (prefix, suffix))
-                    
-                    l_lower = ax.plot(index, 
-                                    #(df[y_name + "_lb"].values),
-                                    (df[("lb", y_name)].values), 
-                                    drawstyle="steps-" + style,
-                                    color=cols_bds[1],
-                                    label="$%s_{%s}^{lb}$" % (prefix, suffix))
-                except:
-                    pass 
-                if i == 0:
-                    lns += l_upper
-                    lns += l_lower
-            labs = [l.get_label() for l in lns]
-            ax.legend(lns, labs, loc='upper center', ncol=5)
-            _min, _max = ax.get_ylim()
-            ax.tick_params(axis='x', labelrotation=45)
-            ax.set_ylim([_min, _max+2])
-            ax.set_ylabel(r"Temperature [$^\circ$C]")
-            ax1.set_ylabel(r"Power [W]")
-            ax2.set_ylabel(r"Cost [EUR/kWh]")
-            axes.append(ax)
-            axes.append(ax1)
-        if solar:
-            # plot solar rad
-            ax2 = fig.add_subplot(212, sharex=ax)
-            l1 = ax2.plot(index, res.phi_s.values, color=next(colors), label="$\phi_{s}$")
-            ax2.set_ylabel(r"Global radiation [$\frac{kW}{m^{2}}$]")
-            ax3 = ax2.twinx()
-            ax3.set_ylabel(r"Shading control [-]")
-            try:
-                l2 = ax3.plot(dt_index, res.u_sha, drawstyle="steps", color=next(colors), label="$u_{sha}$")
-                lns = l1 + l2
-            except:
-                pass
-            _min, _max = ax3.get_ylim()
-            ax3.set_ylim([_min, _max*1.2])
-            labs = [l.get_label() for l in lns]
-            ax.legend(lns, labs, loc='upper center', ncol=2)
-            axes.append(ax2)
-            axes.append(ax3)
-        #fig.tight_layout()
-        return fig, axes, res
 
 class DiscretizedObservationWrapper(gym.ObservationWrapper):
     '''This wrapper converts the Box observation space into a Discrete 

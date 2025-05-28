@@ -14,8 +14,30 @@ from typing import Tuple
 from ocp.mpc_agent import MPCAgent
 from ocp.filters import KalmanDAE
 from ocp.boptestGymEnv import BoptestGymEnv
+from filterpy.kalman import KalmanFilter
+from filterpy.common import Q_discrete_white_noise
 rc('mathtext', default='regular')
 
+def init_filterpy(
+    mpc_agent,
+    init_obs,
+    dt=900
+):
+    my_filter = KalmanFilter(dim_x=2, dim_z=2, dim_u=2)
+    my_filter.x = init_obs
+    my_filter.F = mpc_agent.mpc.get_Ad(
+        dt,
+        p=mpc_agent.mpc.p0
+    )
+    my_filter.B = mpc_agent.mpc.get_Bd(
+        dt,
+        p=mpc_agent.mpc.p0
+    )
+    my_filter.H = np.eye(2)
+    my_filter.P *= 1E-16
+    my_filter.R = np.eye(2)
+    my_filter.Q = Q_discrete_white_noise(dim=2, dt=0.1, var=0.0) # process uncertainty
+    return my_filter
         
 if __name__ == "__main__":
     
@@ -84,13 +106,15 @@ if __name__ == "__main__":
         ekf_cfg,
         params
     )
-    days = 2
+    days = 1
     K = days*24*int(3600/mpc.mpc.dt)
     
     ###########################################################################
     obs, _ = env.reset()
-    # augment obs w/ extra state:
-    #x0 = np.append(obs, [293.15])
+    kf = init_filterpy(
+        mpc,
+        obs,
+    )
 
     cols = pd.MultiIndex.from_product(
         [["model", "emu"], ["Ti", "Te"]],
@@ -109,8 +133,33 @@ if __name__ == "__main__":
         temps.loc[k, "emu"] = obs
         #obs = mpc.preds[k][mpc.mpc.x()].iloc[1].values
         #x0 = np.append(obs, mpc.preds[mpc.i-1].iloc[1]["Te"])
+        
+        # advance filter w/ (u, r):
+        kf_u = np.concatenate([
+            action.values,
+            forecast[mpc.mpc.r_names].iloc[0].values
+        ])
+        kf.predict(kf_u)
+        kf.update(obs)
+        obs = kf.x
     
     fig, axes, res = env.plot_temperatures(K, bounds)
-    res.to_csv("results_1_day_2R2C_no_filtering.csv")
     plt.show()
+    
+    res.to_csv("results_1_day_2R2C_filterpy.csv")
+    
+    res_nofilter = pd.read_csv("results_1_day_2R2C_no_filtering.csv", index_col=0)
+    res_nofilter.index = pd.to_datetime(
+        res_nofilter.index
+    )
+    
+    ax = res.Ti.plot(color="b", drawstyle="steps-post")
+    res_nofilter.Ti.plot(color="r", drawstyle="steps-post")
+    plt.show()
+    
+    ax = res.phi_h.plot(color="b", drawstyle="steps-post")
+    res_nofilter.phi_h.plot(color="r", drawstyle="steps-post")
+    plt.show()
+    
+    
     print(env)

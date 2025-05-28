@@ -1,0 +1,70 @@
+{
+    "days": 2,
+    "sampling_time": "15min",
+    "controller": {
+        "timezone": "Europe/Oslo",
+        "temp_conv": 273.15,
+        "sampling_time": "15min",
+        "mpc_config_file": "mpc_configs/2R2C_MPC.json",
+        "mpc_kwargs": {
+            "x_nom": [12, 12],
+            "x_nom_b": [289.15, 289.15],
+            "r_nom": [12,1000,1000],
+            "r_nom_b": [289.15,0,0],
+            "u_nom": [1000],
+            "u_nom_b ": [0],
+            "slack": true
+            },
+        "est_kwargs": {
+            "x_nom": [12, 12],
+            "x_nom_b": [289.15, 289.15],
+            "r_nom": [12,1000,1000],
+            "r_nom_b": [289.15,0,0],
+            "u_nom": [1000],
+            "u_nom_b ": [0],
+            "slack": false
+            },
+        "ekf_config_file": "ekf_configs/2R2C_EKF_2meas.json",
+        "filter_obs": true,
+        "parameters": [1e-3, 1e-2, 1E6, 1E7],
+        "reiden": false,
+        "reiden_freq": 96,
+        "timesteps_reiden_start": 95,
+        "reiden_N": 1344,
+        "est_config_file": "configs/2R2C.json",
+        "reiden_adaptive_rollout": true
+    },
+    "environment": {
+        "type": "BoptestGymEnv",
+        "config": {   
+            "url": "http://docker-web-1:80",
+            "testcase": "testcase_2R2C",
+            "actions": ["oveAct_u"],
+            "observations": {
+                            "TRooAir_y": [280,310],
+                            "TRooEnv_y": [280,310]
+                            }, 
+            "predictive_period": 0, 
+            "regressive_period": null, 
+            "maps": {
+                "r" : {"Ta": "TDryBul",
+                    "Ti_lb": "LowerSetp[1]",
+                    "Ti_ub": "UpperSetp[1]",
+                    "cost": "PriceElectricPowerHighlyDynamic"
+                },
+                "u" : {
+                    "phi_h": "oveAct"
+                },
+                "y":  {
+                    "Ti": "TRooAir",
+                    "Te":  "TRooEnv"
+                }
+            },
+            "random_start_time": false,
+            "max_episode_length": 86400,
+            "warmup_period": 0,
+            "step_period": 900
+        }
+    }
+}
+

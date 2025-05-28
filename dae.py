@@ -1,6 +1,7 @@
 #from casadi import *
 import casadi as ca
-import re
+import numpy as np
+import scipy
 import pdb
 
 class DAE(object):
@@ -38,6 +39,8 @@ class DAE(object):
         #self.add_meas()
         self.add_odes()
         self.add_algs()
+        self.set_A()
+        self.set_B()
 
     def vars(self, names, stoch=False):
         mxs = []
@@ -485,54 +488,89 @@ class DAE(object):
         
     def add_sde(self, name, expr):
         setattr(self, "sde", expr)
+    
+    """
+    Discrete-time facilities:
+    """    
+    
+    def set_A(self):
+        """
+        Set casadi-Function to get cont.-time A.
+        """
+        self._A = _A = ca.jacobian(
+            self.ode, self.x
+        )
+        self.A = ca.Function(
+            "A",
+            [self.x, self.p],
+            [_A],
+            ["x", "p"], 
+            ["A"]
+        )
+        
+    def set_B(self):
+        """
+        Set casadi-Function to get cont.-time B.
+        """
+        u = ca.vertcat(self.u, self.r)
+        self._B = _B = ca.jacobian(self.ode, u)
+        self.B = ca.Function("B",
+            [u, self.p],
+            [_B],
+            ["u","p"], 
+            ["B"]
+        )
+        
+    def get_Ad(
+            self,
+            dt: int,
+            **kwargs
+        ):
+        """
+        Get discrete-time Ad.
+        """
+        x = kwargs.pop(
+            "x",
+            [293.15]*self.dae.nx()
+        ) 
+        p = kwargs.pop("p", None) 
+        A = self.A(
+            x=x,
+            p=p
+        )["A"]
+        return scipy.linalg.expm(A*dt)
+    
+    def get_Bd(
+            self,
+            dt: int,
+            **kwargs
+        ):
+        """
+        Get discrete-time B:
+        A^-1*(Ad − I)*B
+        """
+        x = kwargs.pop(
+            "x",
+            [293.15]*self.n_x
+        ) 
+        u = kwargs.pop(
+            "x",
+            [0]*(self.n_u + self.n_r)
+        ) 
+        p = kwargs.pop("p", None) 
+        A = self.A(
+            x=x,
+            p=p
+        )["A"]
+        B = self.B(
+            u=u,
+            p=p
+        )["B"]
+        Ad = self.get_Ad(dt, p=p)
+        return np.array(
+            np.linalg.inv(A)@(
+                Ad - np.eye(self.n_x)
+            )@B
+        )
         
         
-'''     
-    def add_odes(self):
-        # get params, states, to local scope
-        
-        #repl_table = {k: "self." + k for k in self.__dict__.keys() if k not in ["dae", "config"]}
-        repl_table = self._get_repl_table()
-        
-        self.odes = {}
-
-        for ode_name, ode_string in self.config["ode"].items():
-
-            pattern = re.compile(r'\b(' + '|'.join(repl_table.keys()) + r')\b')
-            ode_string = pattern.sub(lambda x: repl_table[x.group()], ode_string)
-
-            #exec('ode =' + ode_string, globals())
-            exec(f'self.odes["{ode_name}"] =' + ode_string)
-            self.dae.add_ode(ode_name, self.odes[ode_name])
-            #self.dae.add_aux(ode_name, self.odes[ode_name])
-
-    def add_daes(self):
-        # get params, states, to local scope
-        
-        #repl_table = {k: "self." + k for k in self.__dict__.keys() if k not in ["dae", "config"]}
-        repl_table = self._get_repl_table()
-        self.daes = {}
-
-        for dae_name, dae_string in self.config["dae"].items():
-
-            pattern = re.compile(r'\b(' + '|'.join(repl_table.keys()) + r')\b')
-            dae_string = pattern.sub(lambda x: repl_table[x.group()], dae_string)
-
-            #exec('ode =' + ode_string, globals())
-            exec(f'self.daes["{dae_name}"] =' + dae_string)
-            self.dae.add_dae(dae_name, self.daes[dae_name])
-            #self.dae.add_aux(ode_name, self.odes[ode_name])
-
-    def add_algs(self):
-        
-        #repl_table = {k: "self." + k for k in self.__dict__.keys() if k not in ["dae", "config"]}
-        repl_table = self._get_repl_table()
-        self.algs = {}
-
-        for alg_name, alg_string in self.config["alg"].items():
-
-            pattern = re.compile(r'\b(' + '|'.join(repl_table.keys()) + r')\b')
-            alg_string = pattern.sub(lambda x: repl_table[x.group()], alg_string)
-            
-            exec(f'self.algs["{alg_name}"] =' + alg_string)
-            self.dae.add_alg(alg_name, self.algs[alg_name]) '''

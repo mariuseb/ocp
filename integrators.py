@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod, ABCMeta
 import numpy as np
 from ocp.dae import DAE
 
+__all__ = ["RK4", "IRK", "Cvodes", "idas"]
+
 class Integrator(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
