@@ -24,8 +24,8 @@
             "u_nom_b ": [0],
             "slack": false
             },
-        "ekf_config_file": "ekf_configs/2R2C_EKF_2meas.json",
-        "type": "filterpy.KalmanFilter",
+        "filter_config_file": "ekf_configs/2R2C_EKF_2meas.json",
+        "filter_type": "filterpy.kalman.KalmanFilter",
         "filter_obs": true,
         "parameters": [1e-3, 1e-2, 1E6, 1E7],
         "reiden": false,
@@ -39,6 +39,8 @@
         "type": "CustomGymEnv",
         "config":     
             {
+            "R": [[1E-4, 0], [0, 1E-4]],
+            "Q": [[1E-3, 0], [0, 1E-3]],
             "integrator": 
                 {
                     "name": "IRK",
@@ -67,6 +69,10 @@
                 "x": [
                     "Ti",
                     "Te"
+                ],
+                "y": [
+                    ["y1", "Ti"],
+                    ["y2", "Te"]
                 ]
             },
             "parameters": [1e-3, 1e-2, 1E6, 1E7],

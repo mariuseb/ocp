@@ -1,13 +1,16 @@
 #from ast import Param
 from ocp.mpc import MPC
-from ocp.filters import KalmanDAE
+#from ocp.filters import KalmanDAE
 import numpy as np
 import numpy.typing as npt
 from matplotlib import rc
 import pandas as pd
 from copy import deepcopy
 from typing import Tuple, Any
-import os
+#import os
+import pathlib
+from ocp.filter_wrapper import FilterWrapper
+from itertools import product
 rc('mathtext', default='regular')
 
 
@@ -28,8 +31,9 @@ class MPCAgent(object):
     
     def __init__(
         self,
-        mpc_cfg: os.PathLike,
-        ekf_cfg: os.PathLike,
+        mpc_cfg: pathlib.Path,
+        filter_type: str,
+        filter_cfg: pathlib.Path,
         params: npt.NDArray[Any]
     ) -> None:
         self.params = params
@@ -38,15 +42,61 @@ class MPCAgent(object):
             param_guess=self.params,
             **deepcopy(self.kwargs)
         )  # to remove, replace with N
+        """
         if ekf_cfg != "":
             self.ekf = KalmanDAE(ekf_cfg)
+        """
+        self.filter = FilterWrapper(
+            filter_cfg,
+            filter_type
+        )
         self.i = 0
         self.preds = dict()
         self.forecasts = dict()
+        self._init_state_history()
+        self._init_covar_history()
+        
+    def _init_state_history(
+        self
+    ) -> None:
+        cols = pd.MultiIndex.from_product(
+            [["prior", "posterior"], self.x()],
+            names=['', 'state']
+        )
+        self.state_history = pd.DataFrame(
+            columns=cols
+        )
+    
+    def _init_covar_history(
+        self
+    ) -> None:
+        self.ps = list(
+            map(
+                lambda x: "p_" + str(x[0]) + str(x[1]),
+                product(range(1,self.n_x+1), range(1,self.n_x+1)
+                )
+            )
+        )
+        cols = pd.MultiIndex.from_product(
+            [["prior", "posterior"], self.ps],
+            names=['', 'covariance']
+        )
+        self.covar_history = pd.DataFrame(
+            columns=cols
+        )
+        
         
     @property
     def dt(self):
         return self.mpc.dt
+    
+    @property
+    def x(self):
+        return self.mpc.x
+    
+    @property
+    def n_x(self):
+        return self.mpc.n_x
     
     @property
     def N(self):
@@ -121,27 +171,55 @@ class MPCAgent(object):
             ubx = np.append(ubx, _ubx)
         return lbx, ubx
     
+    def store_filtering_history(
+        self,
+        x: npt.NDArray[np.float64],
+        P: npt.NDArray[np.float64],
+        _type: str
+    ) -> None:
+        assert _type in ("prior", "posterior")
+        self.state_history.loc[
+            self.i, (_type, self.x())
+        ] = x
+        self.covar_history.loc[
+            self.i, (_type, self.ps)
+        ] = P.flatten()
+        
+    
     def x0_from_obs(
         self,
         obs: npt.NDArray[Any]
-    ):
+    ):  
         """
-        Generally, dim(obs) < dim(x).
-        Need filtering.
-        
-        TODO: filter "wrapper"
+        TODO: store prior, posterior 
+        of state and covariance.
         """
-        x_pred = self.preds[self.i-1].iloc[1][self.ekf.dae.x].values
-        # Need to generalize the below:
-        u_model = self.preds[self.i-1].iloc[0][self.ekf.dae.u].values
-        r_pred = self.forecasts[self.i-1].iloc[0][self.ekf.dae.r_names].values
-        #y_z_meas = [y_meas[name] for name in ekf.y]
-        x0, z, y = self.ekf.estimate(
-                                x_pred, 
-                                #z=sol.loc[0, mpc.z_names].values,
-                                p=self.params,
-                                y=obs, 
-                                u=u_model, 
-                                r=r_pred
-                                )
-        return x0
+        _iter = self.i-1
+        u = self.preds[
+            _iter
+        ].iloc[0][
+            self.filter.u
+        ].values
+        r = self.forecasts[
+            _iter
+        ].iloc[0][
+            self.filter.r
+        ].values
+        x_prior, P_prior = self.filter.predict(
+            u,
+            r
+        )
+        self.store_filtering_history(
+            x_prior,
+            P_prior,
+            "prior"
+        )
+        x_posterior, P_posterior = self.filter.update(
+            obs
+        )
+        self.store_filtering_history(
+            x_posterior,
+            P_posterior,
+            "posterior"
+        )
+        return x_posterior

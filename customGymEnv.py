@@ -18,7 +18,7 @@ from copy import deepcopy
 #from project1_boptest_gym.boptestGymEnv import BoptestGymEnv
 import gymnasium as gym
 import numpy.typing as npt
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from gymnasium.wrappers import TimeLimit
 from pprint import pprint
 from pathlib import Path
@@ -41,23 +41,25 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
     
     def __init__(
         self,
-        integrator: Union[Path, dict] = dict(),
-        model: Union[Path, dict] = dict(),
+        integrator: Union[
+            Path, dict
+        ] = dict(),
+        model: Union[
+            Path, dict
+        ] = dict(),
         step_period: int = 900,
         parameters: npt.NDArray[np.floating] = np.array([]),
         maps: Dict[str, Dict[str, str]] = dict(),
-        resource_path = Path("Resources")
+        R: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+        Q: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+        resource_path: Path = Path("Resources")
     ):
-        """
-        Contains path to mpc-config,
-        which contains cfg for integrator.
-        """
-        #cfg = Config()(config)
-        """
-        self.step_period = \
-            config["integrator"]["dt"] = \
-                step_period
-        """
         self.step_period = integrator["dt"] = step_period
         self.params = parameters
         self.integrator = integrator_factory.create(
@@ -74,11 +76,51 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         )
         # set time:
         self.time = 0
-        #self.bound_cols = self.get_bound_cols()
         # set empty history:
         self.res = pd.DataFrame(
             columns=self.x + self.u + self.r # + self.bound_cols
         )
+        self.init_rng()
+        self.handle_noise(
+            R,
+            Q
+        )
+
+    def handle_noise(
+        self,
+        R: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+        Q: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+    ):
+        # set noise:
+        if R is None:
+            self.R = np.eye(self.integrator.dae.n_y)*0
+        else:
+            self.R = R
+        if Q is None:
+            self.Q = np.eye(self.integrator.dae.n_x)*0
+        else:
+            self.Q = Q
+            
+    def sample_Q(self):
+        return self.rng.multivariate_normal(
+            [0]*self.integrator.dae.n_x,
+            self.Q
+        )
+    
+    def sample_R(self):
+        return self.rng.multivariate_normal(
+            [0]*self.integrator.dae.n_y,
+            self.R
+        )
+        
+    def init_rng(self):
+        self.rng = np.random.default_rng(np.random.MT19937(seed=0))
 
     @property
     def F(self) -> ca.Function:
@@ -222,6 +264,11 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         self.time += self.step_period
         self.store_current_state()
         # stage cost zero for now:
+        # add noise. first process, then measurement
+        s_prime += self.sample_Q()
+        # store?
+        s_prime += self.sample_R()
+        # store?
         return s_prime, 0, False, False, {}
 
 

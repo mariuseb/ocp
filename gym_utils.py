@@ -24,7 +24,7 @@ class BoptestGymABC(metaclass=ABCMeta):
         tf: int,
         ts: int = 0,
         resample: bool = True
-    ):
+    ) -> pd.DataFrame:
         pass
     
     def get_results(

@@ -36,18 +36,6 @@ if __name__ == "__main__":
     ekf_cfg = os.path.join("ekf_configs", "4R4C_EKF_1meas.json")
     params_hvac = pd.read_csv("hvac_model_PRBS.csv", index_col=0)
     params_env = pd.read_csv("envelope_model_alt_rad_first.csv", index_col=0)
-    
-    A = 66.7
-    priors = {
-        "Rie": 0.250/A, # m²K / W 
-        "Rea": 2.250/A, # m²K / W 
-        "Ci": 9.50*3600*A, # Wh / m²K
-        "Ce": 112*3600*A, # Wh / m²K
-        "Ai": 2, # m²
-    }
-    for k, v in priors.items():
-        params_env.loc[k] = v
-    
     params_all = pd.concat([params_hvac, params_env])
     params_all = params_all[~params_all.index.duplicated(keep='first')]
     params_all.loc["Prad_to_env_zero"] = 1E4

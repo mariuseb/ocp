@@ -35,7 +35,8 @@ class Coordinator(object):
     ) -> MPCAgent:
         return MPCAgent(
             config["mpc_config_file"],
-            config["ekf_config_file"],
+            config["filter_type"],
+            config["filter_config_file"],
             config["parameters"]
         )
         

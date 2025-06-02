@@ -1,6 +1,8 @@
 #from casadi import *
 import casadi as ca
+import re
 import numpy as np
+import numpy.typing as npt
 import scipy
 import pdb
 
@@ -41,6 +43,7 @@ class DAE(object):
         self.add_algs()
         self.set_A()
         self.set_B()
+        self.set_C()
 
     def vars(self, names, stoch=False):
         mxs = []
@@ -490,19 +493,24 @@ class DAE(object):
         setattr(self, "sde", expr)
     
     """
-    Discrete-time facilities:
-    """    
+    Discrete-time facilities for Kalman filtering:
+    """
+    
+    @property
+    def ode(self):
+        return ca.vertcat(*self.dae.ode())
+    
     
     def set_A(self):
         """
         Set casadi-Function to get cont.-time A.
         """
         self._A = _A = ca.jacobian(
-            self.ode, self.x
+            self.ode, self.var("x")
         )
         self.A = ca.Function(
             "A",
-            [self.x, self.p],
+            [self.var("x"), self.var("p")],
             [_A],
             ["x", "p"], 
             ["A"]
@@ -512,20 +520,47 @@ class DAE(object):
         """
         Set casadi-Function to get cont.-time B.
         """
-        u = ca.vertcat(self.u, self.r)
-        self._B = _B = ca.jacobian(self.ode, u)
+        u = ca.vertcat(
+            self.var("u"),
+            self.var("r")
+        )
+        self._B = _B = ca.jacobian(
+            self.ode,
+            u
+        )
         self.B = ca.Function("B",
-            [u, self.p],
+            [u, self.var("p")],
             [_B],
             ["u","p"], 
             ["B"]
         )
+
+    def set_C(self):
+        """
+        Set casadi-Function to get cont.-time B.
+        """
+        y, x = ca.vertcat(*self.dae.ydef()), self.var("x")
+        self._C = _C = ca.jacobian(y, x)
+        self.C = ca.Function(
+            "C",
+            [x],
+            [_C],
+            ["x"], 
+            ["C"]
+        )
+        
+    def get_C(
+        self
+    ) -> npt.NDArray[np.float64]:
+        """ This should be const. """
+        return np.array(self.C()["C"])
+        
         
     def get_Ad(
             self,
             dt: int,
             **kwargs
-        ):
+        ) -> npt.NDArray[np.float64]:
         """
         Get discrete-time Ad.
         """
@@ -544,7 +579,7 @@ class DAE(object):
             self,
             dt: int,
             **kwargs
-        ):
+        ) -> npt.NDArray[np.float64]:
         """
         Get discrete-time B:
         A^-1*(Ad − I)*B

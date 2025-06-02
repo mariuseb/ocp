@@ -604,8 +604,8 @@ class Boptest(RestApi):
             #ax1.legend(["phi_h"])
             # plot bounds:
             #bounds_plt = pd.concat([bounds]*days)
-            post = bounds.get_full(days)
-            pre = bounds.get_full(days)
+            post = bounds.get_full(days)[1:]
+            pre = bounds.get_full(days)[1:]
             post -= 273.15
             pre -= 273.15
             #bounds_plt.loc[0] = [0]*len(bounds_plt.columns)
