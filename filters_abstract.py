@@ -21,7 +21,6 @@ from pathlib import Path
 class DiscreteTimeCovarianceDynamics(object):
     """ . """
     
-    @abstractmethod
     def _set_one_sample_state_covariance(
         self
     ):
@@ -44,7 +43,7 @@ class DiscreteTimeCovarianceDynamics(object):
             n_x
         )
         next_state_covariance_expr = A@P0@A.T + Q
-        self.one_sample_state_covariance = ca.Function(
+        self._one_sample_state_covariance = ca.Function(
             "one_sample_state",
             [A, P0, Q],
             [next_state_covariance_expr],
@@ -95,16 +94,91 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             P0=P0
         )
     
+    """
     @property
     @abstractmethod
     def one_sample_state(self):
         raise NotImplementedError
     
+    @one_sample_state.setter
+    @abstractmethod # The innermost decorator
+    def one_sample_state(
+        self,
+        one_sample_state: ca.Function
+    ): # Abstract setter
+        pass
+
     @property
     @abstractmethod
     def one_sample_state_covariance(self):
         raise NotImplementedError
-        
+    
+    @one_sample_state_covariance.setter
+    @abstractmethod # The innermost decorator
+    def one_sample_state_covariance(
+        self,
+        one_sample_state_covariance: ca.Function
+    ): # Abstract setter
+        pass
+    
+    @property
+    @abstractmethod
+    def x(self):
+        raise NotImplementedError
+    
+    
+    @x.setter
+    @abstractmethod # The innermost decorator
+    def x(self, x: npt.NDArray[np.float64]): # Abstract setter
+        pass
+    
+    @property
+    @abstractmethod
+    def P(self):
+        raise NotImplementedError
+    
+    
+    @P.setter
+    @abstractmethod # The innermost decorator
+    def P(self, P: npt.NDArray[np.float64]): # Abstract setter
+        pass
+    """
+    @property
+    @abstractmethod
+    def A(self):
+        raise NotImplementedError
+    
+    @property
+    @abstractmethod
+    def C(self):
+        raise NotImplementedError
+    
+    """
+    @property
+    @abstractmethod
+    def one_sample_state_covariance(self):
+        raise NotImplementedError
+    
+    @one_sample_state_covariance.setter
+    @abstractmethod # The innermost decorator
+    def one_sample_state_covariance(
+        self,
+        one_sample_state_covariance: ca.Function
+    ): # Abstract setter
+        pass
+    """
+    
+    @property
+    def one_sample_state_covariance(self):
+        return self._one_sample_state_covariance
+    
+    @one_sample_state_covariance.setter
+    def one_sample_state_covariance(
+        self,
+        one_sample_state_covariance: ca.Function
+    ): # Abstract setter
+        self._one_sample_state_covariance = one_sample_state_covariance
+       
     def _set_output_covariance(
         self
     ):
@@ -147,13 +221,14 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         C = ca.SX.sym("C", self.n_y, self.n_y)
         K = ca.SX.sym("K", self.n_x, self.n_x)
         #R = ca.SX.sym("Q", self.n_y, self.n_y)
-        state_correction_expr = x + K@(y - C@x)
+        e = y - C@x
+        state_correction_expr = x + K@e
         self.state_correction = ca.Function(
             "state_correction",
             [y, x, C, K],
-            [state_correction_expr],
+            [state_correction_expr, e],
             ["y", "x_prior", "C", "K"],
-            ["x_post"]
+            ["x_post", "e"]
         )
 
     def _set_state_covar_correction(
@@ -173,7 +248,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ["C", "K", "P_prior"],
             ["P_post"]
         )
-        
+      
+    """
     def _set_one_sample_feedback(
         self
     ) -> None:
@@ -185,7 +261,6 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         Q = ca.SX.sym("Q", self.n_x, self.n_x)
         R = ca.SX.sym("R", self.n_y, self.n_y)
         P0 = ca.SX.sym("P0", self.n_y, self.n_y)
-        A = ca.SX.sym("A", self.n_x, self.n_x)
         # Function-calls:
         # if predict 
         x_prior = self.one_sample_state(
@@ -194,11 +269,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         P_prior = self.one_sample_state_covariance(
             A, P0, Q
         )
-        
-    
-        
-        
-        
+    """  
+            
     def init_filter(
         self,
         R: Union[
@@ -229,13 +301,16 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             
         hidden_setters = [
             getattr(self, name) for name in dir(self)
+            #name for name in dir(self)
             if name.startswith("_set_") \
+                or \
+                name.startswith("_init_")
                 and \
             callable(getattr(self, name))
         ]
         for method in hidden_setters:
             method()
-        
+     
     def __setattr__(self, name, value):
         if name in ("Q", "R", "P", "x"):
             value = np.array(value)
@@ -248,7 +323,16 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             assert value.shape == shape, "The shape of " + \
                 f"""{name} should be {shape}, not {value.shape}"""
         super(AbstractKalmanFilter, self).__setattr__(name, value)
-        
+    
+    @abstractmethod
+    def predict_state(
+        self,
+        u: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        pass
+    
+    
+    """
     @abstractmethod
     def predict(
         self,
@@ -269,14 +353,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         npt.NDArray[np.float64]
     ]:   
         pass
-    
-    @abstractmethod
-    def predict_state(
-        self,
-        u: npt.NDArray[np.float64]
-    ) -> npt.NDArray[np.float64]:
-        pass
-    
+        
     @abstractmethod
     def predict_state_covariance(
         self,
@@ -297,6 +374,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         y: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         pass
+    """
     
     @property
     def dae(self) -> DAE:
@@ -423,7 +501,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         self.all_vars = all_vars
         self.all_names = all_names
         
-    def init_jac_f_x(self):
+    def _init_jac_f_x(self):
         self.jac_f_x = ca.Function(
             'jac_f_x',
             self.all_vars,
@@ -432,7 +510,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ['jac_f_x']
         ) 
     
-    def init_jac_f_u(self):
+    def _init_jac_f_u(self):
         self.jac_f_u = ca.Function(
             'jac_f_u',
             self.all_vars,
@@ -441,7 +519,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ['jac_f_u']
         ) 
     
-    def init_jac_f_z(self):
+    def _init_jac_f_z(self):
         self.jac_f_z = ca.Function(
             'jac_f_z',
             self.all_vars,
@@ -450,7 +528,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ['jac_f_z']
         ) 
         
-    def init_jac_g_x(self):
+    def _init_jac_g_x(self):
         self.jac_g_x = ca.Function(
             'jac_g_x',
             self.all_vars,
@@ -459,7 +537,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ['jac_g_x']
         ) 
     
-    def init_jac_g_z(self):
+    def _init_jac_g_z(self):
         self.jac_g_z = ca.Function(
             'jac_g_z',
             self.all_vars,
@@ -468,7 +546,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ['jac_g_z']
         ) 
         
-    def init_jac_h_x(self):
+    def _init_jac_h_x(self):
         self.jac_h = ca.Function(
             'jac_h',
             self.all_vars,
@@ -477,7 +555,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ['jac_h']
         )
         
-    def set_log_det(
+    def _set_log_det(
             self,
         ):
         """
@@ -495,7 +573,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             self.n_y
         )
         # for Q:
-        log_det_Q = ca.Function(
+        self.log_det_Q = ca.Function(
             "log_det_Q",
             [Q_SX],
             [ca.trace(ca.log(ca.qr(Q_SX)[1]))],
@@ -503,14 +581,108 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             ["log(det(Q))"]                        
         )
         # for R:
-        log_det_R = ca.Function(
+        self.log_det_R = ca.Function(
             "log_det_R",
             [R_SX],
             [ca.trace(ca.log(ca.qr(R_SX)[1]))],
             ["Q"],
             ["log(det(R))"]                        
         )
-        return log_det_Q, log_det_R
+        #return log_det_Q, log_det_R
+    
+    def predict_state_covariance(
+        self,
+        u: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        self.P = np.array(
+            self.one_sample_state_covariance(
+                self.A, # might need to take at previous state
+                self.P,
+                self.Q
+            ),
+            dtype=np.float64
+        )
+        return self.P
+    
+    def update_state(
+        self,
+        y: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        V = np.array(
+            self.output_covariance(
+                self.C,
+                self.P,
+                self.R
+            ),
+            dtype=np.float64
+        )
+        self.K = np.array(
+            self.kalman_gain( 
+                self.C,
+                self.P,
+                V
+            ),
+            dtype=np.float64
+        )
+        """
+        self.x = np.array(
+            self.state_correction(
+                y,
+                self.x,
+                self.C,
+                self.K
+            ),
+            dtype=np.float64
+        ).flatten()
+        """
+        state_corr = self.state_correction(
+            y,
+            self.x,
+            self.C,
+            self.K
+            
+        )
+        self.x = np.array(
+            state_corr[0],
+            dtype=np.float64
+        ).flatten()
+        return self.x
+    
+    def update_state_covariance(
+        self,
+        y: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        self.P = np.array(
+            self.state_covariance_correction(
+                self.C,
+                self.P,
+                self.K
+            ),
+            dtype=np.float64
+        )
+        return self.P
+
+    def predict(
+        self,
+        u: npt.NDArray[np.float64]
+    ) -> Tuple[
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64]
+    ]:   
+        x = self.predict_state(u)
+        P = self.predict_state_covariance(u)
+        return x, P
+
+    def update(
+        self,
+        y: npt.NDArray[np.float64]
+    ) -> Tuple[
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64]
+    ]:   
+        x, e = self.update_state(y)
+        P = self.update_state_covariance(y)
+        return x, P
         
     
     

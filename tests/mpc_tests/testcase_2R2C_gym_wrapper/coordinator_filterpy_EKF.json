@@ -1,0 +1,97 @@
+{
+    "days": 2,
+    "sampling_time": "15min",
+    "controller": {
+        "timezone": "Europe/Oslo",
+        "temp_conv": 273.15,
+        "sampling_time": "15min",
+        "mpc_config_file": "mpc_configs/2R2C_MPC.json",
+        "mpc_kwargs": {
+            "x_nom": [12, 12],
+            "x_nom_b": [289.15, 289.15],
+            "r_nom": [12,1000,1000],
+            "r_nom_b": [289.15,0,0],
+            "u_nom": [1000],
+            "u_nom_b ": [0],
+            "slack": true
+            },
+        "est_kwargs": {
+            "x_nom": [12, 12],
+            "x_nom_b": [289.15, 289.15],
+            "r_nom": [12,1000,1000],
+            "r_nom_b": [289.15,0,0],
+            "u_nom": [1000],
+            "u_nom_b ": [0],
+            "slack": false
+            },
+        "filter_config_file": "ekf_configs/2R2C_EKF_2meas.json",
+        "filter_type": "filterpy.kalman.ExtendedKalmanFilter",
+        "filter_obs": true,
+        "parameters": [1e-3, 1e-2, 1E6, 1E7],
+        "reiden": false,
+        "reiden_freq": 96,
+        "timesteps_reiden_start": 95,
+        "reiden_N": 1344,
+        "est_config_file": "configs/2R2C.json",
+        "reiden_adaptive_rollout": true
+    },
+    "environment": {
+        "type": "CustomGymEnv",
+        "config":     
+            {
+            "R": [[1E-4, 0], [0, 1E-4]],
+            "Q": [[1E-3, 0], [0, 1E-3]],
+            "integrator": 
+                {
+                    "name": "IRK",
+                    "method": "legendre",
+                    "degree": 1,
+                    "n_steps": 1
+                },
+            "model": {
+                "ode": {
+                    "Ti": "(Te - Ti)/(Rie*Ci) + phi_h/Ci",
+                    "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+                },
+                "p": [
+                    "Rie",
+                    "Rea",
+                    "Ci",
+                    "Ce"
+                ],
+                "u": [
+                    "phi_h"
+                ],
+                "r": [
+                    "Ta",
+                    "cost"
+                ],
+                "x": [
+                    "Ti",
+                    "Te"
+                ],
+                "y": [
+                    ["y1", "Ti"],
+                    ["y2", "Te"]
+                ]
+            },
+            "parameters": [1e-3, 1e-2, 1E6, 1E7],
+            "maps": 
+            {
+                "r" : {"Ta": "TDryBul",
+                "Ti_lb": "LowerSetp[1]",
+                "Ti_ub": "UpperSetp[1]",
+                "cost": "PriceElectricPowerHighlyDynamic"
+                },
+                "u" : {
+                    "phi_h": "oveAct"
+                },
+                "y":  {
+                    "Ti": "TRooAir",
+                    "Te":  "TRooEnv"
+                }
+            }
+        }
+    }
+}
+

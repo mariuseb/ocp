@@ -78,7 +78,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         self.time = 0
         # set empty history:
         self.res = pd.DataFrame(
-            columns=self.x + self.u + self.r # + self.bound_cols
+            columns=self.x + self.u # + self.r # + self.bound_cols
         )
         self.init_rng()
         self.handle_noise(
