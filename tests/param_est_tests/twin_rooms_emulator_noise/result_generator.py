@@ -29,7 +29,7 @@ import numpy as np
 from ocp.utils import ZEBData
 from ocp.param_est import ParameterEstimation
 import matplotlib.pyplot as plt
-from ocp.filters import KalmanDAE
+from ocp.filters_old import KalmanDAE
 #from utils import save_journal_plot, plot_residuals
 from matplotlib import rc
 from sklearn.metrics import r2_score
@@ -46,7 +46,7 @@ from copy import deepcopy
 from matplotlib.colors import ListedColormap
 import seaborn as sns
 import os
-from ocp.covar_solver_cont import CovarianceSolverContinuous
+from ocp.covar_solver_cont_old import CovarianceSolverContinuous
 pd.set_option('future.no_silent_downcasting', True)
 # construct cmap
 #colors = ["#9b59b6", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"]

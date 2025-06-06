@@ -19,9 +19,9 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from pandas.plotting import autocorrelation_plot
-from ocp.filters import KalmanBucy, KalmanDAE
+from ocp.filters_old import KalmanBucy, KalmanDAE
 from ocp.utils import prepare_data, ZEBData
-from ocp.covar_solver_cont import CovarianceSolverContinuous
+from ocp.covar_solver_cont_old import CovarianceSolverContinuous
 from copy import deepcopy
 from utils import prepare_data
 #from result_generator import ResultGenerator, plot_residuals
@@ -150,7 +150,8 @@ if __name__ == "__main__":
         ax1 = ax.twinx()
         #sol["phi_s"].plot(drawstyle="steps-post",ax=ax1)
         #sol["phi_h"].plot(drawstyle="steps-post",ax=ax1)
-        plt.close()
+        plt.show()
+        #plt.close()
         params.to_csv("envelope_model_2R2C.csv", index=True)
         sol.to_csv("simulation_traj_2R2C.csv", index=True)
         print(params) 

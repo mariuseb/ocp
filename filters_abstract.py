@@ -183,7 +183,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         self
     ):
         # concatenate u, r:
-        C = ca.SX.sym("C", self.n_y, self.n_y)
+        C = ca.SX.sym("C", self.n_y, self.n_x)
         P = ca.SX.sym("P", self.n_x, self.n_x)
         R = ca.SX.sym("Q", self.n_y, self.n_y)
         output_covariance_expr = C@P@C.T + R
@@ -199,7 +199,7 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         self
     ):
         # concatenate u, r:
-        C = ca.SX.sym("C", self.n_y, self.n_y)
+        C = ca.SX.sym("C", self.n_y, self.n_x)
         P = ca.SX.sym("P", self.n_x, self.n_x)
         V = ca.SX.sym("Q", self.n_y, self.n_y)
         #R = ca.SX.sym("Q", self.n_y, self.n_y)
@@ -218,8 +218,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         # concatenate u, r:
         y = ca.SX.sym("y", self.n_y)
         x = ca.SX.sym("x", self.n_x)
-        C = ca.SX.sym("C", self.n_y, self.n_y)
-        K = ca.SX.sym("K", self.n_x, self.n_x)
+        C = ca.SX.sym("C", self.n_y, self.n_x)
+        K = ca.SX.sym("K", self.n_x, self.n_y)
         #R = ca.SX.sym("Q", self.n_y, self.n_y)
         e = y - C@x
         state_correction_expr = x + K@e
@@ -235,8 +235,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         self
     ):
         # concatenate u, r:
-        C = ca.SX.sym("C", self.n_y, self.n_y)
-        K = ca.SX.sym("K", self.n_x, self.n_x)
+        C = ca.SX.sym("C", self.n_y, self.n_x)
+        K = ca.SX.sym("K", self.n_x, self.n_y)
         P = ca.SX.sym("K", self.n_x, self.n_x)
         #R = ca.SX.sym("Q", self.n_y, self.n_y)
         state_covariance_correction_expr = \
@@ -292,12 +292,18 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
     ):
         if R is not None:
             self.R = R
+        else:
+            self.R = np.eye(self.n_y)
         if Q is not None:
             self.Q = Q
-        if x0 is not None:
-            self.x = x0
+        else: # TODO: accomodate z
+            self.Q = np.eye(self.n_x)
         if P0 is not None:
             self.P = P0
+        else: # TODO: accomodate z
+            self.P = np.eye(self.n_x)
+        if x0 is not None:
+            self.x = x0
             
         hidden_setters = [
             getattr(self, name) for name in dir(self)
@@ -408,9 +414,20 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         # CORRECTION:
         return ca.vertcat(*self.dae.dae.ydef())
     
-    #@property
-    #def y(self):
-    #    return [y.name() for y in self.dae.y.values() if not isinstance(y, (float, int))]
+    @property
+    def y(self):
+        return [
+            y.name() for y in self.dae.y.values()
+            if 
+            not isinstance(y, (float, int))
+        ]
+    @property
+    def y_map(self):
+        return {
+            y: x.name() for y, x in self.dae.y.items()
+            if 
+            not isinstance(y, (float, int))
+        }
 
     @property
     def n_y(self):
@@ -485,8 +502,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
     def jac_h_x(self):
         #return ca.jacobian(self.h_expr, self.x_symbolic)      
         # CORRRECTION:
-        #return ca.jacobian(self.h_expr, ca.vertcat(self.x_symbolic, self.z_symbolic))
         return ca.jacobian(self.h_expr, ca.vertcat(self.x_symbolic))
+        #return ca.jacobian(self.h_expr, ca.vertcat(self.x_symbolic, self.z_symbolic))
     
     def init_vars(self):
         all_vars = []

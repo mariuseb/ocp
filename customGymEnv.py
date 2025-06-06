@@ -78,7 +78,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         self.time = 0
         # set empty history:
         self.res = pd.DataFrame(
-            columns=self.x + self.u # + self.r # + self.bound_cols
+            columns=self.x + self.u + self.x_true # + self.r # + self.bound_cols
         )
         self.init_rng()
         self.handle_noise(
@@ -143,6 +143,10 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         return self.integrator.dae.x
     
     @property
+    def x_true(self) -> List[str]:
+        return list(map(lambda x: x + "_true", self.integrator.dae.x))
+    
+    @property
     def boptest_to_ocp(self) -> Dict[str, str]:
         return self.maps.boptest_to_ocp
                  
@@ -157,6 +161,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         s, _ = self.set_state(np.array([293.15]*self.n_x))
         # TODO: keep history:
         #self.df = pd.DataFrame(columns=["phi_h", "Ta", "phi_s"])
+        self.store_current_true_state()
         self.store_current_state()
         return s, {}
 
@@ -207,8 +212,14 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
     def store_current_state(
         self
     ):
-        self.res.loc[self.time] = np.nan
+        #self.res.loc[self.time] = np.nan
         self.res.loc[self.time, self.x] = self.s
+    
+    def store_current_true_state(
+        self
+    ):
+        self.res.loc[self.time] = np.nan
+        self.res.loc[self.time, self.x_true] = self.s
         
     def store_controls(
         self, 
@@ -260,15 +271,19 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
             np.array([])
             )
         ).flatten()
+        # only for bookkeeping:
         self.s = s_prime
         self.time += self.step_period
-        self.store_current_state()
+        self.store_current_true_state()
         # stage cost zero for now:
-        # add noise. first process, then measurement
+        # add noise. first proces, then measurement
         s_prime += self.sample_Q()
-        # store?
+        # this should be used in next simulation:
+        self.s = s_prime
+        #self.s = s_prime
         s_prime += self.sample_R()
-        # store?
+        # store after adding noise:s
+        self.store_current_state()
         return s_prime, 0, False, False, {}
 
 

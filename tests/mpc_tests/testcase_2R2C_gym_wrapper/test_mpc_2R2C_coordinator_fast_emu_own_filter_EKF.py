@@ -31,7 +31,7 @@ if __name__ == "__main__":
     plt.show()
     
     res = coord.env.get_results(tf=1e6)
-    res.to_csv("2_days_EKF.csv", index=True)
+    res.to_csv("14_days_EKF.csv", index=True)
     
     filterpy_x = pd.read_csv("filterpy_x_history_2days.csv", index_col=0)
     filterpy_P = pd.read_csv("filterpy_P_history_2days.csv", index_col=0)

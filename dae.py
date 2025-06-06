@@ -41,9 +41,12 @@ class DAE(object):
         #self.add_meas()
         self.add_odes()
         self.add_algs()
-        self.set_A()
-        self.set_B()
-        self.set_C()
+        try:
+            self.set_A()
+            self.set_B()
+            self.set_C()
+        except RuntimeError:
+            print("Model is non-linear.")
 
     def vars(self, names, stoch=False):
         mxs = []

@@ -73,13 +73,19 @@ class ParamGuess(object):
     def get_lb(self, scale):
         assert scale <= 1
         lbp = scale*self.p0
-        lbp[self.lb_inds] = self.lb_vals
+        try:
+            lbp[self.lb_inds] = self.lb_vals
+        except IndexError:
+            pass
         return lbp
     
     def get_ub(self, scale):
         assert scale >= 1
         ubp = scale*self.p0
-        ubp[self.ub_inds] = self.ub_vals
+        try:
+            ubp[self.ub_inds] = self.ub_vals
+        except IndexError:
+            pass
         return ubp
         
         
@@ -263,10 +269,14 @@ class OCP(metaclass=ABCMeta):
             self.p_nom = self.scale = [1]
         """ 
         if p0 is not None and self.p_nom is None:
-            self.p_nom = self.scale = self.get_scale(
-                                                     p0, 
-                                                     truncate=truncate_scaling
-                                                     )
+            self.p_nom = self.scale = get_scale(
+                                                p0, 
+                                                truncate=truncate_scaling
+                                                )
+            self.p_nom_map = {
+                name: val for name, val in \
+                    zip(self.dae.p, self.p_nom)
+            }
         elif param_guess is None:
             #self.p_nom = self.scale = ca.repmat(ca.DM([1]), len(self.dae.p))
             self.p_nom = self.scale = [1]
@@ -812,13 +822,10 @@ class OCP(metaclass=ABCMeta):
     @abstractmethod
     def set_nlp_obj(self):
         raise NotImplementedError("ERROR.")
-        
+    
+    """
     @classmethod
     def get_scale(self, param_guess, truncate=False):
-        """
-        For numerical conditioning.
-        """
-        
         def _truncate(number) -> float:
             return float(f"{number:.2g}")
         
@@ -846,23 +853,14 @@ class OCP(metaclass=ABCMeta):
                                     )
                                 )
                             ).flatten()
-            
-            """
-            -inf appears if parameter guess is
-            zero. Replace it with 1.
-            """
             dec_scale[dec_scale == -np.inf] = 1
-            
             prefix = param_guess/dec_scale
             ceiled = np.ceil(prefix)
-            
-            """
-            Replace nan with 0.
-            """
             #ceiled = np.nan_to_num(ceiled)
             #return np.multiply(ceiled, dec_scale)
             #return np.array(np.multiply(ceiled, dec_scale)).flatten()
             return dec_scale
+    """
         
     def __del__(self):
         pass
@@ -1953,3 +1951,52 @@ class OCP(metaclass=ABCMeta):
 
         
 
+def get_scale(param_guess, truncate=False):
+    """
+    For numerical conditioning.
+    """
+    
+    def _truncate(number) -> float:
+        return float(f"{number:.2g}")
+    
+    if truncate:
+        scale = np.array(
+            list(
+                    map(lambda x: _truncate(x),
+                    param_guess)
+                )
+            )
+        return scale
+    else:
+        dec_scale = np.array(
+                        list(
+                            map(
+                                lambda x: 10**x,
+                                        np.floor(
+                                            np.round(
+                                                np.log10(
+                                                        #param_guess
+                                                        np.abs(param_guess)
+                                                        )
+                                                )
+                                    )
+                                )
+                            )
+                        ).flatten()
+        
+        """
+        -inf appears if parameter guess is
+        zero. Replace it with 1.
+        """
+        dec_scale[dec_scale == -np.inf] = 1
+        
+        prefix = param_guess/dec_scale
+        ceiled = np.ceil(prefix)
+        
+        """
+        Replace nan with 0.
+        """
+        #ceiled = np.nan_to_num(ceiled)
+        #return np.multiply(ceiled, dec_scale)
+        #return np.array(np.multiply(ceiled, dec_scale)).flatten()
+        return dec_scale

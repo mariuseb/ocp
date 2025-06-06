@@ -20,13 +20,14 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from pandas.plotting import autocorrelation_plot
-from ocp.filters import KalmanBucy
+from ocp.filters_old import KalmanBucy
 from ocp.utils import prepare_data, ZEBData
-from ocp.covar_solver_cont import CovarianceSolverContinuous
+from ocp.covar_solver import CovarianceSolver
 from copy import deepcopy
 from result_generator import ResultGenerator, plot_residuals
 from utils import prepare_data
 from test_param_est_envelope_2R2C import prepare_est
+from ocp.result_generator import mse
 # text:
 #rc('mathtext', default='regular')
 rc('text', usetex=True)
@@ -41,11 +42,14 @@ if __name__ == "__main__":
                         "twin_rooms_emulator_PRBS.csv"
                         )
     y_data, N, dt = prepare_data(data_path)
+    y_data["phi_h"] = y_data["Prad"]
     param_guess, kwargs, lbx, ubx, x_guess = prepare_est(y_data)
     params = pd.read_csv("envelope_model_2R2C.csv", index_col=0)
     sol = pd.read_csv("simulation_traj_2R2C.csv", index_col=0)
     cfg_path = os.path.join("configs", "2R2C.json")
-    ekf_config = os.path.join("ekf_configs", "2R2C_envelope_EKF.json") 
+    ekf_config = pathlib.Path(
+        os.path.join("ekf_configs", "2R2C_envelope_EKF.json") 
+    )       
     #covar_kwargs = kwargs
     """
     Param est object:
@@ -64,99 +68,97 @@ if __name__ == "__main__":
         arrival_cost=True,
         **deepcopy(kwargs)
     )
-    p_nom = param_est.p_nom
-    # covar estimation:
-    covar_kwargs = dict()
-    covar_kwargs["p_nom"] = p_nom
-    y_data = y_data[:-1]      
-    #y_data = y_data.iloc[200:300]
-    covar_solver = CovarianceSolverContinuous(
-                                    ekf_config,
-                                    cfg_path,
-                                    y_data,
-                                    param_guess,
-                                    method="single_shooting",
-                                    **covar_kwargs
-                                    )
-    """
-    P0 = np.ones(
-            (covar_solver.ekf.dae.n_x,
-            covar_solver.ekf.dae.n_x)
-            )*1e-3 # + 1e-2
-    """
-    P0 = np.eye(2)*np.diag([0.026, 0.666])**2
-    #P0 = np.eye(3)
-    P0_guess = P0.flatten()
-    Q_guess = np.array(
-        ca.veccat(
-                ca.DM.eye(covar_solver.ekf.dae.n_x),
-                )
-        ).flatten()*1e-3
-    #Q_guess = (np.eye(3)*np.diag([-8.28, -5.666, -5.712])).flatten()
-    #R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*-5
-    R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*1e-3
-    #R_guess = (np.eye(1)*np.diag([-12.4])).flatten()
+    covar_solver = CovarianceSolver(
+        ekf_config,
+        len(y_data),
+        params.values.flatten(),
+        method="single_shooting",
+        **kwargs
+    )
     x0 = sol[["Ti", "Te"]].iloc[0].values
-    H = np.eye(covar_solver.n_theta + covar_solver.n_y)*0
-    covar_solver.exchange_P0_constraint(P0_guess)
-    covar_sol, Q_df, R, raw_sol = covar_solver.solve(
-            y_data, 
-            params.values.flatten(),
-            x0, # guess from smoothing
-            P0_guess,
-            Q_guess,
-            R_guess, 
-            H=H    
-            )
-    Q = Q_df.values.reshape((param_est.n_x, param_est.n_x))
-    # round first entry to 0:
-    Q[0,0] = 0
-    # one-step simulation, optimized parameters vs. non-optimized:
-    result_gen = ResultGenerator(
-                    config=cfg_path,
-                    ekf_config=ekf_config,
-                    params=param_guess,
-                    slack=False,
-                    dt=dt
-                    )   
-    # one-step simulation, plot:
-    result_gen.simple_one_step_plot(
+    covar_sol, x0, P0, Q_df, R_df, raw_sol = covar_solver.solve(
         y_data,
-        covar_sol[param_est.dae.x],
-        params,
-        ekf_config=ekf_config,
-        map_eval=True,
-        symbolic_estimate=True, 
-        R=R,
-        Q=Q,
-        P0x=P0_guess.reshape((param_est.n_x, param_est.n_x))
+        x0_guess=x0
     )
-    mse_opt = result_gen.mse(
-                result_gen.filtered.y_meas, 
-                result_gen.filtered.y_pred
-                             )
-    # write
-    # one-step simulation, plot:
-    Q = np.array(
-                ca.DM.eye(covar_solver.ekf.dae.n_x),
-        )*1e-3
-    R = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y))*1e-3
-    result_gen.simple_one_step_plot(
+    
+    R, Q = R_df.values.reshape((
+        covar_solver.n_y, \
+        covar_solver.n_y
+        )), \
+        Q_df.values.reshape((
+            covar_solver.n_x, \
+            covar_solver.n_x
+    ))
+    
+    u, r, p, y, z = covar_solver.prepare_variable_wise(
         y_data,
-        covar_sol[param_est.dae.x],
-        params,
-        ekf_config=ekf_config,
-        map_eval=True,
-        symbolic_estimate=True, 
-        R=R,
-        Q=Q,
-        P0x=P0_guess.reshape((param_est.n_x, param_est.n_x))
+        scaling=False
     )
-    mse_non_opt = result_gen.mse(
-                result_gen.filtered.y_meas, 
-                result_gen.filtered.y_pred
-                             )
-    print(params)
+    kalman_map = covar_solver.F_map
+    
+    M = covar_solver.M
+    res_opt = kalman_map(
+        x0=x0,
+        P0=P0,
+        u=u.T,
+        p=p*covar_solver.p_nom,
+        r=r.T,
+        y=y.T,
+        Q=Q,
+        R=R
+    )
+    x_pred_opt = pd.DataFrame(
+        data=np.array(res_opt["x_prior"]).T,
+        columns=covar_solver.x
+    )
+    
+    # 'correct' noise parameters:
+    Q = np.eye(covar_solver.n_x)
+    R = np.eye(covar_solver.n_y)
+    res_nonopt = kalman_map(
+        x0=x0,
+        P0=P0,
+        u=u.T,
+        p=p*covar_solver.p_nom,
+        r=r.T,
+        y=y.T,
+        Q=Q,
+        R=R
+    )
+    x_pred_nonopt = pd.DataFrame(
+        data=np.array(res_nonopt["x_prior"]).T,
+        columns=covar_solver.x
+    )
+    
+    val_data = y_data[1:]
+    val_data.index = range(len(val_data.index))
+    
+    mse_opt = mse( 
+        val_data[["Ti"]].values,
+        x_pred_opt[["Ti"]].values,
+    )
+    
+    mse_nonopt = mse( 
+        val_data[["Ti"]].values,
+        x_pred_nonopt[["Ti"]].values,
+    )
+    
+    fig, ax = plt.subplots(1,1)
+    frames = [x_pred_opt, x_pred_nonopt, val_data]
+    
+    var = "Ti"
+    kwargs = {
+        "drawstyle": "steps-post",
+        "linewidth": 0.75
+    }
+    for frame in frames:
+        frame[var].plot(ax=ax,**kwargs)
+    #val_data[var + "_true"].plot(ax=ax,**kwargs,color="k",linestyle="dashed")
+    ax.legend(["opt", "nonopt", "measured"])
+    
+    plt.show()
+    
+    print(Q)
     
     
 

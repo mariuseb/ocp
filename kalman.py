@@ -141,7 +141,8 @@ class ExtendedKalmanFilter(
         the full state dynamics:
         """
         self.one_sample_state = \
-            self.integrator.one_sample
+            self.integrator.chain_integrator()
+            #self.integrator.one_sample
     
     @property
     def A(self):
@@ -197,25 +198,29 @@ class ExtendedKalmanFilter(
         r = ca.MX.sym("u", self.n_r)
         p = ca.MX.sym("p", self.n_p)
         y = ca.MX.sym("y", self.n_y)
+        z = ca.MX.sym("z", self.n_z)
         Q = ca.MX.sym("Q", self.n_x, self.n_x)
         R = ca.MX.sym("R", self.n_y, self.n_y)
-        P0 = ca.MX.sym("P0", self.n_y, self.n_y)
-        return x0, u, p, r, y, Q, R, P0
+        P0 = ca.MX.sym("P0", self.n_x, self.n_x)
+        return x0, z, u, p, r, y, Q, R, P0
     
     def __set_one_sample_state_feedback(
         self
     ) -> None:
-        x0, u, p, r, y, Q, R, P0 = self._init_symbols_one_sample()
-        x_prior = self.one_sample_state(
-            x0, 0, u, p, r, 0
+        x0, z0, u, p, r, y, Q, R, P0 = self._init_symbols_one_sample()
+        res = self.one_sample_state(
+            x0, z0, u, p, r, 0
         )
+        x_prior, z = res[0], res[1]
         # obtain df/dx linearized at t=k-1:
         A = self.jac_f_x(
-            x0,0,u,p,r,y,ca.MX(),ca.MX(),ca.MX()
+            #x0,z0,u,p,r,y,ca.MX(),ca.MX(),ca.MX()
+            x0,z,u,p,r,y,0,0,0
         )
         # obtain linearization of h(x) (usually just [1, 0, ..., 0]):
         C = self.jac_h(
-            x0,0,u,p,r,y,ca.MX(),ca.MX(),ca.MX()
+            #x0,z0,u,p,r,y,ca.MX(),ca.MX(),ca.MX()
+            x0,z,u,p,r,y,0,0,0
         )
         Ad = ca.expm(A*self.dt)
         P_prior = self.one_sample_state_covariance(
@@ -237,10 +242,10 @@ class ExtendedKalmanFilter(
         loglik = (1/2)*(self.log_det_R(V) + e.T@ca.inv(V)@e + self.n_y*ca.log(2*ca.pi))
         self.one_sample_state_feedback = ca.Function(
             "F",
-            [x0, P0, u, p, r, y, Q, R],
-            [x_posterior, P_posterior, loglik],
-            ["x0","P0","u","p","r","y","Q","R"],
-            ["x_posterior", "P_posterior", "loglik"],
+            [x0, P0, z0, u, p, r, y, Q, R],
+            [x_posterior, P_posterior, z, loglik, x_prior],
+            ["x0","P0","z0","u","p","r","y","Q","R"],
+            ["x_posterior", "P_posterior", "z", "loglik", "x_prior"],
         )
         
         

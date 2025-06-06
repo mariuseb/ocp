@@ -20,9 +20,9 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from pandas.plotting import autocorrelation_plot
-from ocp.filters import KalmanBucy, KalmanDAE
+from ocp.filters_old import KalmanBucy, KalmanDAE
 from ocp.utils import prepare_data, ZEBData
-from ocp.covar_solver_cont import CovarianceSolverContinuous
+from ocp.covar_solver_cont_old import CovarianceSolverContinuous
 from copy import deepcopy
 from result_generator import ResultGenerator, plot_residuals
 # text:

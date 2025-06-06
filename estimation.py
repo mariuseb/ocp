@@ -4,7 +4,7 @@ import numpy as np
 #from pprint import pprint
 import re
 from ocp.covar_est import CovarianceEstimation
-from ocp.ocp import OCP
+from ocp.ocp import OCP, get_scale
 
 
 class Estimation(OCP, CovarianceEstimation):
@@ -121,7 +121,13 @@ class Estimation(OCP, CovarianceEstimation):
         self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
         
-        symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
+        #symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
+        #symbols = re.findall("|".join(self.dae.all_names), self.obj_string)
+        symbols = []
+        for symbol in self.dae.all_names:
+            if re.search(symbol, self.obj_string) is not None:
+                symbols.append(symbol)
+        
         vals = dict()
         for symbol in symbols:
             try:
@@ -140,6 +146,7 @@ class Estimation(OCP, CovarianceEstimation):
         vals["ca"] = ca
         vals["R"] = self.R
         vals["Q"] = self.Q
+        vals["p_nom_map"] = self.p_nom_map
         
         """
         s1, s2, ... , s_{nx} are aliases for sigma[:,0] , ... , sigma[:,nx-1]
@@ -246,7 +253,7 @@ class Estimation(OCP, CovarianceEstimation):
             if p_aux is not None:
                 self.add_arrival_cost_to_objective(p_aux=p_aux)
                 assert p_aux_prior is not None
-                p_nom = self.get_scale(p_aux_prior)
+                p_nom = get_scale(p_aux_prior)
                 costate_prior = ca.vertcat(p_aux_prior/p_nom, x_N)
             else:
                 costate_prior = ca.vertcat(p0, x_N)

@@ -29,7 +29,7 @@ import numpy as np
 from ocp.utils import ZEBData
 from ocp.param_est import ParameterEstimation
 import matplotlib.pyplot as plt
-from ocp.filters import KalmanDAE
+from ocp.filters_old import KalmanDAE
 #from utils import save_journal_plot, plot_residuals
 from matplotlib import rc
 from sklearn.metrics import r2_score
@@ -46,7 +46,7 @@ from copy import deepcopy
 from matplotlib.colors import ListedColormap
 import seaborn as sns
 import os
-from ocp.covar_solver_cont import CovarianceSolverContinuous
+from ocp.covar_solver_cont_old import CovarianceSolverContinuous
 pd.set_option('future.no_silent_downcasting', True)
 # construct cmap
 #colors = ["#9b59b6", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"]
@@ -90,6 +90,51 @@ color_map_custom = {
     "T_219_TR3": "darkgray", 
     "T_219_TR4": "silver", 
 }
+
+def mse(y, y_pred):
+    """
+    Report the mse.
+    """
+    return ((y - y_pred) ** 2).mean()
+
+def rmse(y, y_pred):
+    return np.sqrt(mse(y, y_pred))
+
+def nrmse(y, y_pred, by_std_dev=True):
+    """
+    Normalize by |y_max - y_min|
+    """
+    
+    _rmse = rmse(y, y_pred)
+    if by_std_dev:
+        return _rmse/y.std()
+    else:
+        return _rmse/(y.max() - y.min())
+
+def aic(y, y_pred, num_params):
+    """
+    Akaike's information criterion.
+    """
+    n = len(y)
+    _mse = mse(y, y_pred)
+    #aic = 2*num_params - n*np.log(mse)
+    aic = n*np.log(_mse) + 2*num_params
+    return aic
+
+def mbe(y, y_pred):
+    mbe_loss = np.mean(y - y_pred)
+    return mbe_loss
+
+def bic(y, y_pred, num_params):
+    """
+    Akaike's information criterion.
+    """
+    n = len(y)
+    _mse = mse(y, y_pred)
+    #aic = n*log(mse) + 2*num_params
+    #bic = num_params*np.log(n) - n*np.log(mse)
+    bic =  n*np.log(_mse) + num_params*np.log(n)
+    return bic
 
 #my_cmap = discrete_cmap(10, my_cmap)
 

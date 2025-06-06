@@ -37,7 +37,8 @@
             "Tsup_offset",
             "Tset_sup_b",
             "Tset_sup_a",
-            "Ta_dim"
+            "Ta_dim", 
+            "Prad_dim"
         ],
         "u": [
             "rad_219"
@@ -78,7 +79,7 @@
             "ubz": [0.15,330,1E4,1E4]
         }
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3] + dot(m_flow_bool*v5, m_flow_bool*v5)@R[4,4]",
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3] + dot(m_flow_bool*v5, m_flow_bool*v5)@R[4,4] + dot(rad_219*Prad - rad_219*Prad_dim, rad_219*Prad - rad_219*Prad_dim)",
     "method": "multiple_shooting",
     "integrator": 
         {

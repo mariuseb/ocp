@@ -19,11 +19,11 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from pandas.plotting import autocorrelation_plot
-#from ocp.filters import KalmanBucy, KalmanDAE
+from ocp.filters_old import KalmanBucy, KalmanDAE
 from ocp.utils import prepare_data, ZEBData
-#from ocp.covar_solver_cont import CovarianceSolverContinuous
+from ocp.covar_solver_cont_old import CovarianceSolverContinuous
 from copy import deepcopy
-#from utils import prepare_data
+from utils import prepare_data
 #from result_generator import ResultGenerator, plot_residuals
 # text:
 #rc('mathtext', default='regular')
@@ -38,11 +38,11 @@ def prepare_est(data, A=66.7):
     param_guess = {
                 "Rie": 
                 {
-                    "init": 1e-3
+                    "init": 1e-2
                 },
                 "Rea":
                 {
-                    "init": 1e-2
+                    "init": 1e-1
                 },
                 "Ci":
                 {
@@ -50,19 +50,39 @@ def prepare_est(data, A=66.7):
                 },
                 "Ce":
                 {
-                    "init": 1e7
+                    "init": 1e6
+                },
+                "Ai":
+                {
+                    "init": 10
                 }
     }
     kwargs = {
-        #"x_nom": 12,
-        #"x_nom_b": 289.15,
-        #"u_nom": [12]*1 + [1E3,1E3],
-        #"u_nom_b ": [289.15]*1 + [0]*2,
-        #"y_nom": [12],
-        #"y_nom_b": [289.15],
+        "x_nom": 12,
+        "x_nom_b": 289.15,
+        "u_nom": [12]*1 + [1E3,1E3],
+        "u_nom_b ": [289.15]*1 + [0]*2,
+        "y_nom": [12],
+        "y_nom_b": [289.15],
         #"slack": True
         "slack": False
-    }        
+    }
+    priors = {
+        "Rie": 0.250/A, # m²K / W 
+        "Rea": 2.250/A, # m²K / W 
+        "Ci": 9.50*3600*A, # Wh / m²K
+        "Ce": 112*3600*A, # Wh / m²K
+        "Ai": 2, # m²
+    }
+    for name, value in priors.items():
+        param_guess[name]["init"] = value 
+        if not name.startswith("alpha"):
+            param_guess[name]["lb"] = value*1E-3 
+            param_guess[name]["ub"] = value*1E3 
+        else:
+            param_guess[name]["lb"] = value
+            param_guess[name]["ub"] = value
+             
     # constrain in particular Th to physically meaningful values:
     x_guess = np.array([
                     data.y1.values.flatten(),

@@ -157,7 +157,7 @@ class Integrator(metaclass=ABCMeta):
                             [_x0, _z0, _u, _p, _r, _d],
                             [I_chained_expr, z_expr],
                             ["x0","z0","u","p","r","d"],
-                            ["xf", "z"])
+                            ["x", "z"])
         
     
     """

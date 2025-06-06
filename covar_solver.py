@@ -1,18 +1,46 @@
-import cvxpy as cp
+#import cvxpy as cp
 import numpy as np
-from ocp.param_est import ParameterEstimation
+#from ocp.param_est import ParameterEstimation
 #import pandas as pd
 #import os
 #from ocp.tests.utils import get_data_path
 #import mosek
 import numpy as np
-import cvxpy as cp
+#import cvxpy as cp
 import pandas as pd
 from ocp.kalman import ExtendedKalmanFilter
 import casadi as ca
-from ocp.estimation import Estimation
+#from ocp.estimation import Estimation
 from ocp.config import Config
+import numpy.typing as npt
+from typing import Union, Tuple
+import pathlib
+from ocp.ocp import get_scale
 #from scipy.linalg import expm
+
+def _solve_rosenbrock():
+    # Declare variables
+    x = ca.SX.sym("x")
+    y = ca.SX.sym("y")
+    z = ca.SX.sym("z")
+
+    # Formulate the NLP
+    f = x**2 + 100*z**2
+    g = z + (1-x)**2 - y
+    nlp = {'x': ca.vertcat(x,y,z), 'f':f, 'g':g}
+
+    # Create an NLP solver
+    solver = ca.nlpsol(
+        "solver", 
+        "ipopt",
+        nlp,
+        {"ipopt.print_level": 0}
+    )
+    # Solve the Rosenbrock problem
+    res = solver(
+        x0 =[2.5,3.0,0.75],
+        ubg=0,
+        lbg=0)
 
 
 class CovarianceSolver(object):
@@ -21,87 +49,168 @@ class CovarianceSolver(object):
     solve for covariance
     matrices Q, R.
     """
+    def __new__(cls, *args, **kwargs):
+        # TODO: find more permanent way to solve this:
+        _solve_rosenbrock()
+        obj = super().__new__(cls)
+        return obj
+    
     def __init__(
-                 self,
-                 ekf_config,
-                 param_est_cfg,
-                 y_data,
-                 param_guess,
-                 **kwargs
-                 ):
+        self,
+        ekf_config: Union[pathlib.Path, Config],
+        N: int,
+        params: Union[
+            npt.NDArray[np.floating], None
+        ] = None,
+        **kwargs
+    ):
+        ekf_cfg = Config()(ekf_config)
+        if params is not None:
+            ekf_cfg["parameters"] = params
+        self.ekf = ExtendedKalmanFilter(
+            **ekf_cfg
+        )
+        self.N = N
         # unpack scaling:
-        self.p_nom = kwargs.pop("p_nom", 1)
+        self.p_nom = kwargs.pop(
+            "p_nom", 
+            get_scale(
+                self.ekf.params
+            )
+        )
         self.P_nom = np.array(kwargs.pop("P_nom", 1))
         self.x_nom = kwargs.pop("x_nom", 1)
         self.x_nom_b = kwargs.pop("x_nom_b", 0)
         self.u_nom = kwargs.pop("u_nom", 1)
         self.u_nom_b = kwargs.pop("u_nom_b", 0)
+        self.r_nom = kwargs.pop("r_nom", 1)
+        self.r_nom_b = kwargs.pop("r_nom_b", 0)
         self.y_nom = kwargs.pop("y_nom", 1)
         self.y_nom_b = kwargs.pop("y_nom_b", 0)
         self.z_nom = kwargs.pop("z_nom", 1)
         self.z_nom_b = kwargs.pop("z_nom_b", 0)
         # set up problem:
         self.setup_problem(
-                           ekf_config,
-                           param_est_cfg,
-                           y_data,
-                           param_guess,
+                           #ekf_config,
+                           #y_data,
                            **kwargs
                            )
         
-    def solve(self,
-              y_data,
-              params,
-              x_guess,
-              P_guess,
-              Q_guess,
-              R_guess,
-              H=None,
-              ):
+    """
+    def __getattr__(self, name):
+        if name in {"x0", "Q", "R", "P0", "dt", "integrator", "params"}:
+            return getattr(self.ekf, name)
+        else:
+            return getattr(self, name)
+    """
+     
+    @staticmethod 
+    def array_and_flatten(
+        array: npt.NDArray[np.floating]
+    ):
+        return np.array(
+            array 
+        ).flatten()
+            
+    def prepare_parametric_data(
+        self,
+        y_data: pd.DataFrame,
+        #params: npt.NDArray[np.floating]
+    ) -> npt.NDArray[np.floating]:
+        #M = self.M
+        #dae = self.ekf.dae
+        u, r, p, y, z = self.prepare_variable_wise(
+            y_data
+        )
+        p_val = np.concatenate([
+            u.flatten(), r.flatten(), p.flatten(), y.flatten(), z.flatten()
+        ])
+        return p_val
+            
+    def prepare_variable_wise(
+        self,
+        y_data: pd.DataFrame,
+        scaling: bool = True
+    ) -> Tuple[
+        npt.NDArray[np.floating],
+        npt.NDArray[np.floating],
+        npt.NDArray[np.floating],
+        npt.NDArray[np.floating],
+        npt.NDArray[np.floating]
+    ]:
+        M = self.M
+        dae = self.ekf.dae
+        
+        if scaling:
+            return ( 
+                ((y_data[dae.u][0:M].values) - self.u_nom_b)/self.u_nom, \
+                (y_data[dae.r_names][0:M].values - self.r_nom_b)/self.r_nom, \
+                self.ekf.params/self.p_nom, \
+                ((y_data[dae.y_names][1:M+1].values) - self.y_nom_b)/self.y_nom, \
+                #(y_data[dae.y_names][0:M].values), \
+                ((y_data[dae.z][0:M].values) - self.z_nom_b)/self.z_nom
+            )
+        else:
+            return ( 
+                y_data[dae.u][0:M].values, \
+                y_data[dae.r_names][0:M].values, \
+                self.ekf.params/self.p_nom, \
+                y_data[dae.y_names][1:M+1].values, \
+                #(y_data[dae.y_names][0:M].values), \
+                y_data[dae.z][0:M].values
+            )
+            
+            
+    def solve(
+        self,
+        y_data: pd.DataFrame,
+        params: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+        R_guess: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+        Q_guess: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+        x0_guess: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
+        P0_guess: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None
+    ):
         """
         Solve covariance estimation 
         optimization problem.
         
         TODO: modularize depending
         on shooting method.
-        """
-        if H is None:
-            H = np.eye(self.n_theta + self.n_y)*0
-        else:
-            #assert H.shape[0] == (self.n_theta + self.n_y)
-            pass
+        """ 
+        
+        # set y on data:
+        for y, x in self.ekf.y_map.items():
+            y_data[y] = y_data[x]
+        
+        if params is None:
+            params = self.array_and_flatten(self.ekf.params)
+        if R_guess is None:
+            R_guess = self.array_and_flatten(self.ekf.R)
+        if Q_guess is None:
+            Q_guess = self.array_and_flatten(self.ekf.Q)
+        if P0_guess is None:
+            P0_guess = P_guess = self.array_and_flatten(self.ekf.P)
+        if x0_guess is None:
+            x0_guess = self.array_and_flatten(self.ekf.x)
             
-        #param_est = self.param_est
-        dae = self.ekf.dae
-        M = self.M
-        # construct numerical bounds for ll-opt:
-        """
-        p_val = np.concatenate([
-            (y_data[dae.u][0:M].values/self.u_nom).flatten(),
-            y_data[dae.r_names][0:M].values.flatten(),
-            params/self.p_nom, # physical parameters
-            (y_data[dae.y_names][0:M].values/self.y_nom).flatten(),
-            (y_data[dae.z][0:M].values/self.z_nom).flatten(),
-            Q_guess,
-            R_guess,
-            H.flatten()
-        ])
-        """
-        p_val = np.concatenate([
-            (y_data[dae.u][0:M].values).flatten(),
-            y_data[dae.r_names][0:M].values.flatten(),
-            params/self.p_nom, # physical parameters
-            (y_data[dae.y_names][0:M].values).flatten(),
-            (y_data[dae.z][0:M].values).flatten(),
-            Q_guess,
-            R_guess,
-            H.flatten()
-        ])
-        # scale x_guess:
-        #x_guess = x_guess/self.x_nom
-        # bounds for x0_guess:
-        lbx0 = 1*x_guess
-        ubx0 = 1*x_guess
+        p_val = self.prepare_parametric_data(
+            y_data
+        )
        
         if self.method == "multiple_shooting":
             N = self.M+1
@@ -112,67 +221,42 @@ class CovarianceSolver(object):
         P_guess = P_guess/P_nom_flat
         # concatenate variable guesses in correct order:
         x0 = np.concatenate([
-                              x_guess,
+                              #(x0_guess/self.x_nom - self.x_nom_b),
+                              (x0_guess - self.x_nom_b)/self.x_nom,
                               #y_data[param_est.z_names][0:M].values.flatten(),
                               P_guess,
                               Q_guess, 
                               R_guess
                               ])
-        # TODO: modularize depending on sign:
-        """
-        lbx = np.concatenate([
-                              lbx0,
-                              1E-2*P0_guess,
-                              50*Q_guess,
-                              50*R_guess
-                              ])
-        ubx = np.concatenate([
-                              ubx0, 
-                              1E2*P0_guess,
-                              -10*Q_guess,
-                              -10*R_guess
-                              ])
-        lbx = np.concatenate([
-                              0.5*lbx0,
-                              1E-3*P_guess,
-                              1E-3*Q_guess,
-                              #1*Q_guess,
-                              1E-3*R_guess
-                              ])
-        ubx = np.concatenate([
-                              1.5*ubx0, 
-                              1E3*P_guess,
-                              1E3*Q_guess,
-                              #1*Q_guess,
-                              1E3*R_guess
-                              ])
-        """
+        
         if self.method == "single_shooting":
             """
             Static bounds.
             """
+            lb_scale = 1e-6
+            ub_scale = 1e6
             lbx = np.concatenate([
-                                0.5*lbx0,
+                                lb_scale*x0_guess,
                                 #0.1*y_data[param_est.z_names][0:M].values.flatten(),
-                                0.01*P_guess,
+                                lb_scale*P_guess,
                                 #0.99*P_guess,
                                 #np.ones(Q_guess.shape)*-25,
                                 #(np.eye(self.n_x)*-25).flatten(),
-                                1e-7*Q_guess,
+                                lb_scale*Q_guess,
                                 #np.ones(R_guess.shape)*-25
-                                1e-3*R_guess,
+                                lb_scale*R_guess,
                                 ])
             ubx = np.concatenate([
-                                1.5*ubx0, 
+                                ub_scale*x0_guess, 
                                 #10*y_data[param_est.z_names][0:M].values.flatten(),
-                                100*P_guess,
+                                ub_scale*P_guess,
                                 #1.01*P_guess,
                                 #(np.eye(self.n_x)*10).flatten(),
                                 #np.ones(Q_guess.shape)*10,
-                                1e4*Q_guess,
+                                ub_scale*Q_guess,
                                 #0.99*Q_guess,
                                 #np.ones(R_guess.shape)*10
-                                1e3*R_guess,
+                                ub_scale*R_guess,
                                 ])
         elif self.method == "multiple_shooting":
             lbx = np.concatenate([
@@ -191,6 +275,8 @@ class CovarianceSolver(object):
                                 #1*Q_guess,
                                 -10*R_guess
                                 ])
+            
+        #self._solve_rosenbrock()
                         
         _sol = self.ll_solver(
                               x0=x0,
@@ -226,6 +312,7 @@ class CovarianceSolver(object):
         sol_x = _sol["x"][x_start:x_stop]
         # to array:        
         x = np.array(sol_x).reshape((N, self.ekf.n_x))
+        x = x*self.x_nom + self.x_nom_b
         # store:
         sol[self.x] = x
         # P_cols:
@@ -238,33 +325,37 @@ class CovarianceSolver(object):
         P = np.array(sol_P).reshape((N, self.ekf.n_x**2))
         sol[P_cols] = P*self.P_nom.flatten()
         # Q
-        Q_start = -self.n_theta - self.n_y
+        Q_start = -self.n_theta
         Q_stop = Q_start + self.n_x**2
         # how many Q's?
-        self.nQs = int(self.n_theta/(self.n_x**2))
+        #self.nQs = int(self.n_theta/(self.n_x**2))
         # Q_cols:
         Q_cols = [
                 "q" + str(j) + str(i)
                 for j in range(1, self.n_x+1)
                 for i in range(1, self.n_x+1)
                 ]
+        R_cols = [
+                "r" + str(j) + str(i)
+                for j in range(1, self.n_y+1)
+                for i in range(1, self.n_y+1)
+                ]
         Q_df = pd.DataFrame(columns=Q_cols)
-        for n in range(self.nQs):
-            Q_df.loc[n] =  np.array(_sol["x"][Q_start:Q_stop]).flatten()
-            Q_start += self.n_x**2
-            Q_stop += self.n_x**2
+        R_df = pd.DataFrame(columns=R_cols)
+        #for n in range(self.nQs):
+        Q_df.loc[0] =  np.array(_sol["x"][Q_start:Q_stop]).flatten()
+        R_df.loc[0] =  np.array(_sol["x"][Q_stop:]).flatten()
+        #    Q_start += self.n_x**2
+        #    Q_stop += self.n_x**2
+        #R = np.array(_sol["x"][Q_stop:])
         
-        R = np.array(_sol["x"][-self.n_y:])
-        
-        return sol, Q_df, R, _sol
+        return sol, x, P.reshape((self.n_x, self.n_x)), Q_df, R_df, _sol
         
         
     def setup_problem(
                       self,
-                      ekf_config,
-                      param_est_cfg,
-                      y_data,
-                      param_guess,
+                      #ekf_config,
+                      #y_data,
                       **kwargs,
                       ):
         """
@@ -278,27 +369,9 @@ class CovarianceSolver(object):
         Target:
             - Be exact
         """
-        N = len(y_data)
-        try:
-            dt = (y_data.index[1] - y_data.index[0]).seconds
-        except: # RangeIndex
-            dt = (y_data.index[1] - y_data.index[0])
-        """    
-        self.param_est = param_est = Estimation(config=param_est_cfg,
-                                                N=N,
-                                                dt=dt,
-                                                param_guess=param_guess,
-                                                arrival_cost=True,
-                                                **kwargs,
-                                                )
-        """
-        #self.ekf = ekf = KalmanBucy(ekf_config)
-        #ekf_cfg = Config()(ekf_cfg)
-        self.ekf = ekf = ExtendedKalmanFilter(
-            **dict(
-                Config()(ekf_config)
-            )
-        )
+        
+        ekf = self.ekf
+        N = self.N
         F = ekf.one_sample_state_feedback
         self.M = M = N - 1
         
@@ -321,13 +394,13 @@ class CovarianceSolver(object):
         self.R = R = ca.MX.sym("R", (ekf.n_y, ekf.n_y))
         
         if method == "single_shooting":
-            F_map = F.mapaccum(
-                            "kalman_simulator",
-                            M,
-                            [0,1],
-                            #[3,7]
-                            [0,1]
-                            )
+            self.F_map = F_map = F.mapaccum(
+                "kalman_simulator",
+                M,
+                [0,1],
+                #[3,7]
+                [0,1]
+            )
             # accumulate differential variables:
             X = X0 = ca.MX.sym("X0", (ekf.n_x, 1))
             self.P = P = P0 = ca.MX.sym("P", (ekf.n_x, ekf.n_x))
@@ -341,52 +414,6 @@ class CovarianceSolver(object):
             # TODO: modify this:
             P = ca.MX.sym("P", (ekf.n_x, N*ekf.n_x))
             P0 = P[:,:-ekf.n_x]
-
-
-        """
-        W = ekf.one_sample_wiener
-        _P0 = W(
-            P0=0,
-            z0=Z[:,:1],
-            r=r[:,:1],
-            p=self.p_nom*p,
-            y=Y[:,:1],
-            x0=X[:,:1],
-            u=U[:,:1],
-            Ps=1,
-            sigma=ekf.Q_function(Q, U[:,:1]),
-            dt=ekf.dt
-        )["P"]
-       
-        # propagate through kalman simulator:
-        res = F_map(
-            x_0=X0,
-            z_0=Z,
-            #P_0=P[:, :-end_P],
-            P_0=self.P_nom*P0,
-            #P_prev=P,
-            u=U,
-            r=r, #*self.r_nom + self.r_nom_b,
-            p=self.p_nom*ca.repmat(p,1,M),
-            y=Y,
-            Q=ca.repmat(Q,1,M),
-            R=ca.repmat(R,1,M),
-            #dt=300
-        )
-        _P0 = W(
-            P0=0,
-            z0=Z[:,:1]*self.z_nom + self.z_nom_b,
-            r=r[:,:1],
-            p=self.p_nom*p,
-            y=Y[:,:1]*self.y_nom + self.y_nom_b,
-            x0=X[:,:1]*self.x_nom + self.x_nom_b,
-            u=U[:,:1]*self.u_nom + self.u_nom_b,
-            Ps=1,
-            sigma=Q,
-            dt=ekf.dt
-        )["P"]
-        """
-        # propagate dynamics through wiener process:
        
         # propagate through kalman simulator:
         res = F_map(
@@ -418,6 +445,7 @@ class CovarianceSolver(object):
         # create theta_prior:
         Q = ca.veccat(Q)
         R = ca.veccat(R)
+        """
         theta = ca.vertcat(Q, R)
         theta_prior_shape = Q.shape[0] + R.shape[0]
         theta_prior = ca.MX.sym("theta_prior", theta_prior_shape)
@@ -426,10 +454,12 @@ class CovarianceSolver(object):
         # add to objective:
         arrival_cost = (theta - theta_prior).T@H@(theta - theta_prior)
         obj += arrival_cost
+        """
         self.obj = obj
         
         # problem parameters:
-        self._p = _p = ca.veccat(U,r,p,Y,Z,theta_prior,H)
+        #self._p = _p = ca.veccat(U,r,p,Y,Z,theta_prior,H)
+        self._p = _p = ca.veccat(U,r,p,Y,Z)
         #_p = ca.veccat(U,r,p,Y,theta_prior,H)
         # problem variables
         self.V = V = ca.veccat(X,P,Q,R)
@@ -537,6 +567,8 @@ class CovarianceSolver(object):
         }
         opts = dict()
         #opts["ipopt.tol"] = 1e-10
+        
+        # TO config:
         opts["verbose"] = False
         opts["ipopt.linear_solver"] = "ma57"
         #opts["ipopt.tol"] = 1e-4
@@ -571,6 +603,13 @@ class CovarianceSolver(object):
     def n_r(self):
         return self.ekf.n_r
     
+    """
     @property
     def n_theta(self):
         return self.ekf.dae.n_theta
+    """
+
+    # TODO: accomodate time-varying Q, R:
+    @property
+    def n_theta(self):
+        return self.n_y**2 + self.n_x**2
