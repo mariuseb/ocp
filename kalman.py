@@ -185,7 +185,7 @@ class ExtendedKalmanFilter(
                 self.params,
                 u[self.n_u:],
                 0
-            ),
+            )[0],
             dtype=np.float64
         ).flatten()
         return self.x

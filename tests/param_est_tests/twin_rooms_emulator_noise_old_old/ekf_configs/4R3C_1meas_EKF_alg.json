@@ -1,0 +1,80 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad_to_env/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "Prad/Crad - Prad_to_env/Crad",
+            "Tsup": "rad_219*((Tset_sup_b - Tset_sup_a*(Ta - Ta_dim)) - Tsup)/(Rsup*Csup) + (1 - rad_219)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*rad_219",
+            "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))",
+            "Prad": "Prad - (Tsup - Trad)*cp_water*rad_flo",
+            "Prad_to_env": "Prad_to_env - (Trad - Ti)/Rirad"
+        },
+        "w": {
+            "v1": "y1 - Ti"
+        },
+        "sde": {
+            "all" :"Q"
+        },
+        "theta":
+         [
+            "Q"
+         ],
+         "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Risup",
+            "Rirad",
+            "Crad",
+            "Tsup_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim",
+            "Prad_dim"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "m_flow_bool"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad",
+            "Tsup"
+        ],
+        "z": [
+            "rad_flo",
+            "Tset_sup",
+            "Prad",
+            "Prad_to_env"
+          ],
+        "y": [
+            ["y1", "Ti"]
+
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "x0": [293.15, 293.15, 293.15, 293.15]
+}

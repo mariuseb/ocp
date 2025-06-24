@@ -25,7 +25,7 @@ if __name__ == "__main__":
     sysid using PRBS.
     """
     data_path = os.path.join(
-                        "twin_rooms_emulator_PRBS.csv"
+                        "twin_rooms_emulator_PRBS_new_15min.csv"
                         )
     y_data, N, dt = prepare_data(data_path)
     param_guess, kwargs, lbx, ubx, x_guess = prepare_est(y_data)
@@ -34,9 +34,9 @@ if __name__ == "__main__":
     sol = pd.read_csv("simulation_traj_4R4C.csv", index_col=0)
     sol.index = y_data.index
     #y_data["Prad_to_env"] = sol["Prad_to_env"]
-    y_data["rad_flo"] = sol["rad_flo"]
-    y_data["Prad"] = sol["Prad"]
-    y_data["Tset_sup"] = sol["Tset_sup"]
+    #y_data["rad_flo"] = sol["rad_flo"]
+    #y_data["Prad"] = sol["Prad"]
+    #y_data["Tset_sup"] = sol["Tset_sup"]
     
     #y_data = y_data[:10]
     #N = len(y_data)
@@ -45,14 +45,14 @@ if __name__ == "__main__":
     """
     kwargs["z_nom"] = []
     kwargs["z_nom_b"] = []
-    kwargs["y_nom"] = [12,12]
-    kwargs["y_nom_b"] = [289.15,289.15]
+    kwargs["y_nom"] = 12
+    kwargs["y_nom_b"] = 289.15
     #kwargs = {}
     kwargs["p_nom"] = p_nom.values.flatten()
     #kwargs["p_nom"] = 1
     
     ekf_config = pathlib.Path(
-        os.path.join("ekf_configs", "4R3C_2meas_EKF_adj.json") 
+        os.path.join("ekf_configs", "4R3C_3meas_EKF_adj.json") 
     )       
     covar_solver = CovarianceSolver(
         ekf_config,
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         **kwargs
     )
     
-    x0 = sol[["Ti", "Te", "Tret", "Tsup"]].iloc[0].values
+    x0 = x0_sim = sol[["Ti", "Te", "Tret", "Tsup"]].iloc[0].values
     covar_solver.ekf.Q *= 1
     covar_solver.ekf.R *= 1
     covar_solver.ekf.P *= 1
@@ -193,21 +193,35 @@ if __name__ == "__main__":
         columns=covar_solver.x
     )
     
-    val_data = y_data[1:]
+    #val_data = y_data[1:]
+    val_data = y_data.copy()
     val_data.index = range(len(val_data.index))
+    
+    x_pred_opt.index = sol.index[1:]
+    x_pred_opt.loc[0] = x0.flatten()
+    x_pred_opt.sort_index(inplace=True)
+    x_pred_opt["Prad"] = sol["rad_flo"]*sol["cp_water"]*(x_pred_opt["Tsup"] - x_pred_opt["Tret"])
+    val_data.index = sol.index
     
     mse_opt = mse( 
         val_data[["Ti"]].values,
         x_pred_opt[["Ti"]].values,
     )
     
+    x_pred_nonopt.index = sol.index[1:]
+    x_pred_nonopt.loc[0] = x0_sim
+    x_pred_nonopt.sort_index(inplace=True)
+    x_pred_nonopt["Prad"] = sol["rad_flo"]*sol["cp_water"]*(x_pred_nonopt["Tsup"] - x_pred_nonopt["Tret"])
     mse_nonopt = mse( 
         val_data[["Ti"]].values,
         x_pred_nonopt[["Ti"]].values,
     )
     
-    fig, ax = plt.subplots(1,1)
+    fig, axes = plt.subplots(2,1, sharex=True)
     frames = [x_pred_opt, x_pred_nonopt, val_data]
+    #frames = [x_pred_opt, val_data]
+    
+    ax = axes[0]
     
     var = "Ti"
     kwargs = {
@@ -217,9 +231,34 @@ if __name__ == "__main__":
     for frame in frames:
         frame[var].plot(ax=ax,**kwargs)
     #val_data[var + "_true"].plot(ax=ax,**kwargs,color="k",linestyle="dashed")
-    ax.legend(["opt", "nonopt", "measured"])
+    #ax.legend(["opt", "nonopt", "measured"])
+    ax.legend(["opt", "measured"])
+    
+    ax = axes[1]
+    
+    val_data["Prad"] = val_data["y3"]
+    var = "Prad"
+    kwargs = {
+        "drawstyle": "steps-post",
+        "linewidth": 0.75
+    }
+    for frame in frames:
+        frame[var].plot(ax=ax,**kwargs)
+    #val_data[var + "_true"].plot(ax=ax,**kwargs,color="k",linestyle="dashed")
+    #ax.legend(["opt", "nonopt", "measured"])
+    ax.legend(["opt" ,"nonopt", "measured"])
     
     plt.show()
+    
+    x0 = pd.Series(
+        index=covar_solver.x,
+        data=x0.flatten()
+    )
+    
+    one_step_params = pd.concat(
+        [Q_df.squeeze(), R_df.squeeze(), x0]
+    )
+    one_step_params.to_csv("one_step_params.csv", index=True)
     
     print(Q)
     

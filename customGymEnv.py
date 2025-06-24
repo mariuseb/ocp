@@ -67,6 +67,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
             model=model,
             integrator=integrator
         )
+        self._F = self.integrator.chain_integrator()
         self.maps = BoptestMaps(
             maps
         )
@@ -124,7 +125,8 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
 
     @property
     def F(self) -> ca.Function:
-        return self.integrator.one_sample
+        #return self.integrator.one_sample
+        return self._F
     
     @property
     def n_x(self) -> int:
@@ -184,7 +186,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
     def get_forecast(
         self,
         dt: int,
-        N: int 
+        N: int
     ) -> pd.DataFrame:
         return self.data.loc[
             self.time:(self.time + self.step_period*N)

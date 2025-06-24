@@ -1,0 +1,110 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + Prad_to_env/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "Prad/Crad - Prad_to_env/Crad",
+            "Tret": "(rad_flo/rad_flo_nom)*(Tsup - Tsupret_offset - Tret)/(Rret*Cret) + (1 - (rad_flo/rad_flo_nom))*(Ti + Tret_offset - Tret)/(Riret*Cret)",
+            "Tsup": "rad_219*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_219)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)",
+            "rad_flo": "(rad_flo_set - rad_flo)/tau"
+        },
+        "alg": {
+            "rad_flo_set": "rad_flo_set - rad_flo_nom*rad_219",
+            "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))",
+            "Prad": "Prad - (Tsup - Tret)*cp_water*rad_flo",
+            "Prad_to_env": "Prad_to_env - (Trad - Ti)/Rirad"
+        },
+        "w": {
+            "v1": "y1 - Ti",
+            "v2": "y2 - rad_flo",
+            "v3": "y3 - Prad",
+            "v4": "y4 - Tret",
+            "v5": "y5 - Tsup"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Rirad",
+            "Crad",
+            "Ci",
+            "Ce",
+            "Ai",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Risup",
+            "Riret",
+            "Cret",
+            "Rret",
+            "Tsup_offset",
+            "Tsupret_offset",
+            "Tret_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim", 
+            "Prad_dim",
+            "tau"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "m_flow_bool"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad",
+            "Tret",
+            "Tsup",
+            "rad_flo"
+        ],
+        "z": [
+          "rad_flo_set",
+          "Tset_sup",
+          "Prad",
+          "Prad_to_env"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "rad_flo"],
+            ["y3", "Prad"],
+            ["y4", "Tret"],
+            ["y5", "Tsup"]
+
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280,280,280,-0.05],
+            "ubx": [340,340,340,340,340,0.15]
+        },
+        "z": {
+            "lbz": [-0.05,290,-1000,-1000],
+            "ubz": [0.15,330,1E4,1E4]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3] + dot(v5, v5)@R[4,4]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.max_iter" : 1E5
+    },
+    "codegen": false
+}

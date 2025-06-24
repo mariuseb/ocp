@@ -22,16 +22,18 @@ if __name__ == "__main__":
     """
     sysid using PRBS.
     """
-    cfg_path = os.path.join("configs", "4R4C_Tsup_meas_linear_adj.json")
+    cfg_path = os.path.join("configs", "3state_HVAC.json")
     data_path = os.path.join(
-                            "twin_rooms_emulator_PRBS.csv"
+                            "twin_rooms_emulator_PRBS_mod_1min.csv"
                             )
-    y_data, N, dt = prepare_data(data_path)
+    y_data, N, dt = prepare_data(data_path, rule="5min")
     param_guess, kwargs, lbx, ubx, x_guess = prepare_est(
         y_data, 
         load_optimal_rad_params=False,
         load_optimal_env_params=False,
-        load_optimal_traj=False
+        load_optimal_traj=False,
+        n_x=3,
+        hvac=True
     )
     """
     p_nom = pd.read_csv("p_nom_4R4C.csv", index_col=0)
@@ -44,11 +46,23 @@ if __name__ == "__main__":
     kwargs["p_nom_b"][-2] = 289.15
     """
     
-    Prad_dim = 2.5E3
+    Prad_dim = 3000
     param_guess["Prad_dim"] = {
         "init": Prad_dim,
         "lb": Prad_dim,
         "ub": Prad_dim
+    }
+    kwargs["x_nom"] = [12]*2 + [1e-1]
+    kwargs["x_nom_b"] = [289.15]*2 + [0]
+    kwargs["z_nom"] = [1e-1,12,2.5E3]
+    kwargs["z_nom_b"] = [0,289.15,0]
+    kwargs["r_nom"] += [12]
+    kwargs["r_nom_b"] += [289.15]
+    kwargs["y_nom"] = [1e-1,2.5E3,12,12]
+    kwargs["y_nom_b"] = [0,0,289.15,289.15]
+    
+    kwargs = {
+        "slack": False
     }
     
     #param_guess["Ai"]["ub"] = 10
@@ -65,15 +79,16 @@ if __name__ == "__main__":
 
         Q = ca.DM.eye(param_est.n_x)
         R = ca.DM.eye(param_est.n_y)
-        R[1,1] = 0
+        R[0,0] = 1e-1
         #R[1,1] = 1
-        #R[2,2] = 1e-7
+        R[1,1] = 0
         #R[3,3] = 1e-1
         #R[4,4] = 1e-1
-        R[2,2] = 0
-        #R[3,3] = 1e-2
-        R[3,3] = 0
-        R[4,4] = 1e-2
+        #R[2,2] = 0
+        R[2,2] = 1e-2
+        R[3,3] = 1e-2
+        #R[2,2] = 0
+        #R[3,3] = 0
         
         P0 = np.eye(param_est.n_p + param_est.n_x)*1e-2
         P0[
@@ -86,54 +101,57 @@ if __name__ == "__main__":
         lbp = param_est.get_lbp(1e-3)
         ubp = param_est.get_ubp(1e3)
         p0 = param_est.p0
-        sol, params = param_est.solve(
-                                      y_data,
-                                      p0,
-                                      lbp=lbp,
-                                      ubp=ubp,
-                                      lbx=lbx,
-                                      ubx=ubx,
-                                      x_guess=x_guess,
-                                      covar=ca.veccat(Q, R),
-                                      codegen=False,
-                                      P0=P0,
-                                      x_N=x_guess[-1,-param_est.n_x:]
-                                      )
+        sol, params, raw_sol = param_est.solve(
+            y_data,
+            p0,
+            lbp=lbp,
+            ubp=ubp,
+            #lbx=lbx,
+            #ubx=ubx,
+            x_guess=x_guess,
+            covar=ca.veccat(Q, R),
+            codegen=False,
+            P0=P0,
+            x_N=x_guess[-1,-param_est.n_x:],
+            return_raw_sol=True
+        )
         p_nom = param_est.p_nom
         sol.index = y_data.dt_index
         
         fig, axes = plt.subplots(4,1, sharex=True)
         ax = axes[0]
-        sol["Ti"].plot(ax=ax, color="r", linewidth=0.75, drawstyle="steps-post")
-        sol["y1"].plot(ax=ax, color="k", linewidth=0.75, drawstyle="steps-post")
+        sol["rad_flo"].plot(ax=ax, color="r", linewidth=0.75, drawstyle="steps-post")
+        sol["rad_flo_set"].plot(ax=ax, color="g", linewidth=0.75, drawstyle="steps-post")
+        sol["y2"].plot(ax=ax, color="k", linewidth=0.75, drawstyle="steps-post")
         ax.legend(["model", "measured"])
         
         ax = axes[1]
-        sol["Prad"].plot(ax=ax, color="r", linewidth=0.75, drawstyle="steps-post")
-        sol["y3"].plot(ax=ax, color="g", linewidth=0.75, drawstyle="steps-post")
+        sol["Tsup"].plot(ax=ax, color="r", linewidth=0.75, drawstyle="steps-post")
         ax1 = ax.twinx()
-        #sol["rad_219"].plot(ax=ax1, color="k", linewidth=0.75, drawstyle="steps-post")
+        sol["y5"].plot(ax=ax, color="k", linewidth=0.75, drawstyle="steps-post")
+        sol["m_flow_bool"].plot(ax=ax1, color="g", linewidth=0.75, drawstyle="steps-post")
+        
         ax = axes[2]
         sol["Tret"].plot(ax=ax, color="r", linewidth=0.75, drawstyle="steps-post")
+        ax1 = ax.twinx()
         sol["y4"].plot(ax=ax, color="k", linewidth=0.75, drawstyle="steps-post")
-        ax.legend(["model", "measured"])
-        
+        sol["m_flow_bool"].plot(ax=ax1, color="g", linewidth=0.75, drawstyle="steps-post")
+
         ax = axes[3]
-        sol["Tsup"].plot(ax=ax, color="r", linewidth=0.75, drawstyle="steps-post")
-        sol["y5"].plot(ax=ax, color="k", linewidth=0.75, drawstyle="steps-post")
-        ax.legend(["model", "measured"])
+        sol["Prad"].plot(ax=ax, color="r", linewidth=0.75, drawstyle="steps-post")
+        #ax1 = ax.twinx()
+        sol["y3"].plot(ax=ax, color="k", linewidth=0.75, drawstyle="steps-post")
+        sol["m_flow_bool"].plot(ax=ax1, color="g", linewidth=0.75, drawstyle="steps-post")
     
-        #sol["phi_s"].plot(drawstyle="steps-post",ax=ax1)
-        #sol["phi_h"].plot(drawstyle="steps-post",ax=ax1)
         plt.show()
         
-        params.to_csv("full_model_4R4C.csv", index=True)
-        sol.to_csv("simulation_traj_4R4C.csv", index=True)
-        p_nom = pd.Series(
-            data=param_est.p_nom,
-            index=params.index
-        )
-        p_nom.to_csv("p_nom_4R4C.csv", index=True)
+        params.to_csv("3state_hvac_model_full_dataset_params.csv", index=True)
+        sol.to_csv("3state_hvac_model_full_dataset_traj.csv", index=True)
+        #p_nom = pd.Series(
+        #    data=param_est.p_nom,
+        #    index=params.index
+        #)
+        #p_nom.to_csv("p_nom_4R4C.csv", index=True)
         print(params) 
 
     

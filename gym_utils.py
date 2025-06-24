@@ -32,12 +32,14 @@ class BoptestGymABC(metaclass=ABCMeta):
         tf,
         ts=0,
         resample=True,
+        split_requests=True,
         data_path=Path("Resources")
     ) -> pd.DataFrame:
         internal_results = self._get_results(
             tf,
             ts=ts,
-            resample=resample
+            resample=resample,
+            split_requests=split_requests
         )
         if "time" not in internal_results.columns:
             internal_results["time"] = internal_results.index
@@ -206,6 +208,7 @@ def get_forecast_df(
     #files = path.iterdir()
     dfs = []
     for file in files:
+        """
         _path = os.path.join(
             path,
             file
@@ -213,7 +216,8 @@ def get_forecast_df(
         # first read:
         df = pd.read_csv(
             _path, 
-            header=[100],
+            #header=[100],
+            header=[0],
             index_col=0
         )
         n_cols = len(df.columns)
@@ -237,6 +241,23 @@ def get_forecast_df(
                 if ndx % dt == 0
             ]
             df = df.loc[indices]
+        """
+        _path = os.path.join(
+            path,
+            file
+        )
+        df = pd.read_csv(
+            _path, 
+            header=[0],
+            #header=[n_cols],
+            #skiprows=skiprows, 
+            index_col=0
+        )
+        indices = [
+            ndx for ndx in df.index
+            if ndx % dt == 0
+        ]
+        df = df.loc[indices]
         df["time"] = df.index
         df.index.name = ""
         dfs.append(df)
@@ -249,6 +270,7 @@ def get_forecast_df(
             dfs
         )
     df.index = df.time.astype(int)
+    df["dt_index"] = pd.TimedeltaIndex(df.index, unit="s")
     #return df.ffill().drop_duplicates()
     return df.interpolate().drop_duplicates()
 

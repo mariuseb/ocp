@@ -236,7 +236,7 @@ class CovarianceSolver(object):
             lb_scale = 1e-6
             ub_scale = 1e6
             lbx = np.concatenate([
-                                lb_scale*x0_guess,
+                                0.99*(x0_guess - self.x_nom_b)/self.x_nom,
                                 #0.1*y_data[param_est.z_names][0:M].values.flatten(),
                                 lb_scale*P_guess,
                                 #0.99*P_guess,
@@ -247,7 +247,7 @@ class CovarianceSolver(object):
                                 lb_scale*R_guess,
                                 ])
             ubx = np.concatenate([
-                                ub_scale*x0_guess, 
+                                1.01*(x0_guess - self.x_nom_b)/self.x_nom, 
                                 #10*y_data[param_est.z_names][0:M].values.flatten(),
                                 ub_scale*P_guess,
                                 #1.01*P_guess,
@@ -260,7 +260,7 @@ class CovarianceSolver(object):
                                 ])
         elif self.method == "multiple_shooting":
             lbx = np.concatenate([
-                                0.5*lbx0,
+                                0.99*lbx0,
                                 #0.1*y_data[param_est.z_names][0:M].values.flatten(),
                                 1e-3*P_guess,
                                 4*Q_guess,
@@ -268,7 +268,7 @@ class CovarianceSolver(object):
                                 4*R_guess
                                 ])
             ubx = np.concatenate([
-                                1.5*ubx0, 
+                                1.01*ubx0, 
                                 #10*y_data[param_est.z_names][0:M].values.flatten(),
                                 1E3*P_guess,
                                 -10*Q_guess,

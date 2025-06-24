@@ -14,7 +14,7 @@ import pandas as pd
 import inspect
 import json
 import os
-
+import math
 from collections import OrderedDict
 from scipy import interpolate
 from pprint import pformat
@@ -55,6 +55,7 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
                  scenario           = {'electricity_price':'constant'},
                  step_period        = 900,
                  render_episodes    = False,
+                 fill_observations  = False,
                  log_dir            = os.getcwd()):
         '''
         Parameters
@@ -196,6 +197,9 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
         # Default scenario
         self.scenario_def = requests.get('{0}/scenario/{1}'.format(url, self.testid)).json()['payload']
         
+        if fill_observations:
+            observations = self.fill_observations(observations)
+        
         #=============================================================
         # Define observation space
         #=============================================================
@@ -335,6 +339,18 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
         if self.render_episodes:
             plt.ion()
             self.fig = plt.gcf()
+
+    def fill_observations(self, observations):
+        for name in ("r", "y"):
+            d = getattr(self.maps, name)
+            for k, v in d.items():
+                v_adj = v+ "_y" if name == "y" else v
+                if v_adj not in self.observations:
+                    self.observations.append(v_adj)
+                    observations[v_adj] = [0, 1]
+        return observations
+        
+         
 
     def __str__(self):
         '''
@@ -515,14 +531,6 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
         self.episode_rewards = []
 
         return observations, info
-
-    def stop(self):
-        '''
-        Stop the test case
-
-        '''
-
-        requests.put('{0}/stop/{1}'.format(self.url, self.testid))
 
     def stop(self):
         '''
@@ -989,7 +997,8 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             self,
             tf,
             ts=0,
-            resample=True
+            resample=True,
+            split_requests=True
         ) -> pd.DataFrame:
         """
         Get internal results.
@@ -1000,32 +1009,31 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
                  list(inputs.keys())
         if ts == 0 and self.start_time != 0:
             ts = self.start_time
-            tf = self.start_time + tf            
-        res = self.put_results(ts, tf, points)
-        df_res = pd.DataFrame().from_dict(res)
-        df_res.index.name = 'time'
-        df_res.index = pd.to_timedelta(df_res.index*30, unit="s")
+            tf = self.start_time + tf   
+        if split_requests: # by day / episode
+            tot_time = tf - ts
+            eps = math.ceil(tot_time/86400)
+            results = []
+            for n in range(eps):
+                tf = ts + 86400
+                r = pd.DataFrame().from_dict(
+                    self.put_results(ts, tf, points)
+                )
+                results.append(r)
+                ts = tf + 30
+            df_res = pd.concat(results)
+        else:
+            res = self.put_results(ts, tf, points)
+            df_res = pd.DataFrame().from_dict(res)
+            
+        df_res.index = df_res["time"]
+        df_res.index = pd.to_timedelta(
+            df_res.index, 
+            unit="s"
+        )
         if resample:
             df_res = df_res.resample(rule=str(self.step_period/60) + "min").asfreq()
         return df_res
-
-        """
-        if include_forecast:
-            forecast_df = get_forecast_df()
-            forecast_df = forecast_df.loc[df_res.time]
-            forecast_df.index = df_res.index    
-            df_res = pd.merge(
-                df_res,
-                forecast_df,
-                left_index=True,
-                right_index=True
-            )
-        # rename:
-        rev_map = {v: k for k, v in self.boptest_to_ocp.items()}
-        df_res.rename(columns=rev_map, inplace=True)
-        return df_res
-        """
-
 
 class DiscretizedObservationWrapper(gym.ObservationWrapper):
     '''This wrapper converts the Box observation space into a Discrete 

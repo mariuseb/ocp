@@ -15,7 +15,7 @@ from pprint import pprint
 import subprocess
 from copy import deepcopy
 import re
-
+from typing import Union
 #from tables import Col
 #from integrators import RungeKutta4, Cvodes, IRK
 #import sysid.integrators as integrators
@@ -480,10 +480,41 @@ class MPC(OCP):
             expr = expr_dict[i]
             #if self.method == "collocation":
                 #expr = expr.T
-            self.nlp["g"] = ca.vertcat(self.nlp["g"], expr) # TODO: .T?
+            H_call = self.create_and_call_H_function(
+                expr
+            )["H"]
+            self.nlp["g"] = ca.vertcat(
+                self.nlp["g"], 
+                H_call
+            ) # TODO: .T?
             self.lbg = np.append(self.lbg, np.array([elem["lhs"]]*expr.shape[0]))
             self.ubg = np.append(self.ubg, np.array([elem["rhs"]]*expr.shape[0]))
-            
+     
+    def create_and_call_H_function(
+        self, 
+        expr: Union[ca.MX, ca.SX]
+    ):
+        x = self.get_nlp_var("x")
+        u = self.get_nlp_var("u")
+        z = self.get_nlp_var("z")
+        #p = self.get_nlp_var("p")
+        p = self.nlp_parser["p"]["p_orig"]
+        H = ca.Function(
+            "H",
+            [x, u, z, p],
+            [expr],
+            ["x","u","z","p"],
+            ["H"],
+        )
+        H_call = H(
+            x=x*self.x_nom + self.x_nom_b,
+            u=u*self.u_nom + self.u_nom_b,
+            z=z*self.z_nom + self.z_nom_b,
+            p=p*self.p_nom + self.p_nom_b
+        )
+        return H_call
+        
+               
     
     def prepare_solve(self,
                     data,

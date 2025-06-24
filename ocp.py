@@ -1196,6 +1196,10 @@ class OCP(metaclass=ABCMeta):
     @property
     def n_r(self):
         return self.dae.n_r
+    
+    @property
+    def y(self):
+        return {k: v.name() for k, v in self.dae.y.items()}
  
     #@property
     #def n_uslack(self):
@@ -1438,8 +1442,10 @@ class OCP(metaclass=ABCMeta):
                 scale = self.x_nom
             
             if lbx is not None: # passed as array:
+                assert ubx is not None
                 bounds["x"]["ub"] = (ubx - bias)/scale
                 bounds["x"]["lb"] = (lbx - bias)/scale
+                
                 #varnames = list(set(varnames).difference(set("x")))
             else:
                 if "x" in bounds_cfg:
@@ -1481,7 +1487,11 @@ class OCP(metaclass=ABCMeta):
             except AttributeError: # is list, safe pass
                 pass
             
-            bounds["x"]["x0"] = (x_init - bias)/scale
+            bounds["x"]["x0"] = (
+                (x_init - bias)/scale
+            ).T.flatten()
+            
+            
 
         # TODO: extend with lbz, ubz
                  

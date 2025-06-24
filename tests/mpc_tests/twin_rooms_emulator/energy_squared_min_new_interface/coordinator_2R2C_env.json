@@ -1,0 +1,124 @@
+{
+    "days": 14,
+    "sampling_time": "15min",
+    "controller": {
+        "timezone": "Europe/Oslo",
+        "temp_conv": 273.15,
+        "sampling_time": "15min",
+        "mpc_config_file": "mpc_configs/2R2C_MPC_env_no_constraint.json",
+        "scaling": {
+            "x_nom": 12,
+            "x_nom_b": 289.15,
+            "u_nom": [1e-1,2.5E3],
+            "u_nom_b ": [0,0],
+            "r_nom": [12,2.5E3],
+            "r_nom_b": [289.15,0],
+            "slack": true,
+            "truncate_scaling": false
+        },
+        "filter_config_file": "ekf_configs/4R4C_2meas_EKF_adj.json",
+        "filter_type": "ocp.kalman.ExtendedKalmanFilter",
+        "filter_obs": true,
+        "parameters": "full_model_4R4C.csv",
+        "reiden": false,
+        "reiden_freq": 96,
+        "timesteps_reiden_start": 95,
+        "reiden_N": 1344,
+        "est_config_file": "configs/2R2C.json",
+        "reiden_adaptive_rollout": true
+    },
+    "environment": {
+        "type": "CustomGymEnv",
+        "config":     
+            {
+            "R": [[1E-4, 0], [0, 1E-4]],
+            "Q": [[1E-3, 0, 0, 0], [0, 1E-3, 0, 0], [0, 0, 1E-3, 0], [0, 0, 0, 1E-3]],
+            "integrator": 
+                {
+                    "name": "IRK",
+                    "method": "legendre",
+                    "degree": 1,
+                    "n_steps": 1
+                },
+            "model": {
+                "ode": {
+                    "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
+                    "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+                    "Tret": "rad_219*(Tsup - Tsupret_offset - Tret)/(Rret*Cret) + (1 - rad_219)*(Ti + Tret_offset - Tret)/(Riret*Cret)",
+                    "Tsup": "rad_219*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_219)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)"
+                },
+                "alg": {
+                    "rad_flo": "rad_flo - rad_flo_nom*rad_219",
+                    "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))",
+                    "Prad": "Prad - (Tsup - Tret)*cp_water*rad_flo"
+                },
+                "p": [
+                    "Rie",
+                    "Rea",
+                    "Ria",
+                    "Ci",
+                    "Ce",
+                    "Ai",
+                    "n",
+                    "rad_flo_nom",
+                    "cp_water",
+                    "Csup",
+                    "Rsup",
+                    "Risup",
+                    "Riret",
+                    "Cret",
+                    "Rret",
+                    "Tsup_offset",
+                    "Tsupret_offset",
+                    "Tret_offset",
+                    "Tset_sup_b",
+                    "Tset_sup_a",
+                    "Ta_dim", 
+                    "Prad_dim"
+                ],
+                "u": [
+                    "rad_219"
+                ],
+                "r": [
+                    "Ta",
+                    "phi_s",
+                    "m_flow_bool"
+                ],
+                "x": [
+                    "Ti",
+                    "Te",
+                    "Tret",
+                    "Tsup"
+                ],
+                "z": [
+                    "rad_flo",
+                    "Tset_sup",
+                    "Prad"
+                ],
+                "y": [
+                    ["y1", "Ti"],
+                    ["y2", "Tsup"]
+                ]
+            },
+            "parameters": "full_model_4R4C.csv",
+            "maps": 
+            {
+                "r" : {
+                    "Ta": "TDryBul",
+                    "phi_s": "HGloHor",
+                    "Ti_lb": "LowerSetp[1]",
+                    "Ti_ub": "UpperSetp[1]",
+                    "cost": "PriceElectricPowerHighlyDynamic"
+                },
+                "u" : {
+                    "phi_h": "oveAct"
+                },
+                "y":  {
+                    "Ti": "TRooAir",
+                    "Te":  "TRooEnv"
+                }
+            }
+        }
+    }
+}
+

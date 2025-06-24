@@ -41,10 +41,10 @@ class DAE(object):
         #self.add_meas()
         self.add_odes()
         self.add_algs()
+        self.set_C()
         try:
             self.set_A()
             self.set_B()
-            self.set_C()
         except RuntimeError:
             print("Model is non-linear.")
 
@@ -511,11 +511,15 @@ class DAE(object):
         self._A = _A = ca.jacobian(
             self.ode, self.var("x")
         )
+        u = ca.vertcat(
+            self.var("u"),
+            self.var("r")
+        )
         self.A = ca.Function(
             "A",
-            [self.var("x"), self.var("p")],
+            [self.var("x"), u, self.var("p")],
             [_A],
-            ["x", "p"], 
+            ["x", "u", "p"], 
             ["A"]
         )
         
@@ -532,9 +536,9 @@ class DAE(object):
             u
         )
         self.B = ca.Function("B",
-            [u, self.var("p")],
+            [self.var("x"), u, self.var("p")],
             [_B],
-            ["u","p"], 
+            ["x", "u", "p"], 
             ["B"]
         )
 
@@ -557,7 +561,23 @@ class DAE(object):
     ) -> npt.NDArray[np.float64]:
         """ This should be const. """
         return np.array(self.C()["C"])
-        
+    
+    def extract_linearization_kwargs(
+        self,
+        **kwargs
+    ):
+        nu = self.n_u + self.n_r
+        x = kwargs.pop(
+            "x",
+            [293.15]*self.dae.nx()
+        ) 
+        u = kwargs.pop(
+            "u", [0]*nu
+        ) 
+        p = kwargs.pop(
+            "p", None
+        ) 
+        return x, u, p
         
     def get_Ad(
             self,
@@ -567,13 +587,12 @@ class DAE(object):
         """
         Get discrete-time Ad.
         """
-        x = kwargs.pop(
-            "x",
-            [293.15]*self.dae.nx()
-        ) 
-        p = kwargs.pop("p", None) 
+        x, u, p = self.extract_linearization_kwargs(
+            **kwargs
+        )
         A = self.A(
             x=x,
+            u=u,
             p=p
         )["A"]
         return scipy.linalg.expm(A*dt)
@@ -587,20 +606,16 @@ class DAE(object):
         Get discrete-time B:
         A^-1*(Ad − I)*B
         """
-        x = kwargs.pop(
-            "x",
-            [293.15]*self.n_x
-        ) 
-        u = kwargs.pop(
-            "x",
-            [0]*(self.n_u + self.n_r)
-        ) 
-        p = kwargs.pop("p", None) 
+        x, u, p = self.extract_linearization_kwargs(
+            **kwargs
+        )
         A = self.A(
             x=x,
+            u=u,
             p=p
         )["A"]
         B = self.B(
+            x=x,
             u=u,
             p=p
         )["B"]

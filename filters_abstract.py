@@ -663,7 +663,10 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             state_corr[0],
             dtype=np.float64
         ).flatten()
-        return self.x
+        return self.x, np.array(
+            state_corr[1],
+            dtype=np.float64
+        ).flatten()
     
     def update_state_covariance(
         self,
@@ -672,8 +675,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
         self.P = np.array(
             self.state_covariance_correction(
                 self.C,
+                self.K,
                 self.P,
-                self.K
             ),
             dtype=np.float64
         )

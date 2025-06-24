@@ -396,6 +396,7 @@ class MultipleShooting(Shooting):
         nlp_parser.set_p_orig(p)  
         nlp_parser.vars["x"]["shooting_gaps"] = x_gaps.T
         nlp_parser.vars["z"]["alg_gaps"] = g_gaps[:,:-1].T # cut last (time-step N)
+        nlp_parser.vars["p"]["p_orig"] = p
         
         """
         Gaps without noise, scaling for covariance estimation:

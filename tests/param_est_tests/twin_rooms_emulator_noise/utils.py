@@ -2,11 +2,17 @@
 import pandas as pd
 import numpy as np
 
-def prepare_data(data_path, rule="15min"):
+def prepare_data(
+    data_path, 
+    rule="15min", 
+    integrate_inputs=True
+):
     data = pd.read_csv(data_path, index_col=0)
     y_map = {
         "Ti_219": "Ti",
         "Prad_219": "Prad",
+        "Prad_calc": "Prad_calc",
+        "rad_flo_calc": "rad_flo_calc",
         "rad_219": "rad_219",
         "reaRadTRet219_y": "Tret",
         "reaRadTSup219_y": "Tsup",
@@ -18,16 +24,43 @@ def prepare_data(data_path, rule="15min"):
     y_data = data.rename(columns=y_map)[
             list(y_map.values())
         ]
+    #y_data = y_data[60:]
+    #y_data["Prad_calc"] = 4200*y_data["rad_flo"]*(y_data["Tsup"] - y_data["Tret"])
+    #y_data["rad_flo"] = y_data["rad_flo"].shift(-1)
+    #y_data["Prad"] = y_data["Prad"].shift(-1)
+    y_data["rad_flo"] = y_data["rad_flo_calc"]
+    y_data["Prad"] = y_data["Prad_calc"]
+
+    y_data.index = pd.to_timedelta(y_data.index)
+    if integrate_inputs:
+        integrate_names = ["Prad","rad_flo", "phi_s","Ta","Tsup","Tret"] 
+    else:
+        integrate_names = [] 
+    freq_names = [col for col in y_data.columns if col not in integrate_names]
+    integrate = y_data[integrate_names]
+    freq = y_data[freq_names]
+    
+    #y_data = y_data[:-1]
+    integrate = integrate.resample(rule=rule).mean()
+    freq = freq.resample(rule=rule).asfreq()
+    y_data = pd.merge(
+        integrate,
+        freq,
+        left_index=True,
+        right_index=True
+    )
+
     y_data["y1"] = y_data["Ti"]
     y_data["y2"] = y_data["rad_flo"]
     y_data["y3"] = y_data["Prad"]
     y_data["y4"] = y_data["Tret"]
     y_data["y5"] = y_data["Tsup"]
+    y_data["m_val_bool"] = (((y_data["rad_219"].round(4) > 0)).astype(int) + \
+        ((y_data["rad_flo"].round(4) > 0)).astype(int)).astype(bool).astype(int) + 1e-2
     y_data["m_flow_bool"] = ((y_data["rad_flo"].round(4) > 0)).astype(int) + 1e-2
-    #y_data["m_flow_bool"] = 1
-    y_data.index = pd.to_timedelta(y_data.index)
-    
-    y_data = y_data.resample(rule=rule).mean()
+    y_data = y_data[:-1]
+    #y_data["rad_flo"] = y_data["rad_flo"].shift(-1)
+    #y_data["Prad"] = y_data["Prad"].shift(-1)
     
     y_data["dt_index"] = y_data.index
     dt = (y_data.index[1] - y_data.index[0]).seconds
@@ -35,6 +68,8 @@ def prepare_data(data_path, rule="15min"):
     y_data.index *= dt
     #y_data = y_data[4*24:2*4*24]
     #y_data = y_data[-96:]
+    #y_data = y_data[0:12*24]
+    y_data[4:]
     N = len(y_data)
 
     return y_data, N, dt
@@ -46,7 +81,9 @@ def prepare_est(
         A=66.7,
         load_optimal_rad_params=False,
         load_optimal_env_params=False,
-        load_optimal_traj=False
+        load_optimal_traj=False,
+        n_x=4,
+        hvac=False
     ):
     kwargs = {
     
@@ -86,7 +123,19 @@ def prepare_est(
                     {
                         "init": 1e-1
                     },
+                    "Rirad":
+                    {
+                        "init": 1e-3
+                    },
+                    "Rrrad":
+                    {
+                        "init": 1e-3
+                    },
                     "Ci":
+                    {
+                        "init": 1e6
+                    },
+                    "Crad":
                     {
                         "init": 1e6
                     },
@@ -117,7 +166,7 @@ def prepare_est(
                 param_guess[name]["ub"] = value
             
     if load_optimal_rad_params:
-        params_rad = pd.read_csv("rad_model_PRBS.csv", index_col=0)
+        params_rad = pd.read_csv("3state_hvac_model_full_dataset_params.csv", index_col=0)
         param_guess_rad = dict()
         for k in params_rad.index:
             param_guess_rad[k] = {
@@ -132,11 +181,11 @@ def prepare_est(
                         {
                             "init": 1.5,
                             "ub": 3.0,
-                            "lb": 0.1
+                            "lb": 0.01
                         },
                         "rad_flo_nom":
                         {
-                            "init": 0.01,
+                            "init": 0.12,
                             "lb": 0.09, 
                             "ub": 0.15
                         },
@@ -148,7 +197,7 @@ def prepare_est(
                         },
                         "Csup":
                         {
-                            "init": 1E5,
+                            "init": 1E3,
                         },
                         "Rsup":
                         {
@@ -179,13 +228,25 @@ def prepare_est(
                         "Tsupret_offset":
                         {
                             "init": 1,
-                            "lb": -5, 
+                            "lb": 1E-3, 
                             "ub": 20
+                        },
+                        "Tsupret_offset_b":
+                        {
+                            "init": 1,
+                            "lb": 1E-3, 
+                            "ub": 20
+                        },
+                        "Tsupret_offset_a":
+                        {
+                            "init": 2/3,
+                            "lb": 1e-3,
+                            "ub": 10,
                         },
                         "Tret_offset":
                         {
                             "init": 1,
-                            "lb": -5, 
+                            "lb": 1E-3, 
                             "ub": 20
                         },
                         "Tset_sup_a":
@@ -196,7 +257,7 @@ def prepare_est(
                         },
                         "Tset_sup_b":
                         {
-                            "init": 273.15 + 50,
+                            "init": 273.15 + 47,
                             "lb": 273.15 + 40,
                             "ub": 273.15 + 60,
                         },
@@ -206,11 +267,65 @@ def prepare_est(
                             "lb": 273.15 - 20,
                             "ub": 273.15 - 20,
                         },
-                        "Prad_dim":
+                        "Prad_b":
                         {
-                            "init": 1E4,
-                            "lb": 1E4,
+                            "init": 4000,
+                            "lb": 1000,
                             "ub": 1E4,
+                        },
+                        "Prad_a":
+                        {
+                            "init": 33,
+                            "lb": 1,
+                            "ub": 200,
+                        },
+                        "dT_b":
+                        {
+                            "init": 12,
+                            "lb": 6,
+                            "ub": 30,
+                        },
+                        "dTpeak_b":
+                        {
+                            "init": 16,
+                            "lb": 6,
+                            "ub": 30,
+                        },
+                        "dT_a":
+                        {
+                            "init": 1,
+                            "lb": 1e-2,
+                            "ub": 10,
+                        },
+                        "dTpeak_a":
+                        {
+                            "init": 1,
+                            "lb": 1e-2,
+                            "ub": 10,
+                        },
+                        "tau":
+                        {
+                            "init": 1E3,
+                            "lb": 10,
+                            "ub": 1E6,
+                        },
+                        "tau_flow":
+                        {
+                            "init": 1E3,
+                            "lb": 10,
+                            "ub": 1E6,
+                        },
+                        "tau_b":
+                        {
+                            "init": 10,
+                            "lb": 1,
+                            "ub": 300,
+                        },
+                        "tau_a":
+                        {
+                            "init": 200,
+                            "lb": 10,
+                            "ub": 1000,
                         }
         }
     param_guess = {
@@ -238,12 +353,64 @@ def prepare_est(
         ubx = 1.0*x_guess
     else:
         # constrain in particular Th to physically meaningful values:
-        x_guess = np.array([
-                        data.y1.values.flatten(),
-                        data.y1.values.flatten() - 2,
-                        data.y4.values.flatten(),
-                        data.y5.values.flatten()
-                        ])
+        if n_x == 6:
+            x_guess = np.array([
+                            data.y1.values.flatten(),
+                            data.y1.values.flatten() - 2,
+                            data.y1.values.flatten() + 2,
+                            data.y4.values.flatten(),
+                            data.y5.values.flatten(),
+                            data.y2.values.flatten()
+                            ])
+        elif n_x == 5:
+            x_guess = np.array([
+                            data.y1.values.flatten(),
+                            data.y1.values.flatten() - 2,
+                            data.y4.values.flatten(),
+                            data.y5.values.flatten(),
+                            data.y2.values.flatten()
+                            ])
+        elif n_x == 4:
+            """
+            x_guess = np.array([
+                            data.y1.values.flatten(),
+                            data.y1.values.flatten() - 2,
+                            data.y4.values.flatten(),
+                            data.y5.values.flatten()
+                            ])
+            """
+            x_guess = np.array([
+                            data.y1.values.flatten(),
+                            data.y1.values.flatten() - 2,
+                            data.y1.values.flatten() - 280,
+                            data.y2
+                            ])
+        elif n_x == 3:
+            if hvac:
+                x_guess = np.array([
+                                data.y4.values.flatten(),
+                                data.y5.values.flatten(),
+                                data.y2.values.flatten()
+                                ])
+            else:
+                x_guess = np.array([
+                                data.y1.values.flatten(),
+                                data.y1.values.flatten() - 2,
+                                data.y1.values.flatten() - 280
+                                ])
+        elif n_x == 2:
+            if hvac:
+                x_guess = np.array([
+                                data.y4.values.flatten(),
+                                data.y5.values.flatten()
+                                ])
+            else:
+                x_guess = np.array([
+                                data.y1.values.flatten(),
+                                data.y1.values.flatten() - 2
+                                ])
+        else:
+            raise ValueError
         lbx = 0.7*x_guess
         ubx = 2.0*x_guess
         

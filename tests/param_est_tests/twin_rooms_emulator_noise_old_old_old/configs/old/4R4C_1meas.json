@@ -1,0 +1,98 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + Prad_to_env/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "Trad": "Prad/Crad - Prad_to_env/Crad",
+            "Tsup": "rad_219*(Tset_sup - Tsup)/(Rsup*Csup) + (1 - rad_219)*(Ti + Tsup_offset - Tsup)/(Risup*Csup)"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_219, n, 1E-6)",
+            "Tset_sup": "Tset_sup - (Tset_sup_b - Tset_sup_a*(Ta - Ta_dim))",
+            "Prad": "Prad - (Tsup - Trad)*cp_water*rad_flo",
+            "Prad_to_env": "Prad_to_env - (Trad - Ti)/Rirad"
+        },
+        "w": {
+            "v1": "y1 - Ti",
+            "v2": "y2 - rad_flo",
+            "v3": "y3 - Prad",
+            "v4": "y4 - Trad",
+            "v5": "y5 - Tsup"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Risup",
+            "Rirad",
+            "Crad",
+            "Tsup_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "Trad",
+            "Tsup"
+        ],
+        "z": [
+          "rad_flo",
+          "Tset_sup",
+          "Prad",
+          "Prad_to_env"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "rad_flo"],
+            ["y3", "Prad"],
+            ["y4", "Trad"],
+            ["y5", "Tsup"]
+
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,280,280],
+            "ubx": [340,340,340,340]
+        },
+        "z": {
+            "lbz": [-0.05,290,-1000,-1000],
+            "ubz": [0.15,330,1E4,1E4]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}
