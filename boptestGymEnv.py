@@ -619,7 +619,8 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
         # Assign values to inputs if any
         for i, act in enumerate(self.actions):
             # Assign value
-            u[act] = float(action[i])
+            #u[act] = float(action[i])
+            u[act] = float(action.iloc[i])
             
             # Indicate that the input is active
             u[act.replace('_u','_activate')] = float(1)

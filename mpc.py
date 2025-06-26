@@ -86,12 +86,12 @@ class MPC(OCP):
             self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_sl)))
             
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, self.nlp_z, ref=ref, slack=slack)
-        if "f" not in self.nlp:
-            self.set_nlp_obj()
-        
         # set up lbg, ubg:
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
+        
+        if "f" not in self.nlp:
+            self.set_nlp_obj()
         
         self.prepare_h()
         self.add_h() 
@@ -178,20 +178,36 @@ class MPC(OCP):
     def set_nlp_obj(self):
         
         if self.use_objective_from_cfg:
+            # some common ops:
+            obj_string = self.obj_string.replace("dot", "ca.dot")
+            obj_string = obj_string.replace("sqrt", "ca.sqrt")
+            """
+            is there a 'peak' operator?
+            """
+            peak_var = re.search(r'peak\((.*?)\)', obj_string)
+            if peak_var: # TODO: there can be more than one:
+                result = peak_var.group(1)
+                # add helper variable to replace 'peak'-op
+                aux_peak_var_name = self.add_auxiliary_constraints_for_peak(
+                     result
+                )  
+                obj_string = obj_string.replace(
+                    "peak(" + result + ")", 
+                    aux_peak_var_name
+                )     
             matchers = self.dae.all_names
             symbols = set([s for s in matchers if s in self.obj_string])
             #symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
             vals = dict()
             for symbol in symbols:
                 vals[symbol] = self.get(symbol)
-            obj_string = self.obj_string.replace("dot", "ca.dot")
-            obj_string = obj_string.replace("sqrt", "ca.sqrt")
             vals["ca"] = ca
             try:
                 vals["sl"] = self.sl
             except AttributeError:
                 assert self.slack is False
-            
+            for varname in self.max_vars:
+                vals[varname] = getattr(self, varname)
             if self.slack:
                 assert "sl" in obj_string
             #vals["R"] = self.R
@@ -202,10 +218,6 @@ class MPC(OCP):
             #vals["c2"] = c2
             #vals["V0"] = V0
             # exec objective:
-            
-            """
-            TODO: fix:
-            """
             try:
                 exec(f'obj_expr =' + obj_string, vals)
             except: # temp fix
@@ -225,6 +237,65 @@ class MPC(OCP):
             raise ValueError("error")
         
         self.nlp["f"] = obj_expr
+        
+    def add_auxiliary_constraints_for_peak(
+        self, 
+        name: str
+    ):
+        """
+        format is:
+            "h": 
+        [
+            "0 <= Tsup - Ti"        
+        ]
+        """
+        # create the var:
+        aux_peak_var_name = name + "_max"
+        aux_peak_var = ca.MX.sym(aux_peak_var_name)
+        setattr(self, aux_peak_var_name, aux_peak_var)
+        self.nlp["x"] = ca.vertcat(self.nlp["x"], aux_peak_var)
+        aux_constr = []
+        for n in range(self.N):
+            expr_str =  f"""0 <= {aux_peak_var_name} - {name}[{str(n)}]"""
+            aux_constr.append(expr_str)
+        if self._ocp is None:
+            self._ocp = {
+                "h": aux_constr
+            }
+        else: # extend existing list:
+            self._ocp["h"].extend(
+                aux_constr
+            )
+        
+        # add peak var to nlp-parser:
+        """
+        Make modular:
+        """
+        self.max_vars.append(aux_peak_var_name)
+        dim = 1
+        self.nlp_parser.vars[aux_peak_var_name] = {
+                            "range":
+                                    {
+                                    "a":
+                                    self.nlp_parser["sl"]["range"]["b"],
+                                    "b": 
+                                    self.nlp_parser["sl"]["range"]["b"] + \
+                                        dim
+                                    },
+                            "dim": dim
+                            }
+        setattr(
+            self,
+            "n_" + aux_peak_var_name,
+            1
+        )
+        #self.x0 = np.append(self.x0, 1)
+        #self.lbx = np.append(self.lbx, 0)
+        #self.ubx = np.append(self.ubx, np.inf)
+        
+        #self.prepare_h()
+        #self.add_h()
+        return aux_peak_var_name
         
     #def get_nlp_obj(self, u, slack):
     def get_nlp_obj(self, u, z, ref=False, slack=False):
@@ -494,23 +565,32 @@ class MPC(OCP):
         self, 
         expr: Union[ca.MX, ca.SX]
     ):
+        """
+        TODO: major fix required for more
+        modular handling of max vars. But this 
+        requires refactor of code...
+        """
         x = self.get_nlp_var("x")
         u = self.get_nlp_var("u")
         z = self.get_nlp_var("z")
         #p = self.get_nlp_var("p")
         p = self.nlp_parser["p"]["p_orig"]
+        max_vars = ca.vertcat(
+            *[getattr(self, var) for var in self.max_vars]
+        )
         H = ca.Function(
             "H",
-            [x, u, z, p],
+            [x, u, z, p, max_vars],
             [expr],
-            ["x","u","z","p"],
+            ["x","u","z","p", "max_vars"],
             ["H"],
         )
         H_call = H(
             x=x*self.x_nom + self.x_nom_b,
             u=u*self.u_nom + self.u_nom_b,
             z=z*self.z_nom + self.z_nom_b,
-            p=p*self.p_nom + self.p_nom_b
+            p=p*self.p_nom + self.p_nom_b,
+            max_vars=max_vars*2500
         )
         return H_call
         
@@ -627,6 +707,13 @@ class MPC(OCP):
             solver = self.solver
             
         self.prepare_solver(codegen=codegen)
+        
+        ### provision for max_vars: # TODO: move to set_bounds/separate_data:
+        for varname in self.max_vars:
+            self.x0 = np.append(self.x0, 1)
+            self.lbx = np.append(self.lbx, 0)
+            self.ubx = np.append(self.ubx, np.inf)
+        
         if p_val is None:
             sol = solver(
                         x0=self.x0,

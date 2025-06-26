@@ -79,15 +79,17 @@ class BoptestGymABC(metaclass=ABCMeta):
         solar=False, 
         heat_key="phi_h", 
         cost_key="cost",
-        y = ["Ti"]
+        y=["Ti"],
+        res=None
     ):
         """
         Plot temperatures.
         """
-        res = self.get_results(
-            tf, 
-            ts=ts
-        )
+        if res is None:
+            res = self.get_results(
+                tf, 
+                ts=ts
+            )
         bounds = res[self.get_bound_cols(res)]
         bounds.columns = self.multiindex_from_flat(y)
         # plot:
@@ -270,7 +272,7 @@ def get_forecast_df(
             dfs
         )
     df.index = df.time.astype(int)
-    df["dt_index"] = pd.TimedeltaIndex(df.index, unit="s")
+    df["dt_index"] = pd.to_timedelta(df.index, unit="s")
     #return df.ffill().drop_duplicates()
     return df.interpolate().drop_duplicates()
 

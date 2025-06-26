@@ -29,7 +29,8 @@
         ],
         "r": [
             "Ta",
-            "phi_s"
+            "phi_s",
+            "cost"
         ],
         "x": [
             "Ti",
@@ -56,9 +57,9 @@
             "ubu": [1]
         }
     },
-    "N": 24,
+    "N": 96,
     "dt": 900,
-    "objective": "dot(Prad, Prad) + 1E3*dot(sl, sl)",
+    "objective": "peak(Prad) + 1E-2*dot(Prad, Prad) + 1E3*dot(sl, sl)",
     "method": "multiple_shooting",
     "integrator": 
         {

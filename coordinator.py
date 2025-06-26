@@ -5,10 +5,12 @@ import os
 from ocp.config import Config
 from ocp.customGymEnv import CustomGymEnv
 from ocp.boptestGymEnv import BoptestGymEnv
-from ocp.mpc_agent import MPCAgent, AdaptiveMPCAgent
+from ocp.mpc_agent import MPCAgent, AdaptiveMPCAgent, MheMPCAgent
 from typing import Union, Sequence
+from ocp.config import convert_json_to_native_types, get_json_hash
 from copy import deepcopy
 import numpy.typing as npt
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -17,6 +19,14 @@ import sys
 """
 Simulation coordinator.
 """
+
+def recursive_to_dict(d):
+    if isinstance(d, dict):
+        return recursive_to_dict(d)
+    elif isinstance(d, pd.DataFrame):
+        return d.to_dict()
+    else:
+        return d
 
 def get_env_class(name):
     current_module = sys.modules[__name__]
@@ -32,12 +42,21 @@ class ParameterReader(object):
             parameters = pd.read_csv(
                 parameters,
                 index_col=0
-        ).values.flatten()
-        return parameters
+            ).values.flatten()
+        return np.array(
+            parameters,
+            dtype=np.float64
+        )
     
 class Coordinator(object):
-    def __init__(self,  config) -> None:
+    def __init__(
+            self, 
+            config,
+            can_run=True
+        ) -> None:
         cfg = Config()(config)
+        self.cfg = deepcopy(cfg)
+        self.can_run = can_run
         self.days = cfg["days"]
         self.sampling_time = cfg["sampling_time"]
         self.controller = self._init_controller(
@@ -50,7 +69,7 @@ class Coordinator(object):
     def _init_controller(
         self,
         config
-    ) -> Union[MPCAgent, AdaptiveMPCAgent]:
+    ) -> Union[MPCAgent, AdaptiveMPCAgent, MheMPCAgent]:
         """
         Assume structurally identical model for:
             - mpc
@@ -67,42 +86,34 @@ class Coordinator(object):
         mpc_scaling.pop("y_nom", None)
         mpc_scaling.pop("y_nom_b", None)
         mpc_scaling["slack"] = True
+        args = (
+            config["mpc_config_file"],
+            config["filter_type"],
+            config["filter_config_file"],
+            ParameterReader()(config["parameters"]),
+            config["scaling"]
+        )
         if not adaptive:
             return MPCAgent(
-                config["mpc_config_file"],
-                config["filter_type"],
-                config["filter_config_file"],
-                ParameterReader()(config["parameters"]),
-                config["scaling"]
+                *args
             )
         else: # adaptive, which type?
-            est_scaling = deepcopy(
-            config["scaling"]
+            kwargs = dict(
+                config_file=config["est_config_file"],
+                adapt_parameters=config["adapt_parameters"],
+                integrate_replace=config["integrate_replace"]
             )
             if config["adaptive_type"] == "deterministic":
                 return AdaptiveMPCAgent(
-                    config["mpc_config_file"],
-                    config["filter_type"],
-                    config["filter_config_file"],
-                    ParameterReader()(config["parameters"]),
-                    est_scaling,
-                    config_file=config["est_config_file"],
-                    adapt_parameters=config["adapt_parameters"],
-                    integrate_replace=config["integrate_replace"],
+                    *args,
+                    **kwargs,
                     adapt_frequency=config["adapt_frequency"],
-                    adapt_N=config["adaptive_N"],
-                    allow_variable_N=config["allow_variable_N"]
+                    adapt_N=config["adaptive_N"]
                 )
             elif config["adaptive_type"] == "mhe":
-                return mheMPCAgent(
-                    config["mpc_config_file"],
-                    config["filter_type"],
-                    config["filter_config_file"],
-                    ParameterReader()(config["parameters"]),
-                    est_scaling,
-                    integrate_replace=config["integrate_replace"],
-                    config_file=config["est_config_file"],
-                    adapt_parameters=config["adapt_parameters"]
+                return MheMPCAgent(
+                    *args,
+                    **kwargs
                 )
             else:
                 raise ValueError("Unknown adaptive agent type " + \
@@ -150,7 +161,8 @@ class Coordinator(object):
     def plot_temperatures(self, heat_key="phi_h"):
         return self.env.plot_temperatures(
             tf=self.days*24*int(3600/self.dt)*self.dt,
-            heat_key=heat_key
+            heat_key=heat_key,
+            res=self.res
         )
     
     # TODO: generalize:
@@ -171,23 +183,167 @@ class Coordinator(object):
         ax = results[["Prad_calc", "Prad_pred", "Prad"]].plot(drawstyle="steps-post")
         return fig, axes
         
+    def get_custom_kpis(self):
+        """
+        Get kpis for energy, cost, discomfort, peak.
+        
+        Missing: iaq-discomf, but skip for now as we
+        leave ventilation system be.
+        
+        TODO: more modular
+        """
+        _lb_vio = (self.res.Ti - self.res.Ti_lb)
+        _ub_vio = (self.res.Ti - self.res.Ti_ub)
+        lb_vio = _lb_vio.loc[_lb_vio < 0]
+        ub_vio = _ub_vio.loc[_ub_vio > 0]
+        # in Kh:
+        sum_vio = abs(lb_vio.sum()) + ub_vio.sum()
+        tdis = sum_vio/(3600/self.dt)
+        # in kWh:
+        ener_tot = self.res["Qrad"].iloc[-1]/3.6E6
+        # in kW:
+        Prad_calc = (self.res["Qrad"].diff(1)/1E6).shift(-1).fillna(0)
+        # global peak:
+        peak = Prad_calc.max()
+        # cost in EUR:
+        cost = (Prad_calc*self.res.cost).sum()
+        return pd.DataFrame(
+            index=["tdis [Kh]",
+                   "energy [kWh]",
+                   "peak power [kW]",
+                   "cost [EUR]"
+            ],
+            data=[tdis, ener_tot, peak, cost],
+            columns=["value"]
+        )
+        
+        
+        
     def run(self, x0=None): 
-        obs, _ = self.env.reset()
-        if obs is not None: # first x0 is passed:
-            obs = x0
-            
-        K = int(self.days*24*int(3600/self.dt))
-        for k in range(K):
-            # TODO: forecast optional:
-            forecast = self.env.get_forecast(
-                self.controller_dt,
-                self.controller_horizon
+        
+        if self.can_run:
+            obs, _ = self.env.reset()
+            if obs is not None: # first x0 is passed:
+                obs = x0
+                
+            K = int(self.days*24*int(3600/self.dt))
+            for k in range(K):
+                # TODO: forecast optional:
+                forecast = self.env.get_forecast(
+                    self.controller_dt,
+                    self.controller_horizon
+                )
+                self.controller.adaptive_callback(
+                    k, 
+                    self.env
+                )
+                action, _ = self.controller.predict(
+                    obs, 
+                    forecast
+                )
+                if not self.controller.mpc.solver.stats()["success"]:
+                    print(action)
+                obs, reward, terminated, truncated, info = self.env.step(
+                    action
+                )
+                # TODO: filtering optional:
+                obs = self.controller.x0_from_obs(
+                    k, 
+                    obs
+                )
+            # get env result:
+            self.res = self.env.get_results(
+                self.days*24*int(3600/self.dt)*self.dt
             )
-            self.controller.adaptive_callback(k, self.env)
-            action, _ = self.controller.predict(obs, forecast)
-            if not self.controller.mpc.solver.stats()["success"]:
-                print(action)
-            obs, reward, terminated, truncated, info = self.env.step(action)
-            # TODO: filtering optional:
-            obs = self.controller.x0_from_obs(obs)
+            self.kpis = self.get_custom_kpis()
+            self.concatenate_filtering_cols()
+            
+        else: # TODO : log
+            print("Coordinator works only as a result container. " + 
+                  "TODO: get, set emulator state. Then, unpickled " +
+                  "results can be used for further runs.")
+    
+    def concatenate_filtering_cols(self):
+        for attr in ("state_history", "covar_history"):
+            new_columns = []
+            for ndx_tuple in getattr(self.controller, attr).columns:
+                ndx = ndx_tuple[1] + "_" + ndx_tuple[0] 
+                new_columns.append(ndx)
+            setattr(getattr(self.controller, attr), "columns", new_columns)
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            self_jsonstr = convert_json_to_native_types(
+                self._get_containers(
+                    as_ordered_dict=True
+                )
+            )
+            other_jsonstr = convert_json_to_native_types(
+                self._get_containers(
+                    as_ordered_dict=True
+                )
+            )
+            return self_jsonstr == other_jsonstr
+        else:
+            return False
+
+            
+    def _get_containers(
+        self,
+        as_ordered_dict=False
+    ):
+        d = {}
+        for k, v in self.controller.__dict__.items():
+            if isinstance(v, (dict, pd.DataFrame)):  #and k not in ("state_history", "covar_history"):
+                d[k] = v
+        for k, v in self.__dict__.items():
+            if isinstance(v, (dict, pd.DataFrame)):
+                d[k] = v
+        if as_ordered_dict:
+            d = OrderedDict(d)
+        return d
+              
+    def __getstate__(self):
+        """
+        Only pickle dfs, dicts:
+        """
+        out = self._get_containers()
+        return out
+    
+    def __setstate__(self, d):
+        """
+        res and cfg on top-level,
+        rest is on controller.
+        
+        NB! can_run=False
+        """
+        cfg = d.pop("cfg")
+        self.__init__(
+            cfg,
+            can_run=False
+        )
+        self.res = d.pop("res")
+        self.kpis = d.pop("kpis")
+        # set frames, dicts:
+        for k, v in d.items():
+            setattr(self.controller, k, v)
+            
+    def write_result(self):
+        name = get_json_hash(self.cfg) + ".pkl"
+        path = os.path.join("results", name)
+        if not os.path.exists("results"):
+            os.mkdir("results")
+        with open(path, 'wb') as handle:
+            pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            
+    @classmethod
+    def read_result(cls, cfg: OrderedDict):
+        name = get_json_hash(cfg) + ".pkl"
+        path = os.path.join("results", name)
+        with open(path, 'rb') as handle:
+            obj = pickle.load(handle)
+        return obj
+        
+        
+
         

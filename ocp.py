@@ -181,6 +181,7 @@ class OCP(metaclass=ABCMeta):
         # new:
         self.slack_names = []
         self.c_files = []
+        self.max_vars = []
         
         
         self.use_objective_from_cfg = kwargs.pop("use_objective_from_cfg", True)
@@ -512,7 +513,7 @@ class OCP(metaclass=ABCMeta):
                                     "of inequality constraints")
                 """                
                 elems = list(map(lambda x: x.strip(), elems))
-                matchers = self.dae.all_names + self.slack_names
+                matchers = self.dae.all_names + self.slack_names + self.max_vars
                 symbols = set([s for s in matchers if s in elems[1]])
                 #symbols = re.findall("|".join(self.dae.all_names), elems[1])
                 
@@ -1034,7 +1035,11 @@ class OCP(metaclass=ABCMeta):
                              (name))
         
     def get(self, name):
-        ocp_name, offset = self.get_ocp_name_and_offset(name)
+        try:
+            ocp_name, offset = self.get_ocp_name_and_offset(name)
+        except ValueError:
+            assert name in self.max_vars # only defined for mpc per now
+            return getattr(self, name) # return symbol directly 
         if ocp_name == "sl":
             n_ocp_var = self.n_x
             nlp_var = self.sigma
@@ -1790,7 +1795,11 @@ class OCP(metaclass=ABCMeta):
                                         params)).reshape((1,self.n_p)), self.N).reshape(
                                         (self.N, self.n_p)
                                 )
-                    
+            elif name in self.max_vars:
+                scale = 2500
+                max_var = np.array(sol_x[start:stop]*scale).flatten()
+                _vals = np.tile(np.array(max_var), self.N).reshape((self.N, 1))
+                print(name)
             else:
                 #if name == "x":
                 #    scale = self.x_nom
@@ -1931,7 +1940,7 @@ class OCP(metaclass=ABCMeta):
         #all_names = self.dae.all_names + ["us1", "us2", "ls1", "ls2"]
         
         # slack?
-        all_names = self.dae.all_names + self.slack_names
+        all_names = self.dae.all_names + self.slack_names + self.max_vars
                 
         sol_df = pd.DataFrame(
                               columns = 

@@ -1,5 +1,5 @@
 {
-    "days": 7,
+    "days": 14,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
@@ -20,14 +20,14 @@
         "filter_config_file": "ekf_configs/2R3C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true,
-        "parameters": "envelope_model_2R3C_start.csv",
+        "parameters": "envelope_model_2R3C_alt_alt.csv",
         "adaptive": true,
         "integrate_replace": {
             "Prad": "Qrad"
         },
         "adaptive_type": "mhe",
         "est_config_file": "mhe_configs/2R3C_MHE.json",
-        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai"]
+        "adapt_parameters":  []
     },
     "environment": {
         "type": "BoptestGymEnv",

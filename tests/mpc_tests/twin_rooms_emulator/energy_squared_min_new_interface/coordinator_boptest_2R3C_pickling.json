@@ -1,18 +1,18 @@
 {
-    "days": 7,
+    "days": 0.05,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
         "sampling_time": "15min",
-        "mpc_config_file": "mpc_configs/2R3C_MPC_energy_squared.json",
+        "mpc_config_file": "mpc_configs/2R3C_MPC_min_energy_squared.json",
         "scaling": {
             "x_nom": 12,
             "x_nom_b": 289.15,
             "u_nom": [1],
             "u_nom_b ": [0],
-            "r_nom": [12,2.5E3],
-            "r_nom_b": [289.15,0],
+            "r_nom": [12,2.5E3,1],
+            "r_nom_b": [289.15,0,0],
             "z_nom": [2.5E3,12,12],
             "z_nom_b": [0,289.15,289.15],
             "slack": true
@@ -20,14 +20,12 @@
         "filter_config_file": "ekf_configs/2R3C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true,
-        "parameters": "envelope_model_2R3C_start.csv",
-        "adaptive": true,
-        "integrate_replace": {
-            "Prad": "Qrad"
-        },
-        "adaptive_type": "mhe",
-        "est_config_file": "mhe_configs/2R3C_MHE.json",
-        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai"]
+        "parameters": "envelope_model_2R3C_alt_alt.csv",
+        "reiden": false,
+        "reiden_freq": 96,
+        "reiden_N": 1344,
+        "est_config_file": "",
+        "reiden_adaptive_rollout": true
     },
     "environment": {
         "type": "BoptestGymEnv",
@@ -72,7 +70,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 0
+            "start_time": 172800
         }
     }
 }

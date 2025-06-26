@@ -1,7 +1,35 @@
-from collections import OrderedDict
 import json
 import copy
 import os
+import hashlib
+import numpy as np
+import casadi as ca
+import pandas as pd
+from pathlib import Path
+from pprint import pprint
+from collections import OrderedDict
+
+class NativeTypeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, pd.DataFrame):
+            if not isinstance(obj.index, pd.RangeIndex):
+                obj.index = range(len(obj.index))
+            if "dt_index" in obj.columns:
+                obj.drop(columns=["dt_index"], inplace=True)
+            return obj.to_dict()
+        #if isinstance(obj, pd.Timestamp):
+        #    return obj.to_pydatetime()
+        if isinstance(obj, Path):
+            return str(obj)
+        if isinstance(obj, ca.DM):
+            return list(np.array(obj).flatten())
+        return super(NativeTypeEncoder, self).default(obj)
 
 def traverse_dict(nested_dict):
     for key, value in nested_dict.items():
@@ -12,6 +40,19 @@ def traverse_dict(nested_dict):
         else:
             pass # do nothing
 
+def convert_json_to_native_types(d: OrderedDict):
+    return json.dumps(d, sort_keys=True, cls=NativeTypeEncoder)
+
+def get_json_hash(config: OrderedDict):
+    s = convert_json_to_native_types(
+        config
+    )
+    return str(
+                int(
+                    hashlib.sha256(s.encode('utf-8')).hexdigest(),
+                    16) %
+            10**8
+        ) 
 
 class Config(object):
     def __call__(self, config):
@@ -27,3 +68,5 @@ class Config(object):
         return copy.deepcopy(
                 config
         )
+    
+    

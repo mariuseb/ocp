@@ -9,26 +9,28 @@ import pandas as pd
 from copy import deepcopy
 from typing import Tuple, Any, Union
 #import os
+import numpy.typing as npt
 import pathlib
 from ocp.filter_wrapper import FilterWrapper
 from ocp.estimation import Estimation
 from itertools import product
 from ocp.config import Config
-rc('mathtext', default='regular')
 from abc import ABCMeta, abstractmethod
 from gymnasium import Env
 import casadi as ca
 import matplotlib.pyplot as plt
+rc('mathtext', default='regular')
+
+ConfigArg = Union[pathlib.Path, dict, Config]
 
 class AbstractMPCAgent(metaclass=ABCMeta): 
     
     def __init__(
         self,
-        mpc_cfg: pathlib.Path,
+        mpc_cfg: ConfigArg,
         filter_type: str,
-        filter_cfg: pathlib.Path,
+        filter_cfg: ConfigArg,
         params: npt.NDArray[Any],
-        #scaling: dict = dict()
         scaling: dict
     ) -> None:
         self.params = params
@@ -40,7 +42,7 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         )  # to remove, replace with N
         if not isinstance(filter_cfg, Config):
             filter_cfg = Config()(filter_cfg)
-        if not "parameters" in filter_cfg.keys():
+        if "parameters" not in filter_cfg.keys():
             filter_cfg["parameters"] = self.params
         self.filter = FilterWrapper(
             filter_cfg,
@@ -215,8 +217,9 @@ class AbstractMPCAgent(metaclass=ABCMeta):
     
     def x0_from_obs(
         self,
+        k: int,
         obs: npt.NDArray[Any]
-    ):  
+    ) -> npt.NDArray[np.float64]:  
         """
         TODO: store prior, posterior 
         of state and covariance.
@@ -250,14 +253,6 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             "posterior"
         )
         return x_posterior
-    
-    @abstractmethod
-    def adaptive_callback(
-            self,
-            k: int, 
-            env: Env
-        ):
-        pass
 
     def param_guess_from_array(
         self, 
@@ -276,25 +271,52 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             }
         return param_guess
     
-    # the below should be defined in an abstract adaptive class:
+    @abstractmethod
+    def adaptive_callback(
+            self,
+            k: int, 
+            env: Env
+    ):
+        pass
+    
+    
+
+class MPCAgent(AbstractMPCAgent):
+    """
+    Fixed-model MPC agent. Requires no additional
+    functionality beyond ABC implementations.
+    """
+    def adaptive_callback(
+            self,
+            k: int, 
+            env: Env
+    ):
+        pass
+ 
+class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
+    def __init__(
+        self,
+        *args,
+        adapt_parameters: list[str] = [],
+        est_scaling: dict = {},
+        integrate_replace: dict[str, str] = dict()
+    ) -> None: 
+        super().__init__(*args)
+        self.adapt_parameters = adapt_parameters
+        self.params_history = pd.DataFrame(
+            columns=self.p
+        )
+        self.integrate_replace = integrate_replace
+        self.est_scaling = est_scaling
+        self.ests = dict()
+    
     def get_y_data(
         self,
         env: Env,
         k: int,
-        dt: int,
-        N: int,
         backshift: list = [],
         integrate_replace: dict[str, str] = {}
-    ):
-        """
-        ax = y_data[["Prad_calc"]].plot(drawstyle="steps-post")
-        ax1 = ax.twinx()
-        y_data[["rad_219"]].plot(ax=ax1, drawstyle="steps-post", color="k")
-        ax.set_ylim([0,3000])
-        ax1.set_ylim([0,1])
-        plt.show()
-        """
-                    
+    ):         
         tf = k*self.dt
         ts = tf - (self.adapt_N-1)*self.dt
         data = env.get_results(tf, ts=ts)
@@ -312,6 +334,9 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             y_data[y] = y_data[var]
         return y_data
             
+    """
+    TODO: modularize:
+    """
     def get_estimation_parameters(
         self
     ):
@@ -334,94 +359,41 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         self,
         y_data: pd.DataFrame
     ):
+        """
+        TODO: options: by
+            - simulation w/ current model to fill missing,
+            - measurements and filling heuristics.
+            - ekf filtering history
+        """
         x_guess = np.array([
                 y_data.y1.values.flatten(),
                 y_data.y1.values.flatten() - 2,
                 y_data.y1.values.flatten() - 280
         ])
         return x_guess
-        
     
-
-class MPCAgent(AbstractMPCAgent):
-    """
-    Fixed-model MPC agent.
-    """
+    
+    @abstractmethod
+    def re_estimation_clause(
+            self,
+            k: int
+    ) -> bool | NotImplementedError:
+        return NotImplementedError("")
+    
     def adaptive_callback(
             self,
             k: int, 
             env: Env
-        ):
-        pass
- 
- 
-"""
-TODO: consider intermediate abstract superclass for
-adaptive agents.
-"""
-    
-class AdaptiveMPCAgent(MPCAgent):
-    def __init__(
-        self,
-        *args,
-        config_file: Union[pathlib.Path, str, Config] = "",
-        adapt_parameters: list[str] = [],
-        est_scaling: dict = {},
-        adapt_frequency: int = 0,
-        adapt_N: int = 0,
-        allow_variable_N: bool = False,
-        integrate_replace: dict[str, str] = dict()
-    ) -> None: 
-        super().__init__(*args)
-        self.adapt_parameters = adapt_parameters
-        self.adapt_frequency = adapt_frequency
-        self.allow_variable_N = allow_variable_N
-        self.integrate_replace = integrate_replace
-        self.est_scaling = est_scaling
-        self.adapt_N = adapt_N
-        self.estimator = Estimation(
-            config=config_file,
-            N=adapt_N,
-            dt=self.dt,
-            param_guess=self.param_guess_from_array(
-                self.adapt_parameters    
-            ),
-            truncate_scaling=True,
-            arrival_cost=True,
-            **self.get_est_scaling(
-                self.scaling
-            )
-        )
-        self.params_history = pd.DataFrame(
-            columns=self.p
-        )
-        
-    @staticmethod
-    def get_est_scaling(scaling):
-        est_scaling = deepcopy(
-            scaling
-        )
-        # deterministic --> no slack:
-        est_scaling["slack"] = False
-        return est_scaling
-        
-        
-    def adaptive_callback(
-            self,
-            k: int, 
-            env: Env
-        ):
+    ):
         """
         k starts at zero:
         """
-        if (k+1) % self.adapt_frequency == 0:
+        if self.re_estimation_clause(k):
             # estimate, set params:
             Q, R, P0, lbp, ubp, p0 = self.get_estimation_parameters()
             y_data = self.get_y_data(
                 env,
                 k,
-                self.dt,
-                self.adapt_N,
                 backshift=env.maps.u,
                 integrate_replace=self.integrate_replace
             )
@@ -439,34 +411,86 @@ class AdaptiveMPCAgent(MPCAgent):
                                         codegen=False,
                                         P0=P0,
                                         x_N=x_guess[-1,-self.estimator.n_x:]
-                                        )  
+                                        ) 
             self.estimator.p0 = params.values
-            self.params_history.loc[len(self.params_history), :] = params
+            # from t = k, the parameters are:
+            self.params_history.loc[k, :] = params
+            # store solution:
+            self.ests[k] = sol
+            # set parameters globally on agent:
             self.params = params.values
-            
-class mheMPCAgent(MPCAgent):
+        
+        
+    
+ 
+"""
+TODO: consider intermediate abstract superclass for
+adaptive agents.
+"""
+    
+class AdaptiveMPCAgent(AbstractAdaptiveAgent):
     def __init__(
         self,
         *args,
-        config_file: Union[pathlib.Path, str, Config] = "",
-        est_scaling: dict = {},
-        adapt_parameters: list[str] = [],
-        integrate_replace: dict[str, str] = dict()
+        adapt_frequency: int = 0,
+        adapt_N: int = 0,
+        **kwargs,
     ) -> None: 
-        super().__init__(*args)
-        self.adapt_parameters = adapt_parameters
-        self.integrate_replace = integrate_replace
-        self.est_scaling = est_scaling
+        config_file = kwargs.pop("config_file")
+        super().__init__(*args, **kwargs)
+        self.adapt_frequency = adapt_frequency
+        self.adapt_N = adapt_N
+        self.estimator = Estimation(
+            config=config_file,
+            N=adapt_N,
+            dt=self.dt,
+            param_guess=self.param_guess_from_array(
+                self.adapt_parameters    
+            ),
+            truncate_scaling=True,
+            arrival_cost=True,
+            **self.get_est_scaling(
+                self.scaling
+            )
+        )
+        
+    @staticmethod
+    def get_est_scaling(scaling):
+        est_scaling = deepcopy(
+            scaling
+        )
+        # deterministic --> no slack:
+        est_scaling["slack"] = False
+        return est_scaling
+        
+        
+    def re_estimation_clause(
+            self,
+            k: int
+        ):
+        return ((k+1) % self.adapt_frequency == 0) and ((k+1) >= self.adapt_N)
+            
+            
+class MheMPCAgent(AbstractAdaptiveAgent):
+    def __init__(
+        self,
+        *args,
+        **kwargs
+    ) -> None: 
+        config_file = kwargs.pop("config_file")
+        super().__init__(
+            *args,
+            **kwargs
+        )
         self.estimator = MHE(
             config=config_file,
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
             ),
             arrival_cost=True,
-            **{
-                **est_scaling,
-                "slack": False
-            }
+            **self.get_mhe_scaling(
+                self.scaling
+            )
         )
         self.adapt_N = self.estimator.N
         self.params_history = pd.DataFrame(
@@ -478,17 +502,46 @@ class mheMPCAgent(MPCAgent):
         mhe_scaling = deepcopy(
             scaling
         )
-        # deterministic --> no slack:
-        mhe_scaling["slack"] = False
+        # stochastic --> slack:
+        mhe_scaling["slack"] = True
         return mhe_scaling
-        
-        
-    def adaptive_callback(
+    
+    def re_estimation_clause(
             self,
-            k: int, 
-            env: Env
+            k: int
         ):
+        return (k+1) >= self.adapt_N
+    
+    
+    def x0_from_obs(
+        self,
+        k: int,
+        obs: npt.NDArray[Any]
+    ):
         """
-        k starts at zero:
+        Update the EKF in any case s.t. 
+        updates of covariance can be retrieved.
         """
-        pass
+        x_post_ekf = super().x0_from_obs(k, obs)
+        if self.re_estimation_clause(k):
+            # latest estimation, latest state:
+            x_post_mhe = self.ests[k][self.x()].iloc[-1].values.flatten()
+            return x_post_mhe
+        return x_post_ekf
+            
+    
+    
+    
+    
+    
+    """
+    @property
+    @abstractmethod
+    def estimator(self):
+        raise NotImplementedError("")
+    
+    @property
+    @abstractmethod
+    def adapt_N(self):
+        raise NotImplementedError("")
+    """
