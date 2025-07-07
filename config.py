@@ -65,6 +65,7 @@ class Config(object):
                     config["integrator"]["dt"] = config["dt"]
                 except KeyError: # estimation config
                     pass
+        traverse_dict(config)
         return copy.deepcopy(
                 config
         )

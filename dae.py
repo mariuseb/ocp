@@ -517,9 +517,9 @@ class DAE(object):
         )
         self.A = ca.Function(
             "A",
-            [self.var("x"), u, self.var("p")],
+            [self.var("x"), u, self.var("p"), self.var("z")],
             [_A],
-            ["x", "u", "p"], 
+            ["x", "u", "p", "z"], 
             ["A"]
         )
         
@@ -536,9 +536,9 @@ class DAE(object):
             u
         )
         self.B = ca.Function("B",
-            [self.var("x"), u, self.var("p")],
+            [self.var("x"), u, self.var("p"), self.var("z")],
             [_B],
-            ["x", "u", "p"], 
+            ["x", "u", "p", "z"], 
             ["B"]
         )
 
@@ -574,10 +574,13 @@ class DAE(object):
         u = kwargs.pop(
             "u", [0]*nu
         ) 
+        z = kwargs.pop(
+            "z", [0]*self.dae.nz()
+        ) 
         p = kwargs.pop(
             "p", None
         ) 
-        return x, u, p
+        return x, u, p, z
         
     def get_Ad(
             self,
@@ -587,13 +590,14 @@ class DAE(object):
         """
         Get discrete-time Ad.
         """
-        x, u, p = self.extract_linearization_kwargs(
+        x, u, p, z = self.extract_linearization_kwargs(
             **kwargs
         )
         A = self.A(
             x=x,
             u=u,
-            p=p
+            p=p,
+            z=z
         )["A"]
         return scipy.linalg.expm(A*dt)
     
@@ -606,18 +610,20 @@ class DAE(object):
         Get discrete-time B:
         A^-1*(Ad − I)*B
         """
-        x, u, p = self.extract_linearization_kwargs(
+        x, u, p, z = self.extract_linearization_kwargs(
             **kwargs
         )
         A = self.A(
             x=x,
             u=u,
-            p=p
+            p=p,
+            z=z
         )["A"]
         B = self.B(
             x=x,
             u=u,
-            p=p
+            p=p,
+            z=z
         )["B"]
         Ad = self.get_Ad(dt, p=p)
         return np.array(

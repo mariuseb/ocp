@@ -3,15 +3,16 @@ import json
 import copy
 import os
 from ocp.config import Config
-from ocp.customGymEnv import CustomGymEnv
+from ocp.customGymEnv import CustomGymEnv, DataEnv
 from ocp.boptestGymEnv import BoptestGymEnv
-from ocp.mpc_agent import MPCAgent, AdaptiveMPCAgent, MheMPCAgent
+from ocp.mpc_agent import MPCAgent, AdaptiveMPCAgent, MheMPCAgent, PredictiveAdaptiveAgent
 from typing import Union, Sequence
 from ocp.config import convert_json_to_native_types, get_json_hash
 from copy import deepcopy
 import numpy.typing as npt
 import pickle
 import matplotlib.pyplot as plt
+from ocp.result_generator import nrmse, mse, r2_score, rmse
 import numpy as np
 import pandas as pd
 import sys
@@ -65,6 +66,9 @@ class Coordinator(object):
         self.env = self._init_env(
             cfg["environment"]
         )
+        self.val_metrics = pd.DataFrame(
+            columns=["nrmse", "rmse", "r2", "mse"]
+        )
         
     def _init_controller(
         self,
@@ -103,21 +107,27 @@ class Coordinator(object):
                 adapt_parameters=config["adapt_parameters"],
                 integrate_replace=config["integrate_replace"]
             )
-            if config["adaptive_type"] == "deterministic":
-                return AdaptiveMPCAgent(
+            purely_predictive = config.pop("purely_predictive", False)
+            if purely_predictive: # only one type thus far:
+                return PredictiveAdaptiveAgent(
                     *args,
                     **kwargs,
                     adapt_frequency=config["adapt_frequency"],
                     adapt_N=config["adaptive_N"]
                 )
-            elif config["adaptive_type"] == "mhe":
-                return MheMPCAgent(
-                    *args,
-                    **kwargs
-                )
             else:
-                raise ValueError("Unknown adaptive agent type " + \
-                                 config["type"] + " passed")
+                if config["adaptive_type"] == "deterministic":
+                    return AdaptiveMPCAgent(
+                        *args,
+                        **kwargs,
+                        adapt_frequency=config["adapt_frequency"],
+                        adapt_N=config["adaptive_N"]
+                    )
+                elif config["adaptive_type"] == "mhe":
+                    return MheMPCAgent(
+                        *args,
+                        **kwargs
+                    )
                 
         
     def _init_env(
@@ -126,14 +136,6 @@ class Coordinator(object):
     ) -> Union[CustomGymEnv, BoptestGymEnv]:
         #_type = config.pop("type")
         klass = get_env_class(config["type"])
-        """
-        return CustomGymEnv(
-            config["config"],
-            self.dt,
-            config["parameters"],
-            config["maps"]
-        )
-        """
         if "step_period" not in config["config"]:
             config["config"]["step_period"] = self.dt
         try:
@@ -141,7 +143,7 @@ class Coordinator(object):
                 config["config"]["parameters"]
             )
         except KeyError: # no parameters passed
-            assert config["type"] == "BoptestGymEnv"
+            assert config["type"] in ("BoptestGymEnv", "DataEnv")
         return klass(
             **config["config"]
         )
@@ -216,9 +218,7 @@ class Coordinator(object):
             data=[tdis, ener_tot, peak, cost],
             columns=["value"]
         )
-        
-        
-        
+            
     def run(self, x0=None): 
         
         if self.can_run:
@@ -241,6 +241,7 @@ class Coordinator(object):
                     obs, 
                     forecast
                 )
+                self.validation_callback(k)
                 if not self.controller.mpc.solver.stats()["success"]:
                     print(action)
                 obs, reward, terminated, truncated, info = self.env.step(
@@ -255,6 +256,14 @@ class Coordinator(object):
             self.res = self.env.get_results(
                 self.days*24*int(3600/self.dt)*self.dt
             )
+            
+            ax = self.val_metrics.nrmse.plot(drawstyle="steps-post")
+            ax1 = ax.twinx()
+            res = self.res.copy()[:-1]
+            res.index = self.val_metrics.index
+            ax = res["phi_h"].plot(color="r", drawstyle="steps-post")
+            plt.show()
+            
             self.kpis = self.get_custom_kpis()
             self.concatenate_filtering_cols()
             
@@ -287,6 +296,29 @@ class Coordinator(object):
         else:
             return False
 
+    def validation_callback(
+        self,
+        k
+    ):
+        if isinstance(self.env, DataEnv):
+            # take latest pred, forecast:
+            pred = self.controller.preds[k]
+            forecast = self.controller.forecasts[k]
+            # TODO: validation variable modular:
+            val_tuple = (
+                pred["Ti"].values.flatten(), 
+                forecast["Ti"].values.flatten()
+            )
+            self.val_metrics.loc[
+                k,
+                ["nrmse", "rmse", "r2", "mse"]
+            ] = np.array([
+                nrmse(*val_tuple),
+                rmse(*val_tuple),
+                r2_score(*val_tuple),
+                mse(*val_tuple)
+            ])
+                
             
     def _get_containers(
         self,

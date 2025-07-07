@@ -1,0 +1,13 @@
+{
+    "mhe_cost": {
+        "mpc_config_file": "mpc_configs/2R3C_MPC_min_cost.json",
+        "parameters": "envelope_model_2R3C_start.csv",
+        "adaptive": true,
+        "integrate_replace": {
+            "Prad": "Qrad"
+        },
+        "adaptive_type": "mhe",
+        "est_config_file": "mhe_configs/2R3C_MHE.json",
+        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai"]
+    }
+}

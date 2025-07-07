@@ -132,6 +132,8 @@ class ExtendedKalmanFilter(
            **kwargs
         )
        self.__set_one_sample_state_feedback()
+           
+        
     
     def _set_one_sample_state(
         self
@@ -149,7 +151,8 @@ class ExtendedKalmanFilter(
         return self.dae.get_Ad(
             self.dt, 
             p=self.params,
-            x=self.x_prev  
+            x=self.x_prev,
+            z=self.z_prev
         )
     
     @property
@@ -176,18 +179,17 @@ class ExtendedKalmanFilter(
         u: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         # store x_prev for A:
-        self.x_prev = self.x
-        self.x = np.array(
-            self.one_sample_state(
-                self.x,
-                0, # ignore z for now
-                u[:self.n_u],
-                self.params,
-                u[self.n_u:],
-                0
-            )[0],
-            dtype=np.float64
-        ).flatten()
+        self.x_prev, self.z_prev = self.x, self.z
+        casadi_ret = self.one_sample_state(
+            self.x,
+            self.z_prev, # ignore z for now
+            u[:self.n_u],
+            self.params,
+            u[self.n_u:],
+            0
+        )
+        self.x = np.array(casadi_ret[0], dtype=np.float64).flatten()
+        self.z = np.array(casadi_ret[1], dtype=np.float64).flatten()
         return self.x
     
     def _init_symbols_one_sample(

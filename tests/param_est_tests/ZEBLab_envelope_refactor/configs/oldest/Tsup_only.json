@@ -1,0 +1,54 @@
+{
+    "model": {
+        "ode": {
+            "Tsup": "(Tset_sup - Tsup)/(Rsup*Csup)*m_flow_bool + (Tsup - Ti)/(Rsup*Csup)*(1-m_flow_bool)"
+        },
+        "alg": {
+            "Tset_sup": "Tset_sup - ca.if_else(Ta_dim > Ta, T_set_sup_b, ca.if_else(Ta > Ta_max, T_set_sup_b - T_set_sup_a*Ta_max,  T_set_sup_b - T_set_sup_a*(Ta - Ta_dim)))"
+        },
+        "w": {
+            "v1": "Tsup - y1"
+        },
+        "p": [
+            "Ta_dim",
+            "T_set_sup_b",
+            "T_set_sup_a",
+            "Ta_max",
+            "Rsup",
+            "Csup"
+        ],
+        "u": [
+            "u_val",
+            "Ta",
+            "Ti",
+            "m_flow_bool"
+        ],
+        "z": [
+          "Tset_sup"
+        ],
+        "x": [
+          "Tsup"
+        ],
+        "y": [
+            ["y1", "Tsup"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

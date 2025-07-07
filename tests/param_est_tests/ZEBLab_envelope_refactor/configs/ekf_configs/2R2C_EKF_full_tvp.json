@@ -1,0 +1,79 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie_TVP*Ci_TVP) + (1/Ci_TVP)*phi_h + Ai_TVP*(phi_s/Ci_TVP) + (1/Ci_TVP)*alpha_vent_sup*ahu_reaFloSupAir*(T_sup_air - Ti) + (1/Ci_TVP)*alpha_vent_ext*ahu_reaFloExtAir*(Ti - T_ext_air) + (1/Ci_TVP)*alpha_int*phi_int + (1/Ci_TVP)*alpha_occ*phi_occ",
+            "Te": "(Ti - Te)/(Rie_TVP*Ce_TVP) + (Ta - Te)/(Rea_TVP*Ce_TVP)"
+        },
+        "sde": {
+            "all" :"(1 - stepQi)*ca.expm(Q) + stepQi*ca.expm(Q_vent)"
+        },
+
+        "alg": {
+            "Rie_TVP": "vent*Rie_w + (1 - vent)*Rie - Rie_TVP",
+            "Rea_TVP": "vent*Rea_w + (1 - vent)*Rea - Rea_TVP",
+            "Ci_TVP": "vent*Ci_w + (1 - vent)*Ci - Ci_TVP",
+            "Ce_TVP": "vent*Ce_w + (1 - vent)*Ce - Ce_TVP",
+            "Ai_TVP": "phi_s_high*Ai_high + (1 - phi_s_high)*Ai - Ai_TVP"
+        },
+        "theta":
+         [
+            "Q",
+            "Q_vent"
+         ],
+         "p": [
+            "Rie",
+            "Rie_w",
+            "Rea",
+            "Rea_w",
+            "Ci",
+            "Ci_w",
+            "Ce",
+            "Ce_w",
+            "Ai",
+            "Ai_high",
+            "alpha_vent_sup",
+            "alpha_vent_ext",
+            "alpha_int",
+            "alpha_occ"
+        ],
+        "u": [
+            "Ta",
+            "T_sup_air",
+            "T_ext_air",
+            "phi_h",
+            "phi_int",
+            "phi_occ",
+            "phi_s",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir",
+            "weeknd",
+            "vent",
+            "stepQi",
+            "phi_s_high"
+        ],
+        "z": [
+            "Rie_TVP",
+            "Rea_TVP",
+            "Ci_TVP",
+            "Ce_TVP",
+            "Ai_TVP"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1],
+    "R": [1]
+}

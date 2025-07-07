@@ -8,16 +8,27 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 class BoptestMaps(object):
-    def __init__(self, maps):
-        self.set_maps(maps)
+    def __init__(
+            self,
+            maps,
+            non_boptest=False
+        ):
+        self.set_maps(
+            maps, 
+            non_boptest=non_boptest
+        )
     
-    def set_maps(self, maps):
+    def set_maps(
+        self,
+        maps,
+        non_boptest=False
+    ):
         self.var = {}
         self.ocp_to_boptest = dict()
         for k, v in maps.items():
             setattr(self, k, v) # maps accessed by self.maps[<name_of_map>]
             self.var[k] = list(v.keys())
-            if k in ("u", "y"):
+            if not non_boptest and k in ("u", "y"):
                 suffix = "_" + k
             else:
                 suffix = ""

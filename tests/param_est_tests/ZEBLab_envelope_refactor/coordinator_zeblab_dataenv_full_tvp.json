@@ -1,0 +1,71 @@
+{
+    "days": 14,
+    "sampling_time": "15min",
+    "controller": {
+        "timezone": "Europe/Oslo",
+        "temp_conv": 273.15,
+        "sampling_time": "15min",
+        "mpc_config_file": "mpc_configs/2R2C_MPC_full_tvp_min_energy.json",
+        "scaling": {
+            "x_nom": 12,
+            "x_nom_b": 289.15,
+            "r_nom": [12,12,12,2.5E3,2.5E3,2.5E3,2.5E3,1,1,1,1,1,1],
+            "r_nom_b": [289.15,289.15,289.15,0,0,0,0,0,0,0,0,0,0],
+            "z_nom": [1e-2,1e-1,1e6,1e7,1],
+            "z_nom_b": [0,0,0,0,0],
+            "y_nom": [12],
+            "y_nom_b": [289.15]
+        },
+        "filter_config_file": "ekf_configs/2R2C_EKF_full_tvp.json",
+        "filter_type": "ocp.kalman.ExtendedKalmanFilter",
+        "filter_obs": true,
+        "parameters": "envelope_model_2R2C_full_tvp_start.csv",
+        "adaptive": true,
+        "purely_predictive": true,
+        "adaptive_type": "deterministic",
+        "est_config_file": "configs/2R2C_full_tvp.json",
+        "adapt_parameters":  [            
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Rie_w",
+            "Rea_w",
+            "Ci_w",
+            "Ce_w",
+            "Ai",
+            "Ai_high",
+            "alpha_vent_sup",
+            "alpha_vent_ext",
+            "alpha_int",
+            "alpha_occ"
+        ],
+        "adapt_frequency": 96,
+        "integrate_replace": {
+        },
+        "adaptive_N": 1344,
+        "allow_variable_N": false
+    },
+    "environment": {
+        "type": "DataEnv",
+        "config": {   
+            "path": "ZEBLab_nov23_feb24_1m.csv",
+            "testcase": "219",
+            "step_period": 900,
+            "start_time": 1208700,
+            "maps" : {
+            "r" : {
+               "Ta": "TDryBul",
+               "phi_s": "HGloHor",
+               "Ti": "Ti"
+                },
+            "y": {
+                "Ti": "y1"
+                },
+            "u": {
+                }
+            }
+        }   
+    }
+}
+

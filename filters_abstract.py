@@ -74,6 +74,10 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             npt.NDArray[np.floating],
             None
         ] = None,
+        z0: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
         P0: Union[
             npt.NDArray[np.floating],
             None
@@ -91,7 +95,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             R=R,
             Q=Q,
             x0=x0,
-            P0=P0
+            z0=z0,
+            P0=P0,
         )
     
     """
@@ -285,6 +290,10 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             npt.NDArray[np.floating],
             None
         ] = None,
+        z0: Union[
+            npt.NDArray[np.floating],
+            None
+        ] = None,
         P0: Union[
             npt.NDArray[np.floating],
             None
@@ -304,6 +313,8 @@ class AbstractKalmanFilter(metaclass=ABCMeta):
             self.P = np.eye(self.n_x)
         if x0 is not None:
             self.x = x0
+        if z0 is not None:
+            self.z = z0
             
         hidden_setters = [
             getattr(self, name) for name in dir(self)

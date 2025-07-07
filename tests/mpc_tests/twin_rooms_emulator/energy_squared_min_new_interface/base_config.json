@@ -1,5 +1,5 @@
 {
-    "days": 1,
+    "days": 14,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
@@ -64,7 +64,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 172800
+            "start_time": 0
         }
     }
 }

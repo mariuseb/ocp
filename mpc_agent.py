@@ -342,7 +342,10 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
     ):
         Q = ca.DM.eye(self.estimator.n_x)
         R = ca.DM.eye(self.estimator.n_y)
-        R[1,1] = 1e-5 # config / learnable
+        try:
+            R[1,1] = 1e-5 # config / learnable
+        except:
+            pass
         P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
 
         P0[
@@ -368,7 +371,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         x_guess = np.array([
                 y_data.y1.values.flatten(),
                 y_data.y1.values.flatten() - 2,
-                y_data.y1.values.flatten() - 280
+                #y_data.y1.values.flatten() - 280
         ])
         return x_guess
     
@@ -388,12 +391,12 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         """
         k starts at zero:
         """
-        if self.re_estimation_clause(k):
+        if self.re_estimation_clause(env.i):
             # estimate, set params:
             Q, R, P0, lbp, ubp, p0 = self.get_estimation_parameters()
             y_data = self.get_y_data(
                 env,
-                k,
+                env.i,
                 backshift=env.maps.u,
                 integrate_replace=self.integrate_replace
             )
@@ -401,7 +404,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                 y_data
             )
             # solve:
-            sol, params = self.estimator.solve(
+            sol, params, raw_sol = self.estimator.solve(
                                         y_data,
                                         p0,
                                         lbp=lbp,
@@ -409,6 +412,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         x_guess=x_guess,
                                         covar=ca.veccat(Q, R),
                                         codegen=False,
+                                        return_raw_sol=True,
                                         P0=P0,
                                         x_N=x_guess[-1,-self.estimator.n_x:]
                                         ) 
@@ -419,6 +423,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             self.ests[k] = sol
             # set parameters globally on agent:
             self.params = params.values
+            # set parameters on filter:
+            self.filter.filter.params = params.values
         
         
     
@@ -447,7 +453,7 @@ class AdaptiveMPCAgent(AbstractAdaptiveAgent):
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
             ),
-            truncate_scaling=True,
+            truncate_scaling=False,
             arrival_cost=True,
             **self.get_est_scaling(
                 self.scaling
@@ -531,6 +537,58 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             
     
     
+class PredictiveAdaptiveAgent(AdaptiveMPCAgent):
+    """
+    This agent predicts (2,3, ..., M)-steps ahead
+    w/ fixed data.
+    
+    TODO: fix variable horizons.
+    """
+    def __init__(
+        self,
+        *args,
+        **kwargs
+    ) -> None: 
+        super().__init__(
+            *args,
+            **kwargs
+        )
+        self.F = self.mpc.integrator.chain_integrator()
+        self.F_map = self.F.mapaccum(self.mpc.N-1)
+    
+    def predict(
+        self,
+        obs: npt.NDArray[Any],
+        forecast: pd.DataFrame,
+        deterministic: bool = True
+    ) -> Tuple[pd.Series, bool]:
+        
+        sim_forecast = forecast[0:self.mpc.N-1]
+        
+        """
+        Simulate:
+        
+        TODO: modular way obtain z_guess for integrator
+        """
+        res = self.F_map(
+            x0=obs,
+            r=sim_forecast[self.mpc.r_names].values.T,
+            p=self.params
+        )
+        pred = pd.DataFrame(
+            columns=self.mpc.x(),
+            index=range(1,self.mpc.N),
+            data=np.array(
+                res["x"]
+            ).T
+        )
+        pred.loc[0] = obs
+        pred = pred.sort_index()
+        # store forecast, opt result:
+        self.forecasts[self.i] = forecast[0:self.mpc.N]
+        self.preds[self.i] = pred
+        self.i += 1
+        return pd.Series([]), False
     
     
     

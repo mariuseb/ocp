@@ -1,0 +1,69 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai_TVP*(phi_s/Ci) + (1/Ci)*alpha_vent_sup*ahu_reaFloSupAir*(T_sup_air - Ti) + (1/Ci)*alpha_vent_ext*ahu_reaFloExtAir*(Ti - T_ext_air) + (1/Ci)*alpha_int*phi_int + (1/Ci)*alpha_occ*phi_occ",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ai_TVP": "phi_s_high*Ai_high + (1 - phi_s_high)*Ai - Ai_TVP"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "Ai_high",
+            "alpha_vent_sup",
+            "alpha_vent_ext",
+            "alpha_int",
+            "alpha_occ"
+        ],
+        "r": [
+            "Ta",
+            "T_sup_air",
+            "T_ext_air",
+            "phi_h",
+            "phi_int",
+            "phi_occ",
+            "phi_s",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir",
+            "weeknd",
+            "vent",
+            "stepQi",
+            "phi_s_high"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "Ai_TVP"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": false
+}

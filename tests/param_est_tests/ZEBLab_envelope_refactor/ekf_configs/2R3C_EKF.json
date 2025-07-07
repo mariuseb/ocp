@@ -1,0 +1,61 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*Prad + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "dT": "rad_219*(dTdim - dT)/tau + (1 - rad_219)*(dTpeak - dT)/tau"
+        },
+        "alg": {
+            "Prad": "Prad - dT*rad_219*rad_flo_nom*cp_water",
+            "dTdim": "dTdim - (dT_b - dT_a*(Ta - Ta_dim))",
+            "dTpeak": "dTpeak - (dTpeak_b - dT_a*(Ta - Ta_dim))"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "dT_b",
+            "dT_a",
+            "Ta_dim", 
+            "rad_flo_nom",
+            "dTpeak_b",
+            "tau", 
+            "cp_water"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "cost"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "dT"
+        ],
+        "z": [
+            "Prad",
+            "dTdim",
+            "dTpeak"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "x0": [293.15, 293.15, 0]
+}

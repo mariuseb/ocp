@@ -1,0 +1,72 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*phi_h + Ai_TVP*(phi_s/Ci) + (1/Ci)*alpha_vent_sup*ahu_reaFloSupAir*(T_sup_air - Ti) + (1/Ci)*alpha_vent_ext*ahu_reaFloExtAir*(Ti - T_ext_air) + (1/Ci)*alpha_int*phi_int + (1/Ci)*alpha_occ*phi_occ",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Ai_TVP": "phi_s_high*Ai_high + (1 - phi_s_high)*Ai - Ai_TVP"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "Ai_high",
+            "alpha_vent_sup",
+            "alpha_vent_ext",
+            "alpha_int",
+            "alpha_occ"
+        ],
+        "r": [
+            "Ta",
+            "T_sup_air",
+            "T_ext_air",
+            "phi_h",
+            "phi_int",
+            "phi_occ",
+            "phi_s",
+            "ahu_reaFloSupAir",
+            "ahu_reaFloExtAir",
+            "weeknd",
+            "vent",
+            "stepQi",
+            "phi_s_high"
+        ],
+        "z": [
+            "Ai_TVP"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280],
+            "ubx": [340,340]
+        }
+    },
+    "N": 96,
+    "dt": 900,
+    "objective": "ca.sum1(phi_h) + 1E3*dot(sl, sl)",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.max_iter" : 1E5
+    },
+    "codegen": false
+}

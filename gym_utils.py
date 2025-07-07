@@ -116,11 +116,11 @@ class BoptestGymABC(metaclass=ABCMeta):
             else:
                 ser = res[y_name]     
             index = np.array(res.index)
-            l1 = ax.plot(index, ser.values, drawstyle="steps-post", color=next(colors), label="$%s_%s$" % (prefix, suffix))
+            l1 = ax.plot(index, ser.values, linewidth=0.75, drawstyle="steps-post", color=next(colors), label="$%s_%s$" % (prefix, suffix))
             ax1 = ax.twinx()
             ax2 = ax.twinx()
-            l2 = ax1.plot(index, res[[heat_key]].values, drawstyle="steps-post", color="k", linestyle="dashed", label="$\phi_h$")
-            l3 = ax2.plot(index, res[[cost_key]].values, drawstyle="steps-post", color="b", linestyle="dashed", label="$c$")
+            l2 = ax1.plot(index, res[[heat_key]].values, linewidth=0.75, drawstyle="steps-post", color="k", linestyle="dashed", label="$\phi_h$")
+            l3 = ax2.plot(index, res[[cost_key]].values, linewidth=0.75, drawstyle="steps-post", color="y", linestyle="dashed", label="$c$")
             ax2.spines["right"].set_position(("axes", 1.1))
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d %H:%M'))
             
@@ -152,6 +152,7 @@ class BoptestGymABC(metaclass=ABCMeta):
                     l_upper = ax.plot(index,
                                     (df[("ub", y_name)].values), 
                                     #(df[y_name + "_ub"].values), 
+                                    linewidth=0.75,
                                     drawstyle="steps-" + style,
                                     color=cols_bds[0],
                                     label="$%s_{%s}^{ub}$" % (prefix, suffix))
@@ -159,6 +160,7 @@ class BoptestGymABC(metaclass=ABCMeta):
                     l_lower = ax.plot(index, 
                                     #(df[y_name + "_lb"].values),
                                     (df[("lb", y_name)].values), 
+                                    linewidth=0.75,
                                     drawstyle="steps-" + style,
                                     color=cols_bds[1],
                                     label="$%s_{%s}^{lb}$" % (prefix, suffix))

@@ -27,15 +27,137 @@ from typing import Union, Dict, List
 from ocp.integrator_factory import integrator_factory
 from ocp.gym_utils import get_forecast_df, BoptestGymABC
 from ocp.maps import BoptestMaps
+from ocp.utils import ZEBData
 
-"""
-integrator: Union[Path, dict] = dict(),
-model: Union[Path, dict] = dict(),
-step_period: int = 900,
-parameters: npt.NDArray[np.floating] = np.array([]),
-maps: Dict[str, Dict[str, str]] = dict(),
-"""
 
+
+class DataEnv(gym.Env):
+    """An environment containing static data."""
+    
+    def __init__(
+        self,
+        path: str = "",
+        testcase: str = "",
+        step_period: int = 0,
+        start_time: int = 0,
+        maps: Dict[str, Dict[str, str]] = dict(),
+    ):
+        self.data = ZEBData(
+            path,
+            int(testcase)
+        )
+        self.start_time = start_time
+        self.dt = step_period
+        self.maps = BoptestMaps(
+            maps,
+            non_boptest=True
+        )
+        self.res = self.get_res(
+            self.data,
+            str(int(self.dt/60)) + "min"
+        )
+        _, _ = self.reset()
+        
+    @property
+    def start_i(self):
+        return int(self.start_time/self.dt)
+        
+    def reset(
+        self,
+        *,
+        seed: Optional[int] = None,
+        options: Optional[dict[str, Any]] = None,
+    ) -> tuple[npt.NDArray[np.floating], dict[str, Any]]:
+        super().reset(seed=seed, options=options)
+        self.time = self.start_time
+        self.i = self.start_i
+        s = self.get_obs(
+            self.time
+        )
+        return s, {}
+    
+    def get_obs(
+        self,
+        time: int
+    ):
+        obs_names = self.maps.y.values()
+        s = self.res.loc[
+            time, obs_names
+        ].values
+        return s
+        
+    def get_res(
+        self,
+        data,
+        sampling_time: str
+    ):
+        start = data.data.index[0].round(
+                sampling_time
+        )        
+        stop = data.data.index[-1].round(
+            sampling_time
+        )
+        dt_index = pd.date_range(
+            start=start,
+            end=stop,
+            freq=sampling_time
+        )
+        # now, res:
+        res, dt, N = data.get_dataset(
+            start=start,
+            stop=stop,
+            sampling_rate=sampling_time
+        )
+        res["dt_index"] = dt_index[1:-1]
+        res = self.all_temps_to_K(res).bfill()
+        return res
+     
+    def all_temps_to_K(self, df):
+        cols = [col for col in df.columns if col.startswith("T") or col.startswith("y")]
+        df[cols] += 273.15
+        return df
+        
+    def step(
+        self,
+        action: npt.NDArray[np.floating]
+    ) -> tuple[
+        npt.NDArray[np.floating],
+        float,
+        bool, 
+        bool,
+        dict[str, Any]
+    ]:
+        self.i += 1
+        self.time += self.dt
+        # TODO: which vars?
+        s = self.get_obs(self.time)
+        return s, 0, False, False, {}
+    
+    def get_results(
+        self,
+        tf,
+        ts=0,
+        resample=True
+    ) -> pd.DataFrame:
+        return self.res.loc[ts:tf].rename(
+            columns=self.boptest_to_ocp
+        )
+        
+    def get_forecast(
+        self,
+        dt: int,
+        N: int
+    ) -> pd.DataFrame:
+        return self.res.loc[
+            self.time:(self.time + self.dt*N)
+        ].rename(
+            columns=self.boptest_to_ocp   
+        )
+        
+    @property
+    def boptest_to_ocp(self) -> Dict[str, str]:
+        return self.maps.boptest_to_ocp
+        
 class CustomGymEnv(gym.Env, BoptestGymABC):
     """A simple simulator."""
     

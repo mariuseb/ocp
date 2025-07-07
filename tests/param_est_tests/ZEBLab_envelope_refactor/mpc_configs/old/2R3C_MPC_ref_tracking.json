@@ -1,0 +1,81 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*Prad + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "dT": "rad_219*(dTdim - dT)/tau + (1 - rad_219)*(dTpeak - dT)/tau"
+        },
+        "alg": {
+            "Prad": "Prad - dT*rad_219*rad_flo_nom*cp_water",
+            "dTdim": "dTdim - (dT_b - dT_a*(Ta - Ta_dim))",
+            "dTpeak": "dTpeak - (dTpeak_b - dT_a*(Ta - Ta_dim))"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "dT_b",
+            "dT_a",
+            "Ta_dim", 
+            "rad_flo_nom",
+            "dTpeak_b",
+            "tau", 
+            "cp_water"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "Ti_ref"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "dT"
+        ],
+        "z": [
+            "Prad",
+            "dTdim",
+            "dTpeak"
+        ]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,0],
+            "ubx": [340,340,30]
+        },
+        "z": {
+            "lbz": [0,0,0],
+            "ubz": [1E4,30,30]
+        },
+        "u": {
+            "lbu": [0],
+            "ubu": [1]
+        }
+    },
+    "N": 24,
+    "dt": 900,
+    "objective": "dot(Ti_ref - Ti, Ti_ref - Ti) + 1E-6*dot(Prad, Prad)",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.max_iter" : 1E5
+    },
+    "codegen": false
+}
