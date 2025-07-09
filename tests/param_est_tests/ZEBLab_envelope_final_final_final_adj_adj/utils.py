@@ -21,6 +21,30 @@ from scipy.stats import norm
 from hampel import hampel
 # text:
     
+def _solve_rosenbrock():
+    # Declare variables
+    x = ca.SX.sym("x")
+    y = ca.SX.sym("y")
+    z = ca.SX.sym("z")
+
+    # Formulate the NLP
+    f = x**2 + 100*z**2
+    g = z + (1-x)**2 - y
+    nlp = {'x': ca.vertcat(x,y,z), 'f':f, 'g':g}
+
+    # Create an NLP solver
+    solver = ca.nlpsol(
+        "solver", 
+        "ipopt",
+        nlp,
+        {"ipopt.print_level": 0}
+    )
+    # Solve the Rosenbrock problem
+    res = solver(
+        x0 =[2.5,3.0,0.75],
+        ubg=0,
+        lbg=0)
+    
 def prepare_data(data, room=219):
     """
     Prepare data for identification.
@@ -40,8 +64,10 @@ def prepare_data(data, room=219):
     y_data["T_sup_air"] = data["T_sup_air_" + str(room)] # + 273.15
     y_data["V_ext_air"] = data["V_ext_air_" + str(room)]
     y_data["V_sup_air"] = data["V_sup_air_" + str(room)]
-    y_data["ahu_reaFloSupAir"] =  data["V_sup_air_" + str(room)]*(1.292/3600)*1000
-    y_data["ahu_reaFloExtAir"] =  data["V_ext_air_" + str(room)]*(1.292/3600)*1000
+    #y_data["ahu_reaFloSupAir"] =  data["V_sup_air_" + str(room)]*(1.292/3600)*1000
+    #y_data["ahu_reaFloExtAir"] =  data["V_ext_air_" + str(room)]*(1.292/3600)*1000
+    y_data["ahu_reaFloSupAir"] =  data["V_sup_air_" + str(room)]*(1.292/3600)
+    y_data["ahu_reaFloExtAir"] =  data["V_ext_air_" + str(room)]*(1.292/3600)
     # indoor temp:
     y_data["Ti"] = temps_219
     y_data.Ti[y_data.Ti > 30] = 30

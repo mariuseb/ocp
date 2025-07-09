@@ -26,6 +26,7 @@ from ocp.utils import prepare_data, ZEBData, quick_plot
 from result_generator import ResultGenerator, plot_residuals
 from ocp.filters import KalmanDAE
 from pandas.plotting import autocorrelation_plot
+from utils import _solve_rosenbrock
 # text:
 #rc('mathtext', default='regular')
 rc('text', usetex=True)
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     Proof of concept for grey-box SYSID, ZEB Lab.
     Use room 219 first.
     """
-    
+    _solve_rosenbrock()
     param_guess = {
                     "Rie": 
                     {

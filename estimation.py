@@ -268,6 +268,7 @@ class Estimation(OCP, CovarianceEstimation):
                             #p=0
                             )
         ### The below is 'MHE-specific':
+        self.raw_sol = solution
         self.sol_df, params = self.parse_solution(solution)
         # k given by history thus far:
         k = len(self.df) + self.N - 1

@@ -26,6 +26,7 @@ from ocp.utils import prepare_data, ZEBData, quick_plot
 from result_generator import ResultGenerator, plot_residuals
 from ocp.filters import KalmanDAE
 from pandas.plotting import autocorrelation_plot
+from utils import _solve_rosenbrock
 # text:
 #rc('mathtext', default='regular')
 rc('text', usetex=True)
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     Proof of concept for grey-box SYSID, ZEB Lab.
     Use room 219 first.
     """
-    
+    _solve_rosenbrock()
     param_guess = {
                     "Rie": 
                     {
@@ -262,6 +263,11 @@ if __name__ == "__main__":
         
     
     res = result_gen.val_res
+    prbs_res = pd.read_csv("prbs_val_nov.csv", index_col=0)
+    prbs_res["Ti_sim"] = prbs_res["Ti_sim"].astype(float)
+    
+    result_gen.make_journal_plot_alt("whole_day_nov_2023", training=False, ref_result=prbs_res)
+    
     res["Ti_res"] = res["y1"] - res["Ti_onestep"]
     res["v1"] = res["y1"] - res["Ti_sim"]
     plot_residuals(res, res, "covar_opt")
@@ -270,7 +276,6 @@ if __name__ == "__main__":
     result_gen.make_journal_plot_alt("training_nov_2023_day13", day=13)
     result_gen.make_data_plot_alt("training_data_nov_2023_day13", day=13)
     
-    result_gen.make_journal_plot_alt("whole_day_nov_2023", training=False)
     result_gen.residuals.to_csv("to_CTSMR/residuals_tvp_nov_non_covar_opt_jan_H=1.csv")
     params_hist.to_csv("LTI_reiden_no_covar_opt_nov.csv")
     train_metrics.to_csv("metrics/train_metrics_LTI_no_reiden_covar_opt.csv")

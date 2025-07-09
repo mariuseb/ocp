@@ -54,6 +54,7 @@ pd.set_option('future.no_silent_downcasting', True)
 #my_cmap = sns.color_palette("Spectral", as_cmap=True)
 #my_cmap = sns.color_palette("bright", as_cmap=True)
 colors = sns.color_palette("Set1") #, as_cmap=True)
+colors = ["#006400", "#ff4500", "#ffd700", "#c71585", "#00ff00", "#00ffff", "#0000ff", "#1e90ff"]
 
 def discrete_cmap(N, base_cmap=None):
     """Create an N-bin discrete colormap from the specified input map"""
@@ -73,18 +74,19 @@ def discrete_cmap(N, base_cmap=None):
 my_cmap = ListedColormap(sns.color_palette(colors).as_hex())
 color_cycler = plt.cycler(color=colors)
 
+
 color_map_custom = {
-    "space_heat": colors[0],
-    "vent_in": colors[4],
-    "vent_out": colors[-2],
-    "solar": colors[5],
-    "one_step": colors[1],
-    "sim": colors[2],
+    "space_heat": colors[1],
+    "vent_in": colors[3],
+    "vent_out": colors[4],
+    "solar": colors[2],
+    "one_step": colors[7],
+    "sim": colors[6],
     "meas": "k",
-    "int_gains": colors[-3],
+    "int_gains": colors[0],
     #"temp_amb": colors[-1],
-    "temp_amb": "g",
-    "binary": colors[3],
+    "temp_amb": "k",
+    "binary": colors[5],
     "T_219_TR1": "dimgray", 
     "T_219_TR2": "gray", 
     "T_219_TR3": "darkgray", 
@@ -1484,7 +1486,8 @@ class ResultGenerator(object):
                           self,
                           name,
                           training=True,
-                          day=0
+                          day=0,
+                          ref_result=None
                          ):
         
         SMALL_SIZE = 14
@@ -1504,7 +1507,8 @@ class ResultGenerator(object):
         self.save_journal_plot_alt_alt(
                                 "plots/" + name + ".pdf",
                                    training=training,
-                                   day=day
+                                   day=day,
+                                   ref_result=ref_result
                                    )
     def make_data_plot_alt(
                           self,
@@ -1763,7 +1767,7 @@ class ResultGenerator(object):
         plt.savefig(name.replace(".pdf", ".png"))
         plt.close()
         
-    def save_journal_plot_alt_alt(self, name, training=True, day=0):
+    def save_journal_plot_alt_alt(self, name, training=True, day=0, ref_result=None):
         """
         Make a nicely formatted plot of
         simulation result, boundary conditions.
@@ -1792,6 +1796,10 @@ class ResultGenerator(object):
             """
             Forward-fill every column except sim pred:
             """
+            if ref_result is not None:
+                ref_result.index = pd.to_datetime(ref_result.index)
+                data["Ti_onestep"] = ref_result["Ti_sim"]
+            
             rest = data.columns.drop(["Ti_sim"])
             data[rest] = data[rest].ffill()
             data["Ti_sim"] = data["Ti_sim"].ffill()
@@ -1839,9 +1847,9 @@ class ResultGenerator(object):
         ax.set_ylim([ylim[0], ylim[1]*1.05])
         ax.legend(
                   [
-                   "$\\hat{x}_{k|k-1}$", 
+                   "$x_{K|K-M}^{prbs}$", 
                    "$y_{N}$",
-                   "$x_{K|K-M}$"
+                   "$x_{K|K-M}^{adapt}$"
                    ],
                   loc="upper left",
                   bbox_to_anchor=(0.0, 1.28),
@@ -2130,7 +2138,7 @@ class ResultGenerator(object):
         #(data["T_321"] - 273.15).plot(color="b", ax=ax, linewidth=0.75)
         #(data["T_320"] - 273.15).plot(color="y", ax=ax, linewidth=0.75)
         ax.plot(index.to_numpy(),
-                (data["ahu_reaFloSupAir"]).to_numpy(),
+                (data["V_sup_air"]).to_numpy(),
                                  #color="k",
                                  linestyle="dashed",
                                  #ax=ax,
@@ -2138,7 +2146,7 @@ class ResultGenerator(object):
                                  linewidth=0.75
                                  )
         ax.plot(index.to_numpy(),
-                (data["ahu_reaFloExtAir"]).to_numpy(),
+                (data["V_ext_air"]).to_numpy(),
                                  #color="g",
                                  linestyle="dashed",
                                  c=color_map_custom["vent_out"],
@@ -2149,7 +2157,7 @@ class ResultGenerator(object):
         #(data["T_320"]).plot(color="y", ax=ax, linewidth=0.75)
         #ax.legend(["$T_{sup}^{v}$", "$T_{321}$", "$T_{320}$"], loc="upper right", ncol=3)
         ax.legend(["$V_{sup}^{v}$", "$V_{ext}^{v}$"], loc="upper right", ncol=1)
-        ax.set_ylabel("Airflow [$\\frac{kg}{s}$]")
+        ax.set_ylabel("Airflow [$\\frac{m^3}{h}$]")
         ax.set_xlabel("")
         ylim = ax.get_ylim()
         ax.set_ylim([ylim[0], ylim[1]*1.2])
@@ -2169,7 +2177,7 @@ class ResultGenerator(object):
         ax.legend(["$\phi_s$"], loc="upper left", ncol=1)
         ylim = ax.get_ylim()
         ax.set_ylim([ylim[0], ylim[1]*1.1])
-        ax.set_ylabel("Solar global [$\\frac{kW}{m^2}$]")
+        ax.set_ylabel("Solar irr. [$\\frac{kW}{m^2}$]")
         ax.set_yticks([0,0.5])
         ax.set_xlabel("")
         

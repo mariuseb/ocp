@@ -43,7 +43,7 @@ def prepare_data(data, room=219):
     y_data["T_sup_air"] = data["T_sup_air_" + str(room)] # + 273.15
     y_data["V_ext_air"] = data["V_ext_air_" + str(room)]
     y_data["V_sup_air"] = data["V_sup_air_" + str(room)]
-    y_data["ahu_reaFloSupAir"] =  data["V_sup_air_" + str(room)]*(1.292/3600)*1000
+    y_data["ahu_reaFloSupAir"] =  data["V_sup_air_" + str(room)]*(1.292/3600)*1000 # cp air is included here...
     y_data["ahu_reaFloExtAir"] =  data["V_ext_air_" + str(room)]*(1.292/3600)*1000
     # indoor temp:
     y_data["Ti"] = temps_219
