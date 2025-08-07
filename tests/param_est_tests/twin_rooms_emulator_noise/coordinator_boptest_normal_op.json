@@ -1,6 +1,6 @@
 {
     "days": 1,
-    "sampling_time": "1min",
+    "sampling_time": "60min",
     "controller": {
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
@@ -66,14 +66,21 @@
                 "rad_flo": "reaRadFlow219",
                 "rad_flo_acc": "reaRadAccFlo219",
                 "Tret": "reaRadTRet219",
-                "Tsup": "reaRadTSup219"
+                "Tsup": "reaRadTSup219",
+                "phi_int": "floor5Zone_Shading_reaAuxPow",
+                "Tsup_air": "AHU219_reaTSupAir",
+                "Tret_air": "AHU219_reaTRetAir",
+                "fan_220_y": "AHU220_reaFloSupAir",
+                "fan_219_y": "AHU219_reaFloSupAir",
+                "fan_ret_220_y": "AHU220_reaFloExtAir",
+                "fan_ret_219_y": "AHU219_reaFloExtAir"
             }
         },
             "random_start_time": false,
             "max_episode_length": 86400,
             "warmup_period": 0,
-            "step_period": 900,
-            "start_time": 86400
+            "step_period": 3600,
+            "start_time": 604800
         }
     }
 }

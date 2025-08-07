@@ -1,0 +1,77 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1/Ci)*Prad + Ai*(phi_s/Ci)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "rad_flo": "rad_flo - rad_flo_nom*regNonZeroPower(rad_219, n, 1E-6)",
+            "Prad": "Prad - dT*rad_flo*cp_water",
+            "dT": "dT - (dT_b - dT_a*(Ta - Ta_dim))"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v2": "rad_flo - y2",
+            "v3": "Prad - y3",
+            "v4": "dT - y6"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "dT_b",
+            "dT_a",
+            "Ta_dim", 
+            "rad_flo_nom",
+            "tau", 
+            "tau_flow", 
+            "n", 
+            "cp_water"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "m_flow_bool"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "rad_flo",
+            "Prad",
+            "dT"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "rad_flo"],
+            ["y3", "Prad"],
+            ["y6", "dT"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_iter": 30000,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

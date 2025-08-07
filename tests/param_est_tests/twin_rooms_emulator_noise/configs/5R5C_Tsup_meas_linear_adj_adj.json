@@ -65,7 +65,8 @@
         "z": [
           "rad_flo_set",
           "Tset_sup",
-          "Prad"
+          "Prad",
+          "tau_TVP"
         ],
         "y": [
             ["y1", "Ti"],
@@ -82,8 +83,8 @@
             "ubx": [340,340,340,340,0.15]
         },
         "z": {
-            "lbz": [-0.05,290,-1000],
-            "ubz": [0.15,330,1E4]
+            "lbz": [-0.05,290,-1000,0],
+            "ubz": [0.15,330,1E4,1E4]
         }
     },
     "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3] + dot(m_flow_bool*v5, m_flow_bool*v5)@R[4,4]",

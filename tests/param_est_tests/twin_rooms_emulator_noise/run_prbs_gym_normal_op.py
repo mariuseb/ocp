@@ -56,21 +56,23 @@ if __name__ == "__main__":
         cfg
     )
     env = coord.env
+    sampling_time = "60min"
+    dt = int(sampling_time.strip("min"))*60
+    
     prbs, N = prepare_prbs(
-        "PRBS_modified.csv", sampling_time="15min"
+        "PRBS_modified.csv", sampling_time=sampling_time
     )
     obs, _ = env.reset()
     meas = env.measurement_vars+env.predictive_vars
     acts = env.actions
+    
+    M = 24*56 # 
     res = pd.DataFrame(
         columns=acts+meas,
-        index=range(N+1)
+        index=range(M)
     )
-    res.loc[:] = np.nan
     res.loc[0, meas] = obs
-    
-    M = N+2*96
-    #M = 96
+    res.loc[:] = np.nan
     
     for n in range(M):
         obs, reward, terminated, truncated, info = env.step([None])
@@ -80,12 +82,12 @@ if __name__ == "__main__":
     res_ocp = res.rename(
         columns=env.maps.boptest_to_ocp
     )
-    res_ocp.index *= 900
+    res_ocp.index *= dt
     res_ocp.index = pd.to_timedelta(
         res_ocp.index, unit="s"
     )
     
-    _res = env.get_results(tf=M*900) 
+    _res = env.get_results(tf=M*dt) 
     _res.index = res_ocp.index
     #res_ocp[["Prad", "rad_flo"]] = res_ocp[["Prad", "rad_flo"]].shift(-1)
     res_ocp["rad_219"] = _res["rad_219"].shift(-1)
@@ -97,7 +99,7 @@ if __name__ == "__main__":
     plt.show()
     res_ocp["Prad_calc"] = res_ocp["Prad_calc"].shift(-1)
     res_ocp["rad_flo_calc"] = res_ocp["rad_flo_calc"].shift(-1)
-    res_ocp[:-2].to_csv("twin_rooms_emulator_normal_op_15min.csv", index=True)
+    res_ocp.to_csv("twin_rooms_emulator_normal_op_%s.csv" % (sampling_time, ), index=True)
     
     """
     ax = res_ocp["Ti"].plot(drawstyle="steps-post")

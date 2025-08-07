@@ -207,7 +207,7 @@ class OCP(metaclass=ABCMeta):
         else:
             self.dt = dt
         
-        config["model"]["functions"] = functions
+        #config["model"]["functions"] = functions
         ## objective:
         self.obj_string = config.pop("objective", None)
         

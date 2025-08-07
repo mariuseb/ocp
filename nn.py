@@ -10,7 +10,6 @@ from collections import defaultdict
 import gymnasium as gym
 from PIL import Image
 import matplotlib.pyplot as plt
-
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -45,20 +44,51 @@ class NN(nn.Module):
         self.y_scale = y_scale
         self.max_flow = max_flow
         self.fc1 = nn.Linear(state_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        #self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, action_dim)
         self.double()
 
     def forward(self, x):
         x = torch.as_tensor(x).double()
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        #x = F.relu(self.fc2(x))
         """
         Assumes normalization:
         """
         return F.relu(self.fc3(x))
+        #return F.relu(self.fc1(x))
     
     from collections import namedtuple
+
+    
+class LSTMModel(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size, num_layers=1):
+        super(LSTMModel, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        
+        # Define the LSTM layer
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        
+        # Define a linear layer to map LSTM output to desired output size
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        # Initialize hidden and cell states
+        #h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        #c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        
+        # Pass input through LSTM
+        # output: (batch_size, sequence_length, hidden_size)
+        # (hn, cn): tuple of (num_layers * num_directions, batch_size, hidden_size)
+        #output, (hn, cn) = self.lstm(x, (h0, c0))
+        output, (hn, cn) = self.lstm(x)
+        
+        # Take the output from the last time step
+        # For sequence-to-one tasks, use hn[-1] or output[:, -1, :]
+        out = self.fc(output[:, -1, :]) 
+        #out = self.fc(hn[-1]) 
+        return out
     
 
 
@@ -72,9 +102,9 @@ def get_train_config():
     # optimizer parameters
     #train_config['max_iters'] = 20000
     train_config['max_iters'] = 1E5
-    train_config['batch_size'] = 128
+    train_config['batch_size'] = 32
     #train_config['learning_rate'] = 4e-5
-    train_config['learning_rate'] = 1e-2
+    train_config['learning_rate'] = 1e-4
     train_config['betas'] = (0.9, 0.95)
     train_config['weight_decay'] = 0.1 # only applied on matmul weights
     train_config['grad_norm_clip'] = 1.0
@@ -119,64 +149,6 @@ class Trainer:
     def trigger_callbacks(self, onevent: str):
         for callback in self.callbacks.get(onevent, []):
             callback(self)
-
-    def run(self):
-        model, config = self.model, self.config
-
-        # setup the optimizer
-        # self.optimizer = model.configure_optimizers(config) # different weight decays
-        self.optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, betas=config.betas) # same weight decays
-
-        # setup the dataloader
-        train_loader = DataLoader(
-            self.train_dataset,
-            sampler=torch.utils.data.RandomSampler(self.train_dataset, replacement=True, num_samples=int(1e10)),
-            shuffle=False,
-            pin_memory=True,
-            batch_size=config.batch_size,
-            num_workers=config.num_workers,
-        )
-
-        model.train()
-        self.iter_num = 0
-        self.iter_time = time.time()
-        data_iter = iter(train_loader)
-        #criterion = torch.nn.MSELoss()
-        while True:
-
-            # fetch the next batch (x, y) and re-init iterator if needed
-            try:
-                batch = next(data_iter)
-            except StopIteration:
-                # restart a new epoch
-                data_iter = iter(train_loader)
-                batch = next(data_iter)
-            batch = [t.to(self.device) for t in batch]
-            x, y = batch
-
-            # forward the model
-            #logits, self.loss = model(x, y)
-            output = model(x)
-            zero_tensor = torch.tensor([[0]]*config.batch_size, dtype=torch.float64)
-            constraint = torch.dot(model(zero_tensor).flatten(), model(zero_tensor).flatten())
-            self.loss = self.criterion(output, y) + constraint
-
-            # backprop and update the parameters
-            model.zero_grad(set_to_none=True)
-            self.loss.backward()
-            #self.loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
-            self.optimizer.step()
-
-            self.trigger_callbacks('on_batch_end')
-            self.iter_num += 1
-            tnow = time.time()
-            self.iter_dt = tnow - self.iter_time
-            self.iter_time = tnow
-
-            # termination conditions
-            if config.max_iters is not None and self.iter_num >= config.max_iters:
-                break
 
     def run(self):
         model, config = self.model, self.config
@@ -363,8 +335,66 @@ class Trainer:
             """
             try with loss tolerance 1E-3:
             """
-            if self.loss < 1e-4:
-            #if self.loss < 2E-2:
+            #if self.loss < 1e-4:
+            if self.loss < 3E-2:
+                break
+
+    def run(self):
+        model, config = self.model, self.config
+        # setup the optimizer
+        # self.optimizer = model.configure_optimizers(config) # different weight decays
+        self.optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, betas=config.betas) # same weight decays
+        # setup the dataloader
+        train_loader = DataLoader(
+            self.train_dataset,
+            sampler=torch.utils.data.RandomSampler(self.train_dataset, replacement=True, num_samples=int(1e10)),
+            shuffle=False,
+            pin_memory=True,
+            batch_size=config.batch_size,
+            num_workers=config.num_workers,
+        )
+        model.train()
+        self.iter_num = 0
+        self.iter_time = time.time()
+        data_iter = iter(train_loader)
+        #criterion = torch.nn.MSELoss()
+        while True:
+            # fetch the next batch (x, y) and re-init iterator if needed
+            try:
+                batch = next(data_iter)
+            except StopIteration:
+                # restart a new epoch
+                data_iter = iter(train_loader)
+                batch = next(data_iter)
+            batch = [t.to(self.device) for t in batch]
+            x, y = batch
+            # forward the model
+            #logits, self.loss = model(x, y)
+            output = model(x)
+            # add prior from NS3031:
+            self.loss = self.criterion(output[:,0], y[:,0])
+
+            # backprop and update the parameters
+            model.zero_grad(set_to_none=True)
+            self.loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
+            self.optimizer.step()
+
+            self.trigger_callbacks('on_batch_end')
+            self.iter_num += 1
+            tnow = time.time()
+            self.iter_dt = tnow - self.iter_time
+            self.iter_time = tnow
+
+            # termination conditions
+            if config.max_iters is not None and self.iter_num >= config.max_iters:
+                break
+            """
+            try with loss tolerance 1E-3:
+            """
+            #if self.loss < 1e-4:
+            #if self.loss < 1E-2:
+            if self.loss < 1e-3:
                 break
 
 

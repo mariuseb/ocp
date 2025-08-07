@@ -24,6 +24,7 @@ from ocp.utils import prepare_data, ZEBData
 from ocp.covar_solver_cont_old import CovarianceSolverContinuous
 from copy import deepcopy
 from utils import prepare_data, prepare_est
+from ocp.functions import functions
 #from result_generator import ResultGenerator, plot_residuals
 # text:
 #rc('mathtext', default='regular')
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     """
     sysid using PRBS.
     """
-    cfg_path = os.path.join("configs", "2R2C.json")
+    cfg_path = os.path.join("configs", "2R3C.json")
     data_path = os.path.join(
                             "twin_rooms_emulator_PRBS_new_15min.csv"
                             )
@@ -51,7 +52,15 @@ if __name__ == "__main__":
         integrate_inputs=False
     )
     y_data["Prad"] = y_data["Prad_calc"]
-    param_guess, kwargs, lbx, ubx, x_guess = prepare_est(y_data, n_x=2)
+    y_data["rad_flo"] = y_data["rad_flo_calc"]
+    param_guess, kwargs, lbx, ubx, x_guess = prepare_est(y_data, n_x=3)
+    
+    
+    params_rad = pd.read_csv("2R3C_rad_model.csv", index_col=0)
+    for ndx in params_rad.index:
+        param_guess[ndx]["lb"] = params_rad.loc[ndx].iloc[0]
+        param_guess[ndx]["ub"] = params_rad.loc[ndx].iloc[0]
+        param_guess[ndx]["init"] = params_rad.loc[ndx].iloc[0]
     
     kwargs["z_nom"] = [1E4]
     kwargs["z_nom_b"] = [0]
@@ -60,6 +69,10 @@ if __name__ == "__main__":
     kwargs["r_nom"] = [12,1E4,1]
     kwargs["r_nom_b"] = [289.15,0,0]
     
+    kwargs = {
+        "slack": False
+    }
+    
     with Estimation(
                     config=cfg_path,
                     N=N,
@@ -67,11 +80,15 @@ if __name__ == "__main__":
                     param_guess=param_guess,
                     truncate_scaling=True,
                     arrival_cost=True,
+                    functions=functions,
                     **deepcopy(kwargs)
                     ) as param_est:
 
-        Q = ca.DM.eye(2)
-        R = ca.DM.eye(1)
+        Q = ca.DM.eye(3)
+        R = ca.DM.eye(4)
+        R[1,1] = 0
+        R[2,2] = 0
+        R[3,3] = 0
         P0 = np.eye(param_est.n_p + param_est.n_x)*1e-2
         P0[
            param_est.n_p:(param_est.n_p + param_est.n_x),
@@ -88,8 +105,8 @@ if __name__ == "__main__":
                                       p0,
                                       lbp=lbp,
                                       ubp=ubp,
-                                      lbx=lbx,
-                                      ubx=ubx,
+                                      #lbx=lbx,
+                                      #ubx=ubx,
                                       x_guess=x_guess,
                                       covar=ca.veccat(Q, R),
                                       codegen=True,
@@ -108,7 +125,7 @@ if __name__ == "__main__":
         #sol["phi_h"].plot(drawstyle="steps-post",ax=ax1)
         plt.show()
         #plt.close()
-        #params.to_csv("envelope_model_2R2C.csv", index=True)
+        params.to_csv("2R3C_params.csv", index=True)
         #sol.to_csv("simulation_traj_2R2C.csv", index=True)
         print(params) 
 

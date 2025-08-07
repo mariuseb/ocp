@@ -1,5 +1,5 @@
 {
-    "days": 2,
+    "days": 14,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
@@ -11,16 +11,16 @@
             "x_nom_b": 289.15,
             "u_nom": [1],
             "u_nom_b ": [0],
-            "r_nom": [12,2.5E3,1],
-            "r_nom_b": [289.15,0,0],
-            "z_nom": [2.5E3,12,12],
-            "z_nom_b": [0,289.15,289.15],
+            "r_nom": [12,12,2.5E3,1e-1,2.5E3],
+            "r_nom_b": [289.15,289.15,0,0,0],
+            "z_nom": [1E-1,2.5E3,12,12],
+            "z_nom_b": [0,0,289.15,289.15],
             "slack": true
         },
         "filter_config_file": "ekf_configs/2R3C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true,
-        "parameters": "envelope_model_2R3C_alt_alt.csv",
+        "parameters": "2R3C_params.csv",
         "reiden": false,
         "reiden_freq": 96,
         "reiden_N": 1344,
@@ -46,7 +46,8 @@
                "dh_cost": "PriceDistrictHeatingPower",
                "dh_emissions": "EmissionsDistrictHeatingPower",
                "Ti_lb": "LowerSetp[1]",
-               "Ti_ub": "UpperSetp[1]"
+               "Ti_ub": "UpperSetp[1]",
+               "n_occ": "Occupancy[3]"
               },
         "u" : {
                "rad_219": "waterTRVSplitterManifold2Zone_val219_oveValRad",
@@ -70,7 +71,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 172800
+            "start_time": 864000
         }
     }
 }

@@ -3,6 +3,7 @@ import casadi as ca
 import re
 import numpy as np
 import numpy.typing as npt
+from ocp.functions import functions
 import scipy
 import pdb
 
@@ -18,9 +19,9 @@ class DAE(object):
         self.config = config
         
         # get functions:
-        functions = config.pop("functions", None)
-        if functions is not None:
-            for k, v in functions.items():
+        _functions = config.pop("functions", functions)
+        if _functions is not None:
+            for k, v in _functions.items():
                 setattr(self, k, v)
         
         # set z empty

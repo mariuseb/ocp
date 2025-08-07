@@ -1,5 +1,5 @@
 {
-    "days": 14,
+    "days": 7,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
@@ -10,16 +10,15 @@
             "x_nom_b": 289.15,
             "u_nom": [1],
             "u_nom_b ": [0],
-            "r_nom": [12,2.5E3,1],
-            "r_nom_b": [289.15,0,0],
-            "z_nom": [2.5E3,12,12],
-            "z_nom_b": [0,289.15,289.15],
+            "r_nom": [12,12,2.5E3,1e-1,2.5E3,1],
+            "r_nom_b": [289.15,289.15,0,0,0,0],
+            "z_nom": [1E-1,2.5E3,12,12],
+            "z_nom_b": [0,0,289.15,289.15],
             "slack": true
         },
         "filter_config_file": "ekf_configs/2R3C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
-        "filter_obs": true,
-        "parameters": "envelope_model_2R3C_alt_alt.csv"
+        "filter_obs": true
     },
     "environment": {
         "type": "BoptestGymEnv",
@@ -40,7 +39,8 @@
                "dh_cost": "PriceDistrictHeatingPower",
                "dh_emissions": "EmissionsDistrictHeatingPower",
                "Ti_lb": "LowerSetp[1]",
-               "Ti_ub": "UpperSetp[1]"
+               "Ti_ub": "UpperSetp[1]",
+               "n_occ": "Occupancy[3]"
               },
         "u" : {
                "rad_219": "waterTRVSplitterManifold2Zone_val219_oveValRad",
@@ -56,8 +56,16 @@
                 "Prad": "reaRadHeaPow219",
                 "Qrad": "reaRadHeaEne219",
                 "rad_flo": "reaRadFlow219",
+                "rad_flo_acc": "reaRadAccFlo219",
                 "Tret": "reaRadTRet219",
-                "Tsup": "reaRadTSup219"
+                "Tsup": "reaRadTSup219",
+                "phi_int": "floor5Zone_Shading_reaAuxPow",
+                "Tsup_air": "AHU219_reaTSupAir",
+                "Tret_air": "AHU219_reaTRetAir",
+                "fan_220_y": "AHU220_reaFloSupAir",
+                "fan_219_y": "AHU219_reaFloSupAir",
+                "fan_ret_220_y": "AHU220_reaFloExtAir",
+                "fan_ret_219_y": "AHU219_reaFloExtAir"
             }
         },
             "random_start_time": false,

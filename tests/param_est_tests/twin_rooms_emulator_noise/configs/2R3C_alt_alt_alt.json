@@ -14,7 +14,9 @@
         },
         "w": {
             "v1": "Ti - y1",
-            "v2": "Prad - y3"
+            "v2": "rad_flo - y2",
+            "v3": "Prad - y3",
+            "v4": "dT - y6"
         },
         "p": [
             "Rie",
@@ -55,10 +57,22 @@
         ],
         "y": [
             ["y1", "Ti"],
-            ["y3", "Prad"]
+            ["y2", "rad_flo"],
+            ["y3", "Prad"],
+            ["y6", "dT"]
         ]
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1]",
+        "bounds": {
+        "x": {
+            "lbx": [280,280,0,0],
+            "ubx": [340,340,30,0.15]
+        },
+        "z": {
+            "lbz": [0,0,0,0],
+            "ubz": [0.15,1E4,30,30]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3]",
     "method": "multiple_shooting",
     "integrator": 
         {

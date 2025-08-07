@@ -36,7 +36,6 @@ def prepare_prbs(path, sampling_time="15min"):
     prbs = pd.read_csv(path, sep=",", index_col=0)
     prbs.index = pd.to_timedelta(prbs.index)
     prbs.Ph /= 100
-    prbs = prbs.Ph
     prbs = prbs.round(0)
     prbs = prbs.resample(sampling_time).first()
     prbs.index = range(len(prbs.index))
@@ -69,14 +68,14 @@ if __name__ == "__main__":
     res.loc[:] = np.nan
     res.loc[0, meas] = obs
     for n in range(N):
-        action = np.array([prbs.iloc[n]])
-        res.loc[n, acts] = action
+        action = prbs.iloc[n]
+        res.loc[n, acts] = float(action)
         obs, reward, terminated, truncated, info = env.step(action)
         res.loc[n+1, meas] = obs
     
     for n in range(N, N+(2*96)):
-        action = np.array([0])
-        res.loc[n, acts] = action
+        action = pd.DataFrame(data=[0]).iloc[0]
+        res.loc[n, acts] = float(action)
         obs, reward, terminated, truncated, info = env.step(action)
         res.loc[n+1, meas] = obs
         

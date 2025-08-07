@@ -9,6 +9,7 @@ import json
 from ocp.dae import DAE
 import ocp.integrators as integrators
 from copy import deepcopy
+from ocp.functions import functions
 from scipy.linalg import expm
 from ocp.config import Config
 from typing import Tuple, Union
@@ -33,7 +34,11 @@ class FilterWrapper(object):
         #module = __import__(".".join(elems[:-1]))
         module = importlib.import_module(".".join(elems[:-1]))
         _init = getattr(module, elems[-1])
-        self.dae = dae = DAE(cfg["model"])
+        dae_cfg = cfg["model"]
+        dae_cfg["functions"] = functions
+        self.dae = dae = DAE(
+            dae_cfg
+        )
         if "filterpy" in module.__name__:
             dim_x = dae.n_x
             dim_u = dae.n_u + dae.n_r

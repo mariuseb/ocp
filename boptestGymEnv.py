@@ -573,6 +573,14 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             data=vals,
             columns=self.maps.var["r"]
         )
+        # TODO: make below more modular:
+        try:
+            phi_int_factor = 50
+            forecast["phi_int"] = forecast["n_occ"]*phi_int_factor
+            forecast["Tsup_air"] = 292.15
+            forecast["fan_219"] = 0.1
+        except KeyError:
+            pass
         return forecast
 
     def step(self, action):
@@ -620,10 +628,12 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
         for i, act in enumerate(self.actions):
             # Assign value
             #u[act] = float(action[i])
-            u[act] = float(action.iloc[i])
-            
-            # Indicate that the input is active
-            u[act.replace('_u','_activate')] = float(1)
+            try:
+                u[act] = float(action.iloc[i])    
+                # Indicate that the input is active
+                u[act.replace('_u','_activate')] = float(1)
+            except TypeError: # TODO: print warning. u remains empty
+                pass
                 
         # Advance a BOPTEST simulation
         res = requests.post('{0}/advance/{1}'.format(self.url,self.testid), json=u).json()['payload']

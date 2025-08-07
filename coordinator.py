@@ -257,12 +257,14 @@ class Coordinator(object):
                 self.days*24*int(3600/self.dt)*self.dt
             )
             
+            """
             ax = self.val_metrics.nrmse.plot(drawstyle="steps-post")
             ax1 = ax.twinx()
             res = self.res.copy()[:-1]
             res.index = self.val_metrics.index
             ax = res["phi_h"].plot(color="r", drawstyle="steps-post")
             plt.show()
+            """
             
             self.kpis = self.get_custom_kpis()
             self.concatenate_filtering_cols()

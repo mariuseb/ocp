@@ -38,4 +38,6 @@ if __name__ == "__main__":
         heat_key="Prad"
     )
     plt.show()
+    fig, axes = coord.plot_one_step_predictions(res)
+    plt.show()
     print(coord)

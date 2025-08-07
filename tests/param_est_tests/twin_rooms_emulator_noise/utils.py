@@ -14,22 +14,28 @@ def prepare_data(
         "Prad_calc": "Prad_calc",
         "rad_flo_calc": "rad_flo_calc",
         "rad_219": "rad_219",
+        "Tsup_air": "Tsup_air",
         "reaRadTRet219_y": "Tret",
         "reaRadTSup219_y": "Tsup",
         "reaRadFlow219_y": "rad_flo",
         "weatherStation_reaWeaTDryBul_y": "Ta",
-        "weatherStation_reaWeaHGloHor_y": "phi_s"
+        "weatherStation_reaWeaHGloHor_y": "phi_s",
+        "fan_219_y": "fan_219",
+        "fan_ret_219_y": "fan_ret",
+        "phi_int": "phi_int"
         
     }
     y_data = data.rename(columns=y_map)[
             list(y_map.values())
         ]
+    y_data["phi_int"] *= 66.7
     #y_data = y_data[60:]
     #y_data["Prad_calc"] = 4200*y_data["rad_flo"]*(y_data["Tsup"] - y_data["Tret"])
     #y_data["rad_flo"] = y_data["rad_flo"].shift(-1)
     #y_data["Prad"] = y_data["Prad"].shift(-1)
     y_data["rad_flo"] = y_data["rad_flo_calc"]
     y_data["Prad"] = y_data["Prad_calc"]
+    y_data["dT"] = y_data["Tsup"] - y_data["Tret"]
 
     y_data.index = pd.to_timedelta(y_data.index)
     if integrate_inputs:
@@ -55,6 +61,7 @@ def prepare_data(
     y_data["y3"] = y_data["Prad"]
     y_data["y4"] = y_data["Tret"]
     y_data["y5"] = y_data["Tsup"]
+    y_data["y6"] = y_data["dT"]
     y_data["m_val_bool"] = (((y_data["rad_219"].round(4) > 0)).astype(int) + \
         ((y_data["rad_flo"].round(4) > 0)).astype(int)).astype(bool).astype(int) + 1e-2
     y_data["m_flow_bool"] = ((y_data["rad_flo"].round(4) > 0)).astype(int) + 1e-2
@@ -69,7 +76,7 @@ def prepare_data(
     #y_data = y_data[4*24:2*4*24]
     #y_data = y_data[-96:]
     #y_data = y_data[0:12*24]
-    y_data[4:]
+    #y_data[4:]
     N = len(y_data)
 
     return y_data, N, dt
@@ -187,7 +194,7 @@ def prepare_est(
                         {
                             "init": 0.12,
                             "lb": 0.09, 
-                            "ub": 0.15
+                            "ub": 0.30
                         },
                         "cp_water":
                         {
@@ -222,7 +229,7 @@ def prepare_est(
                         "Tsup_offset":
                         {
                             "init": 1,
-                            "lb": -5, 
+                            "lb": -20, 
                             "ub": 20
                         },
                         "Tsupret_offset":
@@ -318,13 +325,31 @@ def prepare_est(
                         "tau_b":
                         {
                             "init": 10,
-                            "lb": 1,
-                            "ub": 300,
+                            "lb": 100,
+                            "ub": 30000,
                         },
                         "tau_a":
                         {
                             "init": 200,
-                            "lb": 10,
+                            "lb": 100,
+                            "ub": 10000,
+                        },
+                        "alpha_int":
+                        {
+                            "init": 0.5,
+                            "lb": 1e-3,
+                            "ub": 4,
+                        },
+                        "alpha_vent":
+                        {
+                            "init": 0.5,
+                            "lb": 1e-3,
+                            "ub": 1,
+                        },
+                        "cp_air":
+                        {
+                            "init": 1000,
+                            "lb": 1000,
                             "ub": 1000,
                         }
         }

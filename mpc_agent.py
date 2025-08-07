@@ -17,6 +17,7 @@ from itertools import product
 from ocp.config import Config
 from abc import ABCMeta, abstractmethod
 from gymnasium import Env
+from ocp.functions import functions
 import casadi as ca
 import matplotlib.pyplot as plt
 rc('mathtext', default='regular')
@@ -38,6 +39,7 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         self.mpc = MPC(
             config=mpc_cfg,
             param_guess=self.params,
+            functions=functions,
             **self.get_mpc_scaling(self.scaling)
         )  # to remove, replace with N
         if not isinstance(filter_cfg, Config):
@@ -342,8 +344,9 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
     ):
         Q = ca.DM.eye(self.estimator.n_x)
         R = ca.DM.eye(self.estimator.n_y)
-        try:
-            R[1,1] = 1e-5 # config / learnable
+        try: # to config:
+            R[1,1] = 1e-1 # config / learnable
+            R[2,2] = 1e-5 # config / learnable
         except:
             pass
         P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
@@ -358,6 +361,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         p0 = self.estimator.p0
         return Q, R, P0, lbp, ubp, p0
     
+    
+    ### TODO: simulate with existing model
     def generate_x_guess(
         self,
         y_data: pd.DataFrame
@@ -371,7 +376,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         x_guess = np.array([
                 y_data.y1.values.flatten(),
                 y_data.y1.values.flatten() - 2,
-                #y_data.y1.values.flatten() - 280
+                y_data.y1.values.flatten() - 280
         ])
         return x_guess
     
@@ -391,12 +396,13 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         """
         k starts at zero:
         """
-        if self.re_estimation_clause(env.i):
+        #if self.re_estimation_clause(env.i):
+        if self.re_estimation_clause(self.i):
             # estimate, set params:
             Q, R, P0, lbp, ubp, p0 = self.get_estimation_parameters()
             y_data = self.get_y_data(
                 env,
-                env.i,
+                self.i,
                 backshift=env.maps.u,
                 integrate_replace=self.integrate_replace
             )
