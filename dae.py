@@ -467,14 +467,14 @@ class DAE(object):
                     else: # other kinds of dependent variables, not handled yet
                         #raise ValueError("Check argument.")
                         self.w_names.append(expr_name)
-                        print("Regular dependant variable %s" % (expr_name,) +
-                              " added")
+                        #print("Regular dependant variable %s" % (expr_name,) +
+                        #      " added")
                         
                     
                 elif hasattr(self, expr_name):
-                    print("Already existing variable. Check.")
+                    #print("Already existing variable. Check.")
                     assert kind == "ode" or kind == "alg"
-                    print("It is an equation, OK.")
+                    #print("It is an equation, OK.")
                     
                     
         except KeyError:

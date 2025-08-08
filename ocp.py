@@ -462,12 +462,12 @@ class OCP(metaclass=ABCMeta):
         # transcribe:
         self.nlp, self.nlp_parser = self.strategy.transcribe_nlp()
         self.opt = config["opt"]
-        try:
-            self.set_A()
-            self.set_B()
-        except RuntimeError:
-            print("Fix setting df/dx, df/du for DAE-models.")
-            pass
+        #try:
+        #    self.set_A()
+        #    self.set_B()
+        #except RuntimeError:
+        #    print("Fix setting df/dx, df/du for DAE-models.")
+        #    pass
         # get duals:
         #self.opt["calc_multipliers"] = True
     
