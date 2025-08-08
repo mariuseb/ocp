@@ -729,17 +729,12 @@ class OCP(metaclass=ABCMeta):
                     x0 = np.append(x0, np.repeat([0], v["dim"]))
                 else:
                     x0 = np.append(x0, bound_dict["lb"])
-               
-               
             # check if u, modify initial guess:
-                    
             else:
-                if k == "p":
-                    print(bound_dict["x0"])
-                
+                #if k == "p":
+                #    print(bound_dict["x0"])
                 #if k == "u":
                 #    bound_dict["x0"] = (bound_dict["lb"] + bound_dict["ub"])/200000
-                    
                 x0 = np.append(x0, bound_dict["x0"])
         # nan issue
         lbx = np.nan_to_num(lbx, nan=0)
@@ -1520,13 +1515,7 @@ class OCP(metaclass=ABCMeta):
                 try:    
                     try:
                         # these should be passed as python lists:
-                        
-                        if varname == "x":
-                            print("yes")
-                        
-                        if varname == "r":
-                            print("yes")
-                        
+
                         scale = getattr(self, varname + "_nom")
                         bias = getattr(self, varname + "_nom_b")
                         
@@ -1847,8 +1836,8 @@ class OCP(metaclass=ABCMeta):
                         _vals = np.array(sol_x[start:stop]*scale).reshape(((self.N-1)*(d+1) + 1, self.n_x)) + self.x_nom_b
                         _vals = _vals[start:stop:(d+1)]
                 else:
-                    if name == "d":
-                        print(name)
+                    #if name == "d":
+                    #    print(name)
                     n_name = getattr(self, "n_" + name)
                     _vals = sol_x[start:stop]
                     if n_name == 0:

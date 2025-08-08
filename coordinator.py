@@ -12,6 +12,7 @@ from copy import deepcopy
 import numpy.typing as npt
 import pickle
 import matplotlib.pyplot as plt
+from contextlib import redirect_stdout
 from ocp.result_generator import nrmse, mse, r2_score, rmse
 import numpy as np
 import pandas as pd
@@ -233,6 +234,9 @@ class Coordinator(object):
                     self.controller_dt,
                     self.controller_horizon
                 )
+                # temp. re-direct of stdout:
+                #with open(os.devnull, 'w') as fnull:
+                    #with redirect_stdout(fnull):
                 self.controller.adaptive_callback(
                     k, 
                     self.env
@@ -242,8 +246,15 @@ class Coordinator(object):
                     forecast
                 )
                 self.validation_callback(k)
-                if not self.controller.mpc.solver.stats()["success"]:
-                    print(action)
+                if self.controller.mpc.solver.stats()["success"]:
+                    status = "succeeded"
+                else:
+                    status = "failed"
+                print("\r", end='')
+                #print("\033[2A", end="")
+                #print("\033[1A", end="")
+                print("Controller solve %s of %s %s" % (str(k+1), str(K), status), flush=True, end='')
+                #print("\033[1A", end="")
                 obs, reward, terminated, truncated, info = self.env.step(
                     action
                 )

@@ -431,6 +431,17 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             self.params = params.values
             # set parameters on filter:
             self.filter.filter.params = params.values
+            
+            # print status:
+            if self.estimator.solver.stats()["success"]:
+                    status = "succeeded"
+            else:
+                status = "failed"
+            print("\r", end='\n')
+            #print("\033[1A", end="")
+            print("Estimator solve %s %s" % (str(k+1), status), flush=True)
+            # print("\033[1A", end="")
+            print("\033[2A", end="")
         
         
     
