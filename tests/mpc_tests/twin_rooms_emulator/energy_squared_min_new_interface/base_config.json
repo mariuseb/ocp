@@ -1,19 +1,11 @@
 {
-    "days": 7,
+    "days": 3,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
         "sampling_time": "15min",
         "scaling": {
-            "x_nom": 12,
-            "x_nom_b": 289.15,
-            "u_nom": [1],
-            "u_nom_b ": [0],
-            "r_nom": [12,12,2.5E3,1e-1,2.5E3,1],
-            "r_nom_b": [289.15,289.15,0,0,0,0],
-            "z_nom": [1E-1,2.5E3,12,12],
-            "z_nom_b": [0,0,289.15,289.15],
             "slack": true
         },
         "filter_config_file": "ekf_configs/2R3C_EKF.json",
@@ -72,7 +64,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 0
+            "start_time": 864000
         }
     }
 }

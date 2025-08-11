@@ -108,6 +108,15 @@ class MPC(OCP):
         x_info = self.nlp_parser["x"]
         nx = self.n_x
         
+        x_symbolic = ca.SX.sym("x", nx)
+        s_symbolic = ca.SX.sym("x", nx)
+
+        F_path_constr = ca.Function(
+            "Fpath", [x_symbolic, s_symbolic], [x_symbolic + s_symbolic], 
+            ["x", "s"], ["slack"]
+        )
+        
+        
         if self.strategy.name == "MultipleShooting":
             #x = self.nlp["x"][(x_info["range"]["a"] + self.n_x):x_info["range"]["b"]]
             x = self.nlp["x"][(x_info["range"]["a"]):x_info["range"]["b"]]
@@ -152,17 +161,38 @@ class MPC(OCP):
             
             # TODO: this should be conditional:
             #b = ca.MX.sym("b", self.sl.shape[1])
-            for n in range(self.N):
+            for n in range(1,self.N):
                 #h_x[n:n+1] += (self.sl[n:n+1] + b_up - b_down)
                 #h_x[n:n+1] += (self.sl[n:n+1] + b)
-                expr = x[(n*nx):((n*nx) + nx)] + self.sl[(n*nx):((n*nx) + nx)] # + b
-                h_x.append(expr)
+                #expr = x[(n*nx):((n*nx) + nx)]*self.x_nom + self.x_nom_b + self.sl[(n*nx):((n*nx) + nx)]*self.x_nom + self.x_nom_b # + b
+                #expr = x[(n*nx):((n*nx) + nx)] + self.sl[(n*nx):((n*nx) + nx)]
+                
+                _x, _s = x[(n*nx):((n*nx) + nx)], self.sl[(n*nx):((n*nx) + nx)] # + b
+                # new, call:
+                F_call = F_path_constr(
+                    #x=_x*self.x_nom + self.x_nom_b,
+                    #s=_s*self.x_nom + self.x_nom_b
+                    x=_x,
+                    s=_s
+                )
+                
+                #h_x.append(expr)
+                h_x.append(F_call["slack"])
         else:
             for n in range(self.N):
                 #h_x[n:n+1] += (self.sl[n:n+1] + b_up - b_down)
                 #h_x[n:n+1] += b
                 expr = x[(n*nx):((n*nx) + nx)] # + b
                 h_x.append(expr)
+                #_x = x[(n*nx):((n*nx) + nx)]
+                # new, call:
+                #F_call = F_path_constr(
+                #    x=_x*self.x_nom + self.x_nom_b,
+                #    s=0
+                #)
+                
+                #h_x.append(expr)
+                #h_x.append(F_call["slack"])
                         
         # keep b as parameter:
         #self.nlp["p"] = ca.vertcat(self.nlp["p"], b)
@@ -171,8 +201,10 @@ class MPC(OCP):
         #self.lbg = np.append(lbg, lbx)
         #self.ubg = np.append(ubg, ubx)
     
-        # Add numerical values for path constraint each solve:       
+        # Add numerical values for path constraint each solve: 
+        self.path_start = self.nlp["g"].shape[0]      
         self.nlp["g"] = ca.vertcat(self.nlp["g"], *h_x)
+        self.path_stop = self.nlp["g"].shape[0]
 
     ### should work for reading from config:  
     def set_nlp_obj(self):
@@ -397,12 +429,14 @@ class MPC(OCP):
             # set bounds for x0:
             self.x0[start:stop] = x0  
             
-            if not self.slack:  
-                self.lbx[start:stop] = x0    
-                self.ubx[start:stop] = x0    
+            #if not self.slack:  
+            self.lbx[start:stop] = x0    
+            self.ubx[start:stop] = x0    
                 
-            lbg = np.append(self.lbg, np.append(x0, lbx))
-            ubg = np.append(self.ubg, np.append(x0, ubx))
+            #lbg = np.append(self.lbg, np.append(x0, lbx))
+            #ubg = np.append(self.ubg, np.append(x0, ubx))
+            lbg = np.append(self.lbg, lbx)
+            ubg = np.append(self.ubg, ubx)
             
             return lbg, ubg
             
@@ -671,6 +705,22 @@ class MPC(OCP):
         #self.ubx = np.array([val if val < 1e8 else np.inf for val in self.ubx])
         return lbg, ubg
               
+    def swap_path_constraints_entries(self, lbg, ubg):
+        """
+        If slack constraints, swap as follows:
+        """          
+        # extract lbx, ubx of x, set on g instead:
+        x_start, x_stop = self.nlp_parser["x"]["range"]["a"], self.nlp_parser["x"]["range"]["b"]
+        x_start += self.n_x 
+        lbx, ubx = self.lbx[x_start:x_stop], self.ubx[x_start:x_stop]
+        lbg[self.path_start:self.path_stop] = lbx
+        ubg[self.path_start:self.path_stop] = ubx
+        self.lbx[x_start:x_stop] = -np.inf
+        self.ubx[x_start:x_stop] = np.inf
+        return lbg, ubg
+        
+    
+              
     def _solve(
                self,
                lbg=None,
@@ -714,6 +764,15 @@ class MPC(OCP):
             self.lbx = np.append(self.lbx, 0)
             self.ubx = np.append(self.ubx, np.inf)
         
+        """
+        if self.slack:
+            lbg, ubg = self.swap_path_constraints_entries(
+                lbg, 
+                ubg
+            )
+        """
+        
+        # TODO: fix lbg, ubg:
         if p_val is None:
             sol = solver(
                         x0=self.x0,

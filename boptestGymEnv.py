@@ -1018,9 +1018,11 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             self.get_measurement_info(), self.get_input_info()
         points = list(measurements.keys()) + \
                  list(inputs.keys())
-        if ts == 0 and self.start_time != 0:
-            ts = self.start_time
-            tf = self.start_time + tf   
+        #if ts == 0 and self.start_time != 0:
+        # adjust by starting time:
+        ts = self.start_time + ts
+        tf = self.start_time + tf   
+        
         if split_requests: # by day / episode
             tot_time = tf - ts
             eps = math.ceil(tot_time/86400)

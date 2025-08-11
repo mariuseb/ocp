@@ -63,8 +63,22 @@
             ["y3", "Prad"]
         ]
     },
+    "bounds": {
+        "x": {
+            "lbx": [280,280,0],
+            "ubx": [340,340,30]
+        },
+        "z": {
+            "lbz": [0,0,0,0],
+            "ubz": [0.15,1E4,30,30]
+        },
+        "u": {
+            "lbu": [0],
+            "ubu": [1]
+        }
+    },
     "objective": "R[0,0]*dot(v1, v1) + R[1,1]*dot(v2, v2) + R[2,2]*dot(v3, v3) + Q[0,0]*dot(s1, s1) + Q[1,1]*dot(s2, s2) + Q[2,2]*dot(s3, s3)",
-    "N": 3,
+    "N": 96,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
@@ -81,8 +95,8 @@
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10, 
         "ipopt.ma57_automatic_scaling": "yes", 
-        "ipopt.max_cpu_time": 2,
-        "ipopt.print_level": 0,
+        "ipopt.max_cpu_time": 200,
+        "ipopt.print_level": 5,
         "print_time": 0,
         "ipopt.max_iter": 1000,
         "ipopt.check_derivatives_for_naninf": "yes",

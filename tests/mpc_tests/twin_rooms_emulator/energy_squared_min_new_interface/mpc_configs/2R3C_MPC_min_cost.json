@@ -69,7 +69,7 @@
     },
     "N": 96,
     "dt": 900,
-    "objective": "dot(cost, Prad) + 1E3*dot(sl, sl)",
+    "objective": "dot(cost, Prad) + 1E4*dot(sl, sl)",
     "method": "multiple_shooting",
     "integrator": 
         {
@@ -84,8 +84,8 @@
         "verbose": false,
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10,
-        "ipopt.print_level": 0,
-        "ipopt.print_time": 0,
+        "ipopt.print_level": 5,
+        "print_time": 0,
         "ipopt.ma57_automatic_scaling" : "yes",
         "ipopt.max_iter" : 1E5
     },

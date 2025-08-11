@@ -749,8 +749,11 @@ class OCP(metaclass=ABCMeta):
         # slack: 
         if self.slack or slack:
             dim = self.nlp_parser.vars["sl"]["dim"]
-            self.lbx = np.append(self.lbx, np.repeat([0], dim))
-            self.ubx = np.append(self.ubx, np.repeat([np.inf], dim))
+            #self.lbx = np.append(self.lbx, np.repeat([0], dim))
+            #self.lbx = np.append(self.lbx, np.repeat([-np.inf], dim))
+            #self.ubx = np.append(self.ubx, np.repeat([np.inf], dim))
+            self.lbx = np.append(self.lbx, np.repeat([-1e6], dim))
+            self.ubx = np.append(self.ubx, np.repeat([1e6], dim))
             self.x0 = np.append(self.x0, np.repeat([0], dim))
         
     #def set_x_guess(self, )
@@ -1441,6 +1444,18 @@ class OCP(metaclass=ABCMeta):
                 bias = self.x_nom_b
                 scale = self.x_nom
             
+            try:
+                try:
+                    b_dim = bias.shape[0]*bias.shape[1]    
+                except IndexError:
+                    b_dim = bias.shape[0]
+                x_dim = x_init.shape[0]*x_init.shape[1]    
+                if b_dim == x_dim:
+                    bias = bias.reshape(x_init.shape)
+                    scale = scale.reshape(x_init.shape)
+            except AttributeError: # is list, safe pass
+                pass
+            
             if lbx is not None: # passed as array:
                 assert ubx is not None
                 bounds["x"]["ub"] = (ubx - bias)/scale
@@ -1453,8 +1468,8 @@ class OCP(metaclass=ABCMeta):
                     dim = int(self.nlp_parser["x"]["dim"]/self.n_x)
                     #lbx = np.hstack([bounds_cfg["x"]["lbx"] for n in range(dim)])
                     #ubx = np.hstack([bounds_cfg["x"]["ubx"] for n in range(dim)])
-                    lbx = np.repeat(bounds_cfg["x"]["lbx"], self.N).reshape(self.n_x, self.N).T.flatten()
-                    ubx = np.repeat(bounds_cfg["x"]["ubx"], self.N).reshape(self.n_x, self.N).T.flatten()
+                    lbx = np.repeat(bounds_cfg["x"]["lbx"], self.N).reshape(self.n_x, self.N) #.flatten()
+                    ubx = np.repeat(bounds_cfg["x"]["ubx"], self.N).reshape(self.n_x, self.N) #.flatten()
                     bounds["x"]["lb"] = (lbx - bias)/scale
                     bounds["x"]["ub"] = (ubx - bias)/scale
                 else:
@@ -1475,17 +1490,6 @@ class OCP(metaclass=ABCMeta):
             #bounds["x"]["x0"] = x_init/self.x_nom
             #bounds["x"]["x0"] = (x_init - self.x_nom_b)/self.x_nom
             
-            try:
-                try:
-                    b_dim = bias.shape[0]*bias.shape[1]    
-                except IndexError:
-                    b_dim = bias.shape[0]
-                x_dim = x_init.shape[0]*x_init.shape[1]    
-                if b_dim == x_dim:
-                    bias = bias.reshape(x_init.shape)
-                    scale = scale.reshape(x_init.shape)
-            except AttributeError: # is list, safe pass
-                pass
             
             bounds["x"]["x0"] = (
                 (x_init - bias)/scale
@@ -1788,7 +1792,7 @@ class OCP(metaclass=ABCMeta):
                 scale = 2500
                 max_var = np.array(sol_x[start:stop]*scale).flatten()
                 _vals = np.tile(np.array(max_var), self.N).reshape((self.N, 1))
-                print(name)
+                #print(name)
             else:
                 #if name == "x":
                 #    scale = self.x_nom

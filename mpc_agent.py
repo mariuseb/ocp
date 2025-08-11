@@ -189,11 +189,11 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             if lb_key in forecast.columns:
                 _lbx = bounds_forecast[lb_key].values
             else:
-                _lbx = np.array([-np.inf]*_len)
+                _lbx = np.array([-1e8]*_len)
             if ub_key in forecast.columns:
                 _ubx = bounds_forecast[ub_key].values
             else:
-                _ubx = np.array([np.inf]*_len)
+                _ubx = np.array([1e8]*_len)
             #lbx = np.append(lbx, _lbx)
             lbs.append(_lbx)
             ubs.append(_ubx)
@@ -422,19 +422,19 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         P0=P0,
                                         x_N=x_guess[-1,-self.estimator.n_x:]
                                         ) 
-            self.estimator.p0 = params.values
-            # from t = k, the parameters are:
-            self.params_history.loc[k, :] = params
             # store solution:
             self.ests[k] = sol
-            # set parameters globally on agent:
-            self.params = params.values
-            # set parameters on filter:
-            self.filter.filter.params = params.values
-            
-            # print status:
+            # only change parameters if estimator succeeded:
             if self.estimator.solver.stats()["success"]:
-                    status = "succeeded"
+                self.estimator.p0 = params.values
+                # from t = k, the parameters are:
+                self.params_history.loc[k, :] = params
+                # set parameters globally on agent:
+                self.params = params.values
+                # set parameters on filter:
+                self.filter.filter.params = params.values
+                # print status:
+                status = "succeeded"
             else:
                 status = "failed"
             print("\r", end='\n')
@@ -534,8 +534,7 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             k: int
         ):
         return (k+1) >= self.adapt_N
-    
-    
+        
     def x0_from_obs(
         self,
         k: int,

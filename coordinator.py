@@ -258,6 +258,8 @@ class Coordinator(object):
                 obs, reward, terminated, truncated, info = self.env.step(
                     action
                 )
+                if k == 119:
+                    print(k)
                 # TODO: filtering optional:
                 obs = self.controller.x0_from_obs(
                     k, 

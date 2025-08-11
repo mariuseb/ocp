@@ -18,10 +18,10 @@ rc('mathtext', default='regular')
 
 if __name__ == "__main__":
     
-    base = Config()("base_config.json")
-    meta = Config()("config_meta_mhe.json")
+    base = Config()("base_config_scaled.json")
+    meta = Config()("config_meta_mhe_cost_only.json")
     x0 = np.array([
-        293.15, 293.15, 16
+        293.15, 293.15, 12
     ])
     cfgs = {}
     for i, (k, v) in enumerate(meta.items()):
