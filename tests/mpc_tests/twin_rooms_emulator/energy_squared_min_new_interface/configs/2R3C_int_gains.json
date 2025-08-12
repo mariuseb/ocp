@@ -14,8 +14,7 @@
         "w": {
             "v1": "Ti - y1",
             "v2": "rad_flo - y2",
-            "v3": "Prad - y3",
-            "v4": "dT - y6"
+            "v3": "Prad - y3"
         },
         "p": [
             "Rie",
@@ -43,9 +42,9 @@
             "Ta",
             "Tsup_air",
             "phi_s",
-            "m_flow_bool",
             "fan_219",
-            "phi_int"
+            "phi_int",
+            "cost"
         ],
         "x": [
             "Ti",
@@ -61,8 +60,7 @@
         "y": [
             ["y1", "Ti"],
             ["y2", "rad_flo"],
-            ["y3", "Prad"],
-            ["y6", "dT"]
+            ["y3", "Prad"]
         ]
     },
         "bounds": {
@@ -75,7 +73,7 @@
             "ubz": [0.15,1E4,30,30]
         }
     },
-    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2] + dot(m_flow_bool*v4, m_flow_bool*v4)@R[3,3]",
+    "objective": "dot(v1, v1)@R[0,0] + dot(v2, v2)@R[1,1] + dot(v3, v3)@R[2,2]",
     "method": "multiple_shooting",
     "integrator": 
         {
