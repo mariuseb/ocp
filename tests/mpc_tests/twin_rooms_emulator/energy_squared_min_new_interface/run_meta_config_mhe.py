@@ -19,7 +19,7 @@ rc('mathtext', default='regular')
 if __name__ == "__main__":
     
     base = Config()("base_config_scaled.json")
-    meta = Config()("config_meta_mhe_cost_only.json")
+    meta = Config()("config_meta_mhe_peak_only.json")
     x0 = np.array([
         293.15, 293.15, 12
     ])

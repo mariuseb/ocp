@@ -96,7 +96,7 @@
         "ipopt.ma57_pre_alloc": 10, 
         "ipopt.ma57_automatic_scaling": "yes", 
         "ipopt.max_cpu_time": 200,
-        "ipopt.print_level": 5,
+        "ipopt.print_level": 0,
         "print_time": 0,
         "ipopt.max_iter": 1000,
         "ipopt.check_derivatives_for_naninf": "yes",

@@ -18,12 +18,16 @@ rc('mathtext', default='regular')
 
 if __name__ == "__main__":
     
-    base = Config()("base_config.json")
-    meta = Config()("config_meta.json")
+    base = Config()("base_config_scaled.json")
+    meta_non = Config()("config_meta_non_adaptive.json")
+    meta_adaptive = Config()("config_meta_mhe.json")
     x0 = np.array([
         293.15, 293.15, 16
     ])
     cfgs = {}
+    
+    meta = {**meta_non, **meta_adaptive}
+    
     for k, v in meta.items():
         cfg = deepcopy(base)
         # fill missing:
