@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc
 #import os
-#from pathlib import Path
+from pathlib import Path
 #from ocp.mpc_agent import MPCAgent
 #from ocp.boptestGymEnv import BoptestGymEnv
 #from ocp.customGymEnv import CustomGymEnv
@@ -14,12 +14,14 @@ from copy import deepcopy
 from pprint import pprint
 rc('mathtext', default='regular')
 
-
-
 if __name__ == "__main__":
     
-    base = Config()("base_config_scaled.json")
-    meta = Config()("config_meta.json")
+    base = Config()(
+            "base_config_scaled.json"
+    )
+    meta = Config()(
+            "config_meta.json"
+    )
     x0 = np.array([
         293.15, 293.15, 12
     ])

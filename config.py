@@ -2,6 +2,7 @@ import json
 import copy
 import os
 import hashlib
+import inspect
 import numpy as np
 import casadi as ca
 import pandas as pd
@@ -54,9 +55,16 @@ def get_json_hash(config: OrderedDict):
             10**8
         ) 
 
+
+def get_abspath_of_caller(path):
+    current_file_path_obj = Path(__file__)
+    current_directory_obj = current_file_path_obj.parent
+    return Path(current_directory_obj, path)
+
 class Config(object):
     def __call__(self, config):
         if isinstance(config, str) or isinstance(config, os.PathLike):
+            #config = get_abspath_of_caller(config)
             with open(config, "r") as f:
                 config = json.load(f, object_pairs_hook=OrderedDict)
         if "integrator" in config.keys():
