@@ -15,6 +15,9 @@ tests/param_est_tests/ZEBLab_envelope_final_final_final/ZEBLab_nov23_oct24_1m.cs
 *.c
 *.o
 
+# .pkl-endings:
+*.pkl
+
 # vscode stuff
 .vscode 
 .vscode-server

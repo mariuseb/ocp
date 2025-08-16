@@ -18,6 +18,7 @@ from ocp.config import Config
 from abc import ABCMeta, abstractmethod
 from gymnasium import Env
 from ocp.functions import functions
+from datetime import datetime
 import casadi as ca
 import matplotlib.pyplot as plt
 rc('mathtext', default='regular')
@@ -153,7 +154,8 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             return_raw_sol=True
         )
         if not self.mpc.solver.stats()["success"]:
-            print(sol)
+            #print(sol)
+            pass
         # store current raw sol:
         self.raw_sol = raw_sol
         # store forecast, opt result:
@@ -439,7 +441,14 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                 status = "failed"
             print("\r", end='\n')
             #print("\033[1A", end="")
-            print("Estimator solve %s %s" % (str(k+1), status), flush=True)
+            #print("Estimator solve %s 
+            print("%s: Estimator solve %s %s" % \
+                    (
+                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'), \
+                     str(k+1),
+                     status
+                     ), 
+                    flush=True, end='')
             # print("\033[1A", end="")
             print("\033[2A", end="")
         

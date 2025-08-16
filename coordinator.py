@@ -14,6 +14,7 @@ import pickle
 import matplotlib.pyplot as plt
 from contextlib import redirect_stdout
 from ocp.result_generator import nrmse, mse, r2_score, rmse
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import sys
@@ -253,13 +254,20 @@ class Coordinator(object):
                 print("\r", end='')
                 #print("\033[2A", end="")
                 #print("\033[1A", end="")
-                print("Controller solve %s of %s %s" % (str(k+1), str(K), status), flush=True, end='')
+                print("%s: Controller solve %s of %s %s" % \
+                    (
+                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'), \
+                     str(k+1),
+                     str(K),
+                     status
+                     ), 
+                    flush=True, end='')
                 #print("\033[1A", end="")
                 obs, reward, terminated, truncated, info = self.env.step(
                     action
                 )
-                if k == 119:
-                    print(k)
+                #if k == 119:
+                #    print(k)
                 # TODO: filtering optional:
                 obs = self.controller.x0_from_obs(
                     k, 
