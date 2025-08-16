@@ -912,7 +912,8 @@ class OCP(metaclass=ABCMeta):
                        **kwargs
                        ):
         # Create a new NLP solver instance from the compiled code
-        compiler = kwargs.pop("compiler", "clang")
+        #compiler = kwargs.pop("compiler", "clang")
+        compiler = kwargs.pop("compiler", "gcc")
         flags = kwargs.pop("flags", ["-O3"])
         #flags = kwargs.pop("flags", ["-Ofast"])
         if os.path.exists("_l4c_generated"):

@@ -18,7 +18,7 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from scipy.stats import norm
-from hampel import hampel
+#from hampel import hampel
 # text:
     
 def _solve_rosenbrock():

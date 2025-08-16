@@ -181,26 +181,53 @@ if __name__ == "__main__":
         param_guess[name]["lb"] = value*1E-3 
         param_guess[name]["ub"] = value*1E3 
 
+    #param_guess["alpha_int_lig"]["ub"] = 1.0
+    #param_guess["alpha_int_plugs"]["ub"] = 1.0
+    param_guess["alpha_vent_sup"]["ub"] = 1.0
+    param_guess["alpha_vent_ext"]["ub"] = 1.0
+    param_guess["alpha_int"]["ub"] = 1.0
+
     data_path = os.path.join("ZEBLab_nov23_feb24_1m.csv")
     Data = ZEBData(data_path)
+    Data.data.loc["2023-11-16 09:20":"2023-11-16 09:51", "T_219_TR2"] = np.nan
+    Data.data.loc["2023-12-06 14:30":"2023-12-06 20:00", "T_sup_air_219"] = np.nan
+    Data.data.loc["2023-12-06 14:30":"2023-12-06 20:00", "T_ext_air_219"] = np.nan
+    Data.data.loc["2023-12-18 06:58":"2023-12-18 17:34", "T_sup_air_219"] = np.nan
+    Data.data.loc["2023-12-18 06:58":"2023-12-18 17:34", "T_ext_air_219"] = np.nan
     """
     Hyper-parameters for run:
     """
+    #start = pd.Timestamp("2024-01-01 00:00")
     start = pd.Timestamp("2023-11-15 00:00")
-    stop = pd.Timestamp("2023-11-29 00:00")
+    #N_days = 14
     N_days = 1
     days = 1
+    
+    #N_days = 1
+    #days = 1
     sampling_rate = "15min"
     plot = True
     cfg_path = os.path.join(
                             "configs", 
-                            "2R2C_int_gains_sep_bal_vent.json"
+                            "2R2C_int_gains_sep_bal_vent_solar_tvp.json"
                             )
-    data, dt, N = Data.get_dataset(
-        start,
-        stop,
-        sampling_rate="15min"
-    )
+    ekf_config = os.path.join(
+                              "configs",
+                              "ekf_configs",
+                              "2R2C_envelope_EKF_int_gains_sep_bal_vent_solar_tvp_covar_tvp.json"
+                              )
+    dt, N = Data.get_meta_for_parest(
+                                     start,
+                                     days,
+                                     sampling_rate
+                                     )
+    result_gen = ResultGenerator(
+                        config=cfg_path,
+                        ekf_config=ekf_config,
+                        params=param_guess,
+                        slack=False,
+                        dt=dt
+                        )    
     param_est = Estimation(config=cfg_path,
                 N=N,
                 dt=dt,
@@ -209,129 +236,172 @@ if __name__ == "__main__":
                 **kwargs,
                 )
     
-    ######### meta-params ########
-    prior_weight = 1
-    lbp = param_est.get_lbp(1e-2)
-    ubp = param_est.get_ubp(1e2)
-    y_data = data
-    p0 = param_est.p0
-    P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight
-    Q, R = ca.DM.eye(param_est.n_x), ca.DM.eye(param_est.n_y)
-    x_guess = np.array([
-                y_data.y1.values.flatten(),
-                y_data.y1.values.flatten() - 2
-                ])
-    for n in range(param_est.n_p, param_est.n_p + param_est.n_x):
-        P0[n,n] = 0
-    lbx = 0.7*x_guess
-    ubx = 2*x_guess
-    ##############################
-    sol, params = param_est.solve(
-            y_data,
-            #param_est.p0,
-            p0,
-            lbp=lbp,
-            ubp=ubp,
-            lbx=lbx,
-            ubx=ubx,
-            x_guess=x_guess,
-            x_N = np.array([293.15]*param_est.n_x), # not used
-            P0=P0,
-            covar=ca.veccat(Q, R),
-            codegen=False
-            )
+    #val_metrics = pd.read_csv("test_var_day_runner.csv")
+    (fig, axes, train_metrics, val_metrics, params_hist, theta_hist) = \
+        result_gen.var_day_validation_runner(ekf_config,
+                                              start,
+                                              N_days,
+                                              days,
+                                              param_guess,
+                                              param_est,
+                                              Data,
+                                              plot=plot,
+                                              prior_weight=0, 
+                                              #prior_weight=1e-5, 
+                                              journal_plot=True,
+                                              sampling_rate=sampling_rate,
+                                              covar_solve=False,
+                                              num_segments=1,
+                                              control_validation=False,
+                                              reidentification=True
+                                              #R=R,
+                                              #Q=Q,
+                                              #P0x=P0,
+                                              #x0_opt=x0>
+                                              #covar_solve=False
+                                              )
+        
+    # get the objective:
+    nlp_obj_expr = param_est.nlp["f"]
+    nlp_vars = param_est.nlp["x"]
+    nlp_params = param_est.nlp["p"]
+    # create function:
+    nlp_obj = ca.Function(
+        "f",
+        [nlp_vars, nlp_params],
+        [nlp_obj_expr],
+        ["x", "p"],
+        ["f"]
+    )
     
-    params_sol = params.copy()
-    # integrator, H:
-    F = param_est.integrator.one_sample.map(N)
-    H = param_est.strategy.h_map
     """
-    Steps:
-    - Do ONE Ipopt solve
-    Brute-force sensitivity analysis from *w (optimal NLP-solution):
-    
-    for n in N:
-        for j in J.
-            - Simulate
-            - Use x from simulation to find meas. gaps ('v')
-            - Calculate obj-function (including prior)
-    
-    Then: 
-    - Do it scaled
+    Get objective values for different values of Rie, Rea.
     """
     
-    #x = np.arange(1e-3,1e-1,1e-3) # Rie
-    #z = np.arange(1e-3,1e-1,1e-3) # Rea
+    relative_pos_Rie = param_est.dae.p.index("Rie")
+    relative_pos_Rea = param_est.dae.p.index("Rea")
+    p_start, p_stop = param_est.nlp_parser.vars["p"]["range"]["a"], param_est.nlp_parser.vars["p"]["range"]["b"]
+    v_start, v_stop = param_est.nlp_parser.vars["v"]["range"]["a"], param_est.nlp_parser.vars["v"]["range"]["b"]
+    len_p = p_stop - p_start
+    n_x = param_est.n_x
+    x0_nlp = np.array(param_est.raw_sol["x"]).flatten()
+    p0_nlp = np.array(param_est.p_val).flatten()
+    len_p_nlp = p0_nlp.shape[0]
     
-    x = np.arange(1e6,1e7,1e6) # Ci
-    z = np.arange(1.1e7,2e7,1e6) # Ce
+    nlp_Rie_x_pos = p_start + relative_pos_Rie
+    nlp_Rea_x_pos = p_start + relative_pos_Rea
+    nlp_Rie_p_pos = len_p_nlp - len_p - n_x + relative_pos_Rie
+    nlp_Rea_p_pos = len_p_nlp - len_p - n_x + relative_pos_Rea
+    Rie_start_scaled = x0_nlp[nlp_Rie_x_pos]
+    Rea_start_scaled = x0_nlp[nlp_Rea_x_pos]
     
-    x = np.arange(1e6,1e7,1e6) # Ci
-    z = np.arange(1e7,1e8,1e7) # Ce
-    
-    #relative_pos_Rie = param_est.dae.p.index("Rie")
-    #relative_pos_Rea = param_est.dae.p.index("Rea")
-    relative_pos_Rie = param_est.dae.p.index("Ci")
-    relative_pos_Rea = param_est.dae.p.index("Ce")
-    
-    x0 = sol.iloc[1][["Ti", "Te"]].values
-    p_nom = param_est.p_nom
-    
+    # start with 10 elems for each:
+    x = np.arange(0.1,1,0.1) # Rie
+    z = np.arange(0.1,1,0.1) # Rea
+    y = np.array([[]])
     for i, _x in enumerate(x):
         sub_y = np.array([])
         for _z in z:
-            # simulate with p0
-            p = params.values
-            p[relative_pos_Rie] = _x
-            p[relative_pos_Rea] = _z
-            x_sim = F(
-                x0=x0,
-                u=data[param_est.u_names].values.T,
-                p=p
-            )["xf"]
-            v_sim = H(
-                y=data[param_est.y_names].values.T,
-                x=x_sim,
-                u=data[param_est.u_names].values.T,
-                p=p,
-                v=0
-            )["h"]
-            obj_value = ca.dot(
-                v_sim, v_sim
-            ) + \
-            prior_weight*ca.dot(
-                p0/p_nom - p/p_nom, p0/p_nom - p/p_nom
+            # copy x:
+            x0_at_point = x0_nlp.copy()
+            lbx_at_point = param_est.lbx.copy() 
+            ubx_at_point = param_est.ubx.copy() 
+            # set Rie on x:
+            x0_at_point[nlp_Rie_x_pos] = _x
+            lbx_at_point[nlp_Rie_x_pos] = _x
+            ubx_at_point[nlp_Rie_x_pos] = _x
+            # set Rea on x:
+            x0_at_point[nlp_Rea_x_pos] = _z
+            # copy p:
+            p_at_point = p0_nlp.copy()
+            # set Rie on p:
+            p_at_point[nlp_Rie_p_pos] = _x
+            # set Rea on p:
+            p_at_point[nlp_Rea_p_pos] = _z
+            # f-value:
+            """
+            f_value = nlp_obj(
+                x0_at_point,
+                p_at_point
             )
-            sub_y = np.append(sub_y, obj_value)
-            print(v_sim)
+            """
+            sol = param_est.solver(
+                x0=x0_at_point,
+                lbx=lbx_at_point,
+                ubx=ubx_at_point,
+                lbg=param_est.lbg,
+                ubg=param_est.ubg,
+                p=p_at_point
+            )
+            sub_y = np.append(sub_y, float(sol["f"]))
+            
+        #sub_y = sub_y.reshape((1, sub_y.shape[0]))
+        #y = np.append(y, sub_y, axis=1)
         if i == 0: 
             y = sub_y
         else:
             y = np.vstack([y, sub_y])
             
-    """
-    Get objective values for different values of Rie, Rea.
-    """
+            
     import matplotlib.pyplot as plt
     import numpy as np
+
     from matplotlib import cm
     from matplotlib.ticker import LinearLocator
+
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
     # Make data.
     #X = np.arange(-5, 5, 0.25)
     #Y = np.arange(-5, 5, 0.25)
     x, z = np.meshgrid(x, z)
     #R = np.sqrt(X**2 + Y**2)
     #Z = np.sin(R)
+
     # Plot the surface.
     surf = ax.plot_surface(x ,z , y, cmap=cm.coolwarm,
                         linewidth=0, antialiased=False)
+
     # Customize the z axis.
     #ax.set_zlim(-1.01, 1.01)
     ax.zaxis.set_major_locator(LinearLocator(10))
     # A StrMethodFormatter is used automatically
     ax.zaxis.set_major_formatter('{x:.02f}')
+
     # Add a color bar which maps values to colors.
     fig.colorbar(surf, shrink=0.5, aspect=5)
-    plt.show()    
+
+    plt.show()
+    
     print(x)
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from matplotlib import cm
+    from matplotlib.ticker import LinearLocator
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+    # Make data.
+    X = np.arange(-5, 5, 0.25)
+    Y = np.arange(-5, 5, 0.25)
+    X, Y = np.meshgrid(X, Y)
+    R = np.sqrt(X**2 + Y**2)
+    Z = np.sin(R)
+
+    # Plot the surface.
+    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False)
+
+    # Customize the z axis.
+    ax.set_zlim(-1.01, 1.01)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    # A StrMethodFormatter is used automatically
+    ax.zaxis.set_major_formatter('{x:.02f}')
+
+    # Add a color bar which maps values to colors.
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    plt.show()
+    """
