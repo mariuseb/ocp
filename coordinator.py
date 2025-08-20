@@ -18,6 +18,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import sys
+import requests
 
 """
 Simulation coordinator.
@@ -289,6 +290,7 @@ class Coordinator(object):
             
             self.kpis = self.get_custom_kpis()
             self.concatenate_filtering_cols()
+            requests.put('{0}/stop/{1}'.format(self.env.url, self.env.testid))
             
         else: # TODO : log
             print("Coordinator works only as a result container. " + 

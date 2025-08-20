@@ -56,7 +56,8 @@ class Forecaster(object):
 class RestApi(object):
     ''' Abstract class. '''
     def __init__(self):
-        self.url = 'http://docker-web-1:80'
+        self.url = 'http://docker-web:80'
+        #self.url = 'http://docker-web-1:80'
         #self.url = 'http://docker-boptest-1:5000'
         #self.name = self.get_name()['name']
         #self.forecast_points = list(requests.get('{0}/forecast_points'.format(self.url)).json()["payload"].keys())
