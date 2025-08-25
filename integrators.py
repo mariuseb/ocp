@@ -116,6 +116,13 @@ class Integrator(metaclass=ABCMeta):
         else: 
             raise TypeError("Unknown DAE-type")
         
+        self.V = ca.Function(
+            "vdef", 
+            [self.x, self.y, self.z, self.p],
+            [rhs_v],
+            ["x", "y", "z", "p"],
+            ["vdef"]
+            )
         self.h_expr = exprs_v
         
     

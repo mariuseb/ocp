@@ -554,6 +554,7 @@ class SingleShooting(Shooting):
         u = self.get_u()
         z = self.get_z()
         r = self.get_r()
+        d = self.get_d()
         # TODO: init p here instead (for TVP etc.):
         #p = self.F.p
         p = self.get_p()
@@ -562,8 +563,6 @@ class SingleShooting(Shooting):
         #self.F_map = self.map_F()
         #self.h_map = self.map_h()
         #self.g_map = self.map_g()
-        
-        
         
         # if 1-D U:
         
@@ -583,80 +582,86 @@ class SingleShooting(Shooting):
         NOTE: z needs to be handled separately,
         and outside of single-shooting integrator.
         """
-
+        F = self.F.chain_integrator()
         g = []
         Xk = x
+        Zk = z
+        X = [x]
+        _V = []
         for n in range(self.N-1):
-            Uk = u[:,n:(n+self.n_u)]
-            Rk = r[:,n:(n+self.n_r)]
+            #Uk = u[:,n:(n+self.n_u)]
+            #Rk = r[:,n:(n+self.n_r)]
+            #Dk = d[:,n:(n+self.n_d)]
+            Uk = u[:,n:(n+1)]
+            Rk = r[:,n:(n+1)]
+            Dk = d[:,n:(n+1)]
+            Yk = y[:,n:(n+1)]
             # integrate
+            """
             Fk = self.F.one_sample(x0=Xk*self.x_nom,
                                     z=0, 
                                     u=Uk*self.u_nom,
                                     p=self.p_nom*p,
                                     w=w*self.w_nom,
                                     r=Rk*self.r_nom)
-            Xk = Fk["xf"]/self.x_nom
+            """
+            Vk = self.F.V(
+                x=Xk*self.x_nom + self.x_nom_b,
+                y=Yk*self.y_nom + self.y_nom_b,
+                z=Zk*self.z_nom + self.z_nom_b,
+                p=p*self.p_nom + self.p_nom_b,
+            )
+            Fk = F(
+                x0=Xk*self.x_nom + self.x_nom_b,
+                z0=Zk*self.z_nom + self.z_nom_b,
+                u=Uk*self.u_nom + self.u_nom_b,
+                p=p*self.p_nom + self.p_nom_b,
+                r=Rk*self.r_nom + self.r_nom_b,
+                d=Dk*self.d_nom + self.d_nom_b
+            )
+            Xk = Fk["x"]/self.x_nom - self.x_nom_b
+            Zk = Fk["z"]/self.z_nom - self.z_nom_b
             # add expression for state at integration end:
-            g.append(Xk)
+            #g.append(Xk)
+            X.append(Xk)
+            _V.append(Vk)
+            g.append(Zk)
             
-        for n in range(self.N-1):
-            Uk = u[:,n:(n+self.n_u)]
-            Rk = r[:,n:(n+self.n_r)]
-            Hk = self.F.h(
-                        y=y*self.y_nom,
-                        x=x*self.x_nom,
-                        z=z,
-                        u=Uk*self.u_nom,
-                        p=self.p_nom*p,
-                        v=v*self.v_nom,
-                        r=Rk*self.r_nom
-                        )["h"]        
-            g.append(Hk)
-         
-        #print(Xk)
-                    
-    
+        # last v:
+        Yk = y[:self.N-1]
+        Vk = self.F.V(
+            x=Xk*self.x_nom + self.x_nom_b,
+            y=Yk*self.y_nom + self.y_nom_b,
+            z=Zk*self.z_nom + self.z_nom_b,
+            p=p*self.p_nom + self.p_nom_b,
+        )
+        _V.append(Vk)
+        
+        
         
         
         """
-        xn = self.F_map(
-                        x0=x*self.x_nom,
-                        z=z,
-                        u=u*self.u_nom,
-                        p=self.p_nom*ca.repmat(p, 1, self.N),
-                        #p=ca.repmat(p, 1, self.N),
-                        # w same unit as dT/dt -> factor: 1/300/900
-                        w=w*self.w_nom,
-                        r=r*self.r_nom
-                        )["xf"]
-        
-        #x_gaps = xn[:,:-1]-self.x_nom*x[:,1:] 
-        #x_gaps = xn - x[:,1:] 
-        h_gaps = self.h_map(
-                            y=y*self.y_nom,
-                            x=x*self.x_nom,
-                            z=z,
-                            u=u*self.u_nom,
-                            #p=ca.repmat(p, 1, self.N),
-                            p=self.p_nom*ca.repmat(p, 1, self.N),
-                            #p=self.scale*ca.repmat(p, 1, self.N),
-                            v=v*self.v_nom,
-                            r=r*self.r_nom
-                            )["h"]
-        
-        g_gaps = self.g_map(
-                            x=x*self.x_nom,
-                            z=z,
-                            u=u*self.u_nom,
-                            #p=ca.repmat(p, 1, self.N),
-                            p=self.p_nom*ca.repmat(p, 1, self.N),
-                            #p=self.scale*ca.repmat(p, 1, self.N),
-                            v=v*self.v_nom,
-                            r=r*self.r_nom
-                            )["g"]
-        """    
-        ###################################################
+        for n in range(self.N):
+            #Uk = u[:,n:(n+self.n_u)]
+            Uk = u[:,n:(n+1)]
+            Rk = r[:,n:(n+1)]
+            Dk = d[:,n:(n+1)]
+            Yk = y[:,n:(n+1)]
+            Vk = v[:,n:(n+1)]
+            Xk = X[n]
+            #Rk = r[:,n:(n+self.n_r)]
+            Hk = self.F.h(
+                x=Xk*self.x_nom + self.x_nom_b,
+                z=Zk*self.z_nom + self.z_nom_b,
+                u=Uk*self.u_nom + self.u_nom_b,
+                p=self.p_nom*p + self.p_nom_b,
+                r=Rk*self.r_nom + self.r_nom_b,
+                #d=Dk*self.d_nom + self.d_nom_b,
+                v=Vk*self.v_nom + self.v_nom_b,
+                y=Yk*self.y_nom + self.y_nom_b
+            )["h"]        
+            g.append(Hk)
+        """
         
         # constraints:
         #g = ca.vertcat(*g)
@@ -670,9 +675,10 @@ class SingleShooting(Shooting):
             y = h(x, p, v)            (3)
         
         """
-        V = ca.veccat(x, z, u, p, w, v, y, r)
+        V = ca.veccat(x, z, u, p, v, y, r, w, d)
         
-        nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
+        #nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
+        nlp_parser = NLPParser((x, z, u, p, v, y, r, w, d))
         # keep orig g:
         nlp_parser.set_g(g)  
         nlp_parser.set_x_orig(x)  
@@ -707,7 +713,9 @@ class SingleShooting(Shooting):
         #nlp_parser.set_x_gaps(x_gaps)
         #nlp_parser.set_h_gaps(h_gaps)
         
-        nlp_parser.x_bounds_g = (0,self.N)
+        #nlp_parser.x_bounds_g = (0,self.N)
+        self.x = X
+        self.v = _V
         
         nlp = {
                'x': V,
@@ -741,7 +749,7 @@ class SingleShooting(Shooting):
     
     def get_v(self):
         """ Measurement noise. """
-        return ca.MX.sym("v", self.n_v, self.N)
+        return ca.MX.sym("v", self.n_v, 0)
     
     def get_w(self):
         """ Process noise. """
@@ -789,6 +797,11 @@ class SingleShooting(Shooting):
         """ Paralell map of algebraic eqs """
         return self.F.g.map(self.N, "openmp")
         #return self.F.g.map(self.N)
+        
+    def get_d(self):
+        """ Disturbances. """
+        #return ca.MX.sym("w", self.n_w, self.N-1)
+        return ca.MX.sym("d", self.n_d, self.N)
         
         
 class Collocation(Shooting):

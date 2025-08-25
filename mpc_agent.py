@@ -70,7 +70,8 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             "y_nom_b", None
         )
         # slack by def., TODO: setting
-        mpc_scaling["slack"] = True
+        if "slack" not in mpc_scaling:
+            mpc_scaling["slack"] = True
         return mpc_scaling
         
     def _init_state_history(
@@ -375,11 +376,19 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             - measurements and filling heuristics.
             - ekf filtering history
         """
-        x_guess = np.array([
-                y_data.y1.values.flatten(),
-                y_data.y1.values.flatten() - 2,
-                y_data.y1.values.flatten() - 280
-        ])
+        if self.estimator.n_x == 3:
+            x_guess = np.array([
+                    y_data.y1.values.flatten(),
+                    y_data.y1.values.flatten() - 2,
+                    y_data.y1.values.flatten() - 280
+            ])
+        elif self.estimator.n_x == 2:
+            x_guess = np.array([
+                    y_data.y1.values.flatten(),
+                    y_data.y1.values.flatten() - 2
+            ])
+        else: 
+            raise ValueError(".")
         return x_guess
     
     
@@ -449,8 +458,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                      status
                      ), 
                     flush=True, end='')
-            # print("\033[1A", end="")
-            print("\033[2A", end="")
+            print("\033[1A", end="")
+            #print("\033[2A", end="")
         
         
     
@@ -514,7 +523,8 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             *args,
             **kwargs
         )
-        self.estimator = MHE(
+        #self.estimator = MHE(
+        self.estimator = Estimation(
             config=config_file,
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
@@ -535,7 +545,9 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             scaling
         )
         # stochastic --> slack:
-        mhe_scaling["slack"] = True
+        #mhe_scaling["slack"] = True
+        # TODO: revert back:
+        mhe_scaling["slack"] = False
         return mhe_scaling
     
     def re_estimation_clause(

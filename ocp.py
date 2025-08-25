@@ -1806,6 +1806,9 @@ class OCP(metaclass=ABCMeta):
                     bias = 0
                 
                 if name == "x":
+                    
+                    scale, bias = self.maybe_modify_scale_bias(scale, bias)
+                    
                     if self.method == "multiple_shooting":
                         
                         #if not isinstance(bias, (float, int)):
@@ -1817,6 +1820,7 @@ class OCP(metaclass=ABCMeta):
                         #bias = bias.reshape((self.N, getattr(self, attr_name)))
                         #_vals = np.array(sol_x[start:stop]).reshape((self.N, getattr(self, attr_name)))*scale + \
                         #    bias
+                        """
                         try:
                             len_scale = len(scale)
                             if not len(scale) == sol_x[start:stop].shape[0]:
@@ -1824,6 +1828,7 @@ class OCP(metaclass=ABCMeta):
                                 bias = bias*int(sol_x[start:stop].shape[0]/self.n_x)
                         except: # scalar
                             pass
+                        """
                         _vals = (np.array(sol_x[start:stop])*scale + bias).reshape((self.N, getattr(self, attr_name)))
     
                         #if not isinstance(scale, (float, int)):
@@ -1831,8 +1836,10 @@ class OCP(metaclass=ABCMeta):
                             
                 #if self.method == "multiple_shooting" or name != "x":
                     elif self.method == "single_shooting":
-                        _vals = np.array(sol_x[start:stop]*scale)
-                        _vals = np.append(_vals, solution["g"][0:(self.n_x*(self.N-1))]*scale).reshape((self.N, getattr(self, attr_name)))
+                        # TODO: with scale
+                        _vals = np.array(sol_x[start:stop])
+                        _vals = np.append(_vals, solution["g"][0:(self.n_x*(self.N-1))])
+                        _vals = (_vals*scale + bias).reshape((self.N, getattr(self, attr_name)))
                     else:
                         #raise NotImplementedError("Nt implmntd.")
                         assert self.method == "collocation"
@@ -1960,7 +1967,18 @@ class OCP(metaclass=ABCMeta):
         
 
 
-
+    def maybe_modify_scale_bias(self, scale, bias):
+        try:
+            len_scale = len(scale)
+            #if not len(scale) == sol_x[start:stop].shape[0]:
+            if not len(scale) == (self.N*self.n_x):
+                #scale = scale*int(sol_x[start:stop].shape[0]/self.n_x)
+                #bias = bias*int(sol_x[start:stop].shape[0]/self.n_x)
+                scale = scale*int(self.N)
+                bias = bias*int(self.N)
+        except AttributeError: # scalar
+            assert not (hasattr(scale, "__len__") or hasattr(bias, "__len__"))
+        return scale, bias
         
 
 def get_scale(param_guess, truncate=False):

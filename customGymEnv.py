@@ -320,7 +320,8 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         self,
         tf,
         ts=0,
-        resample=True
+        resample=True,
+        split_requests=False
     ) -> pd.DataFrame:
         return self.res.loc[ts:tf].rename(
             columns=self.boptest_to_ocp
@@ -393,7 +394,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
             self.params,
             r,
             np.array([])
-            )
+            )[0]
         ).flatten()
         # only for bookkeeping:
         self.s = s_prime

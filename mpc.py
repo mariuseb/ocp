@@ -90,12 +90,13 @@ class MPC(OCP):
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
+        self.add_path_constraints_symbolically()
+        
         if "f" not in self.nlp:
             self.set_nlp_obj()
         
         self.prepare_h()
         self.add_h() 
-        self.add_path_constraints_symbolically()
         # TOOD: add settings:
         self.prepare_solver()
     
@@ -136,7 +137,8 @@ class MPC(OCP):
             #lbx = np.append(x0, lbx)
             #ubx = np.append(x0, ubx)
         else:
-            raise ValueError("Not implemented for single shooting yet.. ")
+            X = self.strategy.x
+            x = ca.veccat(*X)
             
         #h_x = x
         # add bounds, -inf and inf in dim(s) and 0 for x0
@@ -179,7 +181,7 @@ class MPC(OCP):
                 #h_x.append(expr)
                 h_x.append(F_call["slack"])
         else:
-            for n in range(self.N):
+            for n in range(1,self.N):
                 #h_x[n:n+1] += (self.sl[n:n+1] + b_up - b_down)
                 #h_x[n:n+1] += b
                 expr = x[(n*nx):((n*nx) + nx)] # + b
@@ -419,7 +421,7 @@ class MPC(OCP):
         """
         
         #if isinstance(self.strategy, MultipleShooting):
-        if self.strategy.name in ("MultipleShooting", "Collocation"):
+        if self.strategy.name in ("MultipleShooting", "Collocation", "SingleShooting"):
         
             x_info = self.nlp_parser["x"]
             start = x_info["range"]["a"]
@@ -439,10 +441,12 @@ class MPC(OCP):
             ubg = np.append(self.ubg, ubx)
             
             return lbg, ubg
-            
+        
+        else: 
+            raise ValueError(".")
         #elif isinstance(self.strategy, SingleShooting):
-        elif self.strategy.name == "SingleShooting":
-            raise ValueError("Not implemented for single shooting yet..")
+        #elif self.strategy.name == "SingleShooting":
+        #    raise ValueError("Not implemented for single shooting yet..")
         
     def add_path_constraints_alt(
                             self,

@@ -209,6 +209,7 @@ class Coordinator(object):
         # in kW:
         Prad_calc = (self.res["Qrad"].diff(1)/1E6).shift(-1).fillna(0)
         # global peak:
+        
         peak = Prad_calc.max()
         # cost in EUR:
         cost = (Prad_calc*self.res.cost).sum()
@@ -287,10 +288,12 @@ class Coordinator(object):
             ax = res["phi_h"].plot(color="r", drawstyle="steps-post")
             plt.show()
             """
-            
-            self.kpis = self.get_custom_kpis()
             self.concatenate_filtering_cols()
-            requests.put('{0}/stop/{1}'.format(self.env.url, self.env.testid))
+            try:
+                self.kpis = self.get_custom_kpis()
+                requests.put('{0}/stop/{1}'.format(self.env.url, self.env.testid))
+            except KeyError:
+                assert isinstance(self.env, CustomGymEnv)
             
         else: # TODO : log
             print("Coordinator works only as a result container. " + 
