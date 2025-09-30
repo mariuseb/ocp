@@ -27,6 +27,9 @@ from result_generator import ResultGenerator, plot_residuals
 from ocp.filters import KalmanDAE
 from pandas.plotting import autocorrelation_plot
 from utils import _solve_rosenbrock
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
+from mpl_toolkits.mplot3d import Axes3D
 # text:
 #rc('mathtext', default='regular')
 rc('text', usetex=True)
@@ -209,129 +212,233 @@ if __name__ == "__main__":
                 **kwargs,
                 )
     
-    ######### meta-params ########
-    prior_weight = 1
-    lbp = param_est.get_lbp(1e-2)
-    ubp = param_est.get_ubp(1e2)
-    y_data = data
-    p0 = param_est.p0
-    P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight
-    Q, R = ca.DM.eye(param_est.n_x), ca.DM.eye(param_est.n_y)
-    x_guess = np.array([
-                y_data.y1.values.flatten(),
-                y_data.y1.values.flatten() - 2
-                ])
-    for n in range(param_est.n_p, param_est.n_p + param_est.n_x):
-        P0[n,n] = 0
-    lbx = 0.7*x_guess
-    ubx = 2*x_guess
-    ##############################
-    sol, params = param_est.solve(
-            y_data,
-            #param_est.p0,
-            p0,
-            lbp=lbp,
-            ubp=ubp,
-            lbx=lbx,
-            ubx=ubx,
-            x_guess=x_guess,
-            x_N = np.array([293.15]*param_est.n_x), # not used
-            P0=P0,
-            covar=ca.veccat(Q, R),
-            codegen=False
-            )
     
-    params_sol = params.copy()
-    # integrator, H:
-    F = param_est.integrator.one_sample.map(N)
-    H = param_est.strategy.h_map
-    """
-    Steps:
-    - Do ONE Ipopt solve
-    Brute-force sensitivity analysis from *w (optimal NLP-solution):
+    def calculate_sens(prior_weight):
     
-    for n in N:
-        for j in J.
-            - Simulate
-            - Use x from simulation to find meas. gaps ('v')
-            - Calculate obj-function (including prior)
+        ######### meta-params ########
+        lbp = param_est.get_lbp(1e-8)
+        ubp = param_est.get_ubp(1e8)
+        y_data = data
+        p0 = param_est.p0
+        P0 = ca.DM.eye(param_est.n_p + param_est.n_x)*prior_weight
+        Q, R = ca.DM.eye(param_est.n_x), ca.DM.eye(param_est.n_y)
+        x_guess = np.array([
+            y_data.y1.values.flatten(),
+            y_data.y1.values.flatten() - 2
+        ])
+        for n in range(param_est.n_p, param_est.n_p + param_est.n_x):
+            P0[n,n] = 0
+        lbx = 0.7*x_guess
+        ubx = 2*x_guess
+        ##############################
+        sol, params, raw_sol = param_est.solve(
+                y_data,
+                #param_est.p0,
+                p0,
+                lbp=lbp,
+                ubp=ubp,
+                lbx=lbx,
+                ubx=ubx,
+                x_guess=x_guess,
+                x_N = np.array([293.15]*param_est.n_x), # not used
+                P0=P0,
+                covar=ca.veccat(Q, R),
+                codegen=False,
+                return_raw_sol=True
+                )
+        
+        params_sol = params.copy()
+        # integrator, H:
+        F = param_est.integrator.one_sample.mapaccum(N-1)
+        H = param_est.strategy.h_map
+        """
+        Steps:
+        - Do ONE Ipopt solve
+        Brute-force sensitivity analysis from *w (optimal NLP-solution):
+        
+        for n in N:
+            for j in J.
+                - Simulate
+                - Use x from simulation to find meas. gaps ('v')
+                - Calculate obj-function (including prior)
+        
+        Then: 
+        - Do it scaled
+        """
+        
+        #x = np.arange(1e-3,1e-1,1e-3) # Rie
+        #z = np.arange(1e-3,1e-1,1e-3) # Rea
+        
+        x = np.arange(1e6,1e7,1e6) # Ci
+        z = np.arange(1.1e7,2e7,1e6) # Ce
+        
+        x = np.arange(-1e7,1e7,1e6) # Ci
+        z = np.arange(-1e8,1e8,1e7) # Ce
+        
+        x = np.arange(-1e7,1e7,1e5) # Ci
+        z = np.arange(-1e8,1e8,1e6) # Ce
+        
+        x = np.arange(-10e6,10e6,1e6) # Ci
+        z = np.arange(-10e7,10e7,1e7) # Ce
+        
+        x = np.arange(1e6,20e6,1e6) # Ci
+        z = np.arange(1e7,20e7,1e7) # Ce
+        
+        x = np.arange(1e5,1e7,1e5) # Ci
+        z = np.arange(1e6,1e8,1e6) # Ce
+        
+        #x = np.arange(1e6,3e6,1e6) # Ci
+        #z = np.arange(1e7,3e7,1e7) # Ce
+        
+        x[x == 0] = 1e7
+        z[z == 0] = 1e8
+        
+        #relative_pos_Rie = param_est.dae.p.index("Rie")
+        #relative_pos_Rea = param_est.dae.p.index("Rea")
+        relative_pos_Rie = param_est.dae.p.index("Ci")
+        relative_pos_Rea = param_est.dae.p.index("Ce")
+        
+        x0 = sol.iloc[1][["Ti", "Te"]].values
+        p_nom = param_est.p_nom
+        
+        for i, _x in enumerate(x):
+            sub_y = np.array([])
+            for _z in z:
+                # simulate with p0
+                p = params.values
+                p[relative_pos_Rie] = _x
+                p[relative_pos_Rea] = _z
+                x_sim = F(
+                    x0=x0,
+                    u=data[param_est.u_names][:-1].values.T,
+                    p=p
+                )["xf"]
+                x_sim =  ca.horzcat(x0, x_sim)
+                v_sim = H(
+                    y=data[param_est.y_names].values.T,
+                    x=x_sim,
+                    u=data[param_est.u_names].values.T,
+                    p=p,
+                    v=0
+                )["h"]
+                obj_value = ca.dot(
+                    v_sim/12, v_sim/12
+                ) + \
+                prior_weight*ca.dot(
+                    p0/p_nom - p/p_nom, p0/p_nom - p/p_nom
+                )
+                sub_y = np.append(sub_y, obj_value)
+                print(v_sim)
+            if i == 0: 
+                y = sub_y
+            else:
+                y = np.vstack([y, sub_y])
+                
+        # Make data 3D-compliant:
+        x, z = np.meshgrid(x, z)
+        
+        ret = {
+            "x": x,
+            "z": z,
+            "y": y
+        }
+        return ret
+        
+    points = dict()
+    points[1] = calculate_sens(1)
+    points[0] = calculate_sens(0)
     
-    Then: 
-    - Do it scaled
-    """
+        
+    #plt.gca().ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     
-    #x = np.arange(1e-3,1e-1,1e-3) # Rie
-    #z = np.arange(1e-3,1e-1,1e-3) # Rea
+    def normalize_axis(ax, existing_ticks, which=None):
+        #custom_y_ticks = [0, 1e8]
+        #custom_y_ticks = list(np.arange(1e7,1.1e8,1e7))
+        custom_labels = ['']*len(existing_ticks)
+        custom_labels[0] = 0
+        custom_labels[-1] = 1
+        #custom_y_labels = ['0', '1']
+        method = getattr(ax, "set_" + which + "ticks")
+        #ax.set_yticks(existing_ticks, labels=custom_labels)
+        method(existing_ticks, labels=custom_labels)
+        
+        # Get all x-tick labels
+        axis = getattr(ax, which + "axis")
+        ticks = axis.get_major_ticks()
+        for tick in ticks: 
+            tick.label1.set_visible(False)
+        ticks[0].label1.set_visible(True)
+        ticks[-1].label1.set_visible(True)
     
-    x = np.arange(1e6,1e7,1e6) # Ci
-    z = np.arange(1.1e7,2e7,1e6) # Ce
+    def plot_surface(x, y, z, index, title):
+        #ax = fig.add_subplot((1,2,index), projection='3d')
+        subplot_arg = int("12" + str(index+1))
+        ax = fig.add_subplot(subplot_arg, projection='3d')
+        surf = ax.plot_surface(
+            x, z, y,
+            #cmap=cm.summer,
+            #cmap="Greys",
+            cmap=cm.jet,
+            linewidth=0,
+            antialiased=True,
+            #computed_zorder=False
+        )
+        # Customize the z axis.
+        zlims = ax.get_zlim()
+        #ax.set_zlim(0, zlims[1])
+        ax.set_zlim(0, 100)
+        ax.zaxis.set_major_locator(LinearLocator(11))
+        # A StrMethodFormatter is used automatically
+        ax.zaxis.set_major_formatter('{x:.00f}')
+        #ax.ticklabel_format(style='sci',scilimits=(0,0),axis='both')
+        # Add a color bar which maps values to colors.
+        #if prior_weight == 1:
+        #    fig.colorbar(surf, shrink=0.5, aspect=5)
+        #ax.set_zlabel("$f(x,p)$")
+        ax.set_xlabel("$p_1$", rotation=0)
+        ax.set_ylabel("$p_2$", rotation=0)
+        #ax.set_yticklabels([0, 1e8])
+        #ax.set_xticklabels([0, 1e7])
+        
+        #ax.grid(True)
+        #custom_x_ticks = [0, 1e7]
+        custom_x_ticks = list(np.arange(1e6,1.1e7,1e6))
+        custom_y_ticks = list(np.arange(1e7,1.1e8,1e7))
+        custom_z_ticks = list(np.arange(0,100,10))
+        normalize_axis(ax, custom_x_ticks, which="x")
+        normalize_axis(ax, custom_y_ticks, which="y")
+        normalize_axis(ax, custom_z_ticks, which="z")
+
+        ax.tick_params(axis='x', pad=-5) # Set pad to 0 for minimum distance
+        ax.tick_params(axis='z', pad=0) # Set pad to 0 for minimum distance
+        ax.tick_params(axis='y', pad=-5) # Set pad to 0 for minimum distance
+        ax.xaxis.labelpad = -12 # Adjust X-axis label distance
+        ax.yaxis.labelpad = -12 # Adjust Y-axis label distance
+        ax.zaxis.labelpad = -12 # Adjust Y-axis label distance
+        ax.set_title(title)
+        return ax
     
-    x = np.arange(1e6,1e7,1e6) # Ci
-    z = np.arange(1e7,1e8,1e7) # Ce
-    
-    #relative_pos_Rie = param_est.dae.p.index("Rie")
-    #relative_pos_Rea = param_est.dae.p.index("Rea")
-    relative_pos_Rie = param_est.dae.p.index("Ci")
-    relative_pos_Rea = param_est.dae.p.index("Ce")
-    
-    x0 = sol.iloc[1][["Ti", "Te"]].values
-    p_nom = param_est.p_nom
-    
-    for i, _x in enumerate(x):
-        sub_y = np.array([])
-        for _z in z:
-            # simulate with p0
-            p = params.values
-            p[relative_pos_Rie] = _x
-            p[relative_pos_Rea] = _z
-            x_sim = F(
-                x0=x0,
-                u=data[param_est.u_names].values.T,
-                p=p
-            )["xf"]
-            v_sim = H(
-                y=data[param_est.y_names].values.T,
-                x=x_sim,
-                u=data[param_est.u_names].values.T,
-                p=p,
-                v=0
-            )["h"]
-            obj_value = ca.dot(
-                v_sim, v_sim
-            ) + \
-            prior_weight*ca.dot(
-                p0/p_nom - p/p_nom, p0/p_nom - p/p_nom
-            )
-            sub_y = np.append(sub_y, obj_value)
-            print(v_sim)
-        if i == 0: 
-            y = sub_y
-        else:
-            y = np.vstack([y, sub_y])
-            
-    """
-    Get objective values for different values of Rie, Rea.
-    """
-    import matplotlib.pyplot as plt
-    import numpy as np
-    from matplotlib import cm
-    from matplotlib.ticker import LinearLocator
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    # Make data.
-    #X = np.arange(-5, 5, 0.25)
-    #Y = np.arange(-5, 5, 0.25)
-    x, z = np.meshgrid(x, z)
-    #R = np.sqrt(X**2 + Y**2)
-    #Z = np.sin(R)
-    # Plot the surface.
-    surf = ax.plot_surface(x ,z , y, cmap=cm.coolwarm,
-                        linewidth=0, antialiased=False)
-    # Customize the z axis.
-    #ax.set_zlim(-1.01, 1.01)
-    ax.zaxis.set_major_locator(LinearLocator(10))
-    # A StrMethodFormatter is used automatically
-    ax.zaxis.set_major_formatter('{x:.02f}')
-    # Add a color bar which maps values to colors.
-    fig.colorbar(surf, shrink=0.5, aspect=5)
-    plt.show()    
-    print(x)
+    fig = plt.figure()
+    wo_prior = points[0]
+    ax1 = plot_surface(
+        wo_prior["x"], 
+        wo_prior["y"],
+        wo_prior["z"],
+        0,
+        #"$f(w) = \| v \|_{S}^{2}$"
+        "$f(x,p) = V_{N|0}(x,p)$"
+    )
+    w_prior = points[1]
+    ax2 = plot_surface(
+        w_prior["x"], 
+        w_prior["y"],
+        w_prior["z"],
+        1,
+        #"$f(w) = \| v \|_{S}^{2} + \| \overline{p} \|_{P}^{2}$"
+        #"$f(w) = \| v \|_{S}^{2} + \Pi(p)$"
+        "$f(x,p) = V_{N|0}(x,p) + \Pi(p)$"
+    )
+    fig.tight_layout()
+    plt.show()
+       
+    print("head")

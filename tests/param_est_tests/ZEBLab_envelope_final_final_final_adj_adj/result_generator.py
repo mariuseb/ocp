@@ -31,10 +31,10 @@ from ocp.param_est import ParameterEstimation
 import matplotlib.pyplot as plt
 from ocp.filters import KalmanDAE
 #from utils import save_journal_plot, plot_residuals
-from matplotlib import rc
 from sklearn.metrics import r2_score
 from copy import deepcopy
 # text:
+from matplotlib import rc
 rc('text', usetex=True)
 # try to standardize datetime-formatting:
 #plt.rcParams["date.autoformatter.minute"] = "%Y-%m-%d"
@@ -789,6 +789,14 @@ class ResultGenerator(object):
             return rmse/y.std()
         else:
             return rmse/(y.max() - y.min())
+    
+    def cvrmse(self, y, y_pred):
+        """
+        Normalize by |y_max - y_min|
+        """
+        
+        rmse = self.rmse(y, y_pred)
+        return (rmse/y.mean())*100
     
     def aic(self, y, y_pred, num_params):
         """
@@ -1813,13 +1821,24 @@ class ResultGenerator(object):
         
         #plt.set_prop_cycle(color_cycler)
         #plt.rc('axes', prop_cycle=color_cycler)
-        ax.plot(index.to_numpy(),
-            data["Ti_onestep"].to_numpy(),
-                                  linewidth=self.LINEWIDTH,
-                                  drawstyle="steps-post",
-                                  c=color_map_custom["one_step"],
-                                  #cmap=my_cmap
-                                  ) #, marker="v", markersize=MARKERSIZE)
+        if not training:
+            ax.plot(index.to_numpy(),
+                data["Ti_onestep"].to_numpy(),
+                                    linewidth=self.LINEWIDTH,
+                                    drawstyle="steps-post",
+                                    c=color_map_custom["one_step"],
+                                    #cmap=my_cmap
+                ) #, marker="v", markersize=MARKERSIZE)
+            labels =  [
+                "$x_{K|K-M}^{prbs}$", 
+                "$y_{N}$",
+                "$x_{K|K-M}^{adapt}$"
+            ]
+        else:
+            labels =  [
+                "$y_{N}$",
+                "$x_{K|K-M}^{adapt}$"
+            ]
         ax.plot(index.to_numpy(),
             data["y1"].to_numpy(),
                 linewidth=self.LINEWIDTH,
@@ -1846,11 +1865,7 @@ class ResultGenerator(object):
         ylim = ax.get_ylim()
         ax.set_ylim([ylim[0], ylim[1]*1.05])
         ax.legend(
-                  [
-                   "$x_{K|K-M}^{prbs}$", 
-                   "$y_{N}$",
-                   "$x_{K|K-M}^{adapt}$"
-                   ],
+                  labels,
                   loc="upper left",
                   bbox_to_anchor=(0.0, 1.28),
                   ncol=3
@@ -1864,6 +1879,7 @@ class ResultGenerator(object):
             (data["vent"]).to_numpy(),
                           drawstyle="steps-post", 
                           c=color_map_custom["binary"],
+                          #c="m",
                           linewidth=0.75
                           )
         ax.set_yticks([0,1])
