@@ -22,6 +22,7 @@ from ocp.dae import DAE
 #from callback import ProcessIdCallback
 import os
 import subprocess
+#from ocp.estimation import Estimation
 from collections import OrderedDict
 #from shooting import Collocation
 #from sysid.ocp import OCP
@@ -30,6 +31,17 @@ import hashlib
 import scipy
 import typing
 import copy
+
+# hack: broken isinstance
+"""
+def is_single_shooting(strategy):
+    return not isinstance(strategy, MultipleShooting) and \
+            not isinstance(strategy, Collocation)
+"""
+
+def is_single_shooting(strategy):
+    return (type(strategy) is not MultipleShooting) and \
+            (type(strategy) is not Collocation)
 
 class ParamGuess(object):
     """
@@ -997,16 +1009,17 @@ class OCP(metaclass=ABCMeta):
                 # TODO: explicit here:
                 try:
                     sym_var = sym_var.reshape((dim_var, self.N))
-                except:
-                    if varname == "z" and self.method == "collocation":
-                        sym_var = sym_var.reshape((dim_var, self.strategy.d*(self.N-1)))
-                    elif varname != "x":
-                        sym_var = sym_var.reshape((dim_var, self.N-1))
-                    else: # x, collocation, fix:
-                        sym_var = sym_var.reshape((dim_var, (self.N-1)*(self.strategy.d+1)+1))
-                        
+                except RuntimeError:
+                    if isinstance(self.strategy, SingleShooting):
+                        pass # no reshape needed
+                    else:
+                        if varname == "z" and self.method == "collocation":
+                            sym_var = sym_var.reshape((dim_var, self.strategy.d*(self.N-1)))
+                        elif varname != "x":
+                            sym_var = sym_var.reshape((dim_var, self.N-1))
+                        else: # x, collocation, fix:
+                            sym_var = sym_var.reshape((dim_var, (self.N-1)*(self.strategy.d+1)+1))
                     #pass
-        
         return sym_var
         
     
@@ -1430,31 +1443,36 @@ class OCP(metaclass=ABCMeta):
             # TODO: bounds on x here:
             
             # TODO: improve logic:
-            
-            if isinstance(self.x_nom_b, list):
-                """
-                bias = self.x_nom_b = np.tile(self.x_nom_b, self.N)
-                scale = self.x_nom = np.tile(self.x_nom, self.N)
-                """
-                # 'arrayify':
-                bias = np.repeat(self.x_nom_b, self.N) #.reshape(self.n_x, self.N)
-                scale = np.repeat(self.x_nom, self.N) #.reshape(self.n_x, self.N)
+            #if not isinstance(self.strategy, SingleShooting):
+            if not is_single_shooting(self.strategy):
+                if isinstance(self.x_nom_b, list):
+                    """
+                    bias = self.x_nom_b = np.tile(self.x_nom_b, self.N)
+                    scale = self.x_nom = np.tile(self.x_nom, self.N)
+                    """
+                    # 'arrayify':
+                    bias = np.repeat(self.x_nom_b, self.N) #.reshape(self.n_x, self.N)
+                    scale = np.repeat(self.x_nom, self.N) #.reshape(self.n_x, self.N)
+                    
+                else:
+                    bias = self.x_nom_b
+                    scale = self.x_nom
                 
+                try:
+                    try:
+                        b_dim = bias.shape[0]*bias.shape[1]    
+                    except IndexError:
+                        b_dim = bias.shape[0]
+                    x_dim = x_init.shape[0]*x_init.shape[1]    
+                    if b_dim == x_dim:
+                        bias = bias.reshape(x_init.shape)
+                        scale = scale.reshape(x_init.shape)
+                except AttributeError: # is list, safe pass
+                    pass
             else:
                 bias = self.x_nom_b
                 scale = self.x_nom
-            
-            try:
-                try:
-                    b_dim = bias.shape[0]*bias.shape[1]    
-                except IndexError:
-                    b_dim = bias.shape[0]
-                x_dim = x_init.shape[0]*x_init.shape[1]    
-                if b_dim == x_dim:
-                    bias = bias.reshape(x_init.shape)
-                    scale = scale.reshape(x_init.shape)
-            except AttributeError: # is list, safe pass
-                pass
+                
             
             if lbx is not None: # passed as array:
                 assert ubx is not None
@@ -1462,14 +1480,18 @@ class OCP(metaclass=ABCMeta):
                 bounds["x"]["lb"] = (lbx - bias)/scale
                 
                 #varnames = list(set(varnames).difference(set("x")))
+            # TODO: fix for single shooting:
             else:
-                if "x" in bounds_cfg:
-                    
+                if "x" in bounds_cfg:          
                     dim = int(self.nlp_parser["x"]["dim"]/self.n_x)
                     #lbx = np.hstack([bounds_cfg["x"]["lbx"] for n in range(dim)])
                     #ubx = np.hstack([bounds_cfg["x"]["ubx"] for n in range(dim)])
-                    lbx = np.repeat(bounds_cfg["x"]["lbx"], self.N).reshape(self.n_x, self.N) #.flatten()
-                    ubx = np.repeat(bounds_cfg["x"]["ubx"], self.N).reshape(self.n_x, self.N) #.flatten()
+                    if not is_single_shooting(self.strategy):
+                        lbx = np.repeat(bounds_cfg["x"]["lbx"], self.N).reshape(self.n_x, self.N) #.flatten()
+                        ubx = np.repeat(bounds_cfg["x"]["ubx"], self.N).reshape(self.n_x, self.N) #.flatten()
+                    else:
+                        lbx = np.array(bounds_cfg["x"]["lbx"])
+                        ubx = np.array(bounds_cfg["x"]["ubx"])
                     bounds["x"]["lb"] = (lbx - bias)/scale
                     bounds["x"]["ub"] = (ubx - bias)/scale
                 else:
@@ -1741,6 +1763,112 @@ class OCP(metaclass=ABCMeta):
                 else:
                     # Eventually, output such as this should go to logger.
                     print("Cleaned up JIT-files")
+                    
+    def add_path_constraints_symbolically(self):
+        """
+        Add constraints for state path.
+        """
+        x_info = self.nlp_parser["x"]
+        nx = self.n_x
+        
+        x_symbolic = ca.SX.sym("x", nx)
+        s_symbolic = ca.SX.sym("x", nx)
+
+        F_path_constr = ca.Function(
+            "Fpath", [x_symbolic, s_symbolic], [x_symbolic + s_symbolic], 
+            ["x", "s"], ["slack"]
+        )
+        
+        
+        if self.strategy.name == "MultipleShooting":
+            #x = self.nlp["x"][(x_info["range"]["a"] + self.n_x):x_info["range"]["b"]]
+            x = self.nlp["x"][(x_info["range"]["a"]):x_info["range"]["b"]]
+            #lbx = np.append(x0, lbx)
+            #ubx = np.append(x0, ubx)
+        elif self.strategy.name == "Collocation":
+            # TODO: expand bounds to all collocation points
+            # Collocation
+            #d = self.strategy.d
+            #x = self.nlp["x"][x_info["range"]["a"]:x_info["range"]["b"]:(d+1)]
+            x = x_info["boundary_vars"]
+            
+            # set bounds on x0: (to be set as parameter in parametric NLP !!)
+            #self.lbx[0:self.n_x] = x0
+            #self.ubx[0:self.n_x] = x0
+            #self.x0[0:self.n_x] = x0
+            #lbx = np.append(x0, lbx)
+            #ubx = np.append(x0, ubx)
+        else:
+            X = self.strategy.x
+            x = ca.veccat(*X)
+            
+        #h_x = x
+        # add bounds, -inf and inf in dim(s) and 0 for x0
+        #b = ca.MX.sym("b", self.n_x)
+        h_x = []
+        
+        if self.slack:    
+            assert self.n_x == self.n_sl
+
+            #self.lbx = np.append(self.lbx, np.repeat([-np.inf], self.nlp_parser.vars["sl"]["dim"]))
+            #self.lbx = np.append(self.lbx, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
+            #self.ubx = np.append(self.ubx, np.repeat([np.inf], self.nlp_parser.vars["sl"]["dim"]))
+            #self.x0 = np.append(self.x0, np.repeat([0], self.nlp_parser.vars["sl"]["dim"]))
+            
+            #h_x += self.sl[self.n_sl:]
+            
+            # introduce extra params here:
+            #h_x += self.sl
+            #b_up = ca.MX.sym("b_up", self.sl.shape[1])
+            #b_down = ca.MX.sym("b_down", self.sl.shape[1])
+            
+            
+            # TODO: this should be conditional:
+            #b = ca.MX.sym("b", self.sl.shape[1])
+            for n in range(1,self.N):
+                #h_x[n:n+1] += (self.sl[n:n+1] + b_up - b_down)
+                #h_x[n:n+1] += (self.sl[n:n+1] + b)
+                #expr = x[(n*nx):((n*nx) + nx)]*self.x_nom + self.x_nom_b + self.sl[(n*nx):((n*nx) + nx)]*self.x_nom + self.x_nom_b # + b
+                #expr = x[(n*nx):((n*nx) + nx)] + self.sl[(n*nx):((n*nx) + nx)]
+                
+                _x, _s = x[(n*nx):((n*nx) + nx)], self.sl[(n*nx):((n*nx) + nx)] # + b
+                # new, call:
+                F_call = F_path_constr(
+                    #x=_x*self.x_nom + self.x_nom_b,
+                    #s=_s*self.x_nom + self.x_nom_b
+                    x=_x,
+                    s=_s
+                )
+                
+                #h_x.append(expr)
+                h_x.append(F_call["slack"])
+        else:
+            for n in range(1,self.N):
+                #h_x[n:n+1] += (self.sl[n:n+1] + b_up - b_down)
+                #h_x[n:n+1] += b
+                expr = x[(n*nx):((n*nx) + nx)] # + b
+                h_x.append(expr)
+                #_x = x[(n*nx):((n*nx) + nx)]
+                # new, call:
+                #F_call = F_path_constr(
+                #    x=_x*self.x_nom + self.x_nom_b,
+                #    s=0
+                #)
+                
+                #h_x.append(expr)
+                #h_x.append(F_call["slack"])
+                        
+        # keep b as parameter:
+        #self.nlp["p"] = ca.vertcat(self.nlp["p"], b)
+        #self.nlp["p"] = ca.vertcat(b_up, b_down)
+        
+        #self.lbg = np.append(lbg, lbx)
+        #self.ubg = np.append(ubg, ubx)
+    
+        # Add numerical values for path constraint each solve: 
+        self.path_start = self.nlp["g"].shape[0]      
+        self.nlp["g"] = ca.vertcat(self.nlp["g"], *h_x)
+        self.path_stop = self.nlp["g"].shape[0]
         
 
     @staticmethod
@@ -1838,8 +1966,42 @@ class OCP(metaclass=ABCMeta):
                     elif self.method == "single_shooting":
                         # TODO: with scale
                         _vals = np.array(sol_x[start:stop])
-                        _vals = np.append(_vals, solution["g"][0:(self.n_x*(self.N-1))])
-                        _vals = (_vals*scale + bias).reshape((self.N, getattr(self, attr_name)))
+                        if self.__name__ == "Estimation":
+                            # simulate:
+                            F = self.integrator.one_sample.mapaccum(
+                                self.N-1
+                            )
+                            _vals = _vals*self.x_nom + self.x_nom_b
+                            x0 = _vals
+                            __vals = F(
+                                x0=x0,
+                                z=0, # TODO: fix for z
+                                u=self.data[self.u_names].values.T[:,:-1],
+                                p=sol_x[
+                                    self.nlp_parser["p"]["range"]["a"]:
+                                    self.nlp_parser["p"]["range"]["b"]    
+                                ]*self.p_nom,
+                                r=self.data[self.r_names].values.T[:,:-1],
+                                d=0
+                            )["xf"]
+                            x_sim = np.array(
+                                __vals
+                            )
+                            # add to array:
+                            #_vals = np.append(_vals, __vals)
+                            _vals = np.hstack(
+                                [
+                                _vals.reshape((
+                                _vals.shape[0], 1)),
+                                x_sim
+                                ]
+                            )
+                            _vals = _vals.T.flatten()
+                        else:
+                            _vals = np.append(_vals, solution["g"][0:(self.n_x*(self.N-1))])
+                            _vals = (_vals*scale + bias)
+                        # common:
+                        _vals = _vals.reshape((self.N, getattr(self, attr_name)))
                     else:
                         #raise NotImplementedError("Nt implmntd.")
                         assert self.method == "collocation"
@@ -1853,7 +2015,7 @@ class OCP(metaclass=ABCMeta):
                     _vals = sol_x[start:stop]
                     if n_name == 0:
                         continue
-                    
+                
                     try:
                         _vals = _vals.reshape((self.N, getattr(self, attr_name)))
                     except ValueError:
@@ -1976,7 +2138,7 @@ class OCP(metaclass=ABCMeta):
                 #bias = bias*int(sol_x[start:stop].shape[0]/self.n_x)
                 scale = scale*int(self.N)
                 bias = bias*int(self.N)
-        except AttributeError: # scalar
+        except TypeError: # scalar
             assert not (hasattr(scale, "__len__") or hasattr(bias, "__len__"))
         return scale, bias
         

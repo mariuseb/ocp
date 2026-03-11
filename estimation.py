@@ -1,13 +1,16 @@
 import casadi as ca
 import pandas as pd
 import numpy as np
-#from pprint import pprint
+from pprint import pprint
 import re
+from ocp.shooting import SingleShooting, MultipleShooting, Collocation
 from ocp.covar_est import CovarianceEstimation
-from ocp.ocp import OCP, get_scale
-
+from ocp.ocp import OCP, get_scale, is_single_shooting
 
 class Estimation(OCP, CovarianceEstimation):
+    
+    __name__ = "Estimation"
+    
     def __init__(self, **kwargs):
         """
         Almost equal to regular sysid,
@@ -108,7 +111,20 @@ class Estimation(OCP, CovarianceEstimation):
         self.slack_names = list(map(lambda x: "s" + str(x+1), range(self.n_sl)))
         """
         MHE is now discrete-time stochastic.
-        """    
+        """   
+        
+    def get_MX(self, symbol):
+        if symbol.startswith("v") and is_single_shooting(self.strategy):
+            # TODO: slicing:
+            return self.v
+        else:
+            return self.get(symbol)
+    
+    def _transform_v(self):
+        self.v = ca.vertcat(
+            *self.strategy.v
+        )
+        
     
     def set_nlp_obj(self, alg_in_Q=False, arrival_cost=False):
         """
@@ -116,7 +132,9 @@ class Estimation(OCP, CovarianceEstimation):
         
         Modularize this method as we go. 
         """
-        
+        if is_single_shooting(self.strategy):
+            self._transform_v()
+             
         # initialize the parameters needed for the objective:
         self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
         self.R = ca.MX.sym("R", self.n_y, self.n_y)
@@ -131,7 +149,8 @@ class Estimation(OCP, CovarianceEstimation):
         vals = dict()
         for symbol in symbols:
             try:
-                vals[symbol] = self.get(symbol)
+                #vals[symbol] = self.get(symbol)
+                vals[symbol] = self.get_MX(symbol)
             except KeyError:
                 assert symbol.startswith("s")
             
@@ -146,7 +165,7 @@ class Estimation(OCP, CovarianceEstimation):
         vals["ca"] = ca
         vals["R"] = self.R
         vals["Q"] = self.Q
-        vals["p_nom_map"] = self.p_nom_map
+        #vals["p_nom_map"] = self.p_nom_map
         
         """
         s1, s2, ... , s_{nx} are aliases for sigma[:,0] , ... , sigma[:,nx-1]
@@ -204,25 +223,22 @@ class Estimation(OCP, CovarianceEstimation):
     def store_param_and_state(self, params, state, z, k):
         self.df.loc[k*self.dt, :] = np.concatenate([params, state, z])
         
-    def solve(
-              self,
-              data,
-              param_guess,
-              covar=None,
-              lbp=None,
-              ubp=None,
-              lbx=None,
-              ubx=None,
-              P0=None,
-              x_N=None,
-              #z_N=np.array([]),
-              x_guess=None,
-              p_aux=None,
-              p_aux_prior=None,
-              #arrival_cost=False,
-              return_raw_sol=False,
-              codegen=False
-              ):
+    def presolve(
+        self,
+        data,
+        param_guess,
+        covar=None,
+        lbp=None,
+        ubp=None,
+        lbx=None,
+        ubx=None,
+        P0=None,
+        x_N=None,
+        x_guess=None,
+        p_aux=None,
+        p_aux_prior=None,
+        codegen=False
+    ):
         """
         Set initials for v, w to 0
         """
@@ -262,8 +278,44 @@ class Estimation(OCP, CovarianceEstimation):
         else:
             p = ca.veccat(covar)
         self.p_val = p # store
+        #self.nlp["p"] = self.integrator.p
+        #self.p_val = param_guess/self.p_nom
+        
         
         self.prepare_solver(codegen=codegen)
+        
+        
+    def solve(
+              self,
+              data,
+              param_guess,
+              covar=None,
+              lbp=None,
+              ubp=None,
+              lbx=None,
+              ubx=None,
+              P0=None,
+              x_N=None,
+              x_guess=None,
+              p_aux=None,
+              p_aux_prior=None,
+              return_raw_sol=False,
+    ):      
+        self.presolve(
+            data,
+            param_guess,
+            covar=covar,
+            lbp=lbp,
+            ubp=ubp,
+            lbx=lbx,
+            ubx=ubx,
+            P0=P0,
+            x_N=x_N,
+            x_guess=x_guess,
+            p_aux=p_aux,
+            p_aux_prior=p_aux_prior
+        )
+        
         solution = self.solver(
                             x0=self.x0,
                             lbg=self.lbg, # option for path-constraints?
@@ -271,7 +323,7 @@ class Estimation(OCP, CovarianceEstimation):
                             lbx=self.lbx,
                             ubx=self.ubx,
                             #p=ca.veccat(_P0, covar, ca.vertcat(param_guess, x_N))
-                            p=p
+                            p=self.p_val
                             #p=0
                             )
         ### The below is 'MHE-specific':

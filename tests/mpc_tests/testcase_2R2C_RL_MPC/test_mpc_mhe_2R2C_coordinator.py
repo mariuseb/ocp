@@ -23,6 +23,7 @@ if __name__ == "__main__":
     """
     
     coord = Coordinator(
+        #"coordinator_mpc_mhe_unscaled.json"
         "coordinator_mpc_mhe.json"
     )
     x0 = np.array([293.15, 293.15])

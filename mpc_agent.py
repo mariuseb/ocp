@@ -1,5 +1,6 @@
 #from ast import Param
 from ocp.mpc import MPC
+from ocp.ocp import is_single_shooting
 from ocp.mhe import MHE
 #from ocp.filters import KalmanDAE
 import numpy as np
@@ -18,6 +19,7 @@ from ocp.config import Config
 from abc import ABCMeta, abstractmethod
 from gymnasium import Env
 from ocp.functions import functions
+from ocp.shooting import SingleShooting
 from datetime import datetime
 import casadi as ca
 import matplotlib.pyplot as plt
@@ -352,7 +354,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             R[2,2] = 1e-5 # config / learnable
         except:
             pass
-        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
+        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1e-8 # config / learnable
 
         P0[
         self.estimator.n_p:(self.estimator.n_p + self.estimator.n_x),
@@ -389,7 +391,13 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             ])
         else: 
             raise ValueError(".")
-        return x_guess
+        #if isinstance(self.estimator.strategy, SingleShooting):
+        if is_single_shooting(self.estimator.strategy):
+            last_x_guess = x_guess[:,0]
+            x_guess = last_x_guess.reshape((1,self.estimator.n_x))
+        else:
+            last_x_guess = x_guess[-1,-self.estimator.n_x:]
+        return x_guess, last_x_guess
     
     
     @abstractmethod
@@ -417,7 +425,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                 backshift=env.maps.u,
                 integrate_replace=self.integrate_replace
             )
-            x_guess = self.generate_x_guess(
+            x_guess, last_x_guess = self.generate_x_guess(
                 y_data
             )
             # solve:
@@ -431,7 +439,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         codegen=False,
                                         return_raw_sol=True,
                                         P0=P0,
-                                        x_N=x_guess[-1,-self.estimator.n_x:]
+                                        #x_N=x_guess[-1,-self.estimator.n_x:]
+                                        x_N=last_x_guess
                                         ) 
             # store solution:
             self.ests[k] = sol
@@ -529,7 +538,7 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
             ),
-            arrival_cost=True,
+            arrival_cost=False,
             **self.get_mhe_scaling(
                 self.scaling
             )
@@ -566,7 +575,9 @@ class MheMPCAgent(AbstractAdaptiveAgent):
         updates of covariance can be retrieved.
         """
         x_post_ekf = super().x0_from_obs(k, obs)
-        if self.re_estimation_clause(k):
+        # TODO: implement AdaptiveGDSolver
+        #if self.re_estimation_clause(k):
+        if False:
             # latest estimation, latest state:
             x_post_mhe = self.ests[k][self.x()].iloc[-1].values.flatten()
             return x_post_mhe

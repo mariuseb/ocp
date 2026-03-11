@@ -7,12 +7,14 @@
         "sampling_time": "15min",
         "mpc_config_file": "mpc_configs/2R2C_MPC.json",
         "scaling": {
-            "x_nom": [12, 12],
-            "x_nom_b": [289.15, 289.15],
+            "x_nom": [12,12],
+            "x_nom_b": [289.15,289.15],
             "r_nom": [12,1],
             "r_nom_b": [289.15,0],
             "u_nom": [1000],
-            "u_nom_b ": [0],
+            "u_nom_b": [0],
+            "y_nom": [12],
+            "y_nom_b": [289.15],
             "slack": false
             },
         "filter_config_file": "ekf_configs/2R2C_EKF_2meas.json",

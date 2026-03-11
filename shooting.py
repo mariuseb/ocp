@@ -540,13 +540,7 @@ class SingleShooting(Shooting):
     def transcribe_nlp(self):
         """ 
         Transcribe the nlp.
-        """ 
-        
-        #self.x_nom = 300
-        #self.u_nom = 5000
-        #self.r_nom = 300
-        #self.p_nom = self.scale
-        
+        """  
         x = self.get_x()
         w = self.get_w()
         v = self.get_v()
@@ -555,33 +549,7 @@ class SingleShooting(Shooting):
         z = self.get_z()
         r = self.get_r()
         d = self.get_d()
-        # TODO: init p here instead (for TVP etc.):
-        #p = self.F.p
         p = self.get_p()
-        
-        # unsure if single shooting is amenable to map:    
-        #self.F_map = self.map_F()
-        #self.h_map = self.map_h()
-        #self.g_map = self.map_g()
-        
-        # if 1-D U:
-        
-        # NOTE: below should be handled better.
-        
-        #if u.shape[1] == 1:
-        #    u = u.T      
-        #if y.shape[0] != self.n_y:
-        #    y = y.T
-        
-        ############## setting up constraints #############
-        
-        """
-        propagate system one time-step with slice of u
-        use result, "xf", for next time-step.
-        
-        NOTE: z needs to be handled separately,
-        and outside of single-shooting integrator.
-        """
         F = self.F.chain_integrator()
         g = []
         Xk = x
@@ -589,22 +557,11 @@ class SingleShooting(Shooting):
         X = [x]
         _V = []
         for n in range(self.N-1):
-            #Uk = u[:,n:(n+self.n_u)]
-            #Rk = r[:,n:(n+self.n_r)]
-            #Dk = d[:,n:(n+self.n_d)]
             Uk = u[:,n:(n+1)]
             Rk = r[:,n:(n+1)]
             Dk = d[:,n:(n+1)]
             Yk = y[:,n:(n+1)]
             # integrate
-            """
-            Fk = self.F.one_sample(x0=Xk*self.x_nom,
-                                    z=0, 
-                                    u=Uk*self.u_nom,
-                                    p=self.p_nom*p,
-                                    w=w*self.w_nom,
-                                    r=Rk*self.r_nom)
-            """
             Vk = self.F.V(
                 x=Xk*self.x_nom + self.x_nom_b,
                 y=Yk*self.y_nom + self.y_nom_b,
@@ -619,49 +576,28 @@ class SingleShooting(Shooting):
                 r=Rk*self.r_nom + self.r_nom_b,
                 d=Dk*self.d_nom + self.d_nom_b
             )
-            Xk = Fk["x"]/self.x_nom - self.x_nom_b
-            Zk = Fk["z"]/self.z_nom - self.z_nom_b
+            Xk = (Fk["x"] - self.x_nom_b)/self.x_nom
+            Zk = (Fk["z"] - self.z_nom_b)/self.z_nom
+            #Xk = Fk["x"]
+            #Zk = Fk["z"]
             # add expression for state at integration end:
             #g.append(Xk)
             X.append(Xk)
-            _V.append(Vk)
+            _V.append(Vk["vdef"])
+            #_V.append((Vk["vdef"] - self.y_nom_b)/self.y_nom)
             g.append(Zk)
             
-        # last v:
-        Yk = y[:self.N-1]
+        # last v:y
+        
+        Yk = y[self.N-1]
         Vk = self.F.V(
             x=Xk*self.x_nom + self.x_nom_b,
             y=Yk*self.y_nom + self.y_nom_b,
             z=Zk*self.z_nom + self.z_nom_b,
             p=p*self.p_nom + self.p_nom_b,
         )
-        _V.append(Vk)
-        
-        
-        
-        
-        """
-        for n in range(self.N):
-            #Uk = u[:,n:(n+self.n_u)]
-            Uk = u[:,n:(n+1)]
-            Rk = r[:,n:(n+1)]
-            Dk = d[:,n:(n+1)]
-            Yk = y[:,n:(n+1)]
-            Vk = v[:,n:(n+1)]
-            Xk = X[n]
-            #Rk = r[:,n:(n+self.n_r)]
-            Hk = self.F.h(
-                x=Xk*self.x_nom + self.x_nom_b,
-                z=Zk*self.z_nom + self.z_nom_b,
-                u=Uk*self.u_nom + self.u_nom_b,
-                p=self.p_nom*p + self.p_nom_b,
-                r=Rk*self.r_nom + self.r_nom_b,
-                #d=Dk*self.d_nom + self.d_nom_b,
-                v=Vk*self.v_nom + self.v_nom_b,
-                y=Yk*self.y_nom + self.y_nom_b
-            )["h"]        
-            g.append(Hk)
-        """
+        _V.append(Vk["vdef"])
+        #_V.append((Vk["vdef"] - self.y_nom_b)/self.y_nom)
         
         # constraints:
         #g = ca.vertcat(*g)
@@ -676,44 +612,15 @@ class SingleShooting(Shooting):
         
         """
         V = ca.veccat(x, z, u, p, v, y, r, w, d)
+        #V = ca.veccat(x, z, u, ca.MX(), v, y, r, w, d)
         
-        #nlp_parser = NLPParser((x, z, u, p, w, v, y, r))
         nlp_parser = NLPParser((x, z, u, p, v, y, r, w, d))
+        #nlp_parser = NLPParser((x, z, u, ca.MX(), v, y, r, w, d))
         # keep orig g:
         nlp_parser.set_g(g)  
         nlp_parser.set_x_orig(x)  
         nlp_parser.set_p_orig(p)  
-        
-        """
-        Gaps without noise, scaling for covariance estimation:
-        
-        xn = self.F_map(
-                        x0=x,
-                        z=z,
-                        u=u,
-                        p=ca.repmat(p, 1, self.N),
-                        w=0,
-                        r=r
-                        )["xf"]
-        
-        x_gaps = xn[:,:-1]-x[:,1:] 
-        
-        h_gaps = self.h_map(
-                            y=y,
-                            x=x,
-                            z=z,
-                            u=u,
-                            #p=p,
-                            p=ca.repmat(p, 1, self.N),
-                            v=0,
-                            r=r
-                            )["h"]
-        """
-        
-        #nlp_parser.set_x_gaps(x_gaps)
-        #nlp_parser.set_h_gaps(h_gaps)
-        
-        #nlp_parser.x_bounds_g = (0,self.N)
+    
         self.x = X
         self.v = _V
         
@@ -725,6 +632,7 @@ class SingleShooting(Shooting):
                }
         
         return nlp, nlp_parser
+    
     
     """
     def get_nlp_obj(self, v, w):
@@ -749,7 +657,7 @@ class SingleShooting(Shooting):
     
     def get_v(self):
         """ Measurement noise. """
-        return ca.MX.sym("v", self.n_v, 0)
+        return ca.MX.sym("v", self.n_v, self.N)
     
     def get_w(self):
         """ Process noise. """
@@ -781,7 +689,7 @@ class SingleShooting(Shooting):
     
     def get_p(self):
         """ Parameters. """
-        #return ca.MX.sym("p", self.n_p)*self.p_nom
+        #return ca.MX.sym("p", self.n_p)
         return self.F.p #*self.p_nom
     
     def map_F(self):

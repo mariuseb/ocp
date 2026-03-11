@@ -27,8 +27,14 @@
         "y": [
             ["y1", "Ti"]]
     },
-    "objective": "R[0,0]*dot(v1, v1)",
-    "N": 96,
+    "bounds": {
+        "x": {
+            "lbx": [289.15,289.15],
+            "ubx": [301.15,301.15]
+        }
+    },
+    "objective": "dot(v1, v1)",
+    "N": 24,
     "dt": 900,
     "method": "single_shooting",
     "integrator": 
@@ -45,10 +51,10 @@
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10, 
         "ipopt.ma57_automatic_scaling": "yes", 
-        "ipopt.max_cpu_time": 2,
+        "ipopt.max_cpu_time": 20,
         "ipopt.max_iter": 1000,
-        "print_time": false,
-        "ipopt.print_level": 0,
+        "print_time":true,
+        "ipopt.print_level": 5,
         "ipopt.check_derivatives_for_naninf": "yes",
         "ipopt.hessian_approximation": "exact"
     },

@@ -27,7 +27,7 @@
         "y": [
             ["y1", "Ti"]]
     },
-    "objective": "R[0,0]*dot(v1, v1) + Q[0,0]*dot(s1, s1) + Q[1,1]*dot(s2, s2)",
+    "objective": "R[0,0]*dot(v1, v1)",
     "N": 96,
     "dt": 900,
     "method": "multiple_shooting",
@@ -48,7 +48,7 @@
         "ipopt.max_cpu_time": 2,
         "ipopt.max_iter": 1000,
         "print_time": false,
-        "ipopt.print_level": 0,
+        "ipopt.print_level": 5,
         "ipopt.check_derivatives_for_naninf": "yes",
         "ipopt.hessian_approximation": "exact"
     },
