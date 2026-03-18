@@ -354,7 +354,9 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             R[2,2] = 1e-5 # config / learnable
         except:
             pass
-        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1e-8 # config / learnable
+        #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1e-8 # config / learnable
+        #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*0 # config / learnable
+        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
 
         P0[
         self.estimator.n_p:(self.estimator.n_p + self.estimator.n_x),
@@ -378,26 +380,52 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             - measurements and filling heuristics.
             - ekf filtering history
         """
-        if self.estimator.n_x == 3:
-            x_guess = np.array([
-                    y_data.y1.values.flatten(),
-                    y_data.y1.values.flatten() - 2,
-                    y_data.y1.values.flatten() - 280
-            ])
-        elif self.estimator.n_x == 2:
-            x_guess = np.array([
-                    y_data.y1.values.flatten(),
-                    y_data.y1.values.flatten() - 2
-            ])
-        else: 
-            raise ValueError(".")
-        #if isinstance(self.estimator.strategy, SingleShooting):
-        if is_single_shooting(self.estimator.strategy):
-            last_x_guess = x_guess[:,0]
-            x_guess = last_x_guess.reshape((1,self.estimator.n_x))
+        if self.ests == {}:
+            if self.estimator.n_x == 3:
+                x_guess = np.array([
+                        y_data.y1.values.flatten(),
+                        y_data.y1.values.flatten() - 2,
+                        y_data.y1.values.flatten() - 280
+                ])
+            elif self.estimator.n_x == 2:
+                x_guess = np.array([
+                        y_data.y1.values.flatten(),
+                        y_data.y1.values.flatten() - 2
+                ])
+            elif self.estimator.n_x == 1:
+                x_guess = np.array([
+                        y_data.y1.values.flatten()
+                ])
+            else: 
+                raise ValueError(".")
+            #if isinstance(self.estimator.strategy, SingleShooting):
+            if is_single_shooting(self.estimator.strategy):
+                last_x_guess = x_guess[:,0]
+                x_guess = last_x_guess.reshape((1,self.estimator.n_x))
+            else:
+                last_x_guess = x_guess[-1,-self.estimator.n_x:]
+            return x_guess, last_x_guess
         else:
-            last_x_guess = x_guess[-1,-self.estimator.n_x:]
-        return x_guess, last_x_guess
+            last_est = self.ests[self.i-1]
+            x_guess = last_est[self.estimator.x()][1:].values.reshape(
+                (self.estimator.n_x, self.estimator.N-1)
+            )
+            last_x_guess = x_guess[:, 0]
+            # simulate for last guess:
+            F = self.estimator.integrator.one_sample
+            first_x_guess = np.array(
+                F(
+                    x0=x_guess[:,-1],
+                    z=y_data.loc[self.estimator.N-2, self.estimator.z_names].values,
+                    u=y_data.loc[self.estimator.N-2, self.estimator.u_names].values,
+                    p=self.params,
+                    r=y_data.loc[self.estimator.N-2, self.estimator.r_names].values,
+                    d=y_data.loc[self.estimator.N-2, self.estimator.d_names].values
+                )["xf"]
+            )
+            # TODO: fix
+            x_guess = np.hstack([x_guess, first_x_guess])
+            return x_guess, last_x_guess
     
     
     @abstractmethod
@@ -436,7 +464,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         ubp=ubp,
                                         x_guess=x_guess,
                                         covar=ca.veccat(Q, R),
-                                        codegen=False,
+                                        #codegen=False,
                                         return_raw_sol=True,
                                         P0=P0,
                                         #x_N=x_guess[-1,-self.estimator.n_x:]
@@ -538,7 +566,7 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
             ),
-            arrival_cost=False,
+            arrival_cost=True,
             **self.get_mhe_scaling(
                 self.scaling
             )
@@ -557,6 +585,12 @@ class MheMPCAgent(AbstractAdaptiveAgent):
         #mhe_scaling["slack"] = True
         # TODO: revert back:
         mhe_scaling["slack"] = False
+        # TODO: modularize y:
+        try:
+            mhe_scaling["y_nom"] = mhe_scaling["x_nom"]
+            mhe_scaling["y_nom_b"] = mhe_scaling["x_nom_b"]
+        except KeyError:
+            pass
         return mhe_scaling
     
     def re_estimation_clause(

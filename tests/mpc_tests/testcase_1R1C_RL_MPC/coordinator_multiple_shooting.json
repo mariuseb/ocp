@@ -5,7 +5,7 @@
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
         "sampling_time": "15min",
-        "mpc_config_file": "mpc_configs/1R1C_MPC_single_shooting.json",
+        "mpc_config_file": "mpc_configs/1R1C_MPC.json",
         "scaling": {
             "x_nom": [12],
             "x_nom_b": [289.15],
@@ -13,7 +13,7 @@
             "r_nom_b": [289.15,0],
             "u_nom": [1000],
             "u_nom_b ": [0],
-            "slack": false
+            "slack": true
             },
         "filter_config_file": "ekf_configs/1R1C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
@@ -30,8 +30,8 @@
         "type": "CustomGymEnv",
         "config":     
             {
-            "R": [[0]],
-            "Q": [[0]],
+            "R": [[1E-3]],
+            "Q": [[1E-3]],
             "integrator": 
                 {
                     "name": "IRK",
@@ -41,7 +41,7 @@
                 },
             "model": {
                 "ode": {
-                    "Ti": "(Ta - Ti)/(Ria*Ce) + phi_h/Ci"
+                    "Ti": "(Ta - Ti)/(Ria*Ci) + phi_h/Ci"
                 },
                 "p": [
                     "Ria",

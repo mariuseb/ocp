@@ -94,7 +94,7 @@ class BoptestGymABC(metaclass=ABCMeta):
         bounds.columns = self.multiindex_from_flat(y)
         # plot:
         colors = iter(plt.cm.rainbow(np.linspace(0, 1, 5)))
-        dt_index = pd.to_datetime(res.index.astype(np.int64))
+        dt_index = pd.to_datetime(res.index.astype(np.int64)*1E9)
         if not isinstance(res.index, pd.DatetimeIndex):
             res.index = dt_index
         #res.index = dt_index
@@ -131,8 +131,8 @@ class BoptestGymABC(metaclass=ABCMeta):
             
             post = bounds.copy()
             pre = bounds.copy()
-            post -= 273.15
-            pre -= 273.15
+            post -= 273.15 # - 13
+            pre -= 273.15 # - 13
                     
             pre.index = dt_index
             post.index = dt_index
@@ -275,8 +275,8 @@ def get_forecast_df(
         )
     df.index = df.time.astype(int)
     df["dt_index"] = pd.to_timedelta(df.index, unit="s")
-    #return df.ffill().drop_duplicates()
-    return df.interpolate().drop_duplicates()
+    return df.ffill().drop_duplicates()
+    #return df.interpolate().drop_duplicates()
 
 def latexize(name):
     try:

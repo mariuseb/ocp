@@ -246,6 +246,12 @@ class Estimation(OCP, CovarianceEstimation):
         if x_guess is None:  
             x_guess = self.generate_x_guess()
             x_guess = x_guess.reshape((x_guess.shape[0]*x_guess.shape[1], 1))
+
+        # store values of NLP-parameters:
+        self.P0_val = P0
+        #self.Q_val = Q 
+        #self.R_val = R
+        
         self.separate_data(
                           data,
                           lbp=lbp,
@@ -263,6 +269,7 @@ class Estimation(OCP, CovarianceEstimation):
         if self.arrival_cost:        
             p0 = param_guess/self.p_nom
             x_N = (x_N - self.x_nom_b)/self.x_nom
+            self.x_N_val = x_N
             #z_N = (z_N - self.z_nom_b)/self.z_nom
             #p0 = param_guess
             #x_N = x_N

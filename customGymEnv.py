@@ -283,6 +283,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         """Resets the state of the LTI system."""
         super().reset(seed=seed, options=options)
         s, _ = self.set_state(np.array([293.15]*self.n_x))
+        #s, _ = self.set_state(np.array([305.15]*self.n_x))
         # TODO: keep history:
         #self.df = pd.DataFrame(columns=["phi_h", "Ta", "phi_s"])
         self.store_current_true_state()
@@ -386,12 +387,16 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         )
         """
         self.store_controls(action)
+        if len(self.res) < 192:
+            params = self.params
+        else:
+            params = self.params*2
         s_prime = np.array(
             self.F(
             self.s,
             np.array([]),
             action, 
-            self.params,
+            params,
             r,
             np.array([])
             )[0]

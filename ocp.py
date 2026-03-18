@@ -611,7 +611,7 @@ class OCP(metaclass=ABCMeta):
                                 dict(jit=self.with_jit, compiler=self.compiler))
         return hess_lag
             
-    def _init_solver(self, init_qp_solver=False):
+    def _init_solver(self, init_qp_solver=True):
         
         # TODO: fix residual:
         if self.gauss_newton:
@@ -642,30 +642,37 @@ class OCP(metaclass=ABCMeta):
                                 ),
                             #discrete=discrete
                         )
-    #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
-        #self.hsolver_ipopt = self.jsolver_ipopt.factory('h', self.solver.name_in(), ['jac:jac_f_p:p'])
-        #self.hsolver_ipopt = self.solver.factory('h', self.solver.name_in(), ['hess:f:p:p'])
-        #self.sqp_adj = self.solver.reverse(1)
+        #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
+            #self.hsolver_ipopt = self.jsolver_ipopt.factory('h', self.solver.name_in(), ['jac:jac_f_p:p'])
+            #self.hsolver_ipopt = self.solver.factory('h', self.solver.name_in(), ['hess:f:p:p'])
+            #self.sqp_adj = self.solver.reverse(1)
         
         if init_qp_solver:
             
             opts = dict(
                         qpsol='qrqp',
                         #qpsol='qrqp',
-                        qpsol_options=dict(print_iter=False,error_on_fail=False), 
-                        print_time=True,
+                        qpsol_options=dict(
+                            print_iter=False,
+                            error_on_fail=False,
+                            print_time=False,
+                            print_header=False,
+                        ), 
+                        print_time=False,
+                        print_iteration=False,
+                        print_header=False,
+                        print_status=False,
                         #regularize=True,
                         #min_step_size=1E-10
+                        max_iter=10
                         )
-        """
-        self.sqp_solver = ca.nlpsol('solver',
-                                    'sqpmethod',
-                                    self.nlp,
-                                    opts)
-        """ 
-            #self.jsolver_sqp = self.sqp_solver.factory('h', self.sqp_solver.name_in(), ['jac:f:p'])
-            #self.sqp_adj = self.sqp_solver.reverse(1)
-            #self.sqp_forward = self.sqp_solver.forward(self.nlp["p"].shape[0])
+
+        self.sqp_solver = ca.nlpsol(
+            'solver', 'sqpmethod', self.nlp, opts
+        )
+        #self.jsolver_sqp = self.sqp_solver.factory('h', self.sqp_solver.name_in(), ['jac:f:p'])
+        #self.sqp_adj = self.sqp_solver.reverse(1)
+        #self.sqp_forward = self.sqp_solver.forward(self.nlp["p"].shape[0])
                 
     def set_bounds(self, skip_u=False, slack=False):
         

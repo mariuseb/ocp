@@ -1,0 +1,62 @@
+{
+    "model": {
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + phi_h/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce"
+        ],
+        "u": [
+            "phi_h"
+        ],
+        "r": [
+            "Ta",
+            "cost"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]]
+    },
+    "bounds": {
+        "x": {
+            "lbx": [289.15,289.15],
+            "ubx": [301.15,301.15]
+        }
+    },
+    "objective": "dot(v1, v1)",
+    "N": 24,
+    "dt": 900,
+    "method": "single_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 20,
+        "ipopt.max_iter": 1000,
+        "print_time":true,
+        "ipopt.print_level": 5,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

@@ -5,20 +5,20 @@
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
         "sampling_time": "15min",
-        "mpc_config_file": "mpc_configs/2R2C_MPC.json",
+        "mpc_config_file": "mpc_configs/1R1C_MPC.json",
         "scaling": {
-            "x_nom": [12, 12],
-            "x_nom_b": [289.15, 289.15],
+            "x_nom": [12],
+            "x_nom_b": [289.15],
             "r_nom": [12,1],
             "r_nom_b": [289.15,0],
             "u_nom": [1000],
             "u_nom_b ": [0],
             "slack": false
             },
-        "filter_config_file": "ekf_configs/2R2C_EKF_2meas.json",
+        "filter_config_file": "ekf_configs/1R1C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true,
-        "parameters": [1e-3, 1e-2, 1E6, 1E7],
+        "parameters": [1e-2, 1E6],
         "reiden": false,
         "reiden_freq": 96,
         "timesteps_reiden_start": 95,
@@ -30,8 +30,8 @@
         "type": "CustomGymEnv",
         "config":     
             {
-            "R": [[0, 0], [0, 0]],
-            "Q": [[0, 0], [0, 0]],
+            "R": [0],
+            "Q": [0],
             "integrator": 
                 {
                     "name": "IRK",
@@ -41,14 +41,11 @@
                 },
             "model": {
                 "ode": {
-                    "Ti": "(Te - Ti)/(Rie*Ci) + phi_h/Ci",
-                    "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+                    "Ti": "(Ta - Ti)/(Ria*Ci) + phi_h/Ci"
                 },
                 "p": [
-                    "Rie",
-                    "Rea",
-                    "Ci",
-                    "Ce"
+                    "Ria",
+                    "Ci"
                 ],
                 "u": [
                     "phi_h"
@@ -58,15 +55,13 @@
                     "cost"
                 ],
                 "x": [
-                    "Ti",
-                    "Te"
+                    "Ti"
                 ],
                 "y": [
-                    ["y1", "Ti"],
-                    ["y2", "Te"]
+                    ["y1", "Ti"]
                 ]
             },
-            "parameters": [1e-3, 1e-2, 1E6, 1E7],
+            "parameters": [1e-2, 1E6],
             "maps": 
             {
                 "r" : {"Ta": "TDryBul",
@@ -78,8 +73,7 @@
                     "phi_h": "oveAct"
                 },
                 "y":  {
-                    "Ti": "TRooAir",
-                    "Te":  "TRooEnv"
+                    "Ti": "TRooAir"
                 }
             }
         }

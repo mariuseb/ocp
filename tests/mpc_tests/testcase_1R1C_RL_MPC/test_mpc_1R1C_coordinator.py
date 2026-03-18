@@ -23,9 +23,9 @@ if __name__ == "__main__":
     """
     
     coord = Coordinator(
-        "coordinator_own_EKF.json"
+        "coordinator_multiple_shooting.json"
     )
-    x0 = np.array([293.15, 293.15])
+    x0 = np.array([293.15])
     coord.run(x0=x0)
     
     fig, axes, res = coord.plot_temperatures()

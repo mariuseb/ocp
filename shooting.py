@@ -761,7 +761,7 @@ class Collocation(Shooting):
         #self.u_nom = 5000
         #self.r_nom = 300
         #self.p_nom = self.scale
-        d = self.d = self.F.d
+        d = self.d = self.F.degree
         h = self.h = self.F.dt
         # need to keep Da for calculation of z at finite elems:
         B, C, D, self.Da = self.get_coll_coeffs(d, self.method)
@@ -879,7 +879,8 @@ class Collocation(Shooting):
                             Uk*u_nom + u_nom_b,
                             P*p_nom + p_nom_b,
                             #Wk*s_nom,
-                            Rk*r_nom + r_nom_b
+                            Rk*r_nom + r_nom_b,
+                            0
                             )
                             #Wk*s_nom)
                 g.append(h*fj - xp*x_nom)
