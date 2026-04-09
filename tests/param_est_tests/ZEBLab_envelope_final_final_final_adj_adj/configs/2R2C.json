@@ -16,8 +16,6 @@
         ],
         "u": [
             "Ta",
-            "T_sup_air",
-            "T_ext_air",
             "phi_h",
             "phi_s"
         ],

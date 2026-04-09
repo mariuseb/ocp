@@ -18,7 +18,7 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from scipy.stats import norm
-from hampel import hampel
+#from hampel import hampel
 # text:
     
 def prepare_data(data, room=219):
@@ -27,32 +27,32 @@ def prepare_data(data, room=219):
     """
     
     temps_219_cols = [col for col in data.columns if "T_" + str(room) in col]
-    #temps_219_cols = ["T_219_TR3"]
+    temps_219_cols = ["T_219_TR3"]
     temps_219 = data[temps_219_cols].mean(axis=1)
     y_data = data[["P_rad_" + str(room)]]*1000
     y_data.columns = ["phi_h"]
     #y_data["phi_int"] = data["phi_int_219"]
-    y_data["phi_int_plugs"] = data["phi_int_" + str(room) + "_plugs"]
-    y_data["phi_int_lig"] = data["phi_int_" + str(room) + "_lig"]
-    y_data["phi_int"] = data["phi_int_" + str(room) + "_lig"] + data["phi_int_" + str(room) + "_plugs"]
-    # ventilation:
-    y_data["T_ext_air"] = data["T_ext_air_" + str(room)] # + 273.15
-    y_data["T_sup_air"] = data["T_sup_air_" + str(room)] # + 273.15
-    y_data["V_ext_air"] = data["V_ext_air_" + str(room)]
-    y_data["V_sup_air"] = data["V_sup_air_" + str(room)]
-    y_data["ahu_reaFloSupAir"] =  data["V_sup_air_" + str(room)]*(1.292/3600)*1000
-    y_data["ahu_reaFloExtAir"] =  data["V_ext_air_" + str(room)]*(1.292/3600)*1000
     # indoor temp:
     y_data["Ti"] = temps_219
-    y_data.Ti[y_data.Ti > 30] = 30
+    #y_data.Ti[y_data.Ti > 30] = 30
     
-    y_data["phi_s"] = data["I_hor"]
-    #y_data["I_hor"] = data["I_hor"]
+    y_data["phi_s"] = data["I_ver"]
+    #y_data["phi_s"] = data["I_hor"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_" + str(room)]*1000
     #y_data["CO2_in"] = data["CO2_219"]
 
     try:
+        y_data["phi_int_plugs"] = data["phi_int_" + str(room) + "_plugs"]
+        y_data["phi_int_lig"] = data["phi_int_" + str(room) + "_lig"]
+        y_data["phi_int"] = data["phi_int_" + str(room) + "_lig"] + data["phi_int_" + str(room) + "_plugs"]
+        # ventilation:
+        y_data["T_ext_air"] = data["T_ext_air_" + str(room)] # + 273.15
+        y_data["T_sup_air"] = data["T_sup_air_" + str(room)] # + 273.15
+        y_data["V_ext_air"] = data["V_ext_air_" + str(room)]
+        y_data["V_sup_air"] = data["V_sup_air_" + str(room)]
+        y_data["ahu_reaFloSupAir"] =  data["V_sup_air_" + str(room)]*(1.292/3600)*1000
+        y_data["ahu_reaFloExtAir"] =  data["V_ext_air_" + str(room)]*(1.292/3600)*1000
         y_data["T_207"] = data["T_207"]
         y_data["T_211"] = data["T_211"]
         y_data["T_213"] = data["T_213"]
@@ -164,25 +164,33 @@ class ZEBData(object):
         data = self.data.loc[start:(filter_stop + pd.Timedelta(value=sampling_rate))]
         data = data.interpolate()
         data = prepare_data(data, room=self.room)
-        if (data.T_sup_air > 28).any():
-            print("head")
-        data.T_sup_air[data.T_sup_air > 28] = np.nan
-        data.T_ext_air[data.T_ext_air > 28] = np.nan
-        # interpolate:
-        data[["T_sup_air", "T_ext_air"]] = data[["T_sup_air", "T_ext_air"]].interpolate()
-        # then backfill:
+        try:
+            if (data.T_sup_air > 28).any():
+                print("head")
+            data.T_sup_air[data.T_sup_air > 28] = np.nan
+            data.T_ext_air[data.T_ext_air > 28] = np.nan
+            # interpolate:
+            data[["T_sup_air", "T_ext_air"]] = data[["T_sup_air", "T_ext_air"]].interpolate()
+            # then backfill:
+        except:
+            pass
+            
         data = data.bfill()
         data = data.groupby(pd.Grouper(freq=sampling_rate)).mean().dropna()
-        data["vent"] = (data["V_sup_air"] > 10).astype(int) 
-        #data["vent"] = data["daytime"]
+        
         try:
-            data["Tset_high"] = (data["Tset"] > 18).astype(int)
-        except:
-            data["Tset_high"] = 0
-        #data["Tset"] = 22
-        data["heat_on"] = (data["phi_h"] > 10).astype(int)
-        #data["vent"] = data["Tset_high"]
-        data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)
+            data["vent"] = (data["V_sup_air"] > 10).astype(int) 
+            #data["vent"] = data["daytime"]
+            try:
+                data["Tset_high"] = (data["Tset"] > 18).astype(int)
+            except:
+                data["Tset_high"] = 0
+            #data["Tset"] = 22
+            data["heat_on"] = (data["phi_h"] > 10).astype(int)
+            #data["vent"] = data["Tset_high"]
+            data["vent"] = (data["vent"] + data["Tset_high"] + data["heat_on"]).astype(bool).astype(int)
+        except: 
+            pass
         
         """
         for name in ("T_sup_air", "T_ext_air"):

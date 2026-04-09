@@ -37,14 +37,9 @@ def quick_plot(ax, y_data):
     for envelope identification.
     """
     y_data.Ti.plot(ax=ax)
-    for col in ["T_207", "T_211", "T_213", "T_217"]:
-        y_data[col].plot(ax=ax, linewidth=0.5)
     ax.legend()
     ax1 = ax.twinx()
     y_data.phi_h.plot(ax=ax1, drawstyle="steps-post", linestyle="dashed", color="k")
-    P_vent = y_data.V_sup_air*(y_data.T_sup_air - y_data.Ti)
-    P_vent.plot(ax=ax1, color="g", linewidth=0.75)
-    ax1.legend(["calculated from OE16 V_flow, delta T", ""])
     
 
 if __name__ == "__main__":
@@ -54,13 +49,18 @@ if __name__ == "__main__":
     """
 
     cfg_path = os.path.join("configs", "2R2C.json")
-    data_path = os.path.join("ZEBLab_dec24_jan25_1m.csv")
+    data_path = os.path.join("ZEBLab_PRBS_april_25_1m.csv")
 
     zeb_data = ZEBData(data_path)
+    """
+    zeb_data.data["T_219_TR3_old"] = zeb_data.data["T_219_TR3"]
+    Ti = pd.read_csv("219_TR3.csv", index_cl=5, header=3)
+    Ti.index = pd.to_datetime(Ti.index)
+    Ti_ser = Ti._value
+    """
     
-    start = pd.Timestamp("2025-01-01 00:00")
-    #stop = pd.Timestamp("2025-01-01 06:00")
-    stop = pd.Timestamp("2025-12-31 00:00")
+    start = pd.Timestamp("2025-04-14 00:00")
+    stop = pd.Timestamp("2025-04-21 00:00")
     sampling_rate = "15min"
     
     y_data, dt, N = zeb_data.get_dataset(
@@ -87,23 +87,7 @@ if __name__ == "__main__":
                     {
                         "init": 1e-2
                     },
-                    "Rie_w": 
-                    {
-                        "init": 1e-2
-                    },
-                    "Rie_v": 
-                    {
-                        "init": 1e-2
-                    },
                     "Rea":
-                    {
-                        "init": 1e-1
-                    },
-                    "Rea_w":
-                    {
-                        "init": 1e-1
-                    },
-                    "Rea_v":
                     {
                         "init": 1e-1
                     },
@@ -111,23 +95,7 @@ if __name__ == "__main__":
                     {
                         "init": 1e6
                     },
-                    "Ci_w":
-                    {
-                        "init": 1e6
-                    },
-                    "Ci_v":
-                    {
-                        "init": 1e6
-                    },
                     "Ce":
-                    {
-                        "init": 1e6
-                    },
-                    "Ce_w":
-                    {
-                        "init": 1e6
-                    },
-                    "Ce_v":
                     {
                         "init": 1e6
                     },
@@ -184,28 +152,23 @@ if __name__ == "__main__":
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
-        "u_nom": [12]*1 + [1E3,1E3],
-        "u_nom_b ": [289.15]*1 + [0]*2,
+        "u_nom": [12]*3 + [1E3,1E3,1E3,1E3,1,1],
+        "u_nom_b ": [289.15]*3 + [0]*6,
         "y_nom": [12],
         "y_nom_b": [289.15],
         #"slack": True
         "slack": False
     }
-    A = 60
+    kwargs = {
+        "slack": False
+    }
+    A = 66
     
     priors = {
         "Rie": 0.250/A, # m²K / W 
-        "Rie_w": 0.250/A, # m²K / W 
-        "Rie_v": 0.250/A, # m²K / W 
         "Rea": 2.250/A, # m²K / W 
-        "Rea_w": 2.250/A, # m²K / W 
-        "Rea_v": 2.250/A, # m²K / W 
         "Ci": 9.50*3600*A, # Wh / m²K
-        "Ci_w": 9.50*3600*A, # Wh / m²K
-        "Ci_v": 9.50*3600*A, # Wh / m²K
         "Ce": 112*3600*A, # Wh / m²K
-        "Ce_w": 112*3600*A, # Wh / m²K
-        "Ce_v": 112*3600*A, # Wh / m²K
         "Ai": 10, # m²
         "Ai_high": 10, # m²
         "alpha_vent_sup": 0.5,
@@ -237,8 +200,7 @@ if __name__ == "__main__":
                     config=cfg_path,
                     N=N,
                     dt=dt,
-                    param_guess=param_guess,
-                    arrival_cost=True
+                    param_guess=param_guess
                     ) as param_est:
 
         Q = ca.DM.eye(2)
@@ -246,11 +208,6 @@ if __name__ == "__main__":
         
         lbp = param_est.get_lbp(1e-3)
         ubp = param_est.get_ubp(1e3)
-        P0 = np.eye(param_est.n_p + param_est.n_x)*1
-        P0[
-           param_est.n_p:(param_est.n_p + param_est.n_x),
-           param_est.n_p:(param_est.n_p + param_est.n_x)
-           ] = 0
         p0 = param_est.p0
         sol, params = param_est.solve(
                                       y_data,
@@ -260,10 +217,7 @@ if __name__ == "__main__":
                                       lbx=lbx,
                                       ubx=ubx,
                                       x_guess=x_guess,
-                                      covar=ca.veccat(Q, R),
-                                      #codegen=True,
-                                      P0=P0,
-                                      x_N=x_guess[-1,-param_est.n_x:]
+                                      covar=ca.veccat(Q, R)
                                       )
 
         sol.index = y_data.dt_index
@@ -272,5 +226,5 @@ if __name__ == "__main__":
         ax.legend(["model", "measured"])
         plt.show()
     # dump for plots:
-    params.to_csv("params_prbs_january.csv", index=True)
+    params.to_csv("params_prbs_april.csv", index=True)
     print(params)
