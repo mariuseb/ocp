@@ -23,6 +23,7 @@ from pandas.plotting import autocorrelation_plot
 from ocp.filters_old import KalmanBucy
 from ocp.utils import prepare_data, ZEBData
 from ocp.covar_solver_cont_old import CovarianceSolverContinuous
+from ocp.covar_solver import CovarianceSolver
 from copy import deepcopy
 from result_generator import ResultGenerator, plot_residuals
 # text:
@@ -76,6 +77,8 @@ if __name__ == "__main__":
                                         stop=stop,
                                         sampling_rate=sampling_rate
                                         )
+    # causality shift:
+    #y_data["phi_h"] = y_data["phi_h"].shift(1).fillna(0)
     y_data.index = y_data.dt_index
     # shift phi_h one time step forward:
     #y_data["phi_h"] = y_data["phi_h"].shift(-1)
@@ -83,7 +86,7 @@ if __name__ == "__main__":
     
     fig, axes = plt.subplots(1,1,sharex=True)
     quick_plot(axes, y_data)
-    plt.show() 
+    plt.show(block=False) 
 
     param_guess = {
                     "Rie": 
@@ -195,8 +198,8 @@ if __name__ == "__main__":
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
-        "u_nom": [12]*3 + [1E3,1E3],
-        "u_nom_b ": [289.15]*3 + [0]*2,
+        "u_nom": [12] + [1E3,1E3] + [1],
+        "u_nom_b ": [289.15] + [0]*3,
         "y_nom": [12],
         "y_nom_b": [289.15],
         #"slack": True
@@ -287,7 +290,7 @@ if __name__ == "__main__":
                                       ubx=ubx,
                                       x_guess=x_guess,
                                       covar=ca.veccat(Q, R),
-                                      codegen=True,
+                                      #codegen=True,
                                       P0=P0,
                                       x_N=x_guess[-1,-param_est.n_x:]
                                       )
@@ -299,10 +302,11 @@ if __name__ == "__main__":
         ax1 = ax.twinx()
         sol["phi_s"].plot(drawstyle="steps-post",ax=ax1)
         sol["phi_h"].plot(drawstyle="steps-post",ax=ax1)
-        plt.show()
+        plt.show(block=False)
      
      
-    ekf_config = os.path.join("configs/ekf_configs", "2R2C_envelope_EKF.json") 
+    ekf_config = os.path.join("configs/ekf_configs", "2R2C_envelope_EKF_covar_tvp.json") 
+    ekf_config_res_gen = os.path.join("configs/ekf_configs", "2R2C_envelope_EKF_for_res_gen.json") 
     #covar_kwargs = kwargs
     covar_kwargs = dict()
     covar_kwargs["p_nom"] = p_nom
@@ -319,51 +323,49 @@ if __name__ == "__main__":
     
     y_data = y_data[:-1]      
     #y_data = y_data.iloc[200:300]
-    covar_solver = CovarianceSolverContinuous(
-                                    ekf_config,
-                                    cfg_path,
-                                    y_data,
-                                    param_guess,
-                                    method="single_shooting",
-                                    **covar_kwargs
-                                    )
+    covar_solver = CovarianceSolver(
+        ekf_config,
+        N-1,
+        #param_guess,
+        params.values,
+        **covar_kwargs
+    )
     """
     P0 = np.ones(
             (covar_solver.ekf.dae.n_x,
             covar_solver.ekf.dae.n_x)
             )*1e-3 # + 1e-2
     """
-    P0 = np.eye(2)*np.diag([0.026, 0.666])**2
-    #P0 = np.eye(3)
+    P0 = np.eye(2)
     P0_guess = P0.flatten()
     Q_guess = np.array(
         ca.veccat(
                 ca.DM.eye(covar_solver.ekf.dae.n_x),
                 )
-        ).flatten()*1e-3
-    #Q_guess = (np.eye(3)*np.diag([-8.28, -5.666, -5.712])).flatten()
-    #R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*-5
-    R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()*1e-3
-    #R_guess = (np.eye(1)*np.diag([-12.4])).flatten()
-    x0 = sol[["Ti", "Te"]].iloc[0].values
+        ).flatten()*1
+    R_guess = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y)).flatten()
+    x0_init = sol[["Ti", "Te"]].iloc[0].values
     H = np.eye(covar_solver.n_theta + covar_solver.n_y)*0
-    covar_solver.exchange_P0_constraint(P0_guess)
-    covar_sol, Q_df, R, raw_sol = covar_solver.solve(
+    
+    #covar_solver.exchange_P0_constraint(P0_guess)
+    y_data["Ti"] = y_data["y1"]
+    covar_sol, x0, P0, Q_df, R_df, raw_sol = covar_solver.solve(
             y_data, 
             params,
-            x0, # guess from smoothing
-            P0_guess,
-            Q_guess,
             R_guess, 
-            H=H    
+            Q_guess,
+            x0_init, # guess from smoothing
+            P0_guess,
+            #H=H    
             )
     Q = Q_df.values.reshape((param_est.n_x, param_est.n_x))
+    R = R_df.values
     # round first entry to 0:
-    Q[0,0] = 0
+    #Q[0,0] = 0
     # one-step simulation, optimized parameters vs. non-optimized:
     result_gen = ResultGenerator(
                     config=cfg_path,
-                    ekf_config=ekf_config,
+                    ekf_config=ekf_config_res_gen,
                     params=param_guess,
                     slack=False,
                     dt=dt
@@ -373,7 +375,7 @@ if __name__ == "__main__":
         y_data,
         covar_sol[param_est.dae.x],
         params,
-        ekf_config=ekf_config,
+        ekf_config=ekf_config_res_gen,
         map_eval=True,
         symbolic_estimate=True, 
         R=R,
@@ -384,27 +386,42 @@ if __name__ == "__main__":
                 result_gen.filtered.y_meas, 
                 result_gen.filtered.y_pred
                              )
+    residual_opt = (result_gen.filtered.y_meas - result_gen.filtered.y_pred).copy()
     # write
     # one-step simulation, plot:
     Q = np.array(
                 ca.DM.eye(covar_solver.ekf.dae.n_x),
-        )*1e-3
-    R = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y))*1e-3
+        )*1
+    R = np.array(ca.DM.eye(covar_solver.ekf.dae.n_y))*1
+    x0_sim = covar_sol[param_est.dae.x].copy()
+    x0_sim.loc[:] = sol[param_est.dae.x].iloc[0].values
     result_gen.simple_one_step_plot(
         y_data,
-        covar_sol[param_est.dae.x],
+        x0_sim,
         params,
-        ekf_config=ekf_config,
+        ekf_config=ekf_config_res_gen,
         map_eval=True,
         symbolic_estimate=True, 
         R=R,
         Q=Q,
         P0x=P0_guess.reshape((param_est.n_x, param_est.n_x))
     )
+    residual_non_opt = result_gen.filtered.y_meas - result_gen.filtered.y_pred
+    
+    ax = residual_opt.plot(drawstyle="steps-post")
+    residual_non_opt.plot(ax=ax, drawstyle="steps-post")
+    ax1 = ax.twinx()
+    #y_data.phi_h.plot(ax=ax1, color="m", drawstyle="steps-post")
+    plt.show()
+    
     mse_non_opt = result_gen.mse(
                 result_gen.filtered.y_meas, 
                 result_gen.filtered.y_pred
                              )
+    residuals = pd.DataFrame([residual_opt, residual_non_opt]).T
+    residuals.columns = ["non_opt", "opt"]
+    residuals["phi_h"] = y_data["phi_h"]
+    residuals.to_csv("residuals_PRBS_jan_2025.csv", index=True)
     print(params)
     
     

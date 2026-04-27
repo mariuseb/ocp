@@ -935,11 +935,11 @@ class KalmanDAE(Filter):
         #self.Q_function = SDEInt.Q_symbolic
         
         #self.initialize_P_integrator()
-        #self.generate_symbolic_estimate()
-        #self.generate_symbolic_estimate_partial()
-        #self.generate_symbolic_estimate_for_loglik()
-        #self.generate_symbolic_smooting_estimate()
-        #self.initialize_wiener_integrator()
+        self.generate_symbolic_estimate()
+        self.generate_symbolic_estimate_partial()
+        self.generate_symbolic_estimate_for_loglik()
+        self.generate_symbolic_smooting_estimate()
+        self.initialize_wiener_integrator()
     
 
     def init_identity(self):
@@ -1684,7 +1684,7 @@ class KalmanDAE(Filter):
                 r=r,
                 #d=d
                 )
-        x_apriori = res["xf"]
+        x_apriori = res["x"]
         z = res["z"]
 
         # obtain discretized linearization of df/dx:
@@ -1775,7 +1775,7 @@ class KalmanDAE(Filter):
                 r=r,
                 d=d
                 )
-        x_10 = res["xf"]
+        x_10 = res["x"]
         # obtain discretized linearization of df/dx:
         A = self.jac_f_x(x0,z0,u,p,r,y,ca.MX(),ca.MX(),ca.MX())
         #B = self.jac_f_u(x0,[],u,p,r,y,0,[])

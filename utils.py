@@ -49,8 +49,8 @@ def prepare_data(data, room=219):
     y_data["Ti"] = temps_219
     y_data.loc[y_data.Ti > 30, "Ti"] = 30
     
-    #y_data["phi_s"] = data["I_ver"]
-    y_data["phi_s"] = data["I_hor"]
+    y_data["phi_s"] = data["I_ver"]
+    #y_data["phi_s"] = data["I_hor"]
     #y_data["I_hor"] = data["I_hor"]
     y_data["Ta"] = data["T_amb"]
     y_data["Prad"] = data["P_rad_" + str(room)]*1000
@@ -285,7 +285,7 @@ class ZEBData(object):
                                 data,
                                 samples_after_Pint_step=1,
                                 samples_after_Ps_step=1,
-                                samples_after_Qi_step=1
+                                samples_after_Qi_step=10
                                 )
         data["stepQi"] = (data.stepQi + data.stepPs + data.stepPintPlugs).astype(bool).astype(int)
         data["phi_s_high"] = (data.phi_s > 200).astype(int)

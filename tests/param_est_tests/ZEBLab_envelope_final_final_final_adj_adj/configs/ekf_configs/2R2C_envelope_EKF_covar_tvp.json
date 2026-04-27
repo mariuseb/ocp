@@ -8,11 +8,12 @@
             "v1": "Ti - y1"
         },
         "sde": {
-            "all" :"Q"
+            "all" :"(1 - stepQi)*Q + stepQi*Q_vent"
         },
         "theta":
          [
-            "Q"
+            "Q",
+            "Q_vent"
          ],
         "p": [
             "Rie",
@@ -24,7 +25,8 @@
         "u": [
             "Ta",
             "phi_h",
-            "phi_s"
+            "phi_s",
+            "stepQi"
         ],
         "x": [
             "Ti",

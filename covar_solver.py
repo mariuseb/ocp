@@ -204,14 +204,14 @@ class CovarianceSolver(object):
         if Q_guess is None:
             Q_guess = self.array_and_flatten(self.ekf.Q)
         if P0_guess is None:
-            P0_guess = P_guess = self.array_and_flatten(self.ekf.P)
+            P0_guess = self.array_and_flatten(self.ekf.P)
         if x0_guess is None:
             x0_guess = self.array_and_flatten(self.ekf.x)
             
+        P_guess = P0_guess
         p_val = self.prepare_parametric_data(
             y_data
         )
-       
         if self.method == "multiple_shooting":
             N = self.M+1
         else: # single:

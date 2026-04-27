@@ -27,7 +27,7 @@ def prepare_data(data, room=219):
     """
     
     temps_219_cols = [col for col in data.columns if "T_" + str(room) in col]
-    temps_219_cols = ["T_219_TR3"]
+    #temps_219_cols = ["T_219_TR3"]
     temps_219 = data[temps_219_cols].mean(axis=1)
     y_data = data[["P_rad_" + str(room)]]*1000
     y_data.columns = ["phi_h"]

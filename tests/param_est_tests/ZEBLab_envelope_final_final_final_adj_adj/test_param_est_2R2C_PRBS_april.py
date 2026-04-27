@@ -17,6 +17,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
 from matplotlib import rc
+from copy import deepcopy
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from pandas.plotting import autocorrelation_plot
@@ -37,9 +38,11 @@ def quick_plot(ax, y_data):
     for envelope identification.
     """
     y_data.Ti.plot(ax=ax)
+    y_data.Ta.plot(ax=ax, color="g")
     ax.legend()
     ax1 = ax.twinx()
     y_data.phi_h.plot(ax=ax1, drawstyle="steps-post", linestyle="dashed", color="k")
+    (y_data.u_val*10).plot(ax=ax1, drawstyle="steps-post", linestyle="dashed", color="b")
     
 
 if __name__ == "__main__":
@@ -71,7 +74,7 @@ if __name__ == "__main__":
     N = len(y_data)
     fig, axes = plt.subplots(1,1,sharex=True)
     quick_plot(axes, y_data)
-    plt.show()
+    plt.show(block=False)
     
     # interpolate away nan's, see if good enough:
     y_data.index = y_data.dt_index
@@ -152,17 +155,14 @@ if __name__ == "__main__":
     kwargs = {
         "x_nom": 12,
         "x_nom_b": 289.15,
-        "u_nom": [12]*3 + [1E3,1E3,1E3,1E3,1,1],
-        "u_nom_b ": [289.15]*3 + [0]*6,
+        "u_nom": [12] + [1E3,1E3],
+        "u_nom_b ": [289.15] + [0]*2,
         "y_nom": [12],
         "y_nom_b": [289.15],
         #"slack": True
         "slack": False
     }
-    kwargs = {
-        "slack": False
-    }
-    A = 66
+    A = 60
     
     priors = {
         "Rie": 0.250/A, # m²K / W 
@@ -200,11 +200,21 @@ if __name__ == "__main__":
                     config=cfg_path,
                     N=N,
                     dt=dt,
-                    param_guess=param_guess
+                    param_guess=param_guess,
+                    truncate_scaling=True,
+                    arrival_cost=True,
+                    **deepcopy(kwargs)
                     ) as param_est:
 
         Q = ca.DM.eye(2)
         R = ca.DM.eye(1)
+        P0 = np.eye(param_est.n_p + param_est.n_x)*1
+        P0[
+           param_est.n_p:(param_est.n_p + param_est.n_x),
+           param_est.n_p:(param_est.n_p + param_est.n_x)
+           ] = 0
+        #P0[2,2] = 0
+        #P0[5,5] = 0
         
         lbp = param_est.get_lbp(1e-3)
         ubp = param_est.get_ubp(1e3)
@@ -217,7 +227,10 @@ if __name__ == "__main__":
                                       lbx=lbx,
                                       ubx=ubx,
                                       x_guess=x_guess,
-                                      covar=ca.veccat(Q, R)
+                                      covar=ca.veccat(Q, R),
+                                      #codegen=True,
+                                      P0=P0,
+                                      x_N=x_guess[-1,-param_est.n_x:]
                                       )
 
         sol.index = y_data.dt_index
@@ -227,4 +240,6 @@ if __name__ == "__main__":
         plt.show()
     # dump for plots:
     params.to_csv("params_prbs_april.csv", index=True)
+    params_start = params.copy()
+    params.loc[:] = p0
     print(params)
