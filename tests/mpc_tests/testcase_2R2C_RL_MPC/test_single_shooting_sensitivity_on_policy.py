@@ -57,6 +57,7 @@ if __name__ == "__main__":
         ["x","u","p","r","y"],
         ["grad_f_p"]
     )
+    #F_grad_f_p.generate('f.c')
 
     def get_nlpsol_vals(ocp):
         x = ocp.x0[ocp.nlp_parser.vars["x"]["range"]["a"]:
@@ -67,8 +68,8 @@ if __name__ == "__main__":
             ocp.nlp_parser.vars["p"]["range"]["b"]]
         r = (ocp.x0[ocp.nlp_parser.vars["r"]["range"]["a"]:
              ocp.nlp_parser.vars["r"]["range"]["b"]]).reshape((ocp.N, ocp.n_r)).T
-        y = ocp.x0[ocp.nlp_parser.vars["y"]["range"]["a"]:
-            ocp.nlp_parser.vars["y"]["range"]["b"]]
+        y = (ocp.x0[ocp.nlp_parser.vars["y"]["range"]["a"]:
+            ocp.nlp_parser.vars["y"]["range"]["b"]]).reshape((ocp.N, ocp.n_y)).T
         return x, u, p, r, y
         
     
@@ -80,6 +81,7 @@ if __name__ == "__main__":
     if obs is not None: # first x0 is passed:
         obs = x0
     K = int(coord.days*24*int(3600/coord.dt))
+    grad_f_p_buffer = pd.DataFrame(columns=names)
     for k in range(K):
         # TODO: forecast optional:
         forecast = coord.env.get_forecast(
@@ -124,6 +126,10 @@ if __name__ == "__main__":
                     x, u, p, r, y    
                 )
             ).flatten()
+            # add to buffer:
+            grad_f_p_buffer.loc[k] = grad_f_p_eval
+            
+            """
             # normalize params:
             params = coord.controller.params/coord.controller.mpc.p_nom
             # gradient descent:
@@ -138,6 +144,7 @@ if __name__ == "__main__":
             coord.controller.params = params
             # set parameters on filter:
             coord.controller.filter.filter.params = params
+            """
             
         action, _ = coord.controller.predict(
             obs, 
@@ -167,11 +174,20 @@ if __name__ == "__main__":
             k, 
             obs
         )
+    # get all data for sysid tests:
+    y_data = coord.controller.get_y_data(
+        coord.env,
+        coord.controller.i,
+        include_all=True,
+        backshift=coord.env.maps.u,
+        integrate_replace=coord.controller.integrate_replace
+    )
+    y_data.to_csv("data_p=0.5p*.csv", index=True)
     # get env result:
     coord.res = coord.env.get_results(
         coord.days*24*int(3600/coord.dt)*coord.dt
     )
-
+    
     fig, axes, res = coord.plot_temperatures()
     plt.show()
     
@@ -179,3 +195,6 @@ if __name__ == "__main__":
     #plt.show()
 
     print(coord)
+    
+    
+

@@ -67,15 +67,16 @@ if __name__ == "__main__":
     )
     res.loc[:] = np.nan
     res.loc[0, meas] = obs
+    
     for n in range(N):
         action = prbs.iloc[n]
-        res.loc[n, acts] = float(action)
+        res.loc[n, acts] = float(action.iloc[0])
         obs, reward, terminated, truncated, info = env.step(action)
         res.loc[n+1, meas] = obs
-    
-    for n in range(N, N+(2*96)):
-        action = pd.DataFrame(data=[0]).iloc[0]
-        res.loc[n, acts] = float(action)
+        
+    for n in range(N, N+(10*96)):
+        action = pd.DataFrame(data=[None]).iloc[0]
+        #res.loc[n, acts] = float(action.iloc[0])
         obs, reward, terminated, truncated, info = env.step(action)
         res.loc[n+1, meas] = obs
         
@@ -98,12 +99,16 @@ if __name__ == "__main__":
     res_ocp["rad_flo_calc"] = res_ocp["rad_flo_calc"].shift(-1)
     res_ocp[:-2].to_csv("twin_rooms_emulator_PRBS_new_15min.csv", index=True)
     
-    """
-    ax = res_ocp["Ti"].plot(drawstyle="steps-post")
+    fig, axes = plt.subplots(2,1)
+    ax = axes[0]
+    res_ocp["Ti"].plot(ax=ax, drawstyle="steps-post")
     ax1 = ax.twinx()
     res_ocp["Prad"].plot(ax=ax1, color="k", drawstyle="steps-post")
+    ax = axes[1]
+    res_ocp["Ta"].plot(ax=ax, color="g", drawstyle="steps-post")
+    
     plt.show()
-    """
+
     
     print(res_ocp)
         

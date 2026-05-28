@@ -5,7 +5,7 @@
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
         "sampling_time": "15min",
-        "mpc_config_file": "mpc_configs/2R3C_MPC_min_energy_squared.json",
+        "mpc_config_file": "mpc_configs/2R2C_MPC.json",
         "scaling": {
             "x_nom": 12,
             "x_nom_b": 289.15,
@@ -13,14 +13,14 @@
             "u_nom_b ": [0],
             "r_nom": [12,2.5E3],
             "r_nom_b": [289.15,0],
-            "z_nom": [2.5E3,12,12],
-            "z_nom_b": [0,289.15,289.15],
+            "z_nom": [2.5E3],
+            "z_nom_b": [0],
             "slack": true
         },
-        "filter_config_file": "ekf_configs/2R3C_EKF.json",
+        "filter_config_file": "ekf_configs/2R2C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true,
-        "parameters": "envelope_model_2R3C_alt_alt.csv",
+        "parameters": "2R2C_params.csv",
         "reiden": false,
         "reiden_freq": 96,
         "reiden_N": 1344,
@@ -30,7 +30,7 @@
     "environment": {
         "type": "BoptestGymEnv",
         "config": {   
-            "url": "http://docker-web-1:80",
+            "url": "http://docker-web-1:8000",
             "testcase": "twin_rooms_emulator",
             "actions": ["waterTRVSplitterManifold2Zone_val219_oveValRad_u"],
             "observations": {

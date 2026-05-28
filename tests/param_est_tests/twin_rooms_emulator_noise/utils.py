@@ -25,15 +25,18 @@ def prepare_data(
         "phi_int": "phi_int"
         
     }
-    y_data = data.rename(columns=y_map)[
-            list(y_map.values())
-        ]
-    y_data["phi_int"] *= 66.7
+    try:
+        y_data = data.rename(columns=y_map)[
+                list(y_map.values())
+            ]
+        y_data["phi_int"] *= 66.7
+    except:
+        y_data = data
     #y_data = y_data[60:]
     #y_data["Prad_calc"] = 4200*y_data["rad_flo"]*(y_data["Tsup"] - y_data["Tret"])
     #y_data["rad_flo"] = y_data["rad_flo"].shift(-1)
     #y_data["Prad"] = y_data["Prad"].shift(-1)
-    y_data["rad_flo"] = y_data["rad_flo_calc"]
+    #y_data["rad_flo"] = y_data["rad_flo_calc"]
     y_data["Prad"] = y_data["Prad_calc"]
     y_data["dT"] = y_data["Tsup"] - y_data["Tret"]
 

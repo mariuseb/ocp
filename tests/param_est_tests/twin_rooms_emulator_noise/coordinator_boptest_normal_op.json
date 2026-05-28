@@ -1,6 +1,6 @@
 {
     "days": 1,
-    "sampling_time": "60min",
+    "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
@@ -31,7 +31,7 @@
     "environment": {
         "type": "BoptestGymEnv",
         "config": {   
-            "url": "http://docker-web-1:80",
+            "url": "http://docker-web-1:8000",
             "testcase": "twin_rooms_emulator",
             "actions": [],
             "observations": {
@@ -79,7 +79,7 @@
             "random_start_time": false,
             "max_episode_length": 86400,
             "warmup_period": 0,
-            "step_period": 3600,
+            "step_period": 900,
             "start_time": 604800
         }
     }

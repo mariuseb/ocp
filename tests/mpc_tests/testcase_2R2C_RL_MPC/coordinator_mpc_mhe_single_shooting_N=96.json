@@ -24,7 +24,7 @@
         "adaptive": true,
         "adaptive_type": "mhe",
         "integrate_replace": {},
-        "est_config_file": "mhe_configs/2R2C_MHE_single_shooting.json",
+        "est_config_file": "mhe_configs/2R2C_MHE_single_shooting_N=96.json",
         "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea"]
     },
     "environment": {

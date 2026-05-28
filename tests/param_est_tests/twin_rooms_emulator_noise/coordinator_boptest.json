@@ -31,7 +31,7 @@
     "environment": {
         "type": "BoptestGymEnv",
         "config": {   
-            "url": "http://docker-web-1:80",
+            "url": "http://-web-1:8000",
             "testcase": "twin_rooms_emulator",
             "actions": ["waterTRVSplitterManifold2Zone_val219_oveValRad_u"],
             "observations": {

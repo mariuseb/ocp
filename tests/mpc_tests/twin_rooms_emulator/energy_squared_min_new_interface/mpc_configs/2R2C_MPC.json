@@ -1,48 +1,54 @@
 {
     "model": {
-        "w": {
-            "v1": "Ti - y1"
-        },
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + phi_h/Ci",
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_val, n, 1E-6)"
         },
         "p": [
             "Rie",
             "Rea",
             "Ci",
-            "Ce"
+            "Ce",
+            "Ai",
+            "n",
+            "Prad_nom"
         ],
         "u": [
-            "phi_h"
+            "rad_val"
         ],
         "r": [
             "Ta",
-            "cost"
+            "phi_s"
         ],
         "x": [
             "Ti",
             "Te"
         ],
-        "y": [
-            ["y1", "Ti"],
-            ["y2", "Te"]
+        "z": [
+            "Prad"
         ]
     },
     "bounds": {
+        "u": {
+            "lbu": [0],
+            "ubu": [1]
+        },
         "x": {
-            "lbx": [289.15,289.15],
-            "ubx": [301.15,301.15]
+            "lbx": [280,280],
+            "ubx": [340,340]
         }
     },
-    "objective": "dot(v1, v1)",
-    "N": 24,
+    "objective": "dot(Prad, Prad) + 1E4*dot(sl, sl)",
+    "N": 12,
     "dt": 900,
-    "method": "single_shooting",
+    "method": "multiple_shooting",
     "integrator": 
         {
         "name": "IRK",
-        "method": "radau",
+        "method": "legendre",
         "degree": 1,
         "n_steps": 1
         }
@@ -53,10 +59,8 @@
         "ipopt.linear_solver": "ma57",
         "ipopt.ma57_pre_alloc": 10, 
         "ipopt.ma57_automatic_scaling": "yes", 
-        "ipopt.max_cpu_time": 20,
-        "ipopt.max_iter": 1000,
-        "print_time":true,
-        "ipopt.print_level": 5,
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
         "ipopt.check_derivatives_for_naninf": "yes",
         "ipopt.hessian_approximation": "exact"
     },

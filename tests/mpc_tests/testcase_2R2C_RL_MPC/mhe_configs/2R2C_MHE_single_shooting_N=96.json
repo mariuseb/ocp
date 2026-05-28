@@ -36,7 +36,7 @@
         }
     },
     "objective": "dot(v1, v1)",
-    "N": 24,
+    "N": 96,
     "dt": 900,
     "method": "single_shooting",
     "integrator": 

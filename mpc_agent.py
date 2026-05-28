@@ -321,11 +321,15 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         self,
         env: Env,
         k: int,
+        include_all: bool = False,
         backshift: list = [],
         integrate_replace: dict[str, str] = {}
     ):         
         tf = k*self.dt
-        ts = tf - (self.adapt_N-1)*self.dt
+        if include_all:
+            ts = 0 
+        else:
+            ts = tf - (self.adapt_N-1)*self.dt
         data = env.get_results(tf, ts=ts)
         y_data = data.rename(
             columns=env.maps.boptest_to_ocp
@@ -566,7 +570,7 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
             ),
-            arrival_cost=True,
+            arrival_cost=False,
             **self.get_mhe_scaling(
                 self.scaling
             )

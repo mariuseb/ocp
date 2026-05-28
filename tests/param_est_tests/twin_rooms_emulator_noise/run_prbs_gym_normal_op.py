@@ -56,7 +56,7 @@ if __name__ == "__main__":
         cfg
     )
     env = coord.env
-    sampling_time = "60min"
+    sampling_time = "15min"
     dt = int(sampling_time.strip("min"))*60
     
     prbs, N = prepare_prbs(
@@ -66,7 +66,9 @@ if __name__ == "__main__":
     meas = env.measurement_vars+env.predictive_vars
     acts = env.actions
     
-    M = 24*56 # 
+    M = 24*56 #
+    M = 7*96 
+    #M = 10
     res = pd.DataFrame(
         columns=acts+meas,
         index=range(M)
@@ -75,8 +77,9 @@ if __name__ == "__main__":
     res.loc[:] = np.nan
     
     for n in range(M):
-        obs, reward, terminated, truncated, info = env.step([None])
-        res.loc[n+1, meas] = obs
+        action = pd.DataFrame(data=[None]).iloc[0]
+        #res.loc[n, acts] = float(action.iloc[0])
+        obs, reward, terminated, truncated, info = env.step(action)
         
     # map to OCP-names:
     res_ocp = res.rename(
@@ -88,10 +91,16 @@ if __name__ == "__main__":
     )
     
     _res = env.get_results(tf=M*dt) 
-    _res.index = res_ocp.index
+    _res["rad_219"] = _res.rad_219.shift(-1)
+    _res["Prad"] = _res.Prad.shift(-1)
+    _res["Prad_calc"] = (_res[["Qrad"]].diff(1)/1000)
+    #_res.index = res_ocp.index
     #res_ocp[["Prad", "rad_flo"]] = res_ocp[["Prad", "rad_flo"]].shift(-1)
-    res_ocp["rad_219"] = _res["rad_219"].shift(-1)
+    #res_ocp["rad_219"] = _res["rad_219"].shift(-1)
     
+    
+    
+    """
     res_ocp["rad_flo_calc"] = res_ocp["rad_flo_acc"].diff(1)/1000
     res_ocp["Prad_calc"] = (res_ocp[["Qrad"]].diff(1)/1000)
     res_ocp["Prad_calc_2"] = (res_ocp["Tsup"] - res_ocp["Tret"])*4200*res_ocp["rad_flo"]
@@ -100,13 +109,23 @@ if __name__ == "__main__":
     res_ocp["Prad_calc"] = res_ocp["Prad_calc"].shift(-1)
     res_ocp["rad_flo_calc"] = res_ocp["rad_flo_calc"].shift(-1)
     res_ocp.to_csv("twin_rooms_emulator_normal_op_%s.csv" % (sampling_time, ), index=True)
+    _res.rad_219
+    """
     
-    """
-    ax = res_ocp["Ti"].plot(drawstyle="steps-post")
+    _res.to_csv("twin_rooms_emulator_normal_op_%s.csv" % (sampling_time, ), index=True)
+    
+    fig, axes = plt.subplots(2,1, sharex=True)
+    ax = axes[0]
+    _res["Ti"].plot(ax=ax, drawstyle="steps-post")
     ax1 = ax.twinx()
-    res_ocp["Prad"].plot(ax=ax1, color="k", drawstyle="steps-post")
+    _res["Prad"].plot(ax=ax1, color="k", drawstyle="steps-post")
+    _res["Prad_calc"].plot(ax=ax1, color="r", linestyle="dashed", drawstyle="steps-post")
+    ax = axes[1]
+    ax1 = ax.twinx()
+    _res["Ta"].plot(ax=ax, color="g", drawstyle="steps-post")
+    _res["rad_219"].plot(ax=ax1, color="k", drawstyle="steps-post")
+    
     plt.show()
-    """
     
     print(res_ocp)
         
