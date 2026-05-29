@@ -943,8 +943,8 @@ class OCP(metaclass=ABCMeta):
                        ):
         # Create a new NLP solver instance from the compiled code
         compiler = kwargs.pop("compiler", "clang")
-        flags = kwargs.pop("flags", ["-O3"])
-        #flags = kwargs.pop("flags", ["-Ofast"])
+        #flags = kwargs.pop("flags", ["-O3"])
+        flags = kwargs.pop("flags", ["-Ofast"])
         if os.path.exists("_l4c_generated"):
             linkage = ["-L./", "_l4c_generated/libl4casadi_f.so"]
         else:

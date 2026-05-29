@@ -21,17 +21,22 @@ from gymnasium import Env
 from ocp.functions import functions
 from ocp.shooting import SingleShooting
 from datetime import datetime
+from ocp.dae import DAE
+import ocp.integrators as integrators
 import casadi as ca
 import matplotlib.pyplot as plt
 rc('mathtext', default='regular')
 
 ConfigArg = Union[pathlib.Path, dict, Config]
 
+
+
 class AbstractMPCAgent(metaclass=ABCMeta): 
     
     def __init__(
         self,
         mpc_cfg: ConfigArg,
+        hammerstein_cfg: ConfigArg,
         filter_type: str,
         filter_cfg: ConfigArg,
         params: npt.NDArray[Any],
@@ -45,6 +50,33 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             functions=functions,
             **self.get_mpc_scaling(self.scaling)
         )  # to remove, replace with N
+        if hammerstein_cfg is None: # trivial map
+            # create trivial map
+            self.hstein = ca.Function(
+                "G",
+                [
+                    self.mpc.dae.var("u"),
+                    ca.vertcat( 
+                        self.mpc.dae.var("z"), 
+                        self.mpc.dae.var("p")
+                    )
+                ],
+                [self.mpc.dae.var("u")],
+                ["u'", "p"],
+                ["u"]
+            )
+        else: # construct from provided cfg
+            ###### TODO: own function: #######
+            dae = DAE(hammerstein_cfg["model"])
+            integr_cfg = hammerstein_cfg.pop("integrator")
+            integr_name = integr_cfg.pop("name")
+            integr_klass = getattr(integrators, integr_name)
+            # set dt as from data:
+            integr_cfg["dt"] = hammerstein_cfg["dt"]
+            # init integrator:
+            self.H_integrator = integr_klass(dae, **integr_cfg) 
+            self.hstein = self.H_integrator.G_u
+            ##################################
         if not isinstance(filter_cfg, Config):
             filter_cfg = Config()(filter_cfg)
         if "parameters" not in filter_cfg.keys():
@@ -56,6 +88,12 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         self.i = 0
         self.preds = dict()
         self.forecasts = dict()
+        # TODO: fix for n_u > 1
+        self.actions = pd.DataFrame(
+            columns=[self.H_integrator.dae.u]
+        )
+        for n in range(self.mpc.delay):
+            self.actions.loc[n,:] = 0
         self._init_state_history()
         self._init_covar_history()
      
@@ -147,15 +185,39 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         lbx, ubx = self.fill_x_bounds(lbx, ubx)
         """
         lbx, ubx = self.get_bounds_from_forecast(forecast)
-        sol, u, x0, raw_sol = self.mpc.solve(
+        if self.mpc.delay > 0:
+            last_n_u = self.get_u_bounds_for_delay(self.mpc.delay)
+        else:
+            last_n_u = None
+        sol, u_prime, x0, raw_sol = self.mpc.solve(
             forecast,
             x0=obs,
             lbx=lbx,
             ubx=ubx,
             params=self.params,
             codegen=False,
-            return_raw_sol=True
+            return_raw_sol=True, 
+            last_n_u=last_n_u
         )
+        """
+        Assume hammerstein block to only depend on z:
+        """
+        if all(u_prime.values < 10):
+            u_val = np.array([0]*self.mpc.n_u)
+        else:
+            u_val = np.array([
+                self.hstein(
+                    1E-4,
+                    ca.vertcat(
+                        u_prime.values,
+                        self.params
+                    )
+                )]
+        )
+        u = u_prime.copy()
+        u.index = [self.H_integrator.dae.u]
+        u.loc[:] = u_val
+         
         if not self.mpc.solver.stats()["success"]:
             #print(sol)
             pass
@@ -163,6 +225,9 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         self.raw_sol = raw_sol
         # store forecast, opt result:
         self.forecasts[self.i] = forecast
+        # NB! what about delay here? need to pre-fill actions?
+        self.actions.loc[self.i+self.mpc.delay] = np.nan
+        self.actions.loc[self.i+self.mpc.delay, :] = u.values
         self.preds[self.i] = sol
         self.i += 1
         return u, False
@@ -207,6 +272,16 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         ubx = np.array(ubs).T.flatten()
         return lbx, ubx
     
+    def get_u_bounds_for_delay(self, n: int):
+        #action_diff = n - len(self.actions)
+        #if action_diff > 0: # TODO: fix for n > 1 and u != valve
+        #    return np.array([[0]]*self.mpc.n_u)
+        #else:
+        return self.actions[
+            self.i+self.mpc.delay-n:self.i+self.mpc.delay
+        ].values
+        
+        
     def store_filtering_history(
         self,
         x: npt.NDArray[np.float64],

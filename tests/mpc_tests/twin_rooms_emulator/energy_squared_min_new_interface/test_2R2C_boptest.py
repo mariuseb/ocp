@@ -41,6 +41,12 @@ if __name__ == "__main__":
     
     res = coord.res
     res.index = res.dt_index
+    res["Prad_model"] = np.nan
+    # causality shift:
+    res["Prad_calc"] = (res.Qrad.diff(1)/1000).shift(-1)
+    # what are the preds of Prad?
+    for i, df in coord.controller.preds.items():
+        res["Prad_model"][i] = df["Prad"][0]
     
     fig, axes = plt.subplots(2,1, sharex=True)
     ax = axes[0]
@@ -48,8 +54,10 @@ if __name__ == "__main__":
     res.Ti_lb.plot(ax=ax, drawstyle="steps-post", color="k")
     ax = axes[1]
     ax1 = ax.twinx()
-    res.Prad.plot(ax=ax, drawstyle="steps-post", color="r")
-    res.rad_219.plot(ax=ax1, drawstyle="steps-post", color="k")
+    #res.Prad.plot(ax=ax, drawstyle="steps-post", color="r")
+    res.Prad_calc.plot(ax=ax, drawstyle="steps-post", color="r")
+    res.Prad_model.plot(ax=ax, drawstyle="steps-post", color="g")
+    #res.rad_219.plot(ax=ax1, drawstyle="steps-post", color="k")
     
     plt.show()
     

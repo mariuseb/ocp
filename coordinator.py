@@ -85,6 +85,7 @@ class Coordinator(object):
             - est
         """
         adaptive = config.pop("adaptive", False)
+        hstein_cfg = config.pop("hammerstein_config_file", None)
         # TODO: rewrite more modular:
         mpc_scaling = deepcopy(
             config["scaling"]
@@ -95,6 +96,7 @@ class Coordinator(object):
         mpc_scaling["slack"] = True
         args = (
             config["mpc_config_file"],
+            hstein_cfg,
             config["filter_type"],
             config["filter_config_file"],
             ParameterReader()(config["parameters"]),

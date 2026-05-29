@@ -4,6 +4,9 @@
             "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
+        "alg": {
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_val, n, 1E-6)"
+        },
         "p": [
             "Rie",
             "Rea",
@@ -14,7 +17,7 @@
             "Prad_nom"
         ],
         "u": [
-            "Prad"
+            "rad_val"
         ],
         "r": [
             "Ta",
@@ -23,6 +26,9 @@
         "x": [
             "Ti",
             "Te"
+        ],
+        "z": [
+            "Prad"
         ]
     },
     "bounds": {
@@ -35,8 +41,8 @@
             "ubx": [340,340]
         }
     },
-    "objective": "dot(Prad, Prad) + 1E4*dot(sl, sl)",
-    "N": 12,
+    "objective": "0",
+    "N": 1,
     "delay": 0,
     "dt": 900,
     "method": "multiple_shooting",

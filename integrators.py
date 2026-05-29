@@ -636,6 +636,11 @@ class IRK(Integrator):
                           [self.g_expr],
                           ["z", "x", "u", "p", "r"],
                           ["g"])
+        self.g_u = ca.Function('g',
+                          [self.u, ca.vertcat(self.z, self.p)],
+                          [self.g_expr],
+                          ["u'", "p"],
+                          ["u"])
         
     def set_G(self):
         """ g non-explicit."""
@@ -716,7 +721,9 @@ class IRK(Integrator):
         #ifcn = ca.rootfinder('g_rootfinder', 'fast_newton', self.g)
         try:
             ifcn = ca.rootfinder('g_rf', 'newton', self.g)
+            ifcn_u = ca.rootfinder('g_rf', 'newton', self.g_u)
             self.G = ifcn
+            self.G_u = ifcn_u
         except:
             self.G = self.g
         

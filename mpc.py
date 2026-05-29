@@ -56,8 +56,8 @@ class MPC(OCP):
     """
     def __init__(self, **kwargs):
         
-        ref = kwargs.pop("ref", False)
-        
+        #ref = kwargs.pop("ref", False)
+        self.delay = kwargs["config"].pop("delay", 0)
         super().__init__(**kwargs)
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)
         # TODO: with single shooting, form slack on N instead of x.shape
@@ -498,6 +498,7 @@ class MPC(OCP):
         elif self.strategy.name == "SingleShooting":
             raise ValueError("Not implemented for single shooting yet..")
     
+    """
     def solve(
               self,
               data,
@@ -518,6 +519,7 @@ class MPC(OCP):
                            p_val=p_val,
                            sqp=sqp,
                            codegen=codegen)
+    """
         
     def solve(
               self,
@@ -529,9 +531,14 @@ class MPC(OCP):
               return_raw_sol=False,
               codegen=False,
               p_val=None,
+              last_n_u=None,
               sqp=False
               ):
         lbg, ubg = self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
+        if self.delay > 0:
+            assert last_n_u is not None
+            # TODO: assertions on size of last_n_u
+            self.fix_u_delay(last_n_u)
         #self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
         return self._solve(lbg=lbg,
                            ubg=ubg,
@@ -539,6 +546,16 @@ class MPC(OCP):
                            p_val=p_val,
                            sqp=sqp,
                            codegen=codegen)
+        
+    def fix_u_delay(self, last_n_u):
+        start = self.nlp_parser["u"]["range"]["a"]
+        for n in range(self.delay):
+            stop = start+self.n_u
+            self.lbx[start:stop] = last_n_u[n]
+            self.ubx[start:stop] = last_n_u[n]
+            start = stop
+        
+            
     
     def add_h(self):
         """
@@ -804,11 +821,11 @@ class MPC(OCP):
         if not return_raw_sol:
             #return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values
             return sol_df, \
-                   sol_df.loc[0, self.u_names], \
+                   sol_df.loc[self.delay, self.u_names], \
                    sol_df.loc[1, self.x_names].values
         else:
             #return sol_df, sol_df.loc[0, self.u_names], sol_df.loc[self.dt, self.x_names].values, sol
             return sol_df, \
-                   sol_df.loc[0, self.u_names], \
+                   sol_df.loc[self.delay, self.u_names], \
                    sol_df.loc[1, self.x_names].values, \
                    sol
