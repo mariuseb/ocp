@@ -66,6 +66,7 @@ def get_value_function_error(coord, N=None):
             res["Prad"].loc[ndx:stop_ndx].values/1E3, 
             preds[i].loc[:N-1, "Prad"].values/1E3, 
         )
+    value["Prad_act"] = res["Prad"][:-N]/1E3
     return value
 
 def plot_parameter_evolution(coord, PRBS_ref):

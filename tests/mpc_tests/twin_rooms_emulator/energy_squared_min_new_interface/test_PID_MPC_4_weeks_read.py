@@ -52,40 +52,6 @@ if __name__ == "__main__":
     coord_ad_mpc = Coordinator.read_result(cfg)
     quick_plot(coord_ad_mpc)
     kpis_ad_mpc = coord_ad_mpc.get_custom_kpis(start=start)
-    
-    
-    
-    """
-    Parameter plot:
-    
-    Plot parameter evolution against PRBS-params
-    """
-    p = coord_mpc.controller.p
-    _params_PRBS = pd.Series(
-        index=p,
-        data=coord_mpc.controller.params,
-    )
-    hist = coord_ad_mpc.controller.params_history
-    params_PRBS = pd.DataFrame(_params_PRBS).T
-    params_PRBS.index = [hist.index[0]]
-    for ndx in hist.index:
-        params_PRBS.loc[ndx, :] = params_PRBS.iloc[0, :]
-    
-    fig, axes = plt.subplots(7,1, sharex=True, figsize=(10,12))
-    for i, name in enumerate(p):
-        hist[name].plot(
-            ax=axes[i], 
-            color="k", 
-            linestyle="dashed",
-            drawstyle="steps-post"
-        )
-        params_PRBS[name].plot(
-            ax=axes[i], 
-            color="k", 
-            drawstyle="steps-post"
-        )
-        axes[i].set_title(name)
-    plt.show()
-    
+
     
     print("tail")
