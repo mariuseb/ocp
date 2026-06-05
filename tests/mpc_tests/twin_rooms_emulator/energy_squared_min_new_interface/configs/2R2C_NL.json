@@ -1,0 +1,72 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_219, n, 1E-6)"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v3": "Prad - y3"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n",
+            "Prad_nom"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "Prad"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y3", "Prad"]
+        ]
+    },
+        "bounds": {
+        "x": {
+            "lbx": [280,280],
+            "ubx": [340,340]
+        },
+        "z": {
+            "lbz": [-1E3],
+            "ubz": [1E4]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v3, v3)@R[1,1]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.max_iter": 30000,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

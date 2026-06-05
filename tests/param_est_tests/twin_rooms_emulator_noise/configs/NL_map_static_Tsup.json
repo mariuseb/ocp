@@ -1,0 +1,60 @@
+{
+    "model": {
+        "ode": {
+        },
+        "alg": {
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_219, n, 1E-6)",
+            "Prad_nom": "Prad_nom - (Prad_dim - Prad_nom_a*(Ta - Ta_dim))"
+        },
+        "w": {
+            "v1": "y3 - Prad"
+        },
+        "p": [
+            "n",
+            "Prad_dim",
+            "Prad_nom_a",
+            "Ta_dim"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta"
+        ],
+        "x": [
+        ],
+        "z": [
+          "Prad",
+          "Prad_nom"
+        ],
+        "y": [
+            ["y3", "Prad"]
+
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [-1000,-1000],
+            "ubz": [1E4,1E4]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "radau",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "none",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.max_iter" : 1E5
+    },
+    "codegen": false
+}

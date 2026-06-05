@@ -43,8 +43,10 @@ if __name__ == "__main__":
     sysid using PRBS.
     """
     cfg_path = os.path.join("configs", "2R2C.json")
+    month = "jan"
     data_path = os.path.join(
-                            "twin_rooms_emulator_PRBS_new_15min.csv"
+                            "PRBS_results",
+                            "twin_rooms_emulator_PRBS_15min_%s.csv" % (month, )
                             )
     y_data, N, dt = prepare_data(
         data_path,
@@ -125,7 +127,7 @@ if __name__ == "__main__":
         #sol["phi_h"].plot(drawstyle="steps-post",ax=ax1)
         plt.show()
         #plt.close()
-        params.to_csv("2R2C_params.csv", index=True)
+        #params.to_csv("params_result/2R2C_params_%s.csv" % (month, ), index=True)
         #sol.to_csv("simulation_traj_2R2C.csv", index=True)
         print(params) 
 

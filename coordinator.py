@@ -66,9 +66,10 @@ class Coordinator(object):
         self.controller = self._init_controller(
             cfg["controller"]
         )
-        self.env = self._init_env(
-            cfg["environment"]
-        )
+        if can_run:
+            self.env = self._init_env(
+                cfg["environment"]
+            )
         self.val_metrics = pd.DataFrame(
             columns=["nrmse", "rmse", "r2", "mse"]
         )
@@ -190,7 +191,7 @@ class Coordinator(object):
         ax = results[["Prad_calc", "Prad_pred", "Prad"]].plot(drawstyle="steps-post")
         return fig, axes
         
-    def get_custom_kpis(self):
+    def get_custom_kpis(self, start=None):
         """
         Get kpis for energy, cost, discomfort, peak.
         
@@ -199,22 +200,27 @@ class Coordinator(object):
         
         TODO: more modular
         """
-        _lb_vio = (self.res.Ti - self.res.Ti_lb)
-        _ub_vio = (self.res.Ti - self.res.Ti_ub)
+        if start is not None:
+            res = self.res.loc[start:]
+        else:
+            res = self.res
+        
+        _lb_vio = (res.Ti - res.Ti_lb)
+        _ub_vio = (res.Ti - res.Ti_ub)
         lb_vio = _lb_vio.loc[_lb_vio < 0]
         ub_vio = _ub_vio.loc[_ub_vio > 0]
         # in Kh:
         sum_vio = abs(lb_vio.sum()) + ub_vio.sum()
         tdis = sum_vio/(3600/self.dt)
         # in kWh:
-        ener_tot = self.res["Qrad"].iloc[-1]/3.6E6
+        ener_tot = (res["Qrad"].iloc[-1] - res["Qrad"].iloc[0])/3.6E6
         # in kW:
-        Prad_calc = (self.res["Qrad"].diff(1)/1E6).shift(-1).fillna(0)
+        Prad_calc = (res["Qrad"].diff(1)/1E6).shift(-1).fillna(0)
         # global peak:
         
         peak = Prad_calc.max()
         # cost in EUR:
-        cost = (Prad_calc*self.res.cost).sum()
+        cost = (Prad_calc*res.cost).sum()
         return pd.DataFrame(
             index=["tdis [Kh]",
                    "energy [kWh]",
@@ -224,7 +230,38 @@ class Coordinator(object):
             data=[tdis, ener_tot, peak, cost],
             columns=["value"]
         )
-            
+    
+    def run_baseline_control(self):
+        """ Run PID for however long. """        
+        obs, _ = self.env.reset()
+        K = int(self.days*24*int(3600/self.dt))
+        for k in range(K):
+            print("\r", end='')
+            #print("\033[2A", end="")
+            #print("\033[1A", end="")
+            print("%s: Step %s of %s %s" % \
+                (
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'), \
+                    str(k+1),
+                    str(K),
+                    "Success"
+                    ), 
+                flush=True, end='')
+            #print("\033[1A", end="")
+            obs, reward, terminated, truncated, info = self.env.step(
+                pd.DataFrame(data=[None]).iloc[0]
+            )
+        # get env result:
+        self.res = self.env.get_results(
+            self.days*24*int(3600/self.dt)*self.dt
+        )
+        try:
+            self.kpis = self.get_custom_kpis()
+            requests.put('{0}/stop/{1}'.format(self.env.url, self.env.testid))
+        except KeyError:
+            assert isinstance(self.env, CustomGymEnv)
+        
+         
     def run(self, x0=None): 
         
         if self.can_run:
@@ -232,6 +269,9 @@ class Coordinator(object):
             if obs is not None: # first x0 is passed:
                 obs = x0
                 
+            #start_k = int(self.env.start_time/self.dt) - 1
+            #K = start_k + int(self.days*24*int(3600/self.dt))
+            #self.controller.i = start_k
             K = int(self.days*24*int(3600/self.dt))
             for k in range(K):
                 # TODO: forecast optional:

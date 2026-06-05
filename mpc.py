@@ -57,7 +57,10 @@ class MPC(OCP):
     def __init__(self, **kwargs):
         
         #ref = kwargs.pop("ref", False)
-        self.delay = kwargs["config"].pop("delay", 0)
+        try:
+            self.delay = kwargs["config"].pop("delay", 0)
+        except AttributeError:
+            self.delay = 0
         super().__init__(**kwargs)
         #self.nlp["f"] = self.get_nlp_obj(self.nlp_u, ref=ref)
         # TODO: with single shooting, form slack on N instead of x.shape

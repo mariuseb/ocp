@@ -4,9 +4,6 @@
             "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
-        "alg": {
-            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_val, n, 1E-6)"
-        },
         "w": {
             "v1": "Ti - y1"
         },
@@ -27,7 +24,7 @@
             "Prad_nom"
         ],
         "u": [
-            "rad_val"
+            "Prad"
         ],
         "r": [
             "Ta",
@@ -36,9 +33,6 @@
         "x": [
             "Ti",
             "Te"
-        ],
-        "z": [
-            "Prad"
         ],
         "y": [
             ["y1", "Ti"]
@@ -53,7 +47,7 @@
         "n_steps": 1
         },
     "x0": [293.15, 293.15],
-    "z0": [0],
+    "z0": [],
     "Q": [[1,0], [0,1]],
     "R": [[1]],
     "P0": [

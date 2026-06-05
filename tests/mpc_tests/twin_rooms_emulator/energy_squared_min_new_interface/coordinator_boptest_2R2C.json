@@ -1,16 +1,16 @@
 {
-    "days": 14,
+    "days": 28,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
         "temp_conv": 273.15,
         "sampling_time": "15min",
-        "mpc_config_file": "mpc_configs/2R2C_MPC.json",
+        "mpc_config_file": "mpc_configs/2R2C_MPC_min_energy.json",
         "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
         "scaling": {
             "x_nom": 12,
             "x_nom_b": 289.15,
-            "u_nom": [1],
+            "u_nom": [2.5E3],
             "u_nom_b ": [0],
             "r_nom": [12,2.5E3],
             "r_nom_b": [289.15,0],
@@ -21,7 +21,7 @@
         "filter_config_file": "ekf_configs/2R2C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true,
-        "parameters": "2R2C_params.csv",
+        "parameters": "params_result/2R2C_params_jan.csv",
         "reiden": false,
         "reiden_freq": 96,
         "reiden_N": 1344,
@@ -71,7 +71,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 86400
+            "start_time": 0
         }
     }
 }

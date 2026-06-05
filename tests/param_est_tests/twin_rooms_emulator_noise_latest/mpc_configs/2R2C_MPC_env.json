@@ -1,0 +1,86 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "Ci",
+            "Ce",
+            "Ai",
+            "n",
+            "rad_flo_nom",
+            "cp_water",
+            "Csup",
+            "Rsup",
+            "Risup",
+            "Riret",
+            "Cret",
+            "Rret",
+            "Tsup_offset",
+            "Tsupret_offset",
+            "Tret_offset",
+            "Tset_sup_b",
+            "Tset_sup_a",
+            "Ta_dim",
+            "Prad_dim", 
+            "deltaT_rad_zero",
+            "rad_flo_zero"
+        ],
+        "u": [
+            "rad_flo",
+            "Prad"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "ocp": {
+        "h": 
+        [
+            "0 == Prad[0] - deltaT_rad_zero*cp_water*rad_flo[0]"        
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0,0],
+            "ubu": [0.15,5000]
+        },
+        "x": {
+            "lbx": [280,280],
+            "ubx": [340,340]
+        }
+    },
+    "objective": "dot(Prad, Prad) + 1E4*dot(sl, sl)",
+    "N": 96,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

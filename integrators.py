@@ -636,11 +636,14 @@ class IRK(Integrator):
                           [self.g_expr],
                           ["z", "x", "u", "p", "r"],
                           ["g"])
-        self.g_u = ca.Function('g',
-                          [self.u, ca.vertcat(self.z, self.p)],
-                          [self.g_expr],
-                          ["u'", "p"],
-                          ["u"])
+        try:
+            self.g_u = ca.Function('g',
+                            [self.u, ca.vertcat(self.z, self.p)],
+                            [self.g_expr],
+                            ["u'", "p"],
+                            ["u"])
+        except RuntimeError:
+            self.g_u = None
         
     def set_G(self):
         """ g non-explicit."""

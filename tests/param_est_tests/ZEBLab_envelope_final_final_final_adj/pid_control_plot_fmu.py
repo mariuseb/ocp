@@ -22,10 +22,10 @@ from matplotlib import rc
 from ocp.tests.utils import get_opt_config_path, get_data_path
 import os
 from pandas.plotting import autocorrelation_plot
-from ocp.filters import KalmanBucy
+#from ocp.filters import KalmanBucy
 from utils import prepare_data, ZEBData, quick_plot
-from result_generator import ResultGenerator
-from ocp.filters import KalmanDAE
+#from result_generator import ResultGenerator
+#from ocp.filters import KalmanDAE
 import matplotlib.pyplot as plt
 from copy import deepcopy
 import matplotlib.dates as mdates
@@ -130,8 +130,11 @@ if __name__ == "__main__":
     #ekf = KalmanBucy(ekf_cfg)
     # set params:s
     #ekf.set_params(params)
+    # These are anyway frozen:
     Ki = 5000
     Kp = 1
+    Ki = 7200
+    Kp = 0.3
     #params = [Ki, Kp]
     mpc = MPC(config=mpc_cfg,
               param_guess=params,
@@ -153,7 +156,7 @@ if __name__ == "__main__":
                        data=np.array(res["z"]).T,
                        columns=["u","u11","u22"]
                        )
-    out["E"] = np.array(res["xf"]).flatten()
+    out["E"] = np.array(res["x"]).flatten()
     out.index = test.index
     test["sim_PI"] = out["u"]
     test["u_contr"] = test["val_pos_219"]/100
@@ -225,7 +228,7 @@ if __name__ == "__main__":
             drawstyle="steps-post",
             **deepcopy(kwargs))
     ax.plot(test.dt_index.values, 
-            test.sim_PI.values,
+            -(test.sim_PI.values),
             markevery=mark_freq,
             color="k",
             linestyle="dashed",

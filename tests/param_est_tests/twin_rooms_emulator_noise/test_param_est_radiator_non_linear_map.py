@@ -45,15 +45,15 @@ if __name__ == "__main__":
     cfg_path = os.path.join("configs", "NL_map_static.json")
     data_path = os.path.join(
                             #"twin_rooms_emulator_PRBS_new_15min.csv"
-                            "twin_rooms_emulator_normal_op_15min.csv"
+                            "twin_rooms_emulator_normal_op_15min_3_months.csv"
                             )
     y_data, N, dt = prepare_data(
         data_path,
         rule="15min",
         integrate_inputs=False
     )
-    y_data["y3"] = y_data["y3"].shift(-1)
-    y_data["y3"] = y_data["y3"].fillna(0)
+    #y_data["y3"] = y_data["y3"].shift(-1)
+    #y_data["y3"] = y_data["y3"].fillna(0)
     #y_data = y_data[:-1]
     #y_data["rad_flo"] = y_data["rad_flo_calc"]
     #param_guess, kwargs, lbx, ubx, x_guess = prepare_est(y_data, n_x=0)
@@ -127,10 +127,25 @@ if __name__ == "__main__":
         sol["Prad"].plot(color="g", ax=ax, linewidth=0.75, drawstyle="steps-post")
         #ax.legend(["model", "measured"])
         ax1 = ax.twinx()
-        sol["rad_219"].plot(color="k", ax=ax1, linewidth=0.75, drawstyle="steps-post")
+        #sol["rad_219"].plot(color="k", ax=ax1, linewidth=0.75, drawstyle="steps-post")
         #sol["phi_s"].plot(drawstyle="steps-post",ax=ax1)
         #sol["phi_h"].plot(drawstyle="steps-post",ax=ax1)
         plt.show()
+        
+        # sort:
+        rad_219 = sol["rad_219"].sort_values(ascending=True)
+        y3 = sol["y3"].loc[rad_219.index]
+        Prad = sol["Prad"].loc[rad_219.index]          
+        rad_219.index = range(len(rad_219.index))
+        y3.index = range(len(y3.index))
+        Prad.index = range(len(Prad.index))
+        ax = y3.plot(color="r", linewidth=0.75, drawstyle="steps-post")
+        ax1 = ax.twinx()
+        rad_219.plot(ax=ax1, color="k", linewidth=0.75, drawstyle="steps-post")
+        #sol["y3"].plot(color="k", ax=ax, linewidth=0.75, drawstyle="steps-post")
+        Prad.plot(color="g", ax=ax, linewidth=0.75, drawstyle="steps-post")
+        plt.show()
+        
         #plt.close()
         params.to_csv("radiator_NL_map.csv", index=True)
         #sol.to_csv("simulation_traj_2R2C.csv", index=True)

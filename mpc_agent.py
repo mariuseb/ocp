@@ -89,9 +89,15 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         self.preds = dict()
         self.forecasts = dict()
         # TODO: fix for n_u > 1
-        self.actions = pd.DataFrame(
-            columns=[self.H_integrator.dae.u]
-        )
+        if hasattr(self, "H_integrator"):
+            self.actions = pd.DataFrame(
+                columns=[self.H_integrator.dae.u]
+            )
+        else:
+            self.actions = pd.DataFrame(
+                columns=[self.mpc.u()]
+            )
+            
         for n in range(self.mpc.delay):
             self.actions.loc[n,:] = 0
         self._init_state_history()
@@ -214,9 +220,12 @@ class AbstractMPCAgent(metaclass=ABCMeta):
                     )
                 )]
         )
-        u = u_prime.copy()
-        u.index = [self.H_integrator.dae.u]
-        u.loc[:] = u_val
+        if hasattr(self, "H_integrator"):
+            u = u_prime.copy()
+            u.index = [self.H_integrator.dae.u]
+            u.loc[:] = u_val
+        else:
+            u = u_prime
          
         if not self.mpc.solver.stats()["success"]:
             #print(sol)
@@ -401,6 +410,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         integrate_replace: dict[str, str] = {}
     ):         
         tf = k*self.dt
+        #tf = k*self.dt + self.dt
         if include_all:
             ts = 0 
         else:
@@ -428,9 +438,9 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
     ):
         Q = ca.DM.eye(self.estimator.n_x)
         R = ca.DM.eye(self.estimator.n_y)
-        try: # to config:
-            R[1,1] = 1e-1 # config / learnable
-            R[2,2] = 1e-5 # config / learnable
+        try: # TODO: to config:
+            R[1,1] = 1e-3 # config / learnable
+            #R[2,2] = 1e-5 # config / learnable
         except:
             pass
         #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1e-8 # config / learnable
@@ -485,7 +495,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                 last_x_guess = x_guess[-1,-self.estimator.n_x:]
             return x_guess, last_x_guess
         else:
-            last_est = self.ests[self.i-1]
+            #last_est = self.ests[self.i-1]
+            last_est = self.ests[self.i - self.adapt_frequency]
             x_guess = last_est[self.estimator.x()][1:].values.reshape(
                 (self.estimator.n_x, self.estimator.N-1)
             )
@@ -523,12 +534,14 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         k starts at zero:
         """
         #if self.re_estimation_clause(env.i):
+        #if self.re_estimation_clause(k):
         if self.re_estimation_clause(self.i):
             # estimate, set params:
             Q, R, P0, lbp, ubp, p0 = self.get_estimation_parameters()
             y_data = self.get_y_data(
                 env,
                 self.i,
+                #k,
                 backshift=env.maps.u,
                 integrate_replace=self.integrate_replace
             )
@@ -549,6 +562,18 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         #x_N=x_guess[-1,-self.estimator.n_x:]
                                         x_N=last_x_guess
                                         ) 
+            
+            """
+            ax = sol["rad_219"].plot(color="k", drawstyle="steps-post")
+            ax1 = ax.twinx()
+            sol["Prad"].plot(drawstyle="steps-post", ax=ax1)
+            plt.show()
+            
+            ax = sol["y1"].plot(color="k", drawstyle="steps-post")
+            sol["Ti"].plot(drawstyle="steps-post", ax=ax)
+            plt.show()
+            
+            """
             # store solution:
             self.ests[k] = sol
             # only change parameters if estimator succeeded:

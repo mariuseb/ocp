@@ -74,7 +74,7 @@ if __name__ == "__main__":
         obs, reward, terminated, truncated, info = env.step(action)
         res.loc[n+1, meas] = obs
         
-    for n in range(N, N+(10*96)):
+    for n in range(N, N+(2*96)):
         action = pd.DataFrame(data=[None]).iloc[0]
         #res.loc[n, acts] = float(action.iloc[0])
         obs, reward, terminated, truncated, info = env.step(action)
@@ -89,6 +89,12 @@ if __name__ == "__main__":
         res_ocp.index, unit="s"
     )
     #res_ocp[["Prad", "rad_flo"]] = res_ocp[["Prad", "rad_flo"]].shift(-1)
+    
+    _res = env.get_results(tf=n*900) 
+    _res.index = res_ocp.index
+    _res["rad_219"] = _res.rad_219.shift(-1)
+    _res["Prad"] = _res.Prad.shift(-1)
+    _res["Prad_calc"] = (_res[["Qrad"]].diff(1)/1000).shift(-1)
     
     res_ocp["rad_flo_calc"] = res_ocp["rad_flo_acc"].diff(1)/1000
     res_ocp["Prad_calc"] = (res_ocp[["Qrad"]].diff(1)/1000)
@@ -107,6 +113,23 @@ if __name__ == "__main__":
     ax = axes[1]
     res_ocp["Ta"].plot(ax=ax, color="g", drawstyle="steps-post")
     
+    plt.show()
+
+    fig, axes = plt.subplots(2,1, sharex=True)
+    ax = axes[0]
+    _res["Ti"].plot(ax=ax, drawstyle="steps-post")
+    ax1 = ax.twinx()
+    _res["Prad_calc"].plot(ax=ax1, color="k", drawstyle="steps-post")
+    ax = axes[1]
+    _res["rad_219"].plot(ax=ax, color="b", drawstyle="steps-post")
+    res_ocp["rad_219"].plot(ax=ax, linestyle="dashed", color="k", drawstyle="steps-post")
+    ax1 = ax.twinx()
+    _res["Prad_calc"].plot(ax=ax1, color="r", drawstyle="steps-post")
+    
+    plt.show()
+    
+    ax = res_ocp["rad_219"].plot(drawstyle="steps-post", color="k")
+    _res["rad_219"].plot(drawstyle="steps-post", color="b")
     plt.show()
 
     

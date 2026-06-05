@@ -67,7 +67,7 @@ if __name__ == "__main__":
     acts = env.actions
     
     M = 24*56 #
-    M = 7*96 
+    M = (31 + 29 + 31)*96 
     #M = 10
     res = pd.DataFrame(
         columns=acts+meas,
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     _res = env.get_results(tf=M*dt) 
     _res["rad_219"] = _res.rad_219.shift(-1)
     _res["Prad"] = _res.Prad.shift(-1)
-    _res["Prad_calc"] = (_res[["Qrad"]].diff(1)/1000)
+    _res["Prad_calc"] = (_res[["Qrad"]].diff(1)/1000).shift(-1)
     #_res.index = res_ocp.index
     #res_ocp[["Prad", "rad_flo"]] = res_ocp[["Prad", "rad_flo"]].shift(-1)
     #res_ocp["rad_219"] = _res["rad_219"].shift(-1)
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     _res.rad_219
     """
     
-    _res.to_csv("twin_rooms_emulator_normal_op_%s.csv" % (sampling_time, ), index=True)
+    _res.to_csv("twin_rooms_emulator_normal_op_%s_3_months.csv" % (sampling_time, ), index=True)
     
     fig, axes = plt.subplots(2,1, sharex=True)
     ax = axes[0]
