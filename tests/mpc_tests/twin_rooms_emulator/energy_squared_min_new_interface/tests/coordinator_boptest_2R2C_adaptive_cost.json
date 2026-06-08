@@ -30,7 +30,7 @@
         "integrate_replace": {
             "Prad": "Qrad"
         },
-        "adaptive_N": 1344,
+        "adaptive_N": 672,
         "allow_variable_N": false
     },
     "environment": {
