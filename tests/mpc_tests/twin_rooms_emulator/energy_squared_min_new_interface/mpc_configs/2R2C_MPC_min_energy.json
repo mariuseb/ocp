@@ -10,6 +10,7 @@
             "Ci",
             "Ce",
             "Ai",
+            "alpha_int",
             "n",
             "Prad_nom"
         ],
@@ -18,7 +19,9 @@
         ],
         "r": [
             "Ta",
-            "phi_s"
+            "phi_s",
+            "phi_int",
+            "cost"
         ],
         "x": [
             "Ti",

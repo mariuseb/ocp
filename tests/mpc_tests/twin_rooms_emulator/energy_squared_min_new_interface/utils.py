@@ -27,6 +27,9 @@ def quick_plot(coord):
     ax = axes[0]
     res.Ti.plot(ax=ax, drawstyle="steps-post", color="m")
     res.Ti_lb.plot(ax=ax, drawstyle="steps-post", color="k")
+    res.Ti_ub.plot(ax=ax, drawstyle="steps-post", color="k")
+    ax1 = ax.twinx()
+    res.cost.plot(ax=ax1, drawstyle="steps-post", color="b", linestyle="dashed")
     ax = axes[1]
     #ax1 = ax.twinx()
     #res.Prad.plot(ax=ax, drawstyle="steps-post", color="r")
@@ -77,15 +80,15 @@ def plot_parameter_evolution(coord, PRBS_ref):
     p = coord.controller.p
     _params_PRBS = pd.Series(
         index=p,
-        data=coord.controller.params,
+        data=params_PRBS.values.flatten(),
     )
     hist = coord.controller.params_history
     params_PRBS = pd.DataFrame(_params_PRBS).T
     params_PRBS.index = [hist.index[0]]
     for ndx in hist.index:
-        params_PRBS.loc[ndx, :] = params_PRBS.iloc[0, :]
+        params_PRBS.loc[ndx, :] = params_PRBS.iloc[0, :].values
     
-    fig, axes = plt.subplots(7,1, sharex=True, figsize=(10,12))
+    fig, axes = plt.subplots(8,1, sharex=True, figsize=(10,12))
     for i, name in enumerate(p):
         hist[name].plot(
             ax=axes[i], 

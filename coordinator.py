@@ -130,6 +130,7 @@ class Coordinator(object):
                         adapt_N=config["adaptive_N"]
                     )
                 elif config["adaptive_type"] == "mhe":
+                    #kwargs["slack"] = True
                     return MheMPCAgent(
                         *args,
                         **kwargs
@@ -439,9 +440,10 @@ class Coordinator(object):
             pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
             
     @classmethod
-    def read_result(cls, cfg: OrderedDict):
-        name = get_json_hash(cfg) + ".pkl"
-        path = os.path.join("results", name)
+    def read_result(cls, cfg: OrderedDict, path=None):
+        if path is None:
+            name = get_json_hash(cfg) + ".pkl"
+            path = os.path.join("results", name)
         with open(path, 'rb') as handle:
             obj = pickle.load(handle)
         return obj

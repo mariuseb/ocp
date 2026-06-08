@@ -563,6 +563,8 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             #return self.to_np_array(self.get_forecast(), self.r, self.var["r"])
         index = np.arange(0, dt*N, dt)
         _forecast = self.put_forecast(N, dt)    
+        # add reaAuxPow:
+        _forecast["reaAuxPow"] = [0]*N
         vals = self.to_np_array(
             _forecast,
             self.maps.r,
@@ -574,6 +576,7 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             columns=self.maps.var["r"]
         )
         # TODO: make below more modular:
+        """
         try:
             phi_int_factor = 50
             forecast["phi_int"] = forecast["n_occ"]*phi_int_factor
@@ -581,6 +584,7 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             forecast["fan_219"] = 0.1
         except KeyError:
             pass
+        """
         return forecast
 
     def step(self, action):

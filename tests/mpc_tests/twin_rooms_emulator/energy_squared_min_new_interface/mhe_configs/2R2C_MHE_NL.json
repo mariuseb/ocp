@@ -1,11 +1,15 @@
 {
     "model": {
         "ode": {
-            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + alpha_int*phi_int*(1/Ci) + Prad/Ci",
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "alg": {
-            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_val, n, 1E-6)"
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_219, n, 1E-6)"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v3": "Prad - y3"
         },
         "p": [
             "Rie",
@@ -18,11 +22,13 @@
             "Prad_nom"
         ],
         "u": [
-            "rad_val"
+            "rad_219"
         ],
         "r": [
             "Ta",
-            "phi_s"
+            "phi_s",
+            "phi_int",
+            "cost"
         ],
         "x": [
             "Ti",
@@ -30,21 +36,24 @@
         ],
         "z": [
             "Prad"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y3", "Prad"]
         ]
     },
-    "bounds": {
-        "u": {
-            "lbu": [0],
-            "ubu": [1]
-        },
+        "bounds": {
         "x": {
             "lbx": [280,280],
             "ubx": [340,340]
+        },
+        "z": {
+            "lbz": [-1E3],
+            "ubz": [1E4]
         }
     },
-    "objective": "dot(Prad, Prad) + 1E4*dot(sl, sl)",
-    "N": 12,
-    "delay": 0,
+    "objective": "dot(v1, v1)@R[0,0] + dot(v3, v3)@R[1,1] + Q[0,0]*dot(s1, s1) + Q[1,1]*dot(s2, s2)",
+    "N": 96,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
@@ -58,12 +67,12 @@
     "solver": "",
     "opt": {
         "verbose": false,
+        "print_time": false,
         "ipopt.linear_solver": "ma57",
-        "ipopt.ma57_pre_alloc": 10, 
-        "ipopt.ma57_automatic_scaling": "yes", 
-        "ipopt.max_cpu_time": 300,
-        "ipopt.max_iter": 3000,
-        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.print_level": 0,
+        "ipopt.max_iter": 30000,
+        "ipopt.ma57_automatic_scaling" : "yes",
         "ipopt.hessian_approximation": "exact"
     },
     "codegen": false

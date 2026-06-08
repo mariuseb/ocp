@@ -307,6 +307,7 @@ class Estimation(OCP, CovarianceEstimation):
               p_aux=None,
               p_aux_prior=None,
               return_raw_sol=False,
+              codegen=False
     ):      
         self.presolve(
             data,
@@ -320,7 +321,8 @@ class Estimation(OCP, CovarianceEstimation):
             x_N=x_N,
             x_guess=x_guess,
             p_aux=p_aux,
-            p_aux_prior=p_aux_prior
+            p_aux_prior=p_aux_prior,
+            codegen=codegen
         )
         
         solution = self.solver(

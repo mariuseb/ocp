@@ -428,6 +428,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         y_data.index = range(len(y_data.index))
         for y, var in self.estimator.y.items():
             y_data[y] = y_data[var]
+        y_data["phi_int"] = y_data["InternalGainsRad[1]"] + y_data["InternalGainsLat[1]"] + y_data["InternalGainsCon[1]"]
         return y_data
             
     """
@@ -556,7 +557,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         ubp=ubp,
                                         x_guess=x_guess,
                                         covar=ca.veccat(Q, R),
-                                        #codegen=False,
+                                        codegen=True,
                                         return_raw_sol=True,
                                         P0=P0,
                                         #x_N=x_guess[-1,-self.estimator.n_x:]
@@ -660,6 +661,7 @@ class MheMPCAgent(AbstractAdaptiveAgent):
         **kwargs
     ) -> None: 
         config_file = kwargs.pop("config_file")
+        self.adapt_frequency = 1
         super().__init__(
             *args,
             **kwargs
@@ -670,7 +672,7 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
             ),
-            arrival_cost=False,
+            arrival_cost=True,
             **self.get_mhe_scaling(
                 self.scaling
             )
@@ -686,15 +688,17 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             scaling
         )
         # stochastic --> slack:
-        #mhe_scaling["slack"] = True
+        mhe_scaling["slack"] = True
         # TODO: revert back:
-        mhe_scaling["slack"] = False
+        #mhe_scaling["slack"] = False
         # TODO: modularize y:
+        """
         try:
             mhe_scaling["y_nom"] = mhe_scaling["x_nom"]
             mhe_scaling["y_nom_b"] = mhe_scaling["x_nom_b"]
         except KeyError:
             pass
+        """
         return mhe_scaling
     
     def re_estimation_clause(
