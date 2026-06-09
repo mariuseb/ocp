@@ -27,7 +27,7 @@ if __name__ == "__main__":
         295.15, 293.15
     ])
     cfgs = {}
-    for k, v in meta.items():
+    for i, (k, v) in enumerate(meta.items()):
         print("###################################")
         print(
             "Running %s, %s out of %s" %
