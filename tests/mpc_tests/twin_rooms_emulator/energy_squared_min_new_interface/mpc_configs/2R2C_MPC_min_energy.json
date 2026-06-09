@@ -39,7 +39,7 @@
         }
     },
     "objective": "ca.sum1(Prad) + 1E4*dot(sl, sl)",
-    "N": 24,
+    "N": 96,
     "delay": 0,
     "dt": 900,
     "method": "multiple_shooting",
