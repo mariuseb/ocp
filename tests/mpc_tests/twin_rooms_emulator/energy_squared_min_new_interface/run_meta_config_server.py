@@ -21,13 +21,19 @@ if __name__ == "__main__":
     
     _path = "results_server"
     base = Config()("base_config_scaled.json")
-    base["days"] = 2
+    base["days"] = 120
     meta = Config()("config_meta.json")
     x0 = np.array([
         295.15, 293.15
     ])
     cfgs = {}
     for k, v in meta.items():
+        print("###################################")
+        print(
+            "Running %s, %s out of %s" %
+            (k, str(i+1), str(len(meta)))
+        )
+        print("###################################")
         cfg = deepcopy(base)
         # fill missing:
         for _k, _v in v.items():
