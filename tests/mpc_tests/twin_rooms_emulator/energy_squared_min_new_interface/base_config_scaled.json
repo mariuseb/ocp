@@ -6,24 +6,26 @@
         "temp_conv": 273.15,
         "sampling_time": "15min",
         "scaling": {
-            "x_nom": [12,12,12],
-            "x_nom_b": [289.15,289.15,0],
-            "u_nom": [1],
+            "x_nom": 12,
+            "x_nom_b": 289.15,
+            "u_nom": [2.5E3],
             "u_nom_b ": [0],
-            "r_nom": [12,12,2.5E3,1e-1,2.5E3,1],
-            "r_nom_b": [289.15,289.15,0,0,0,0],
-            "z_nom": [1E-1,2.5E3,12,12],
-            "z_nom_b": [0,0,0,0],
+            "r_nom": [12,2.5E3,2.5E3,1],
+            "r_nom_b": [289.15,0,0,0],
+            "z_nom": [2.5E3],
+            "z_nom_b": [0],
+            "y_nom": [12,2.5E3],
+            "y_nom_b": [289.15,0],
             "slack": true
         },
-        "filter_config_file": "ekf_configs/2R3C_EKF.json",
+        "filter_config_file": "ekf_configs/2R2C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true
     },
     "environment": {
         "type": "BoptestGymEnv",
         "config": {   
-            "url": "http://boptest:80",
+            "url": "http://docker-web-1:8000",
             "testcase": "twin_rooms_emulator",
             "actions": ["waterTRVSplitterManifold2Zone_val219_oveValRad_u"],
             "observations": {
@@ -37,10 +39,10 @@
                "phi_s": "HGloHor",
                "cost": "PriceElectricPowerDynamic",
                "dh_cost": "PriceDistrictHeatingPower",
+               "phi_int": "reaAuxPow",
                "dh_emissions": "EmissionsDistrictHeatingPower",
                "Ti_lb": "LowerSetp[1]",
-               "Ti_ub": "UpperSetp[1]",
-               "n_occ": "Occupancy[3]"
+               "Ti_ub": "UpperSetp[1]"
               },
         "u" : {
                "rad_219": "waterTRVSplitterManifold2Zone_val219_oveValRad",
@@ -56,23 +58,15 @@
                 "Prad": "reaRadHeaPow219",
                 "Qrad": "reaRadHeaEne219",
                 "rad_flo": "reaRadFlow219",
-                "rad_flo_acc": "reaRadAccFlo219",
                 "Tret": "reaRadTRet219",
-                "Tsup": "reaRadTSup219",
-                "phi_int": "floor5Zone_Shading_reaAuxPow",
-                "Tsup_air": "AHU219_reaTSupAir",
-                "Tret_air": "AHU219_reaTRetAir",
-                "fan_220_y": "AHU220_reaFloSupAir",
-                "fan_219_y": "AHU219_reaFloSupAir",
-                "fan_ret_220_y": "AHU220_reaFloExtAir",
-                "fan_ret_219_y": "AHU219_reaFloExtAir"
+                "Tsup": "reaRadTSup219"
             }
         },
             "random_start_time": false,
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 172800
+            "start_time": 0
         }
     }
 }

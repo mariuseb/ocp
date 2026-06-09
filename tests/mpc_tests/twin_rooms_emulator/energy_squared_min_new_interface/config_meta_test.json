@@ -1,0 +1,36 @@
+{
+    "baseline_cost": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cost.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
+        "parameters": "params_result/2R2C_params_jan.csv",
+        "adaptive": false
+    },
+    "adaptive_cost": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cost.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
+        "parameters": "params_result/2R2C_start.csv",
+        "adaptive": true,
+        "adaptive_type": "deterministic",
+        "est_config_file": "configs/2R2C_NL_cost.json",
+        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai", "alpha_int"],
+        "adapt_frequency": 96,
+        "integrate_replace": {
+            "Prad": "Qrad"
+        },
+        "adaptive_N": 96,
+        "allow_variable_N": false
+    },
+    "mhe_cost": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cost.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
+        "parameters": "params_result/2R2C_start.csv",
+        "adaptive": true,
+        "integrate_replace": {
+            "Prad": "Qrad"
+        },
+        "adaptive_type": "mhe",
+        "est_config_file": "mhe_configs/2R2C_MHE_NL.json",
+        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai", "alpha_int"]
+    }
+}
+

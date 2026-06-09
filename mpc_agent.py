@@ -440,7 +440,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         Q = ca.DM.eye(self.estimator.n_x)
         R = ca.DM.eye(self.estimator.n_y)
         try: # TODO: to config:
-            R[1,1] = 1e-3 # config / learnable
+            R[1,1] = 1e-5 # config / learnable
             #R[2,2] = 1e-5 # config / learnable
         except:
             pass
@@ -557,7 +557,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         ubp=ubp,
                                         x_guess=x_guess,
                                         covar=ca.veccat(Q, R),
-                                        codegen=True,
+                                        codegen=False,
                                         return_raw_sol=True,
                                         P0=P0,
                                         #x_N=x_guess[-1,-self.estimator.n_x:]
@@ -689,6 +689,8 @@ class MheMPCAgent(AbstractAdaptiveAgent):
         )
         # stochastic --> slack:
         mhe_scaling["slack"] = True
+        #mhe_scaling["u_nom"] = [1]
+        #mhe_scaling["u_nom_b"] = [0]
         # TODO: revert back:
         #mhe_scaling["slack"] = False
         # TODO: modularize y:

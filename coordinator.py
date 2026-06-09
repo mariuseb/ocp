@@ -431,19 +431,24 @@ class Coordinator(object):
         for k, v in d.items():
             setattr(self.controller, k, v)
             
-    def write_result(self):
+    def write_result(self, _path=None):
         name = get_json_hash(self.cfg) + ".pkl"
-        path = os.path.join("results", name)
-        if not os.path.exists("results"):
-            os.mkdir("results")
+        if _path is None:
+            _path = "results"
+        if not os.path.exists(_path):
+            os.mkdir(_path)
+        path = os.path.join(_path, name)
         with open(path, 'wb') as handle:
             pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
             
     @classmethod
-    def read_result(cls, cfg: OrderedDict, path=None):
-        if path is None:
-            name = get_json_hash(cfg) + ".pkl"
-            path = os.path.join("results", name)
+    def read_result(cls, cfg: OrderedDict, _path=None, filename=None):
+        if _path is None: 
+            _path = "results"
+        # path -> filename
+        if filename is None:
+            filename = get_json_hash(cfg) + ".pkl"
+        path = os.path.join(_path, filename)
         with open(path, 'rb') as handle:
             obj = pickle.load(handle)
         return obj

@@ -12,16 +12,19 @@ import pandas as pd
 from ocp.config import Config, traverse_dict
 from copy import deepcopy
 from pprint import pprint
+from utils import quick_plot
 rc('mathtext', default='regular')
 
 
 
 if __name__ == "__main__":
     
-    base = Config()("base_config.json")
-    meta = Config()("config_meta_min_energy_test.json")
+    _path = "results_server"
+    base = Config()("base_config_scaled.json")
+    base["days"] = 2
+    meta = Config()("config_meta_test.json")
     x0 = np.array([
-        293.15, 293.15, 16
+        295.15, 293.15
     ])
     cfgs = {}
     for k, v in meta.items():
@@ -35,16 +38,19 @@ if __name__ == "__main__":
         )
         # deploy control:
         coord.run(x0=x0)
-        coord.write_result()   
+        coord.write_result(_path=_path)   
     
     read_coords = {}
     for k, v in cfgs.items():
-        coord = Coordinator.read_result(v)
+        coord = Coordinator.read_result(v, _path=_path)
         read_coords[k] = coord
+        """
         fig, axes, res = coord.plot_temperatures(
             heat_key="Prad"
         )
         fig.suptitle(k)
+        """
+        quick_plot(coord)
         print(k + " kpis:")
         print(coord.kpis)
         plt.show()

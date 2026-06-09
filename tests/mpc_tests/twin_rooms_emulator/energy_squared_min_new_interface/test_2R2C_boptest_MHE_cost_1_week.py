@@ -10,7 +10,8 @@ from matplotlib import rc
 from ocp.coordinator import Coordinator
 import pandas as pd
 from ocp.config import Config, traverse_dict
-from utils import quick_plot, plot_parameter_evolution
+import ocp
+from ocp.tests.mpc_tests.twin_rooms_emulator.energy_squared_min_new_interface.utils import quick_plot, plot_parameter_evolution
 rc('mathtext', default='regular')
 
 
