@@ -201,7 +201,7 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             lbx=lbx,
             ubx=ubx,
             params=self.params,
-            codegen=False,
+            codegen=self.mpc.codegen,
             return_raw_sol=True, 
             last_n_u=last_n_u
         )
@@ -557,7 +557,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                                         ubp=ubp,
                                         x_guess=x_guess,
                                         covar=ca.veccat(Q, R),
-                                        codegen=False,
+                                        codegen=self.estimator.codegen,
                                         return_raw_sol=True,
                                         P0=P0,
                                         #x_N=x_guess[-1,-self.estimator.n_x:]
