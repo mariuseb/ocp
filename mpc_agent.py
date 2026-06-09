@@ -65,6 +65,7 @@ class AbstractMPCAgent(metaclass=ABCMeta):
                 ["u'", "p"],
                 ["u"]
             )
+            self.decomposed = False
         else: # construct from provided cfg
             ###### TODO: own function: #######
             dae = DAE(hammerstein_cfg["model"])
@@ -77,6 +78,7 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             self.H_integrator = integr_klass(dae, **integr_cfg) 
             self.hstein = self.H_integrator.G_u
             ##################################
+            self.decomposed = True
         if not isinstance(filter_cfg, Config):
             filter_cfg = Config()(filter_cfg)
         if "parameters" not in filter_cfg.keys():
@@ -573,8 +575,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             ax = sol["y1"].plot(color="k", drawstyle="steps-post")
             sol["Ti"].plot(drawstyle="steps-post", ax=ax)
             plt.show()
-            
             """
+
             # store solution:
             self.ests[k] = sol
             # only change parameters if estimator succeeded:
@@ -588,6 +590,21 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                 self.filter.filter.params = params.values
                 # print status:
                 status = "succeeded"
+                """
+                TODO: make more modular:
+                """
+                if self.decomposed:
+                    """
+                    u_range = self.mpc.nlp_parser.vars["u"]["range"]
+                    self.mpc.ubx[
+                        u_range["a"]:u_range["b"]
+                    ] = (params["Prad_nom"]/self.scaling["u_nom"])
+                    self.mpc.bounds["u"]["ub"] = np.array(
+                        [params["Prad_nom"]/self.scaling["u_nom"]]*self.mpc.N
+                    )
+                    """
+                    self.mpc.bounds_cfg["u"]["ubu"] = \
+                         [params["Prad_nom"]]
             else:
                 status = "failed"
             print("\r", end='\n')
