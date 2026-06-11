@@ -215,7 +215,8 @@ class Estimation(OCP, CovarianceEstimation):
         self.costate_prior = ca.MX.sym("costate_prior", self.n_x + p.shape[0])
             
         costate = ca.vertcat(p, last_x)
-        arrival_cost = (costate - self.costate_prior).T@ca.inv(self.P0)@(costate - self.costate_prior)
+        #arrival_cost = (costate - self.costate_prior).T@ca.inv(self.P0)@(costate - self.costate_prior)
+        arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
         self.nlp["f"] = self.f_orig + arrival_cost
         self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
         

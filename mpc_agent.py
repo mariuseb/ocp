@@ -209,23 +209,28 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         )
         """
         Assume hammerstein block to only depend on z:
-        """
         if all(u_prime.values < 10):
-            u_val = np.array([0]*self.mpc.n_u)
+            u = np.array([0]*self.mpc.n_u)
         else:
-            u_val = np.array([
-                self.hstein(
-                    1E-8,
-                    ca.vertcat(
-                        #u_prime.values,
-                        self.params
-                    )
-                )]
-        )
+            # Hammerstein-Wiener:
+        """
         if hasattr(self, "H_integrator"):
+            try:
+                u_val = np.array([
+                    self.hstein(
+                        1E-8,
+                        ca.vertcat(
+                            u_prime.values,
+                            self.params
+                        )
+                    )]
+                )
+            except RuntimeError: # rootfinder fail:
+                u_val = np.array([0]*self.mpc.n_u)
             u = u_prime.copy()
             u.index = [self.H_integrator.dae.u]
             u.loc[:] = u_val
+        # non-decomposed:
         else:
             u = u_prime
          
