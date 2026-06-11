@@ -387,7 +387,7 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         )
         """
         self.store_controls(action)
-        if len(self.res) < 192:
+        if len(self.res) < 672:
             params = self.params
         else:
             params = self.params*2

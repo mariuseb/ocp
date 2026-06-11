@@ -39,12 +39,13 @@ if __name__ == "__main__":
     #alpha = 1e-2
     alpha = 1e-2
     gamma = 0.99
-    B = 1
+    B = 96
     P0 = np.eye(3)*1
     Q = np.eye(1)*1
     R = np.eye(1)*1
     P0_step = np.eye(3)*0
     R_step = np.eye(1)*0
+    Q_step = np.eye(1)*0
     #P0[2,2] = 0
     obs, _ = coord.env.reset()
     if obs is not None: # first x0 is passed:
@@ -203,13 +204,16 @@ if __name__ == "__main__":
                 buffer.loc[k,"P[0,0]"] = P0[0,0]
                 buffer.loc[k,"P[1,1]"] = P0[1,1]
                 buffer.loc[k,"P[2,2]"] = P0[2,2]
+                buffer.loc[k,"Q"] = Q[0,0]
+                buffer.loc[k,"R"] = R[0,0]
                 p_step = alpha*td_error*grad_f_p_val
                 # take online gradient steps on parameters:
                 # step only on P0:
                 P0_step[0,0] += p_step[0]
                 P0_step[1,1] += p_step[4]
                 P0_step[2,2] += p_step[8]
-                #R_step[0,0] += p_step[10]
+                Q_step[0,0] += p_step[9]
+                R_step[0,0] += p_step[10]
             except NameError:
                 buffer.loc[k, "V(s_k+1)"] = np.nan
                 buffer.loc[k, "td-error"] = np.nan             
@@ -231,11 +235,20 @@ if __name__ == "__main__":
                     P0[2,2] += P0_step[2,2]
                 else:
                     P0[2,2] = 1e-8
+                if R[0,0] + R_step[0,0] > 0:
+                    R[0,0] += R_step[0,0]
+                if Q[0,0] + Q_step[0,0] > 0:
+                    Q[0,0] += Q_step[0,0]
                 #R += R_step
-                steps[b] = P0_step
+                steps[b] = {
+                    "P0": P0_step,
+                    "Q": Q_step,
+                    "R": R_step
+                }
                 b += 1
                 P0_step = np.eye(3)*0
-                #R_step = np.eye(1)*0
+                R_step = np.eye(1)*0
+                Q_step = np.eye(1)*0
             
         obs = coord.controller.x0_from_obs(
             k, 
@@ -278,14 +291,30 @@ if __name__ == "__main__":
     plt.show()
     
     
+    hist = coord.controller.params_history
+    hist["Ria_act"] = 1e-2
+    hist["Ci_act"] = 1e6
+    hist["Ria_act"].loc[672:] = 2e-2
+    hist["Ci_act"].loc[672:] = 2e6
+
+
     fig, axes = plt.subplots(2,1, sharex=True)
     ax = axes[0]
     kwargs = {"drawstyle": "steps-post"}
-    buffer.r.plot(ax=ax, color="r", **kwargs)
-    ax1 = ax.twinx()
-    coord.controller.params_history[["Ci"]].plot(ax=ax1, **kwargs)
+    hist[["Ria"]].plot(ax=ax, **kwargs)
+    hist_no_RL[["Ria"]].plot(ax=ax, **kwargs, color="k")
+    hist[["Ria_act"]].plot(ax=ax, **kwargs)
+    #buffer.r.plot(ax=ax, color="r", **kwargs)
+    #ax1 = ax.twinx()
+    ax = axes[1]
+    hist[["Ci"]].plot(ax=ax, **kwargs)
+    hist_no_RL[["Ci"]].plot(ax=ax, **kwargs, color="k")
+    hist[["Ci_act"]].plot(ax=ax, **kwargs)
     plt.show()
     
+    #hist.to_csv("params_hist_B=96_no_RL.csv", index=True)
+    #hist_RL = pd.read_csv("params_hist_B=96.csv", index_col=0)
+    hist_no_RL = pd.read_csv("params_hist_B=96_no_RL.csv", index_col=0)
     #fig, axes = coord.plot_one_step_predictions(res)
     #plt.show()
     

@@ -1,5 +1,5 @@
 {
-    "days": 7,
+    "days": 14,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",

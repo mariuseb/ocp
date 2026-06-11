@@ -215,9 +215,9 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         else:
             u_val = np.array([
                 self.hstein(
-                    1E-4,
+                    1E-8,
                     ca.vertcat(
-                        u_prime.values,
+                        #u_prime.values,
                         self.params
                     )
                 )]
