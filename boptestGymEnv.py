@@ -653,7 +653,7 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
         truncated = self.compute_truncated(res, reward)
 
         # Optionally we can pass additional info, we are not using that for now
-        info = {}
+        #info = {}
         
         # Get observations at the end of this time step
         observations = self.get_observations(res)
@@ -662,7 +662,9 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
         if (terminated or truncated) and self.render_episodes:
             self.render()
         
-        return observations, reward, terminated, truncated, info
+        # hack: pass res as info to keep gym conventions
+
+        return observations, reward, terminated, truncated, res
     
     def render(self, mode='episodes'):
         '''

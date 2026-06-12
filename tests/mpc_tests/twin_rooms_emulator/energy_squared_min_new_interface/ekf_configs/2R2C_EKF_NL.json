@@ -5,7 +5,7 @@
             "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
         },
         "alg": {
-            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_val, n, 1E-6)"
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_219, n, 1E-6)"
         },
         "w": {
             "v1": "Ti - y1"
@@ -28,7 +28,7 @@
             "Prad_nom"
         ],
         "u": [
-            "rad_val"
+            "rad_219"
         ],
         "r": [
             "Ta",

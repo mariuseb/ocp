@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from contextlib import redirect_stdout
 from ocp.result_generator import nrmse, mse, r2_score, rmse
 from datetime import datetime
+from pprint import pprint
 import numpy as np
 import pandas as pd
 import sys
@@ -265,6 +266,17 @@ class Coordinator(object):
          
     def run(self, x0=None): 
         
+        """
+        TODO: check equivalence of results kept internally and
+        final call to get_results.
+        """
+        y_cols = list(self.env.all_measurement_vars.keys())
+        u_cols = list(self.env.maps.u.keys())
+        # set on env instead:
+        self.env._res = pd.DataFrame(
+            columns=y_cols + u_cols
+        )
+
         if self.can_run:
             obs, _ = self.env.reset()
             if obs is not None: # first x0 is passed:
@@ -311,6 +323,14 @@ class Coordinator(object):
                 obs, reward, terminated, truncated, info = self.env.step(
                     action
                 )
+                time = info.pop("time")
+                # store measurements:
+                self.env._res.loc[time, y_cols] = pd.DataFrame().from_dict(
+                    info, orient="index"
+                ).T[y_cols].values
+                # store control actions (remember causality):
+                self.env._res.loc[time - self.dt, action.index] = action.values
+
                 #if k == 119:
                 #    print(k)
                 # TODO: filtering optional:
@@ -318,7 +338,7 @@ class Coordinator(object):
                     k, 
                     obs
                 )
-            # get env result:
+            # get env result: # TODO: remove this call:
             self.res = self.env.get_results(
                 self.days*24*int(3600/self.dt)*self.dt
             )
@@ -330,6 +350,13 @@ class Coordinator(object):
             res.index = self.val_metrics.index
             ax = res["phi_h"].plot(color="r", drawstyle="steps-post")
             plt.show()
+
+            ax = self._res["rad_219"].plot(drawstyle="steps-post", color="k")
+            res = self.res.copy()
+            res.index = self._res.index
+            res["rad_219"].plot(drawstyle="steps-post", color="r")
+            plt.show()
+
             """
             self.concatenate_filtering_cols()
             try:

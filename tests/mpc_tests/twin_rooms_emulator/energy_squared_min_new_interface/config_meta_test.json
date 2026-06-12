@@ -1,10 +1,4 @@
 {
-    "baseline_cost": {
-        "mpc_config_file": "mpc_configs/2R2C_MPC_cost.json",
-        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
-        "parameters": "params_result/2R2C_params_jan.csv",
-        "adaptive": false
-    },
     "mhe_cost": {
         "mpc_config_file": "mpc_configs/2R2C_MPC_cost.json",
         "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
@@ -16,6 +10,12 @@
         "adaptive_type": "mhe",
         "est_config_file": "mhe_configs/2R2C_MHE_NL.json",
         "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai", "alpha_int"]
+    },
+    "baseline_cost": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cost.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
+        "parameters": "params_result/2R2C_params_jan.csv",
+        "adaptive": false
     }
 }
 

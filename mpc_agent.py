@@ -228,7 +228,7 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             except RuntimeError: # rootfinder fail:
                 u_val = np.array([0]*self.mpc.n_u)
             u = u_prime.copy()
-            u.index = [self.H_integrator.dae.u]
+            u.index = self.H_integrator.dae.u
             u.loc[:] = u_val
         # non-decomposed:
         else:
@@ -414,7 +414,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         k: int,
         include_all: bool = False,
         backshift: list = [],
-        integrate_replace: dict[str, str] = {}
+        integrate_replace: dict[str, str] = {},
+        from_boptest=False
     ):         
         tf = k*self.dt
         #tf = k*self.dt + self.dt
@@ -422,20 +423,35 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             ts = 0 
         else:
             ts = tf - (self.adapt_N-1)*self.dt
-        data = env.get_results(tf, ts=ts)
-        y_data = data.rename(
-            columns=env.maps.boptest_to_ocp
-        )
-        for replace_var, orig_var in integrate_replace.items():
-            # TODO: pass conversion factor:
-            y_data[replace_var] = (y_data[orig_var].diff(1)/1000).shift(-1)
-        for var in backshift:
-            y_data[var] = y_data[var].shift(-1)
-        y_data = y_data.fillna(0)
-        y_data.index = range(len(y_data.index))
-        for y, var in self.estimator.y.items():
-            y_data[y] = y_data[var]
-        y_data["phi_int"] = y_data["InternalGainsRad[1]"] + y_data["InternalGainsLat[1]"] + y_data["InternalGainsCon[1]"]
+
+        if from_boptest:
+            data = env.get_results(tf, ts=ts)
+            y_data = data.rename(
+                columns=env.maps.boptest_to_ocp
+            )
+            for replace_var, orig_var in integrate_replace.items():
+                # TODO: pass conversion factor:
+                y_data[replace_var] = (y_data[orig_var].diff(1)/1000).shift(-1)
+            for var in backshift:
+                y_data[var] = y_data[var].shift(-1)
+            y_data = y_data.fillna(0)
+            y_data.index = range(len(y_data.index))
+            for y, var in self.estimator.y.items():
+                y_data[y] = y_data[var]
+            y_data["phi_int"] = y_data["InternalGainsRad[1]"] + y_data["InternalGainsLat[1]"] + y_data["InternalGainsCon[1]"]
+        else: # from internal bookkeeping: 
+            data = env._res.sort_index().loc[ts:tf]
+            # no need to back-shift
+            # index already correct
+            y_data = data.rename(
+                columns=env.maps.boptest_to_ocp
+            )
+            y_data = y_data.fillna(0)
+            for y, var in self.estimator.y.items():
+                y_data[y] = y_data[var]
+            # unsure about int gains:
+            # they are not passed back as measurements.
+            # hence need to get them from forecast
         return y_data
             
     """
