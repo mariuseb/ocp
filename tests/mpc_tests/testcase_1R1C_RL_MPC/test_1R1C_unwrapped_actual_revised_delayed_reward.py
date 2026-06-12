@@ -39,7 +39,8 @@ if __name__ == "__main__":
     #alpha = 1e-2
     alpha = 1
     gamma = 0.99
-    B = 96
+    B = 9600
+    H = 12
     #B = 1
     P0 = np.eye(3)*0
     #Q = np.eye(1)*1e-1
@@ -193,30 +194,33 @@ if __name__ == "__main__":
                 obs[0] - coord.controller.preds[k]["Ti"].iloc[1]
             )**2
             """
-            r = (
+            _r = (
                 (obs[0] - 289.15)/12 - \
                 (coord.controller.preds[k]["Ti"].iloc[1] - 289.15)/12
             )**2
-            buffer.loc[k, "r"] = r
+            buffer.loc[k, "r_1step"] = _r
             # store Q(s,a):
             buffer.loc[k, "V(s_k+1)"] = V_k_plus = float(raw_sol["f"])
             # store for V(s_k+1):
             try:
-                buffer.loc[k, "td-target"] = td_target = gamma*V_k_plus + r
+                #buffer.loc[k, "td-target"] = td_target = gamma*V_k_plus + r
                 buffer.loc[k, "Q(s_k, a_k)"] = Q_k = float(raw_sol_prev["f"])
-                td_error = td_target - Q_k
-                buffer.loc[k, "td-error"] = td_error
-                buffer.loc[k,"P[0,0]"] = P0[0,0]
-                buffer.loc[k,"P[1,1]"] = P0[1,1]
-                buffer.loc[k,"P[2,2]"] = P0[2,2]
-                buffer.loc[k,"Q"] = Q[0,0]
-                buffer.loc[k,"R"] = R[0,0]
-                p_step = -alpha*td_error*grad_f_p_val
+                pred = (coord.controller.preds[k-H+1]["Ti"].iloc[:H] - 289.15)/12
+                actual = (y_data[-H:].Ti - 289.15)/12
+                buffer.loc[k-H, "r"] = ((pred.values - actual.values)**2).sum()
+                #td_error = td_target - Q_k
+                #buffer.loc[k, "td-error"] = td_error
+                #buffer.loc[k,"P[0,0]"] = P0[0,0]
+                #buffer.loc[k,"P[1,1]"] = P0[1,1]
+                #buffer.loc[k,"P[2,2]"] = P0[2,2]
+                #buffer.loc[k,"Q"] = Q[0,0]
+                #buffer.loc[k,"R"] = R[0,0]
+                #p_step = -alpha*td_error*grad_f_p_val
                 # take online gradient steps on parameters:
                 # step only on P0:
-                P0_step[0,0] += p_step[0]
-                P0_step[1,1] += p_step[4]
-                P0_step[2,2] += p_step[8]
+                #P0_step[0,0] += p_step[0]
+                #P0_step[1,1] += p_step[4]
+                #P0_step[2,2] += p_step[8]
                 #Q_step[0,0] += p_step[9]
                 #R_step[0,0] += p_step[10]
             except NameError:
@@ -266,6 +270,13 @@ if __name__ == "__main__":
         
     # analysis:
     
+    for k in range(est.N-1,est.N-1+len(buffer)):
+        Q_k = buffer.loc[k, "Q(s_k, a_k)"]
+        V_k_plus = buffer.loc[k, "V(s_k+1)"]
+        r = buffer.loc[k, "r"]
+        td_error = r + gamma*V_k_plus - Q_k
+        buffer.loc[k, "td-error"] = td_error
+        #buffer.loc[k, "param_step"] = alpha*td_error*buffer.loc[k, "dQdp[0]"]
     """
     gamma = 1
     alpha = 1
@@ -273,13 +284,6 @@ if __name__ == "__main__":
     #buffer.loc[:, "V(s_k+1)"] = buffer.loc[:, "Q(s_k, a_k)"] + buffer.loc[:, "r"]
     # check only 1 element:
     buffer.loc[:, "param_step"] = 0
-    for k in range(est.N-1,est.N-1+len(buffer)):
-        Q_k = buffer.loc[k, "Q(s_k, a_k)"]
-        V_k_plus = buffer.loc[k, "V(s_k+1)"]
-        r = buffer.loc[k, "r"]
-        td_error = r + gamma*V_k_plus - Q_k
-        buffer.loc[k, "td-error"] = td_error
-        buffer.loc[k, "param_step"] = alpha*td_error*buffer.loc[k, "dQdp[0]"]
     """
     
     # get env result:

@@ -29,8 +29,8 @@
         "type": "CustomGymEnv",
         "config":     
             {
-            "R": [[1E-3]],
-            "Q": [[1E-3]],
+            "R": [[1e-3]],
+            "Q": [[1e-3]],
             "integrator": 
                 {
                     "name": "IRK",

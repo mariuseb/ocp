@@ -136,9 +136,12 @@ class Estimation(OCP, CovarianceEstimation):
             self._transform_v()
              
         # initialize the parameters needed for the objective:
-        self.Q = ca.MX.sym("Q", self.n_x, self.n_x)
-        self.R = ca.MX.sym("R", self.n_y, self.n_y)
-        
+        self.Q0 = ca.MX.sym("Q0", self.n_x, self.n_x)
+        self.R0 = ca.MX.sym("R0", self.n_y, self.n_y)
+        # TODO: expand to multiple_dims:
+        #self.xi_q = ca.MX.sym("xi_q", self.n_x, self.n_x)
+        self.Q = ca.expm(self.Q0)
+        self.R = ca.expm(self.R0)
         #symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
         #symbols = re.findall("|".join(self.dae.all_names), self.obj_string)
         symbols = []
@@ -188,7 +191,9 @@ class Estimation(OCP, CovarianceEstimation):
         if arrival_cost:
             self.add_arrival_cost_to_objective()
         else:
-            self.nlp["p"] = ca.veccat(self.Q, self.R)    
+            #self.nlp["p"] = ca.veccat(self.Q, self.R)    
+            # TODO: check:
+            self.nlp["p"] = ca.veccat(self.Q0, self.R0)    
    
     """
     def __del__(self):
@@ -212,13 +217,16 @@ class Estimation(OCP, CovarianceEstimation):
             p = p_aux
             
         self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + p.shape[0]))
+        self.P = ca.expm(self.P0)
         self.costate_prior = ca.MX.sym("costate_prior", self.n_x + p.shape[0])
             
         costate = ca.vertcat(p, last_x)
         #arrival_cost = (costate - self.costate_prior).T@ca.inv(self.P0)@(costate - self.costate_prior)
-        arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
+        #arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
+        arrival_cost = (costate - self.costate_prior).T@self.P@(costate - self.costate_prior)
         self.nlp["f"] = self.f_orig + arrival_cost
-        self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
+        #self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
+        self.nlp["p"] = ca.veccat(self.P0, self.Q0, self.R0, self.costate_prior)    
         
     
     def store_param_and_state(self, params, state, z, k):
