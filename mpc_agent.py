@@ -444,21 +444,23 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
     def get_estimation_parameters(
         self
     ):
-        Q = ca.DM.eye(self.estimator.n_x)
+        Q = ca.DM.eye(self.estimator.n_x)*0
         R = ca.DM.eye(self.estimator.n_y)
         try: # TODO: to config:
-            R[1,1] = 1e-5 # config / learnable
+            #R[1,1] = 1e-5 # config / learnable
+            R[1,1] = -5 # config / learnable
             #R[2,2] = 1e-5 # config / learnable
         except:
             pass
         #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1e-8 # config / learnable
         #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*0 # config / learnable
-        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
+        #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
+        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*0 # config / learnable
 
         P0[
         self.estimator.n_p:(self.estimator.n_p + self.estimator.n_x),
         self.estimator.n_p:(self.estimator.n_p + self.estimator.n_x)
-        ] = 0 # config setting: opts (0, EKF smoothing update, identity, learnable)
+        ] = -5 # config setting: opts (0, EKF smoothing update, identity, learnable)
         
         lbp = self.estimator.get_lbp(1e-3)
         ubp = self.estimator.get_ubp(1e3)

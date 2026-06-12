@@ -27,7 +27,13 @@ if __name__ == "__main__":
         295.15, 293.15
     ])
     cfgs = {}
-    for k, v in meta.items():
+    for i, (k, v) in enumerate(meta.items()):
+        print("###################################")
+        print(
+            "Running %s, %s out of %s" %
+            (k, str(i+1), str(len(meta)))
+        )
+        print("###################################")
         cfg = deepcopy(base)
         # fill missing:
         for _k, _v in v.items():
