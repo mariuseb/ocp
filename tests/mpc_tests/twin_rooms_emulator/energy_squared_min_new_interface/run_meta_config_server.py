@@ -21,7 +21,7 @@ if __name__ == "__main__":
     
     _path = "results_server"
     base = Config()("base_config_scaled.json")
-    base["days"] = 2
+    base["days"] = 120
     meta = Config()("config_meta.json")
     x0 = np.array([
         295.15, 293.15
