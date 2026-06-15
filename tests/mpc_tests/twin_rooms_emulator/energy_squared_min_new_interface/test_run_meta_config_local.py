@@ -22,7 +22,7 @@ if __name__ == "__main__":
     _path = "results_local"
     base = Config()("base_config_scaled.json")
     base["days"] = 120
-    meta = Config()("config_meta_local.json")
+    meta = Config()("config_meta_test.json")
     x0 = np.array([
         295.15, 293.15
     ])

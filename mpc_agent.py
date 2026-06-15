@@ -105,7 +105,10 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             self.actions.loc[n,:] = 0
         self._init_state_history()
         self._init_covar_history()
-        self.read_int_gains_df()
+        try:
+            self.read_int_gains_df()
+        except FileNotFoundError:
+            self.int_gains = pd.DataFrame()
 
 
     def read_int_gains_df(self):
@@ -455,6 +458,9 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             y_data = data.rename(
                 columns=env.maps.boptest_to_ocp
             )
+            backshift = ["Prad"]
+            for var in backshift:
+                y_data[var] = y_data[var].shift(-1)
             y_data = y_data.fillna(0)
             for y, var in self.estimator.y.items():
                 y_data[y] = y_data[var]
