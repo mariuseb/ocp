@@ -24,6 +24,7 @@ from datetime import datetime
 from ocp.dae import DAE
 import ocp.integrators as integrators
 import casadi as ca
+import os
 import matplotlib.pyplot as plt
 rc('mathtext', default='regular')
 
@@ -104,7 +105,15 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             self.actions.loc[n,:] = 0
         self._init_state_history()
         self._init_covar_history()
-     
+        self.read_int_gains_df()
+
+
+    def read_int_gains_df(self):
+        self.int_gains = pd.read_csv(
+            os.path.join("Resources", "internal_setpoints_occupancy.csv"),
+            index_col=0
+        )
+  
     @staticmethod
     def get_mpc_scaling(scaling):
         mpc_scaling = deepcopy(
@@ -449,9 +458,11 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             y_data = y_data.fillna(0)
             for y, var in self.estimator.y.items():
                 y_data[y] = y_data[var]
-            # unsure about int gains:
-            # they are not passed back as measurements.
-            # hence need to get them from forecast
+            y_data = pd.concat([
+                y_data, self.int_gains.loc[ts:tf]
+            ], axis=1)
+            y_data.index = range(len(y_data.index))
+            y_data["phi_int"] = y_data["InternalGainsRad[1]"] + y_data["InternalGainsLat[1]"] + y_data["InternalGainsCon[1]"]
         return y_data
             
     """
@@ -747,7 +758,10 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             self,
             k: int
         ):
-        return (k+1) >= self.adapt_N
+        #return (k+1) >= self.adapt_N
+        # NOTE: with internal book-keeping of data,
+        # first row will contain some NaN's. Hence:
+        return k >= self.adapt_N
         
     def x0_from_obs(
         self,

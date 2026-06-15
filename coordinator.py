@@ -272,9 +272,16 @@ class Coordinator(object):
         """
         y_cols = list(self.env.all_measurement_vars.keys())
         u_cols = list(self.env.maps.u.keys())
+
+        # first forecast:
+        forecast = self.env.get_forecast(
+            self.controller_dt,
+            self.controller_horizon
+        )
+
         # set on env instead:
         self.env._res = pd.DataFrame(
-            columns=y_cols + u_cols
+            columns=y_cols + u_cols + list(forecast.columns)
         )
 
         if self.can_run:
@@ -328,6 +335,8 @@ class Coordinator(object):
                 self.env._res.loc[time, y_cols] = pd.DataFrame().from_dict(
                     info, orient="index"
                 ).T[y_cols].values
+                # store forecast points:
+                self.env._res.loc[time - self.dt, forecast.columns] = forecast.loc[0, :]
                 # store control actions (remember causality):
                 self.env._res.loc[time - self.dt, action.index] = action.values
 
