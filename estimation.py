@@ -21,6 +21,7 @@ class Estimation(OCP, CovarianceEstimation):
         conditions.
         """
         self.gamma = kwargs.pop("gamma", 1)
+        need_sensitivities = kwargs.pop("need_sensitivities", False)
         self.arrival_cost = kwargs.pop("arrival_cost", False)
         self.algebraic_slack = kwargs.pop("algebraic_slack", False)
         super(Estimation, self).__init__(**kwargs)
@@ -40,8 +41,52 @@ class Estimation(OCP, CovarianceEstimation):
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         self.add_h() 
+        if need_sensitivities:   
+            self.set_up_grad_f_x_solver()
+            self.set_up_jac_x_p_solver()
         #self.prepare_solver()
-        
+    
+    def set_up_grad_f_x_solver(self):
+        """
+        Assume multiple shooting. 
+
+        TODO: check / add other options
+        """
+        f = self.nlp["f"]
+        rho = ca.MX.sym("rho")
+        x_gaps = self.nlp_parser["x"]["shooting_gaps"]
+        y_gaps = self.nlp_parser["y"]["shooting_gaps"]
+        shooting_expr = 0
+        for n in range(self.N-1):
+            shooting_expr += ca.sqrt(
+                x_gaps[n,:]@x_gaps[n,:].T
+            )
+        # TODO: include R:
+        for n in range(self.N):
+            #shooting_expr += y_gaps[n,:]**2
+            shooting_expr += ca.sqrt(
+                y_gaps[n,:]@y_gaps[n,:].T
+            )
+        shooting_expr = rho/2*(shooting_expr)
+        f = f + shooting_expr
+        x, p = self.nlp["x"], self.nlp["p"]
+        grad_f_x_expr = ca.gradient(
+            f, x
+        )
+        self.grad_f_x = ca.Function(
+            "grad_f_x", [x, p, rho], [grad_f_x_expr], ["x", "p", "rho"], ["grad_f_x"]
+        )
+
+    def set_up_jac_x_p_solver(self):
+        """
+        Use factory of sqp-solver to form this.
+        Hence, will have same signature as that
+        one.
+        """
+        self.jac_x_p = self.sqp_solver.factory(
+            'h', self.solver.name_in(), ['jac:x:p']
+        )
+
        
     def add_slack_to_shooting_gaps(self, algebraic_slack=False):
         """

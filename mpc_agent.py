@@ -724,11 +724,13 @@ class MheMPCAgent(AbstractAdaptiveAgent):
             **kwargs
         )
         #self.estimator = MHE(
+        need_sens = config_file.pop("need_sensitivities", False)
         self.estimator = Estimation(
             config=config_file,
             param_guess=self.param_guess_from_array(
                 self.adapt_parameters    
             ),
+            need_sensitivities=need_sens,
             arrival_cost=True,
             **self.get_mhe_scaling(
                 self.scaling

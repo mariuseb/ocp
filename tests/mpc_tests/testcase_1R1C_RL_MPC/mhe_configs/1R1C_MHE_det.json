@@ -29,8 +29,8 @@
             "ubx": [340.15]
         }
     },
-    "objective": "R[0,0]*dot(v1, v1) + Q[0,0]*dot(s1, s1)",
-    "N": 96,
+    "objective": "R[0,0]*dot(v1, v1)",
+    "N": 8,
     "dt": 900,
     "method": "multiple_shooting",
     "integrator": 
@@ -54,6 +54,5 @@
         "ipopt.check_derivatives_for_naninf": "yes",
         "ipopt.hessian_approximation": "exact"
     },
-    "codegen": false,
-    "need_sensitivities": true
+    "codegen": false
 }
