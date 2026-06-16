@@ -22,6 +22,7 @@ class Estimation(OCP, CovarianceEstimation):
         """
         self.gamma = kwargs.pop("gamma", 1)
         need_sensitivities = kwargs.pop("need_sensitivities", False)
+        #self.codegen = kwargs.pop("codegen", False)
         self.arrival_cost = kwargs.pop("arrival_cost", False)
         self.algebraic_slack = kwargs.pop("algebraic_slack", False)
         super(Estimation, self).__init__(**kwargs)
@@ -41,6 +42,9 @@ class Estimation(OCP, CovarianceEstimation):
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         self.add_h() 
+
+        self.prepare_solver(codegen=self.codegen)
+
         if need_sensitivities:   
             self.set_up_grad_f_x_solver()
             self.set_up_jac_x_p_solver()
@@ -342,8 +346,7 @@ class Estimation(OCP, CovarianceEstimation):
         #self.nlp["p"] = self.integrator.p
         #self.p_val = param_guess/self.p_nom
         
-        
-        self.prepare_solver(codegen=codegen)
+        #self.prepare_solver(codegen=codegen)
         
         
     def solve(
