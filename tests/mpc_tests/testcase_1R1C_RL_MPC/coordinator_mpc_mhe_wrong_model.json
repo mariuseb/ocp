@@ -1,0 +1,81 @@
+{
+    "days": 28,
+    "sampling_time": "15min",
+    "controller": {
+        "timezone": "Europe/Oslo",
+        "temp_conv": 273.15,
+        "sampling_time": "15min",
+        "mpc_config_file": "mpc_configs/1R1C_MPC.json",
+        "scaling": {
+            "x_nom": [12],
+            "x_nom_b": [289.15],
+            "r_nom": [12,12,1],
+            "r_nom_b": [289.15,289.15,0],
+            "u_nom": [1000],
+            "u_nom_b ": [0],
+            "slack": true
+            },
+        "filter_config_file": "ekf_configs/1R1C_EKF.json",
+        "filter_type": "ocp.kalman.ExtendedKalmanFilter",
+        "filter_obs": true,
+        "parameters": [0.3e-2, 3E6],
+        "adaptive": true,
+        "adaptive_type": "mhe",
+        "integrate_replace": {},
+        "est_config_file": "mhe_configs/1R1C_MHE.json",
+        "adapt_parameters":  ["Ci", "Ria"]
+    },
+    "environment": {
+        "type": "CustomGymEnv",
+        "config":     
+            {
+            "R": [[0]],
+            "Q": [[0]],
+            "integrator": 
+                {
+                    "name": "IRK",
+                    "method": "legendre",
+                    "degree": 1,
+                    "n_steps": 1
+                },
+            "model": {
+                "ode": {
+                    "Ti": "(Ta - Ti)/(Ria*Ci) + phi_h/Ci"
+                },
+                "p": [
+                    "Ria",
+                    "Ci"
+                ],
+                "u": [
+                    "phi_h"
+                ],
+                "r": [
+                    "Ta",
+                    "cost"
+                ],
+                "x": [
+                    "Ti"
+                ],
+                "y": [
+                    ["y1", "Ti"]
+                ]
+            },
+            "parameters": [1e-2, 1E6],
+            "maps": 
+            {
+                "r" : {"Ta": "TDryBul",
+                "Ti_lb": "LowerSetp[1]",
+                "Ti_ub": "UpperSetp[1]",
+                "cost": "PriceElectricPowerHighlyDynamic"
+                },
+                "u" : {
+                    "phi_h": "oveAct"
+                },
+                "y":  {
+                    "Ti": "TRooAir"
+                }
+            }
+        }
+    }
+}
+

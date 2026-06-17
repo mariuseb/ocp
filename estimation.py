@@ -48,8 +48,15 @@ class Estimation(OCP, CovarianceEstimation):
         if need_sensitivities:   
             self.set_up_grad_f_x_solver()
             self.set_up_jac_x_p_solver()
+            self.init_x_p_range()
         #self.prepare_solver()
     
+    def init_x_p_range(self):
+        start = self.nlp_parser.vars["x"]["range"]["a"]
+        self.x_range = (start, start + self.n_x)
+        start = self.nlp_parser.vars["p"]["range"]["a"]
+        self.p_range = (start, start + self.n_p)
+
     def set_up_grad_f_x_solver(self):
         """
         Assume multiple shooting. 
@@ -81,6 +88,22 @@ class Estimation(OCP, CovarianceEstimation):
             "grad_f_x", [x, p, rho], [grad_f_x_expr], ["x", "p", "rho"], ["grad_f_x"]
         )
 
+    def get_grad_f_x(
+        self, 
+        x, 
+        p, 
+        rho=1
+    ):
+        grad_f_x_val = self.grad_f_x(
+            x, p, rho
+        )
+        grad_f_x0 = grad_f_x_val[self.x_range[0]:self.x_range[1]]
+        grad_f_p = grad_f_x_val[self.p_range[0]:self.p_range[1]]
+        return ca.vertcat(
+            grad_f_x0, grad_f_p
+        )
+        
+
     def set_up_jac_x_p_solver(self):
         """
         Use factory of sqp-solver to form this.
@@ -91,6 +114,39 @@ class Estimation(OCP, CovarianceEstimation):
             'h', self.solver.name_in(), ['jac:x:p']
         )
 
+    def eval_jac_x_p(
+        self, 
+        **solver_kwargs
+    ):
+        return self.jac_x_p( 
+            x0=solver_kwargs["x0"] ,
+            lbg=solver_kwargs["lbg"], # option for path-constraints?
+            ubg=solver_kwargs["ubg"], # --"--
+            lbx=solver_kwargs["lbx"],
+            ubx=solver_kwargs["ubx"],
+            #p=ca.veccat(_P0, covar, ca.vertcat(param_guess, x_N))
+            p=solver_kwargs["p"]
+        )["jac_x_p"]
+
+    def get_jac_p_x0_nlp_p(
+        self,
+        **solver_kwargs
+    ):
+        jac_x_p = self.eval_jac_x_p(
+            **solver_kwargs
+        )
+        # assume order (x0, p):
+        # what are dims?
+        # assume: n_x0 x n_nlp_p, n_p x n_nlp_p
+        # then the combined matrix: ((n_x0 + n_p) x  nlp_p)
+        jac_x0_p = jac_x_p[self.x_range[0]:self.x_range[1], :]
+        jac_p_p = jac_x_p[self.p_range[0]:self.p_range[1], :]
+
+        return ca.vertcat(
+            jac_x0_p,
+            jac_p_p
+        )
+        
        
     def add_slack_to_shooting_gaps(self, algebraic_slack=False):
         """
@@ -265,8 +321,16 @@ class Estimation(OCP, CovarianceEstimation):
         else:
             p = p_aux
             
-        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + p.shape[0]))
-        self.P = ca.expm(self.P0)
+        #self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + p.shape[0]))
+        P0_shape = self.n_x + p.shape[0]
+        self.P0 = ca.MX.sym("P0", P0_shape, P0_shape)
+        #self.P = ca.expm(self.P0)
+        self.P = ca.expm(0.5*self.P0 + 0.5*self.P0.T)
+        """
+        S = MX.sym("S",2,2)
+        S = 0.5*(S + S.T)
+        P = expm(S)
+        """
         self.costate_prior = ca.MX.sym("costate_prior", self.n_x + p.shape[0])
             
         costate = ca.vertcat(p, last_x)

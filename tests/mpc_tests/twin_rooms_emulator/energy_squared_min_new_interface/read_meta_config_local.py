@@ -21,7 +21,7 @@ if __name__ == "__main__":
     
     _path = "results_local"
     base = Config()("base_config_scaled.json")
-    base["days"] = 2
+    base["days"] = 120
     meta = Config()("config_meta_test.json")
     
     read_coords = {}
@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
         coord = Coordinator.read_result(cfg, _path=_path)
         read_coords[k] = coord
-        quick_plot(coord)
+        #quick_plot(coord)
         print(k + " kpis:")
         print(coord.kpis)
-        plt.show()
+        #plt.show()
     

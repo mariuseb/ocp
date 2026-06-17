@@ -57,6 +57,20 @@ if __name__ == "__main__":
         p=est.p_val
     )["jac_x_p"]
 
+    solver_kwargs = dict(
+        x0=est.x0,
+        lbg=est.lbg, # option for path-constraints?
+        ubg=est.ubg, # --"--
+        lbx=est.lbx,
+        ubx=est.ubx,
+        #p=ca.veccat(_P0, covar, ca.vertcat(param_guess, x_N))
+        p=est.p_val
+    )
+
+    _jac_x_p_val = est.get_jac_p_x0_nlp_p(
+        **solver_kwargs
+    )
+
     """
     Now, what are the sensitivies of p, x0 w.r.t (P0, Q0, R0)?
     They can be exctracted as follows:
@@ -95,5 +109,6 @@ if __name__ == "__main__":
     # how much does 1st parameter change?
     print((_raw_sol["x"][p_range[0]] - raw_sol["x"][p_range[0]])/h)
     print(jac_p_p[0][0])
+    print(_jac_x_p_val[1][0])
     
     print(coord)

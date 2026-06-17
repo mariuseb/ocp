@@ -1,5 +1,5 @@
 {
-    "days": 14,
+    "days": 7,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
@@ -9,8 +9,8 @@
         "scaling": {
             "x_nom": [12],
             "x_nom_b": [289.15],
-            "r_nom": [12,1],
-            "r_nom_b": [289.15,0],
+            "r_nom": [12,12,1],
+            "r_nom_b": [289.15,289.15,0],
             "u_nom": [1000],
             "u_nom_b ": [0],
             "slack": true
@@ -18,7 +18,7 @@
         "filter_config_file": "ekf_configs/1R1C_EKF.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true,
-        "parameters": [0.3e-2, 7E6],
+        "parameters": [1e-2, 1E6],
         "adaptive": true,
         "adaptive_type": "mhe",
         "integrate_replace": {},

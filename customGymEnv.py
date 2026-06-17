@@ -387,16 +387,21 @@ class CustomGymEnv(gym.Env, BoptestGymABC):
         )
         """
         self.store_controls(action)
-        if len(self.res) < 672:
-            params = self.params
-        else:
-            params = self.params*2
+        #if len(self.res) < 192:
+        #if len(self.res) < 672:
+        #    params = self.params
+        #elif len(self.res) > 672 and len(self.res) < 1344:
+        #    params = self.params*2
+        #if len(self.res) < 672:
+        #    params = self.params
+        #else:
+        #    params = 2*self.params
         s_prime = np.array(
             self.F(
             self.s,
             np.array([]),
             action, 
-            params,
+            self.params,
             r,
             np.array([])
             )[0]
