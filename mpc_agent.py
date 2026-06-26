@@ -59,7 +59,8 @@ class AbstractMPCAgent(metaclass=ABCMeta):
                     self.mpc.dae.var("u"),
                     ca.vertcat( 
                         self.mpc.dae.var("z"), 
-                        self.mpc.dae.var("p")
+                        self.mpc.dae.var("p"),
+                        self.mpc.dae.var("r")
                     )
                 ],
                 [self.mpc.dae.var("u")],
@@ -179,11 +180,55 @@ class AbstractMPCAgent(metaclass=ABCMeta):
     @property
     def n_x(self):
         return self.mpc.n_x
+
+    @property
+    def n_u(self):
+        return self.mpc.n_u
+    
+    @property
+    def n_r(self):
+        return self.mpc.n_r
     
     @property
     def N(self):
         return self.mpc.N
         
+    def get_explicit_lb_ub_u(self):
+        bounds = self.mpc.bounds_cfg["u"]
+        lb = np.array(bounds["lbu"])
+        ub = np.array(bounds["ubu"])
+        try:
+            lb = (
+                lb - self.scaling["u_nom_b"]
+            )/self.scaling["u_nom"],
+            ub = (
+                ub - self.scaling["u_nom_b"]
+            )/self.scaling["u_nom"]
+        except KeyError:
+            pass
+        return np.tile(lb, self.N).reshape((self.N*self.n_u, 1)), \
+            np.tile(ub, self.N).reshape((self.N*self.n_u, 1))
+
+    def lock_Tsup_to_Ta(self, lbu, ubu, forecast):
+        _, Tsup_offset = self.mpc.get_ocp_name_and_offset("Tsup_set_219")
+        _, Ta_offset = self.mpc.get_ocp_name_and_offset("Ta")
+        Ta_vals = forecast["Ta"].values
+        orig_inds = np.where(Ta_vals > (292.15))[0]
+        # 
+        try:
+            Ta_vals = (
+                Ta_vals -  self.scaling["r_nom_b"][Ta_offset]
+            )/self.scaling["r_nom"][Ta_offset]
+        except KeyError:
+            pass
+        # expand inds to fit in whole r:
+        inds = orig_inds*self.n_u + Tsup_offset
+        bounds_shape = (lbu[inds].shape[0], lbu[inds].shape[1])
+        # set:
+        lbu[inds] = Ta_vals[orig_inds].reshape(bounds_shape)
+        ubu[inds] = Ta_vals[orig_inds].reshape(bounds_shape)
+        return lbu, ubu
+
     def predict(
         self,
         obs: npt.NDArray[Any],
@@ -193,6 +238,7 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         
         forecast = forecast[0:self.mpc.N]
         forecast["Ti_ref"] = 295.15
+        forecast["fan_219"] = 0.1
         # get bounds:
         """
         bounds_forecast = forecast[1:]
@@ -209,15 +255,31 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             last_n_u = self.get_u_bounds_for_delay(self.mpc.delay)
         else:
             last_n_u = None
+
+        # This piece of logic replaces more detailed modeling:
+        if (forecast["Ta"] > 292.15).any():
+            lbu, ubu = self.get_explicit_lb_ub_u()
+            # set Ta as lb & ub on Tset_sup_219:
+            lbu, ubu = self.lock_Tsup_to_Ta(
+                lbu, 
+                ubu,
+                forecast
+            )
+        else:
+            lbu, ubu = None, None
+
         sol, u_prime, x0, raw_sol = self.mpc.solve(
             forecast,
             x0=obs,
             lbx=lbx,
             ubx=ubx,
+            lbu=lbu,
+            ubu=ubu,
             params=self.params,
             codegen=self.mpc.codegen,
             return_raw_sol=True, 
-            last_n_u=last_n_u
+            last_n_u=last_n_u,
+            qp=False
         )
         """
         Assume hammerstein block to only depend on z:
@@ -226,26 +288,34 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         else:
             # Hammerstein-Wiener:
         """
+
         if hasattr(self, "H_integrator"):
             try:
                 u_val = np.array([
                     self.hstein(
-                        1E-8,
+                        np.array([1])*1E-8,
                         ca.vertcat(
-                            u_prime.values,
+                            u_prime[self.H_integrator.dae.z].values,
+                            #forecast[self.mpc.r_names].iloc[0].values,
                             self.params
                         )
                     )]
                 )
             except RuntimeError: # rootfinder fail:
-                u_val = np.array([0]*self.mpc.n_u)
+                #if u_prime["Prad"] > 100:
+                #    print("fail")
+                u_val = np.array([0]*self.H_integrator.nz)
             u = u_prime.copy()
-            u.index = self.H_integrator.dae.u
-            u.loc[:] = u_val
+            new_index = self.H_integrator.dae.u + list(u.index[self.H_integrator.nz:])
+            u.index = new_index
+            u.iloc[:self.H_integrator.nz] = u_val
+            u["coo_219"] = u["coo_219"]/5000
+            #u.loc[:] = u_val
         # non-decomposed:
         else:
             u = u_prime
          
+        #if not self.mpc.qp_solver.stats()["success"]:
         if not self.mpc.solver.stats()["success"]:
             #print(sol)
             pass
@@ -254,11 +324,11 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         # store forecast, opt result:
         self.forecasts[self.i] = forecast
         # NB! what about delay here? need to pre-fill actions?
-        self.actions.loc[self.i+self.mpc.delay] = np.nan
-        self.actions.loc[self.i+self.mpc.delay, :] = u.values
+        #self.actions.loc[self.i+self.mpc.delay] = np.nan
+        #self.actions.loc[self.i+self.mpc.delay, :] = u.values
         self.preds[self.i] = sol
         self.i += 1
-        return u, False
+        return u.round(5), False
     
     def get_bounds_from_forecast(
         self, 
@@ -429,10 +499,10 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
         integrate_replace: dict[str, str] = {},
         from_boptest=False
     ):         
-        tf = k*self.dt
+        tf = k*self.dt + env.start_time
         #tf = k*self.dt + self.dt
         if include_all:
-            ts = 0 
+            ts = env.start_time
         else:
             ts = tf - (self.adapt_N-1)*self.dt
 
@@ -461,6 +531,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             backshift = ["Prad"]
             for var in backshift:
                 y_data[var] = y_data[var].shift(-1)
+            y_data["Pcoo"] = y_data["Pcoo"].abs().shift(-1)
             y_data = y_data.fillna(0)
             for y, var in self.estimator.y.items():
                 y_data[y] = y_data[var]
@@ -469,6 +540,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             ], axis=1)
             y_data.index = range(len(y_data.index))
             y_data["phi_int"] = y_data["InternalGainsRad[1]"] + y_data["InternalGainsLat[1]"] + y_data["InternalGainsCon[1]"]
+            # from actuator opening to cooling input [W]: 
+            #y_data["coo_219"] = y_data["coo_219"]*-5000
         return y_data
             
     """
@@ -568,6 +641,12 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
     ) -> bool | NotImplementedError:
         return NotImplementedError("")
     
+    def get_RC_inds(self):
+        inds = []
+        for name in ("Rie", "Rea", "Ci", "Ce", "alpha_int", "n", "Prad_nom"):
+            inds.append(self.mpc.get_ocp_name_and_offset(name)[1])
+        return inds
+
     def adaptive_callback(
             self,
             k: int, 
@@ -591,6 +670,29 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             x_guess, last_x_guess = self.generate_x_guess(
                 y_data
             )
+            """
+            Check if sum(heating) +  > delta. 
+            If no/limited heating in data window,
+            no parameter change. 
+
+            TODO: make more modular.
+            Hardcode delta to 500 for now
+            """
+            if (y_data["Prad"].sum() < 10000) and (y_data["Pcoo"].abs().sum() < 10000):
+            #if (y_data["Prad"].sum() < 10000):
+            #if (y_data["Prad"].sum() < 4000) and (y_data["Pcoo"].abs().sum() < 4000):
+                inds = self.get_RC_inds()
+                lbp[inds] = ubp[inds] = p0[inds]
+            else:
+                pass
+            Ai_ind = self.mpc.get_ocp_name_and_offset("Ai")[1]
+            eta_sha_ind = self.mpc.get_ocp_name_and_offset("eta_sha")[1]
+            Ai, eta_sha = p0[Ai_ind], p0[eta_sha_ind]
+            solar_exc = ((1-y_data["sha_219"]*eta_sha)*y_data["phi_s"]).sum()*Ai
+            #if solar_exc < 1000:
+            solar_inds = [Ai_ind, eta_sha_ind]
+            if solar_exc < 10000:
+                lbp[solar_inds] = ubp[solar_inds] = p0[solar_inds]
             # solve:
             sol, params, raw_sol = self.estimator.solve(
                                         y_data,
@@ -609,11 +711,16 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             """
             ax = sol["rad_219"].plot(color="k", drawstyle="steps-post")
             ax1 = ax.twinx()
-            sol["Prad"].plot(drawstyle="steps-post", ax=ax1)
+            sol["Pcoo"].plot(drawstyle="steps-post", ax=ax1)
             plt.show()
             
             ax = sol["y1"].plot(color="k", drawstyle="steps-post")
             sol["Ti"].plot(drawstyle="steps-post", ax=ax)
+            plt.show()
+
+            ax = sol["y1"].plot(color="k", drawstyle="steps-post")
+            ax1 = ax.twinx()
+            (sol["Pcoo"]).plot(drawstyle="steps-post", ax=ax1)
             plt.show()
             """
 
@@ -643,8 +750,9 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                         [params["Prad_nom"]/self.scaling["u_nom"]]*self.mpc.N
                     )
                     """
-                    self.mpc.bounds_cfg["u"]["ubu"] = \
-                         [params["Prad_nom"]]
+                    _, offset = self.mpc.get_ocp_name_and_offset("Prad")
+                    self.mpc.bounds_cfg["u"]["ubu"][offset] = \
+                         params["Prad_nom"]
             else:
                 status = "failed"
             print("\r", end='\n')
@@ -725,11 +833,21 @@ class MheMPCAgent(AbstractAdaptiveAgent):
         )
         #self.estimator = MHE(
         need_sens = config_file.pop("need_sensitivities", False)
+        param_guess = self.param_guess_from_array(
+                self.adapt_parameters    
+            )
+        ########## temp. fix ##############:
+        param_guess["Prad_nom"]["ub"] = 2E3
+        param_guess["n"]["ub"] = 5
+        param_guess["alpha_int"]["ub"] = 1
+        param_guess["Ai"]["ub"] = 0.2*66.7
+        param_guess["Ci"]["lb"] = 1E6
+        param_guess["eta_sha"]["lb"] = 1E-2
+        param_guess["eta_sha"]["ub"] = 1
+        ###################################
         self.estimator = Estimation(
             config=config_file,
-            param_guess=self.param_guess_from_array(
-                self.adapt_parameters    
-            ),
+            param_guess=param_guess,
             need_sensitivities=need_sens,
             arrival_cost=True,
             **self.get_mhe_scaling(

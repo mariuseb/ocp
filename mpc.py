@@ -93,13 +93,15 @@ class MPC(OCP):
         self.lbg = np.array([0]*self.nlp_parser.g.shape[0])
         self.ubg = np.array([0]*self.nlp_parser.g.shape[0])
         
-        self.add_path_constraints_symbolically()
+        #self.add_path_constraints_symbolically()
         
         if "f" not in self.nlp:
             self.set_nlp_obj()
         
-        self.prepare_h()
+        #self.prepare_h()
         self.add_h() 
+        # add here instead:
+        self.add_path_constraints_symbolically()
         # TOOD: add settings:
         self.prepare_solver()
     
@@ -530,14 +532,24 @@ class MPC(OCP):
               x0=None,
               lbx=None,
               ubx=None,
+              lbu=None,
+              ubu=None,
               params=None,
               return_raw_sol=False,
               codegen=False,
               p_val=None,
               last_n_u=None,
-              sqp=False
+              qp=False
               ):
-        lbg, ubg = self.prepare_solve(data,x0=x0,lbx=lbx,ubx=ubx,params=params)
+        lbg, ubg = self.prepare_solve(
+            data,
+            x0=x0,
+            lbx=lbx,
+            ubx=ubx,
+            lbu=lbu,
+            ubu=ubu,
+            params=params
+        )
         if self.delay > 0:
             assert last_n_u is not None
             # TODO: assertions on size of last_n_u
@@ -547,7 +559,7 @@ class MPC(OCP):
                            ubg=ubg,
                            return_raw_sol=return_raw_sol,
                            p_val=p_val,
-                           sqp=sqp,
+                           qp=qp,
                            codegen=codegen)
         
     def fix_u_delay(self, last_n_u):
@@ -559,11 +571,8 @@ class MPC(OCP):
             start = stop
         
             
-    
+    """
     def add_h(self):
-        """
-        Inequality constraints independent of external data.
-        """
         expr_dict = {}
         for i, elem in self.h_exprs.items():
             expr_string = elem["body"]
@@ -599,13 +608,6 @@ class MPC(OCP):
             vals["expr_dict"] = expr_dict
             exec(f'expr_dict[%s] =' % (i,) + expr_string, vals)
             
-            """
-            Now, add this constraint to nlp.g
-            add also corresponding entries for lbg and ubg
-            
-            TODO: more solid logic here
-            """
-            
             expr = expr_dict[i]
             #if self.method == "collocation":
                 #expr = expr.T
@@ -618,7 +620,8 @@ class MPC(OCP):
             ) # TODO: .T?
             self.lbg = np.append(self.lbg, np.array([elem["lhs"]]*expr.shape[0]))
             self.ubg = np.append(self.ubg, np.array([elem["rhs"]]*expr.shape[0]))
-     
+    """
+
     def create_and_call_H_function(
         self, 
         expr: Union[ca.MX, ca.SX]
@@ -631,6 +634,7 @@ class MPC(OCP):
         x = self.get_nlp_var("x")
         u = self.get_nlp_var("u")
         z = self.get_nlp_var("z")
+        r = self.get_nlp_var("r")
         #p = self.get_nlp_var("p")
         p = self.nlp_parser["p"]["p_orig"]
         max_vars = ca.vertcat(
@@ -638,15 +642,16 @@ class MPC(OCP):
         )
         H = ca.Function(
             "H",
-            [x, u, z, p, max_vars],
+            [x, u, z, r, p, max_vars],
             [expr],
-            ["x","u","z","p", "max_vars"],
+            ["x","u","z","r","p", "max_vars"],
             ["H"],
         )
         H_call = H(
             x=x*self.x_nom + self.x_nom_b,
             u=u*self.u_nom + self.u_nom_b,
             z=z*self.z_nom + self.z_nom_b,
+            r=r*self.r_nom + self.r_nom_b,
             p=p*self.p_nom + self.p_nom_b,
             max_vars=max_vars*2500
         )
@@ -659,6 +664,8 @@ class MPC(OCP):
                     x0=None,
                     lbx=None,
                     ubx=None,
+                    lbu=None,
+                    ubu=None,
                     params=None,
                     ):
         """
@@ -674,6 +681,9 @@ class MPC(OCP):
                           p_guess=params
                           #x0=x0
                           )  
+        if lbu is not None and ubu is not None:
+            self.bounds["u"]["lb"] = lbu
+            self.bounds["u"]["ub"] = ubu
         self.set_bounds()
         # TODO: only do this once (symbolically):: 
         """
@@ -751,7 +761,7 @@ class MPC(OCP):
                ubg=None,
                return_raw_sol=False,
                p_val=None,
-               sqp=False,
+               qp=False,
                codegen=False
               ):
         
@@ -775,8 +785,9 @@ class MPC(OCP):
         """
         TODO: remove sqp-solver
         """
-        if sqp is True:
-            solver = self.sqp_solver
+        #if sqp is True:
+        if qp is True:
+            solver = self.qp_solver
         else:
             solver = self.solver
             

@@ -28,12 +28,16 @@ def quick_plot(coord):
     res.Ti.plot(ax=ax, drawstyle="steps-post", color="m")
     res.Ti_lb.plot(ax=ax, drawstyle="steps-post", color="k")
     res.Ti_ub.plot(ax=ax, drawstyle="steps-post", color="k")
+    res.Tsup_set_219.plot(ax=ax, drawstyle="steps-post", color="y")
+    res.AHU219_reaTSupAir_y.plot(ax=ax, drawstyle="steps-post", color="r", linestyle="dashed")
     ax1 = ax.twinx()
     res.cost.plot(ax=ax1, drawstyle="steps-post", color="b", linestyle="dashed")
     ax = axes[1]
     #ax1 = ax.twinx()
     #res.Prad.plot(ax=ax, drawstyle="steps-post", color="r")
     res.Prad_calc.plot(ax=ax, drawstyle="steps-post", color="r")
+    #res.Pvent.plot(ax=ax, drawstyle="steps-post", color="r", linestyle="dashed")
+    (-res.Pcoo).shift(-1).plot(ax=ax, drawstyle="steps-post", color="b")
     try: 
         res["Prad_model"] = np.nan
         res["Ti_model"] = np.nan
@@ -43,6 +47,9 @@ def quick_plot(coord):
             res.loc[res.index[i], "Prad_model"] = df.loc[0, "Prad"]
             res.loc[res.index[i+1], "Ti_model"] = df.loc[1, "Ti"]
         res.Prad_model.plot(ax=ax, drawstyle="steps-post", color="g")
+        ax1 = ax.twinx()
+        res.rad_219.shift(-1).plot(ax=ax1, drawstyle="steps-post", color="k")
+        res.sha_219.shift(-1).plot(ax=ax1, drawstyle="steps-post", color="k", linestyle="dashed")
         ax = axes[0]
         res.Ti_model.plot(ax=ax, drawstyle="steps-post", color="g")
     #res.rad_219.plot(ax=ax1, drawstyle="steps-post", color="k")
@@ -72,6 +79,57 @@ def get_value_function_error(coord, N=None):
     value["Prad_act"] = res["Prad"][:-N]/1E3
     return value
 
+def one_step_cost_pred(coord, N=None, slack_weight=1E3):
+    preds = coord.controller.preds
+    if N is None:
+        N = coord.controller.N
+    else:
+        assert N < coord.controller.N
+    res = coord.res.copy()
+    res["Prad"] = res["Prad"].shift(-1)
+    onestep = pd.DataFrame(columns=[
+        "slack_pred", "slack_act", "cost_pred", "cost_act"
+    ])
+    lb_vio, ub_vio = coord.get_constraint_violations(res)
+    lb_vio = lb_vio.reindex(res.index).fillna(0)
+    ub_vio = ub_vio.reindex(res.index).fillna(0)
+    # scale. hardcode for now
+    # TODO: modular scale
+    slack_viol = slack_weight*((lb_vio + ub_vio)/12)**2
+    #lb_vio = slack_weight*(lb_vio/12)**2
+    #ub_vio = slack_weight*(ub_vio/12)**2
+    #res = res[:-N]
+    for i, ndx in enumerate(res[:-N].index):
+        """
+        stop_ndx = res.index[i+N-1]
+        onestep.loc[ndx, "Ti_ol"] = mean_squared_error(
+            (res["Ti"].loc[ndx:stop_ndx].values - 289.15)/12, 
+            (preds[i].loc[:N-1, "Ti"].values - 289.15)/12, 
+        )*1E3
+        onestep.loc[ndx, "Prad_ol"] = mean_squared_error(
+            res["Prad"].loc[ndx:stop_ndx].values/1E3, 
+            preds[i].loc[:N-1, "Prad"].values/1E3, 
+        )
+        """
+        pred = preds[i]
+        next_ndx = res.index[i+1]
+        # Calculate 0-step predicted energy cost:
+        onestep.loc[ndx, "cost_pred"] = (
+            pred["Prad"].iloc[0]/2500
+        )*res["cost"].iloc[0]
+        # Calculate 0-step actual energy cost:
+        onestep.loc[ndx, "cost_act"] = (
+            res.loc[ndx, "Prad"]/2500
+        )*res["cost"].iloc[0]
+        # Calculate 1-step predicted slack term:
+        onestep.loc[next_ndx, "slack_pred"] = \
+             slack_weight*pred.loc[next_ndx, "s1"]**2
+
+        if pred["Prad"].iloc[0] > 100:
+            print(pred)
+    onestep["Prad_act"] = res["Prad"][:-N]/1E3
+    return onestep
+
 def plot_parameter_evolution(coord, PRBS_ref):
     params_PRBS = pd.read_csv(
         PRBS_ref,
@@ -88,7 +146,7 @@ def plot_parameter_evolution(coord, PRBS_ref):
     for ndx in hist.index:
         params_PRBS.loc[ndx, :] = params_PRBS.iloc[0, :].values
     
-    fig, axes = plt.subplots(8,1, sharex=True, figsize=(10,12))
+    fig, axes = plt.subplots(9,1, sharex=True, figsize=(10,12))
     for i, name in enumerate(p):
         hist[name].plot(
             ax=axes[i], 

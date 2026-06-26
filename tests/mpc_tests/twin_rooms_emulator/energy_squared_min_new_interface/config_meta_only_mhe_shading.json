@@ -1,0 +1,15 @@
+{
+    "mhe_cost_free_rad_hist": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_shading.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL.json",
+        "parameters": "params_result/2R2C_params_jan.csv",
+        "adaptive": true,
+        "integrate_replace": {
+            "Prad": "Qrad"
+        },
+        "adaptive_type": "mhe",
+        "est_config_file": "mhe_configs/2R2C_MHE_NL_cooling_shading.json",
+        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai", "alpha_int", "n", "Prad_nom"],
+        "cost": "PriceElectricPowerHighlyDynamic"
+    }
+}

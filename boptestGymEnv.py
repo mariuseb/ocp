@@ -575,6 +575,9 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             data=vals,
             columns=self.maps.var["r"]
         )
+        forecast["phi_int"] = np.array(_forecast["InternalGainsRad[1]"]) + \
+            np.array(_forecast["InternalGainsLat[1]"]) + \
+            np.array(_forecast["InternalGainsCon[1]"])
         # TODO: make below more modular:
         """
         try:

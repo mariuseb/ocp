@@ -1,0 +1,88 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci - Pcoo/Ci + fan_219*1000*(Tsup_set_219 - Ti)/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Thex": "Thex - (Ta + 0.8*(293.15 - Ta))",
+            "Pvent": "Pvent - fan_219*1000*(Tsup_set_219 - Thex)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "alpha_int",
+            "n",
+            "Prad_nom"
+        ],
+        "u": [
+            "Prad",
+            "Pcoo",
+            "Tsup_set_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "phi_int",
+            "fan_219",
+            "cost"
+        ],
+        "z": [
+            "Thex",
+            "Pvent"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0,0,250],
+            "ubu": [1699.52,5000,292.15]
+        },
+        "z": {
+            "lbz": [200,0],
+            "ubz": [400,5000]
+        },
+        "x": {
+            "lbx": [280,280],
+            "ubx": [340,340]
+        }
+    },
+    "ocp": {
+        "h": [
+            "0 <= Tsup_set_219 - Ta"
+        ]
+    },
+    "objective": "dot(cost, Prad) + dot(cost, Pvent) + dot(cost, Pcoo) + 1E7*dot(sl, sl)",
+    "N": 96,
+    "delay": 0,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.print_level": 5,
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "print_time": false,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

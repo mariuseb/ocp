@@ -12,7 +12,7 @@ import pandas as pd
 from ocp.config import Config, traverse_dict
 from copy import deepcopy
 from pprint import pprint
-from utils import quick_plot
+from utils import quick_plot, plot_parameter_evolution
 rc('mathtext', default='regular')
 
 
@@ -20,9 +20,11 @@ rc('mathtext', default='regular')
 if __name__ == "__main__":
     
     _path = "results_local"
-    base = Config()("base_config_scaled.json")
-    base["days"] = 120
-    meta = Config()("config_meta_test.json")
+    base = Config()("base_config_scaled_shading.json")
+    base["days"] = 31 + 28 + 31 + 30 + 31
+    #meta = Config()("config_meta_only_mhe_shading.json")
+    #meta = Config()("config_meta_test.json")
+    meta = Config()("config_meta_mhe_baseline_shading.json")
     x0 = np.array([
         295.15, 293.15
     ])
@@ -47,8 +49,10 @@ if __name__ == "__main__":
         # deploy control:
         coord.run(x0=x0)
         coord.write_result(_path=_path)   
+        quick_plot(coord)
         #pprint(cfg)
-    
+    print("tail")
+    plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
     """
     read_coords = {}
     for k, v in cfgs.items():

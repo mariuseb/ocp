@@ -631,8 +631,9 @@ class IRK(Integrator):
     """
         
     def set_g(self):
+        len_g_expr = self.g_expr.shape[0]
         self.g = ca.Function('g',
-                          [self.z, self.x, self.u, self.p, self.r],
+                          [self.z[:len_g_expr], self.x, self.u, self.p, self.r],
                           [self.g_expr],
                           ["z", "x", "u", "p", "r"],
                           ["g"])
@@ -722,13 +723,13 @@ class IRK(Integrator):
         #z_ifcn = ca.rootfinder('ifcn', 'fast_newton', zfcn_sx)
         #ifcn = ca.rootfinder('ifcn', 'fast_newton', vfcn_sx)
         #ifcn = ca.rootfinder('g_rootfinder', 'fast_newton', self.g)
+        ifcn = ca.rootfinder('g_rf', 'newton', self.g)
+        self.G = ifcn
         try:
-            ifcn = ca.rootfinder('g_rf', 'newton', self.g)
             ifcn_u = ca.rootfinder('g_rf', 'newton', self.g_u)
-            self.G = ifcn
             self.G_u = ifcn_u
-        except:
-            self.G = self.g
+        except (TypeError, RuntimeError):
+            print("u / z mismatch, cannot be used for solving u from z.")
         
         
     def set_ode_func(self):

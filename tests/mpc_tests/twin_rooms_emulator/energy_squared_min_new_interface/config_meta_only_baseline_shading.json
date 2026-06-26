@@ -1,0 +1,9 @@
+{
+    "baseline_cost_hist": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_shading.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
+        "parameters": "params_result/2R2C_params_jan.csv",
+        "adaptive": false,
+        "cost": "PriceElectricPowerHighlyDynamic"
+    }
+}

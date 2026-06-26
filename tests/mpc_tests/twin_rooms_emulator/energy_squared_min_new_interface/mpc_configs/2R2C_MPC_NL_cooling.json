@@ -1,0 +1,74 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_219, n, 1E-6)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "alpha_int",
+            "n",
+            "Prad_nom",
+            "eta_sha"
+        ],
+        "u": [
+            "rad_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "phi_int",
+            "fan_219",
+            "cost"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "Prad"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0],
+            "ubu": [1]
+        },
+        "x": {
+            "lbx": [280,280],
+            "ubx": [340,340]
+        }
+    },
+    "objective": "dot(Prad, Prad) + 1E4*dot(sl, sl)",
+    "N": 12,
+    "delay": 0,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

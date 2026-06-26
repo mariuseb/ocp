@@ -642,6 +642,24 @@ class OCP(metaclass=ABCMeta):
                                 ),
                             #discrete=discrete
                         )
+
+        opts = {
+            'print_time': False,               # Disables CasADi's own timing printout
+            'osqp': {
+                'max_iter': 10000,             # Higher iteration allowance
+                'eps_abs': 1e-6,               # Strict absolute tolerance
+                'eps_rel': 1e-6,               # Strict relative tolerance
+                'verbose': False,              # Suppress OSQP console output
+                'polish': True                 # Refined final solution
+            }
+        }
+
+        self.qp_solver = ca.qpsol(
+            "solver",
+            "osqp",
+            self.nlp,
+            opts
+        )
         #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
             #self.hsolver_ipopt = self.jsolver_ipopt.factory('h', self.solver.name_in(), ['jac:jac_f_p:p'])
             #self.hsolver_ipopt = self.solver.factory('h', self.solver.name_in(), ['hess:f:p:p'])

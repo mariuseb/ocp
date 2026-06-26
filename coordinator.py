@@ -192,8 +192,17 @@ class Coordinator(object):
         ax = axes[1]
         ax = results[["Prad_calc", "Prad_pred", "Prad"]].plot(drawstyle="steps-post")
         return fig, axes
-        
-    def get_custom_kpis(self, start=None):
+
+    @staticmethod
+    def get_constraint_violations(res):
+        _lb_vio = (res.Ti - res.Ti_lb)
+        _ub_vio = (res.Ti - res.Ti_ub)
+        lb_vio = _lb_vio.loc[_lb_vio < 0]
+        ub_vio = _ub_vio.loc[_ub_vio > 0]
+        return lb_vio, ub_vio
+
+
+    def get_custom_kpis(self, start=None, return_discomf=False):
         """
         Get kpis for energy, cost, discomfort, peak.
         
@@ -207,10 +216,7 @@ class Coordinator(object):
         else:
             res = self.res
         
-        _lb_vio = (res.Ti - res.Ti_lb)
-        _ub_vio = (res.Ti - res.Ti_ub)
-        lb_vio = _lb_vio.loc[_lb_vio < 0]
-        ub_vio = _ub_vio.loc[_ub_vio > 0]
+        lb_vio, ub_vio = self.get_constraint_violations(res)
         # in Kh:
         sum_vio = abs(lb_vio.sum()) + ub_vio.sum()
         tdis = sum_vio/(3600/self.dt)
@@ -218,21 +224,31 @@ class Coordinator(object):
         ener_tot = (res["Qrad"].iloc[-1] - res["Qrad"].iloc[0])/3.6E6
         # in kW:
         Prad_calc = (res["Qrad"].diff(1)/1E6).shift(-1).fillna(0)
+        # cooling:
+        Pcoo = res.Pcoo.abs()
+        # cooling energy:
+        coo_ener = Pcoo.sum()/4000
+        # 
+        ener_tot += coo_ener
         # global peak:
-        
-        peak = Prad_calc.max()
+        peak = max(Prad_calc.max(), (abs(Pcoo)/1000).iloc[1:].max())
         # cost in EUR:
-        cost = (Prad_calc*res.cost).sum()
-        return pd.DataFrame(
+        cost = (Prad_calc*res.cost).sum() + (abs(Pcoo)/1000*res.cost).sum()
+        kpis = pd.DataFrame(
             index=["tdis [Kh]",
-                   "energy [kWh]",
-                   "peak power [kW]",
-                   "cost [EUR]"
+                "energy [kWh]",
+                "peak power [kW]",
+                "cost [EUR]"
             ],
             data=[tdis, ener_tot, peak, cost],
             columns=["value"]
         )
-    
+        if not return_discomf:
+            return kpis
+        else:
+            #discomf = lb_vio + ub_vio
+            return kpis, lb_vio, ub_vio
+
     def run_baseline_control(self):
         """ Run PID for however long. """        
         obs, _ = self.env.reset()
@@ -251,7 +267,7 @@ class Coordinator(object):
                 flush=True, end='')
             #print("\033[1A", end="")
             obs, reward, terminated, truncated, info = self.env.step(
-                pd.DataFrame(data=[None]).iloc[0]
+                pd.DataFrame(data=[None]*len(self.env.actions))
             )
         # get env result:
         self.res = self.env.get_results(
@@ -312,6 +328,7 @@ class Coordinator(object):
                 )
                 self.validation_callback(k)
                 if self.controller.mpc.solver.stats()["success"]:
+                #if self.controller.mpc.qp_solver.stats()["success"]:
                     status = "succeeded"
                 else:
                     status = "failed"

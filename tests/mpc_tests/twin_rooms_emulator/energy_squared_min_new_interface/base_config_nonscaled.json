@@ -6,16 +6,6 @@
         "temp_conv": 273.15,
         "sampling_time": "15min",
         "scaling": {
-            "x_nom": 12,
-            "x_nom_b": 289.15,
-            "u_nom": [2.5E3,2.5E3,12],
-            "u_nom_b": [0,0,289.15],
-            "r_nom": [12,2.5E3,2.5E3,1,1],
-            "r_nom_b": [289.15,0,0,0,0],
-            "z_nom": [2.5E3],
-            "z_nom_b": [0],
-            "y_nom": [12,2.5E3],
-            "y_nom_b": [289.15,0],
             "slack": true
         },
         "filter_config_file": "ekf_configs/2R2C_EKF_cooling.json",

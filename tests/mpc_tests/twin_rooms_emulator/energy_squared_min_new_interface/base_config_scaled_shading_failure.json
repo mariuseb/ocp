@@ -8,8 +8,8 @@
         "scaling": {
             "x_nom": 12,
             "x_nom_b": 289.15,
-            "u_nom": [2.5E3,2.5E3,12],
-            "u_nom_b": [0,0,289.15],
+            "u_nom": [2.5E3,2.5E3,12,1],
+            "u_nom_b": [0,0,289.15,0],
             "r_nom": [12,2.5E3,2.5E3,1,1],
             "r_nom_b": [289.15,0,0,0,0],
             "z_nom": [2.5E3],
@@ -18,7 +18,7 @@
             "y_nom_b": [289.15,0],
             "slack": true
         },
-        "filter_config_file": "ekf_configs/2R2C_EKF_cooling.json",
+        "filter_config_file": "ekf_configs/2R2C_EKF_cooling_shading_eff.json",
         "filter_type": "ocp.kalman.ExtendedKalmanFilter",
         "filter_obs": true
     },
@@ -27,7 +27,7 @@
         "config": {   
             "url": "http://docker-web-1:8000",
             "testcase": "twin_rooms_emulator",
-            "actions": ["waterTRVSplitterManifold2Zone_val219_oveValRad_u", "AHU219_oveCoo_u", "oveTsupSet219_u"],
+            "actions": ["waterTRVSplitterManifold2Zone_val219_oveValRad_u", "AHU219_oveCoo_u", "oveTsupSet219_u", "floor5Zone_Shading_oveSha219_u"],
             "observations": {
                             "floor5Zone_Shading_reaT219_y": [270,330]
 
@@ -49,6 +49,7 @@
                "rad_220": "waterTRVSplitterManifold2Zone_val220_oveValRad",
                "fan_220": "AHU220_oveFanSup",
                "fan_219": "AHU219_oveFanSup",
+               "sha_219": "floor5Zone_Shading_oveSha219",
                "fan_ret_220": "AHU220_oveFanRet",
                "fan_ret_219": "AHU219_oveFanRet",
                "coo_219": "AHU219_oveCoo",
@@ -70,7 +71,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 11145600
+            "start_time": 10945800
         }
     }
 }

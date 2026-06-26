@@ -12,7 +12,7 @@ import pandas as pd
 from ocp.config import Config, traverse_dict
 from copy import deepcopy
 from pprint import pprint
-from utils import quick_plot
+from utils import quick_plot, plot_parameter_evolution
 rc('mathtext', default='regular')
 
 
@@ -20,9 +20,10 @@ rc('mathtext', default='regular')
 if __name__ == "__main__":
     
     _path = "results_local"
-    base = Config()("base_config_nonscaled.json")
-    base["days"] = 120
-    meta = Config()("config_meta_test.json")
+    base = Config()("base_config_scaled_shading_failure.json")
+    base["days"] = 7 
+    meta = Config()("config_meta_only_mhe_shading_failure.json")
+    #meta = Config()("config_meta_test.json")
     x0 = np.array([
         295.15, 293.15
     ])
@@ -37,7 +38,9 @@ if __name__ == "__main__":
         cfg = deepcopy(base)
         # fill missing:
         for _k, _v in v.items():
-            cfg["controller"][_k] = _v
+            if _k != "cost":
+                cfg["controller"][_k] = _v
+        cfg["environment"]["config"]["maps"]["r"]["cost"] = v["cost"]
         cfgs[k] = cfg
         coord = Coordinator(
             cfg
@@ -45,21 +48,17 @@ if __name__ == "__main__":
         # deploy control:
         coord.run(x0=x0)
         coord.write_result(_path=_path)   
-    
+        quick_plot(coord)
+        #pprint(cfg)
+    print("tail")
+    plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
+    """
     read_coords = {}
     for k, v in cfgs.items():
         coord = Coordinator.read_result(v, _path=_path)
         read_coords[k] = coord
-        """
-        fig, axes, res = coord.plot_temperatures(
-            heat_key="Prad"
-        )
-        fig.suptitle(k)
-        """
         quick_plot(coord)
         print(k + " kpis:")
         print(coord.kpis)
         plt.show()
-    
-    pprint(cfgs)
-    
+    """
