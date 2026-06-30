@@ -575,9 +575,10 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             data=vals,
             columns=self.maps.var["r"]
         )
-        forecast["phi_int"] = np.array(_forecast["InternalGainsRad[1]"]) + \
-            np.array(_forecast["InternalGainsLat[1]"]) + \
-            np.array(_forecast["InternalGainsCon[1]"])
+        #forecast["phi_int"] = np.array(_forecast["InternalGainsRad[1]"]) + \
+        #    np.array(_forecast["InternalGainsLat[1]"]) + \
+        #    np.array(_forecast["InternalGainsCon[1]"])
+        forecast["phi_int"] = 0
         # TODO: make below more modular:
         """
         try:
@@ -1029,8 +1030,8 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
                  list(inputs.keys())
         #if ts == 0 and self.start_time != 0:
         # adjust by starting time:
-        ts = self.start_time + ts
-        tf = self.start_time + tf   
+        #ts = self.start_time + ts
+        #tf = self.start_time + tf   
         
         if split_requests: # by day / episode
             tot_time = tf - ts

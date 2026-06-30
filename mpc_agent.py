@@ -302,8 +302,8 @@ class AbstractMPCAgent(metaclass=ABCMeta):
                     )]
                 )
             except RuntimeError: # rootfinder fail:
-                #if u_prime["Prad"] > 100:
-                #    print("fail")
+                if u_prime["Prad"] > 100:
+                    print("fail")
                 u_val = np.array([0]*self.H_integrator.nz)
             u = u_prime.copy()
             new_index = self.H_integrator.dae.u + list(u.index[self.H_integrator.nz:])
@@ -550,23 +550,24 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
     def get_estimation_parameters(
         self
     ):
-        Q = ca.DM.eye(self.estimator.n_x)*0
+        Q = ca.DM.eye(self.estimator.n_x)
         R = ca.DM.eye(self.estimator.n_y)
         try: # TODO: to config:
-            #R[1,1] = 1e-5 # config / learnable
-            R[1,1] = -5 # config / learnable
+            R[1,1] = 1e-5 # config / learnable
+            #R[1,1] = -5 # config / learnable
             #R[2,2] = 1e-5 # config / learnable
         except:
             pass
         #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1e-8 # config / learnable
         #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*0 # config / learnable
         #P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
-        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*0 # config / learnable
+        P0 = np.eye(self.estimator.n_p + self.estimator.n_x)*1 # config / learnable
 
         P0[
         self.estimator.n_p:(self.estimator.n_p + self.estimator.n_x),
         self.estimator.n_p:(self.estimator.n_p + self.estimator.n_x)
-        ] = -5 # config setting: opts (0, EKF smoothing update, identity, learnable)
+        #] = -5 # config setting: opts (0, EKF smoothing update, identity, learnable)
+        ] = 0 # config setting: opts (0, EKF smoothing update, identity, learnable)
         
         lbp = self.estimator.get_lbp(1e-3)
         ubp = self.estimator.get_ubp(1e3)
@@ -612,7 +613,7 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             return x_guess, last_x_guess
         else:
             #last_est = self.ests[self.i-1]
-            last_est = self.ests[self.i - self.adapt_frequency]
+            last_est = self.ests[self.i - self.adapt_frequency - 1]
             x_guess = last_est[self.estimator.x()][1:].values.reshape(
                 (self.estimator.n_x, self.estimator.N-1)
             )
@@ -665,7 +666,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                 self.i,
                 #k,
                 backshift=env.maps.u,
-                integrate_replace=self.integrate_replace
+                integrate_replace=self.integrate_replace,
+                from_boptest=False
             )
             x_guess, last_x_guess = self.generate_x_guess(
                 y_data
@@ -678,21 +680,37 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             TODO: make more modular.
             Hardcode delta to 500 for now
             """
+            #lbp = 1*p0
+            #ubp = 1*p0
             if (y_data["Prad"].sum() < 10000) and (y_data["Pcoo"].abs().sum() < 10000):
             #if (y_data["Prad"].sum() < 10000):
             #if (y_data["Prad"].sum() < 4000) and (y_data["Pcoo"].abs().sum() < 4000):
                 inds = self.get_RC_inds()
-                lbp[inds] = ubp[inds] = p0[inds]
+                lbp[inds] = 1*p0[inds]
+                ubp[inds] = 1*p0[inds]
+                #lbp = ubp = p0
+                #lbp = 1*p0
+                #ubp = 1*p0
             else:
                 pass
             Ai_ind = self.mpc.get_ocp_name_and_offset("Ai")[1]
+            Ai = p0[Ai_ind]
+            solar_exc = y_data["phi_s"].sum()*Ai
+            if solar_exc < 10000:
+                #lbp[solar_inds] = ubp[solar_inds] = p0[solar_inds]
+                lbp[Ai_ind] = 1*p0[Ai_ind]
+                ubp[Ai_ind] = 1*p0[Ai_ind]
+            """
             eta_sha_ind = self.mpc.get_ocp_name_and_offset("eta_sha")[1]
             Ai, eta_sha = p0[Ai_ind], p0[eta_sha_ind]
             solar_exc = ((1-y_data["sha_219"]*eta_sha)*y_data["phi_s"]).sum()*Ai
             #if solar_exc < 1000:
             solar_inds = [Ai_ind, eta_sha_ind]
-            if solar_exc < 10000:
-                lbp[solar_inds] = ubp[solar_inds] = p0[solar_inds]
+            if solar_exc < 20000:
+                #lbp[solar_inds] = ubp[solar_inds] = p0[solar_inds]
+                lbp[solar_inds] = 1*p0[solar_inds]
+                ubp[solar_inds] = 1*p0[solar_inds]
+            """
             # solve:
             sol, params, raw_sol = self.estimator.solve(
                                         y_data,
@@ -841,9 +859,10 @@ class MheMPCAgent(AbstractAdaptiveAgent):
         param_guess["n"]["ub"] = 5
         param_guess["alpha_int"]["ub"] = 1
         param_guess["Ai"]["ub"] = 0.2*66.7
-        param_guess["Ci"]["lb"] = 1E6
-        param_guess["eta_sha"]["lb"] = 1E-2
-        param_guess["eta_sha"]["ub"] = 1
+        param_guess["Ai"]["lb"] = 1
+        #param_guess["Ci"]["lb"] = 1E6
+        #param_guess["eta_sha"]["lb"] = 1E-2
+        #param_guess["eta_sha"]["ub"] = 1
         ###################################
         self.estimator = Estimation(
             config=config_file,
@@ -900,8 +919,8 @@ class MheMPCAgent(AbstractAdaptiveAgent):
         """
         x_post_ekf = super().x0_from_obs(k, obs)
         # TODO: implement AdaptiveGDSolver
-        #if self.re_estimation_clause(k):
-        if False:
+        #if False:
+        if self.re_estimation_clause(k):
             # latest estimation, latest state:
             x_post_mhe = self.ests[k][self.x()].iloc[-1].values.flatten()
             return x_post_mhe

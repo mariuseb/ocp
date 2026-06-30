@@ -20,12 +20,10 @@ rc('mathtext', default='regular')
 if __name__ == "__main__":
     
     _path = "results_local"
-    base = Config()("base_config_scaled.json")
-    base["days"] = 31 + 28 + 31 + 30 + 31 
-    #meta = Config()("config_meta_only_mhe_shading.json")
+    base = Config()("base_config_scaled_shading_failure.json")
+    base["days"] = 7
+    meta = Config()("config_meta_only_mhe_shading_failure.json")
     #meta = Config()("config_meta_test.json")
-    #meta = Config()("config_meta_only_mhe.json")
-    meta = Config()("config_meta_mhe_baseline_adaptive.json")
     x0 = np.array([
         295.15, 293.15
     ])
@@ -38,7 +36,7 @@ if __name__ == "__main__":
         )
         print("###################################")
         cfg = deepcopy(base)
-        # fill missing:z
+        # fill missing:
         for _k, _v in v.items():
             if _k != "cost":
                 cfg["controller"][_k] = _v
@@ -53,7 +51,7 @@ if __name__ == "__main__":
         quick_plot(coord)
         #pprint(cfg)
     print("tail")
-    plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
+    plot_parameter_evolution(coord, "params_result/2R2C_params_jan_sha_eff.csv")
     """
     read_coords = {}
     for k, v in cfgs.items():

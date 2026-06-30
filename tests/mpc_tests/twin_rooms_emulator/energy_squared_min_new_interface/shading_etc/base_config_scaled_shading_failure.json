@@ -71,7 +71,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 10945800
+            "start_time": 10368000
         }
     }
 }

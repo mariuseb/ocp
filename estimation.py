@@ -241,12 +241,12 @@ class Estimation(OCP, CovarianceEstimation):
             self._transform_v()
              
         # initialize the parameters needed for the objective:
-        self.Q0 = ca.MX.sym("Q0", self.n_x, self.n_x)
-        self.R0 = ca.MX.sym("R0", self.n_y, self.n_y)
+        self.Q = ca.MX.sym("Q0", self.n_x, self.n_x)
+        self.R = ca.MX.sym("R0", self.n_y, self.n_y)
         # TODO: expand to multiple_dims:
         #self.xi_q = ca.MX.sym("xi_q", self.n_x, self.n_x)
-        self.Q = ca.expm(self.Q0)
-        self.R = ca.expm(self.R0)
+        #self.Q = ca.expm(self.Q0)
+        #self.R = ca.expm(self.R0)
         #symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
         #symbols = re.findall("|".join(self.dae.all_names), self.obj_string)
         symbols = []
@@ -321,11 +321,11 @@ class Estimation(OCP, CovarianceEstimation):
         else:
             p = p_aux
             
-        #self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + p.shape[0]))
-        P0_shape = self.n_x + p.shape[0]
-        self.P0 = ca.MX.sym("P0", P0_shape, P0_shape)
+        self.P0 = ca.MX.sym("P0", ca.Sparsity.diag(self.n_x + p.shape[0]))
+        #P0_shape = self.n_x + p.shape[0]
+        #self.P = ca.MX.sym("P0", P0_shape, P0_shape)
         #self.P = ca.expm(self.P0)
-        self.P = ca.expm(0.5*self.P0 + 0.5*self.P0.T)
+        #self.P = ca.expm(0.5*self.P0 + 0.5*self.P0.T)
         """
         S = MX.sym("S",2,2)
         S = 0.5*(S + S.T)
@@ -336,10 +336,10 @@ class Estimation(OCP, CovarianceEstimation):
         costate = ca.vertcat(p, last_x)
         #arrival_cost = (costate - self.costate_prior).T@ca.inv(self.P0)@(costate - self.costate_prior)
         #arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
-        arrival_cost = (costate - self.costate_prior).T@self.P@(costate - self.costate_prior)
+        arrival_cost = (costate - self.costate_prior).T@self.P0@(costate - self.costate_prior)
         self.nlp["f"] = self.f_orig + arrival_cost
-        #self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
-        self.nlp["p"] = ca.veccat(self.P0, self.Q0, self.R0, self.costate_prior)    
+        self.nlp["p"] = ca.veccat(self.P0, self.Q, self.R, self.costate_prior)    
+        #self.nlp["p"] = ca.veccat(self.P0, self.Q0, self.R0, self.costate_prior)    
         
     
     def store_param_and_state(self, params, state, z, k):
@@ -459,13 +459,14 @@ class Estimation(OCP, CovarianceEstimation):
         ### The below is 'MHE-specific':
         self.sol_df, params = self.parse_solution(solution)
         # k given by history thus far:
-        k = len(self.df) + self.N - 1
+        k = len(self.df) # + self.N - 1
         self.store_param_and_state(
                                    params.values, 
                                    self.sol_df[self.x_names].iloc[-1].values,
                                    self.sol_df[self.z_names].iloc[-2].values,
                                    k + 1
                                    )
+        #Wself.sol_df.index = np.arange(k*self.dt, (k + self.N)*self.dt, self.dt)
         self.sol_df.index = np.arange(k*self.dt, (k + self.N)*self.dt, self.dt)
         ####
         if not return_raw_sol:

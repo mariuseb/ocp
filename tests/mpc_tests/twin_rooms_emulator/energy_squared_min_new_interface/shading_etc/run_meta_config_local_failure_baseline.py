@@ -21,8 +21,8 @@ if __name__ == "__main__":
     
     _path = "results_local"
     base = Config()("base_config_scaled_shading_failure.json")
-    base["days"] = 7 
-    meta = Config()("config_meta_only_mhe_shading_failure.json")
+    base["days"] = 28
+    meta = Config()("config_meta_baseline_mhe_shading_failure.json")
     #meta = Config()("config_meta_test.json")
     x0 = np.array([
         295.15, 293.15

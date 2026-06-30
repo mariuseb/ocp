@@ -12,7 +12,8 @@ import pandas as pd
 from ocp.config import Config, traverse_dict
 from copy import deepcopy
 from pprint import pprint
-from utils import quick_plot, get_value_function_error, plot_parameter_evolution
+from scipy import stats
+from utils import quick_plot, get_value_function_error, plot_parameter_evolution, one_step_cost_pred
 rc('mathtext', default='regular')
 
 
@@ -20,12 +21,14 @@ rc('mathtext', default='regular')
 if __name__ == "__main__":
     
     _path = "results_local"
-    base = Config()("base_config_scaled_shading.json")
-    base["days"] = 31 + 28 + 31 + 30 + 31
+    base = Config()("base_config_scaled.json")
+    #base["days"] = 28
+    base["days"] = 31 + 28 + 31 + 30 + 31 
     #meta = Config()("config_meta_test.json")
-    #meta = Config()("config_meta_only_baseline.json")
-    meta = Config()("config_meta_mhe_baseline_shading.json")
-    
+    meta = Config()("config_meta_only_mhe.json")
+    meta = Config()("config_meta_mhe_baseline.json")
+    #meta = Config()("config_meta_mhe_baseline_shading.json")
+    results = {}
     read_coords = {}
     values = {}
     for k, v in meta.items():
@@ -38,39 +41,172 @@ if __name__ == "__main__":
         coord = Coordinator.read_result(cfg, _path=_path)
         values[k] = get_value_function_error(coord)
         read_coords[k] = coord
-        quick_plot(coord)
+        #results[k] = quick_plot(coord)
         print(k + " kpis:")
         print(coord.kpis)
         #plt.show()
 
+    #plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
+
+    value_mhe = values["mhe_cost_free_rad_hist"]
+    value = values["baseline_cost_hist"]
+    res_mhe = read_coords["mhe_cost_free_rad_hist"].res
+    res = read_coords["baseline_cost_hist"].res
+
+    """
+    rule = "15min"
+    _value = value.resample(rule=rule).mean()
+    _value_mhe = value_mhe.resample(rule=rule).mean()
+
+    fig, axes = plt.subplots(2,1)
+    ax = axes[0]
+    _value[["Ti_ol", "Prad_ol"]].cumsum().plot(drawstyle="steps-post", ax=ax)
+    ax = axes[1]
+    _value_mhe[["Ti_ol", "Prad_ol"]].cumsum().plot(drawstyle="steps-post", ax=ax)
+    plt.show()
+    
+    fig, axes = plt.subplots(2,1)
+    ax = axes[0]
+    _value[["Ti_ol"]].cumsum().plot(drawstyle="steps-post", ax=ax)
+    _value_mhe[["Ti_ol"]].cumsum().plot(drawstyle="steps-post", ax=ax)
+    #ax = axes[1]
+    plt.show()
+    """
+
+    coord_mhe = read_coords["mhe_cost_free_rad_hist"]
+    onestep_mhe = one_step_cost_pred(coord_mhe)
     coord = read_coords["baseline_cost_hist"]
-    coord = read_coords["mhe_cost_free_rad_hist"]
-    plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
-    print("tail")
+    onestep = one_step_cost_pred(coord)
 
-    # params at k = 12258:
-    coord.controller.params_history.loc[12258].to_csv("params_result/before_failure.csv", index=True)
+    # NOTE: find the days with the most different economic cost:
+    onestep_daily = onestep.cost_act.resample(rule="1D").mean()
+    onestep_daily_mhe = onestep_mhe.cost_act.resample(rule="1D").mean()
+    # delta:
+    delta = (onestep_daily - onestep_daily_mhe).abs()
+    start_ind = delta.idxmax() - pd.Timedelta(days=1)
+    stop_ind = start_ind + pd.Timedelta(days=3)
+    _, _ = quick_plot(coord, start=start_ind, stop=stop_ind, title="baseline")
+    _, _ = quick_plot(coord_mhe, start=start_ind, stop=stop_ind, title="mhe")
 
-    ax = coord.controller.params_history.alpha_int.plot()
+    # NOTE: find the days with the most realized slack:
+    slack_rea = onestep_mhe.slack_act.resample(rule="1D").mean()
+    cost_rea_mhe = onestep_mhe.cost_act.resample(rule="1D").mean()
+    cost_rea = onestep.cost_act.resample(rule="1D").mean()
+    second_highest_index = slack_rea.nlargest(3).idxmin()
+    start_ind = second_highest_index - pd.Timedelta(days=1)
+    stop_ind = start_ind + pd.Timedelta(days=3)
+    _, _ = quick_plot(coord, start=start_ind, stop=stop_ind, title="baseline")
+    _, _ = quick_plot(coord_mhe, start=start_ind, stop=stop_ind, title="mhe")
+
+
+    """
+    NOTE: To find the deep winter day with the most similar starting temperature:
+    """
+    Ti_min = np.inf
+    _d = 0
+    # take 28 first days:
+    for d in range(1,28):
+        Ti_mhe = coord_mhe.controller.preds[96*d]["Ti"].iloc[0]
+        Ti_fixed = coord.controller.preds[96*d]["Ti"].iloc[0]
+        Ti_dev = abs(Ti_mhe - Ti_fixed)
+        if Ti_dev < Ti_min:
+            Ti_min = Ti_dev
+            _d = d
+    print(_d)
+
+    # 
+    ax = value_mhe["Ti_ol"].plot(drawstyle="steps-post")
     ax1 = ax.twinx()
-    coord.controller.params_history.Ai.plot(ax=ax1, color="k")
+    onestep_mhe["slack_act"].plot(drawstyle="steps-post", ax=ax1, color="k")
     plt.show()
 
-    fig, axes = plt.subplots(2,1, sharex=True)
-    for i, (k, v) in enumerate(values.items()):
-        ax = axes[i]
-        v[["Ti_ol", "Prad_ol"]].resample(
-            rule="1D").mean().plot(
-                drawstyle="steps-post",
-                ax=ax
-            )
-        ax.set_title(k)
-        print(k + ":")
-        print(v.sum())
+    """
+    Temperature / slack / comfort evaluation:
+    """
 
-    for ax in axes: 
-        ax.set_ylim(0, 80)
+    pearson_r = stats.pearsonr(
+        value_mhe.Ti_ol.astype(float).values.flatten(), 
+        onestep_mhe.slack_act.astype(float).values.flatten()
+    )
 
+    # 1-step dev.:
+    onestep_dev_mhe = (res_mhe.Ti_model.bfill() - res_mhe.Ti).abs()[:-96]
+    ax = onestep_dev_mhe.plot(drawstyle="steps-post")
+    ax1 = ax.twinx()
+    onestep_mhe["slack_act"].plot(drawstyle="steps-post", ax=ax1, color="k")
+    plt.show()
+
+    _pearson_r = stats.pearsonr(
+        onestep_dev_mhe.astype(float).values.flatten(), 
+        onestep_mhe.slack_act.astype(float).values.flatten()
+    )
+
+    ax = onestep_mhe.slack_pred.plot(drawstyle="steps-post")
+    ax1 = ax.twinx()
+    onestep_mhe["slack_act"].plot(drawstyle="steps-post", ax=ax1, color="k")
+    plt.show()
+
+    __pearson_r = stats.pearsonr(
+        onestep_mhe.slack_pred.astype(float).values.flatten(), 
+        onestep_mhe.slack_act.astype(float).values.flatten()
+    )
+
+    """
+    Power / economic cost evaluation.
+    """
+
+    eco_cost_dev = (onestep_mhe["cost_act"] - onestep_mhe["cost_pred"]).abs()
+    Prad_dev = ((res["Prad"] - res["Prad_model"]).abs()/2500)[:-96]
+
+    # 96-step:
+    ax = value_mhe["Prad_ol"].plot(drawstyle="steps-post")
+    ax1 = ax.twinx()
+    eco_cost_dev.plot(drawstyle="steps-post", ax=ax1, color="k", linestyle="dashed")
+    plt.show()
+
+    pearson_r = stats.pearsonr(
+        value_mhe.Prad_ol.astype(float).values.flatten(), 
+        #eco_cost_dev.astype(float).values.flatten()
+        onestep_mhe["cost_act"].astype(float).values.flatten()
+    )
+
+    # 0-step:
+    ax = Prad_dev.plot(drawstyle="steps-post")
+    ax1 = ax.twinx()
+    eco_cost_dev.plot(drawstyle="steps-post", ax=ax1, color="k", linestyle="dashed")
+    plt.show()
+    
+    _pearson_r = stats.pearsonr(
+        Prad_dev.astype(float).values.flatten(), 
+        #eco_cost_dev.astype(float).values.flatten()
+        onestep_mhe["cost_act"].astype(float).values.flatten()
+    )
+
+    """
+    ax = Prad_dev.plot(drawstyle="steps-post")
+    ax1 = ax.twinx()
+    eco_cost_dev.plot(drawstyle="steps-post", ax=ax1, color="k", linestyle="dashed")
+    plt.show()
+    
+    __pearson_r = stats.pearsonr(
+        onestep_mhe["cost_pred"].astype(float).values.flatten(),
+        onestep_mhe["cost_act"].astype(float).values.flatten()
+    )
+    """
+
+
+    """
+    Total cost:
+
+    How well does the MPC work as a N-step predictor of optimality?
+
+    TODO: calculate N-step rolling cost, both pred and act
+    insert in get_value_function_error, that already iterates
+    through predictions.
+    """
+    ax = onestep_mhe.cost_pred.plot(drawstyle="steps-post")
+    onestep_mhe["cost_act"].plot(drawstyle="steps-post", ax=ax, color="k")
+    ax.legend(["cost_pred", "cost_act"])
     plt.show()
 
     print("tail")

@@ -318,10 +318,13 @@ class Coordinator(object):
                 # temp. re-direct of stdout:
                 #with open(os.devnull, 'w') as fnull:
                     #with redirect_stdout(fnull):
+
+                """
                 self.controller.adaptive_callback(
                     k, 
                     self.env
                 )
+                """
                 action, _ = self.controller.predict(
                     obs, 
                     forecast
@@ -357,8 +360,14 @@ class Coordinator(object):
                 # store control actions (remember causality):
                 self.env._res.loc[time - self.dt, action.index] = action.values
 
-                #if k == 119:
-                #    print(k)
+                if k == 128:
+                    print(k)
+
+                self.controller.adaptive_callback(
+                    k, 
+                    self.env
+                )
+
                 # TODO: filtering optional:
                 obs = self.controller.x0_from_obs(
                     k, 
@@ -366,7 +375,7 @@ class Coordinator(object):
                 )
             # get env result: # TODO: remove this call:
             self.res = self.env.get_results(
-                self.days*24*int(3600/self.dt)*self.dt
+                self.days*24*int(3600/self.dt)*self.dt + self.env.start_time
             )
             
             """
@@ -504,8 +513,23 @@ class Coordinator(object):
         path = os.path.join(_path, filename)
         with open(path, 'rb') as handle:
             obj = pickle.load(handle)
+        obj.res = obj.modify_res_df(
+            obj
+        )
         return obj
-        
-        
-
-        
+    
+    @staticmethod
+    def modify_res_df(obj):
+        res = obj.res.copy()
+        #res = coord.env._res
+        res.index = res.dt_index
+        # causality shift:
+        res["Prad_calc"] = (res.Qrad.diff(1)/1000).shift(-1) 
+        res["Prad_model"] = np.nan
+        res["Ti_model"] = np.nan
+        for i, df in obj.controller.preds.items():
+            #res["Prad_model"][i] = df["Prad"][0]
+            #res["Ti_model"][i+1] = df["Ti"][1]
+            res.loc[res.index[i], "Prad_model"] = df.loc[0, "Prad"]
+            res.loc[res.index[i+1], "Ti_model"] = df.loc[1, "Ti"]
+        return res

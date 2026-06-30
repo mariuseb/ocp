@@ -46,17 +46,13 @@
               },
         "u" : {
                "rad_219": "waterTRVSplitterManifold2Zone_val219_oveValRad",
-               "rad_220": "waterTRVSplitterManifold2Zone_val220_oveValRad",
-               "fan_220": "AHU220_oveFanSup",
-               "fan_219": "AHU219_oveFanSup",
-               "fan_ret_220": "AHU220_oveFanRet",
-               "fan_ret_219": "AHU219_oveFanRet",
                "coo_219": "AHU219_oveCoo",
                "Tsup_set_219": "oveTsupSet219"
             },
-        "y": {
+            "y": {
                 "Ti": "floor5Zone_Shading_reaT219",
                 "Ti_220": "floor5Zone_Shading_reaT220",
+                "fan_219": "AHU219_reaFloSupAir",
                 "Prad": "reaRadHeaPow219",
                 "Qrad": "reaRadHeaEne219",
                 "Pcoo": "reaAHUCoo219",
@@ -70,7 +66,7 @@
             "max_episode_length": 86400,
             "warmup_period": 0,
             "step_period": 900,
-            "start_time": 11145600
+            "start_time": 0
         }
     }
 }

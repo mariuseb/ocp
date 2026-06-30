@@ -22,10 +22,11 @@ if __name__ == "__main__":
     _path = "results_local"
     base = Config()("base_config_scaled.json")
     base["days"] = 31 + 28 + 31 + 30 + 31 
+    base["days"] = 2
     #meta = Config()("config_meta_only_mhe_shading.json")
     #meta = Config()("config_meta_test.json")
-    #meta = Config()("config_meta_only_mhe.json")
-    meta = Config()("config_meta_mhe_baseline_adaptive.json")
+    meta = Config()("config_meta_only_baseline.json")
+    #meta = Config()("config_meta_mhe_baseline.json")
     x0 = np.array([
         295.15, 293.15
     ])

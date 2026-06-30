@@ -15,7 +15,8 @@
             "Ai",
             "alpha_int",
             "n",
-            "Prad_nom"
+            "Prad_nom",
+            "eta_sha"
         ],
         "u": [
             "rad_219"

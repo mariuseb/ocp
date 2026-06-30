@@ -1,8 +1,8 @@
 {
     "mhe_cost_free_rad_hist": {
         "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_shading_eff.json",
-        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
-        "parameters": "params_result/before_failure.csv",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling_sha.json",
+        "parameters": "params_result/2R2C_params_jan_sha_eff.csv",
         "adaptive": true,
         "integrate_replace": {
             "Prad": "Qrad"

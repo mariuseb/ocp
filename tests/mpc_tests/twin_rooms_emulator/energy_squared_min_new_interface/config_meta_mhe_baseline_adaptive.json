@@ -1,0 +1,38 @@
+{
+    "adaptive_cost_free_rad": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
+        "parameters": "params_result/2R2C_start.csv",
+        "adaptive": true,
+        "adaptive_type": "deterministic",
+        "est_config_file": "configs/2R2C_NL_cooling.json",
+        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai", "alpha_int", "n", "Prad_nom"],
+        "adapt_frequency": 96,
+        "integrate_replace": {
+            "Prad": "Qrad"
+        },
+        "adaptive_N": 96,
+        "allow_variable_N": false,
+        "cost": "PriceElectricPowerDynamic"
+    },
+    "mhe_cost_free_rad_hist": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
+        "parameters": "params_result/2R2C_start.csv",
+        "adaptive": true,
+        "integrate_replace": {
+            "Prad": "Qrad"
+        },
+        "adaptive_type": "mhe",
+        "est_config_file": "mhe_configs/2R2C_MHE_NL_cooling.json",
+        "adapt_parameters":  ["Ci", "Ce", "Rie", "Rea", "Ai", "alpha_int", "n", "Prad_nom"],
+        "cost": "PriceElectricPowerHighlyDynamic"
+    },
+    "baseline_cost_hist": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
+        "parameters": "params_result/2R2C_params_jan.csv",
+        "adaptive": false,
+        "cost": "PriceElectricPowerHighlyDynamic"
+    }
+}
