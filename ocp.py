@@ -643,6 +643,7 @@ class OCP(metaclass=ABCMeta):
                             #discrete=discrete
                         )
 
+        """
         opts = {
             'print_time': False,               # Disables CasADi's own timing printout
             'osqp': {
@@ -660,12 +661,14 @@ class OCP(metaclass=ABCMeta):
             self.nlp,
             opts
         )
+        """
+        
         #self.jsolver_ipopt = self.solver.factory('j', self.solver.name_in(), ['jac:f:p'])
             #self.hsolver_ipopt = self.jsolver_ipopt.factory('h', self.solver.name_in(), ['jac:jac_f_p:p'])
             #self.hsolver_ipopt = self.solver.factory('h', self.solver.name_in(), ['hess:f:p:p'])
             #self.sqp_adj = self.solver.reverse(1)
         
-        
+        """
         if init_qp_solver:
             
             opts = dict(
@@ -688,6 +691,7 @@ class OCP(metaclass=ABCMeta):
         self.sqp_solver = ca.nlpsol(
             'solver', 'sqpmethod', self.nlp, opts
         )
+        """
         #self.jsolver_sqp = self.sqp_solver.factory('h', self.sqp_solver.name_in(), ['jac:f:p'])
         #self.sqp_adj = self.sqp_solver.reverse(1)
         #self.sqp_forward = self.sqp_solver.forward(self.nlp["p"].shape[0])

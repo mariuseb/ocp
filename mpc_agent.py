@@ -680,26 +680,10 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             TODO: make more modular.
             Hardcode delta to 500 for now
             """
-            #lbp = 1*p0
-            #ubp = 1*p0
-            if (y_data["Prad"].sum() < 10000) and (y_data["Pcoo"].abs().sum() < 10000):
-            #if (y_data["Prad"].sum() < 10000):
-            #if (y_data["Prad"].sum() < 4000) and (y_data["Pcoo"].abs().sum() < 4000):
-                inds = self.get_RC_inds()
-                lbp[inds] = 1*p0[inds]
-                ubp[inds] = 1*p0[inds]
-                #lbp = ubp = p0
-                #lbp = 1*p0
-                #ubp = 1*p0
-            else:
-                pass
-            Ai_ind = self.mpc.get_ocp_name_and_offset("Ai")[1]
-            Ai = p0[Ai_ind]
-            solar_exc = y_data["phi_s"].sum()*Ai
-            if solar_exc < 10000:
-                #lbp[solar_inds] = ubp[solar_inds] = p0[solar_inds]
-                lbp[Ai_ind] = 1*p0[Ai_ind]
-                ubp[Ai_ind] = 1*p0[Ai_ind]
+            lbp, ubp = self.simple_excitation_logic(
+                lbp, ubp, p0, y_data, delta=10000/96
+            )
+
             """
             eta_sha_ind = self.mpc.get_ocp_name_and_offset("eta_sha")[1]
             Ai, eta_sha = p0[Ai_ind], p0[eta_sha_ind]
@@ -785,7 +769,40 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
                     flush=True, end='')
             print("\033[1A", end="")
             #print("\033[2A", end="")
-        
+    
+    def set_hard_bounds(self, param_guess):
+        param_guess["Prad_nom"]["ub"] = 2E3
+        param_guess["n"]["ub"] = 5
+        param_guess["alpha_int"]["ub"] = 1
+        param_guess["Ai"]["ub"] = 0.2*66.7
+        param_guess["Ai"]["lb"] = 1
+        return param_guess
+
+    def simple_excitation_logic(
+        self, lbp, ubp, p0, y_data, delta=10000/96
+    ):
+        """
+        Check whether re-identification of parameters
+        should take place or not.
+
+        TODO: allow for different deltas for solar
+        and thermal.
+        """
+        if (y_data["Prad"].sum()/self.estimator.N < delta) and \
+             (y_data["Pcoo"].abs().sum()/self.estimator.N  < delta):
+            inds = self.get_RC_inds()
+            lbp[inds] = 1*p0[inds]
+            ubp[inds] = 1*p0[inds]
+        else:
+            pass
+        Ai_ind = self.mpc.get_ocp_name_and_offset("Ai")[1]
+        Ai = p0[Ai_ind]
+        solar_exc = y_data["phi_s"].sum()*Ai
+        if solar_exc < delta:
+            #lbp[solar_inds] = ubp[solar_inds] = p0[solar_inds]
+            lbp[Ai_ind] = 1*p0[Ai_ind]
+            ubp[Ai_ind] = 1*p0[Ai_ind]
+        return lbp, ubp
         
     
  
@@ -806,13 +823,17 @@ class AdaptiveMPCAgent(AbstractAdaptiveAgent):
         super().__init__(*args, **kwargs)
         self.adapt_frequency = adapt_frequency
         self.adapt_N = adapt_N
+        param_guess = self.param_guess_from_array(
+            self.adapt_parameters    
+        )
+        param_guess = self.set_hard_bounds(
+            param_guess
+        )
         self.estimator = Estimation(
             config=config_file,
             N=adapt_N,
             dt=self.dt,
-            param_guess=self.param_guess_from_array(
-                self.adapt_parameters    
-            ),
+            param_guess=param_guess,
             truncate_scaling=False,
             arrival_cost=True,
             **self.get_est_scaling(
@@ -855,14 +876,12 @@ class MheMPCAgent(AbstractAdaptiveAgent):
                 self.adapt_parameters    
             )
         ########## temp. fix ##############:
-        param_guess["Prad_nom"]["ub"] = 2E3
-        param_guess["n"]["ub"] = 5
-        param_guess["alpha_int"]["ub"] = 1
-        param_guess["Ai"]["ub"] = 0.2*66.7
-        param_guess["Ai"]["lb"] = 1
         #param_guess["Ci"]["lb"] = 1E6
         #param_guess["eta_sha"]["lb"] = 1E-2
         #param_guess["eta_sha"]["ub"] = 1
+        param_guess = self.set_hard_bounds(
+            param_guess
+        )
         ###################################
         self.estimator = Estimation(
             config=config_file,

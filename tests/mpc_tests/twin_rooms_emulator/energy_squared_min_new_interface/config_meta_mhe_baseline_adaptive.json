@@ -1,6 +1,6 @@
 {
     "adaptive_cost_free_rad": {
-        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler.json",
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_1E2.json",
         "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
         "parameters": "params_result/2R2C_start.csv",
         "adaptive": true,
@@ -11,12 +11,12 @@
         "integrate_replace": {
             "Prad": "Qrad"
         },
-        "adaptive_N": 96,
+        "adaptive_N": 1344,
         "allow_variable_N": false,
-        "cost": "PriceElectricPowerDynamic"
+        "cost": "PriceElectricPowerHighlyDynamic"
     },
     "mhe_cost_free_rad_hist": {
-        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler.json",
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_1E2.json",
         "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
         "parameters": "params_result/2R2C_start.csv",
         "adaptive": true,
@@ -29,7 +29,7 @@
         "cost": "PriceElectricPowerHighlyDynamic"
     },
     "baseline_cost_hist": {
-        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler.json",
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_1E2.json",
         "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
         "parameters": "params_result/2R2C_params_jan.csv",
         "adaptive": false,

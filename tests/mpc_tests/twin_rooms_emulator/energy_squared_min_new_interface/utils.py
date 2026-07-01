@@ -63,7 +63,10 @@ def quick_plot(coord, start=None, stop=None):
 
 def quick_plot(coord, start=None, stop=None, title=""):
     
-    res = coord.res
+    if not hasattr(coord.res, "Prad_calc"):
+        res = coord.modify_res_obj(coord.res)
+    else:
+        res = coord.res
     if start is None:
         start = res.index[0]
     if stop is None:
@@ -96,7 +99,7 @@ def quick_plot(coord, start=None, stop=None, title=""):
     plt.show(block=False)
     return fig, axes
     
-def get_value_function_error(coord, N=None, slack_weight=1E3):
+def get_value_function_error(coord, N=None, slack_weight=1E2):
     preds = coord.controller.preds
     if N is None:
         N = coord.controller.N
@@ -151,7 +154,7 @@ def get_value_function_error(coord, N=None, slack_weight=1E3):
     return value
 
 
-def get_slack_viol(coord, res, slack_weight=1E3):
+def get_slack_viol(coord, res, slack_weight=1E2):
     lb_vio, ub_vio = coord.get_constraint_violations(res)
     lb_vio = lb_vio.reindex(res.index).fillna(0)
     ub_vio = ub_vio.reindex(res.index).fillna(0)
@@ -161,7 +164,7 @@ def get_slack_viol(coord, res, slack_weight=1E3):
     #lb_vio = slack_weight*(lb_vio/12)**2
     return slack_viol
 
-def one_step_cost_pred(coord, N=None, slack_weight=1E3):
+def one_step_cost_pred(coord, N=None, slack_weight=1E2):
     preds = coord.controller.preds
     if N is None:
         N = coord.controller.N

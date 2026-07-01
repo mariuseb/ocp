@@ -638,6 +638,7 @@ class BoptestGymEnv(gym.Env, BoptestGymABC):
             #u[act] = float(action[i])
             try:
                 u[act] = float(action.iloc[i])    
+                #u[act] = action.iloc[i].astype(float)
                 # Indicate that the input is active
                 u[act.replace('_u','_activate')] = float(1)
             except TypeError: # TODO: print warning. u remains empty

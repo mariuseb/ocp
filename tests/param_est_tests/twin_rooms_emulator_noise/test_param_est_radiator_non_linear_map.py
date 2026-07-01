@@ -44,7 +44,7 @@ if __name__ == "__main__":
     """
     cfg_path = os.path.join("configs", "NL_map_static.json")
     data_path = os.path.join(
-                            #"twin_rooms_emulator_PRBS_new_15min.csv"
+                            #"twin_rooms_emulator_PRBS_15min.csv"
                             "twin_rooms_emulator_normal_op_15min_3_months.csv"
                             )
     y_data, N, dt = prepare_data(
@@ -52,6 +52,8 @@ if __name__ == "__main__":
         rule="15min",
         integrate_inputs=False
     )
+    #y_data = y_data[:672*2]
+    #N = len(y_data)
     #y_data["y3"] = y_data["y3"].shift(-1)
     #y_data["y3"] = y_data["y3"].fillna(0)
     #y_data = y_data[:-1]

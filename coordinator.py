@@ -249,9 +249,75 @@ class Coordinator(object):
             #discomf = lb_vio + ub_vio
             return kpis, lb_vio, ub_vio
 
-    def run_baseline_control(self):
-        """ Run PID for however long. """        
-        obs, _ = self.env.reset()
+    @staticmethod
+    def prepare_prbs(path, sampling_time="15min"):
+        prbs = pd.read_csv(path, sep=",", index_col=0)
+        prbs.index = pd.to_timedelta(prbs.index)
+        prbs.Ph /= 100
+        prbs = prbs.round(0)
+        prbs = prbs.resample(sampling_time).first()
+        # reindex:
+        new_index = pd.timedelta_range(
+            start=prbs.index[0],
+            end=prbs.index[-1].ceil("d"),
+            freq=sampling_time 
+        )
+        prbs = prbs.reindex(
+            new_index,
+            method="nearest"
+        )
+        prbs.index = range(len(prbs.index))
+        # baseline control for sysid:
+        N = len(prbs)
+        return prbs, N
+
+    def run_PRBS(self):
+        env = self.env
+        prbs, N = self.prepare_prbs(
+            "PRBS_modified.csv", sampling_time="15min"
+        )
+        # make sure prbs ends at whole day:
+
+        obs, _ = env.reset()
+        meas = env.measurement_vars+env.predictive_vars
+        acts = env.actions
+        res = pd.DataFrame(
+            columns=acts+meas,
+            index=range(N+1)
+        )
+        res.loc[:] = np.nan
+        res.loc[0, meas] = obs
+        
+        action = pd.DataFrame(index=acts, data=[None]*len(acts))
+
+        for n in range(N):
+            action.loc[acts[0], 0] = prbs.iloc[n].values
+            res.loc[n, acts] = action.values.flatten()
+            obs, reward, terminated, truncated, info = env.step(action)
+            res.loc[n+1, meas] = obs
+            
+        """
+        for n in range(N, N+(2*96)):
+            action = pd.DataFrame(data=[None]).iloc[0]
+            #res.loc[n, acts] = float(action.iloc[0])
+            obs, reward, terminated, truncated, info = env.step(action)
+            res.loc[n+1, meas] = obs
+        """ 
+        # map to OCP-names:
+        res_ocp = res.rename(
+            columns=env.maps.boptest_to_ocp
+        )
+        res_ocp.index *= 900
+        res_ocp.index = pd.to_timedelta(
+            res_ocp.index, unit="s"
+        )
+        return res_ocp
+
+
+    def run_baseline_control(self, reset=True):
+        """ Run PID for however long. """      
+        if reset:  
+            obs, _ = self.env.reset()
         K = int(self.days*24*int(3600/self.dt))
         for k in range(K):
             print("\r", end='')
@@ -396,6 +462,7 @@ class Coordinator(object):
             self.concatenate_filtering_cols()
             try:
                 self.kpis = self.get_custom_kpis()
+                self.boptest_kpis = self.get_kpis()
                 requests.put('{0}/stop/{1}'.format(self.env.url, self.env.testid))
             except KeyError:
                 assert isinstance(self.env, CustomGymEnv)

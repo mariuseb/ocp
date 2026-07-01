@@ -24,12 +24,14 @@ if __name__ == "__main__":
     base = Config()("base_config_scaled.json")
     #base["days"] = 28
     base["days"] = 31 + 28 + 31 + 30 + 31 
+    base["days"] = 28
     #meta = Config()("config_meta_test.json")
     meta = Config()("config_meta_only_mhe.json")
-    meta = Config()("config_meta_mhe_baseline.json")
+    meta = Config()("config_meta_mhe_baseline_adaptive.json")
     #meta = Config()("config_meta_mhe_baseline_shading.json")
     results = {}
     read_coords = {}
+    kpis = {}
     values = {}
     for k, v in meta.items():
         cfg = deepcopy(base)
@@ -41,15 +43,20 @@ if __name__ == "__main__":
         coord = Coordinator.read_result(cfg, _path=_path)
         values[k] = get_value_function_error(coord)
         read_coords[k] = coord
-        #results[k] = quick_plot(coord)
         print(k + " kpis:")
         print(coord.kpis)
+        kpis[k] = coord.kpis
         #plt.show()
 
-    #plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
+    coord_ad = read_coords["adaptive_cost_free_rad"]
+    fig, axes = quick_plot(coord_ad)
 
+    plot_parameter_evolution(coord_ad, "params_result/2R2C_params_jan.csv")
+
+    value_ad = values["adaptive_cost_free_rad"]
     value_mhe = values["mhe_cost_free_rad_hist"]
     value = values["baseline_cost_hist"]
+    res_ad = read_coords["adaptive_cost_free_rad"].res
     res_mhe = read_coords["mhe_cost_free_rad_hist"].res
     res = read_coords["baseline_cost_hist"].res
 
@@ -77,6 +84,29 @@ if __name__ == "__main__":
     onestep_mhe = one_step_cost_pred(coord_mhe)
     coord = read_coords["baseline_cost_hist"]
     onestep = one_step_cost_pred(coord)
+    coord = read_coords["adaptive_cost_free_rad"]
+    onestep_ad = one_step_cost_pred(coord)
+
+    # table 
+    table = pd.DataFrame(
+        index=["tdis [Kh]", "energy [kWh]", "peak power [kW]", "cost [EUR]"],
+    )
+    for k, coord in read_coords.items():
+        table.loc[:, k.split("_")[0]] = coord.kpis
+
+    table.loc["total_obj", "baseline"] = onestep.tot_cost.sum()
+    table.loc["total_obj", "mhe"] = onestep_mhe.tot_cost.sum()
+    table.loc["total_obj", "adaptive"] = onestep_ad.tot_cost.sum()
+
+    table.loc["comp_time", :] = np.nan
+
+    latex_string = table.to_latex(
+        index=True,
+        float_format="{:.2f}".format,
+        caption="Controller comparison",
+        label="tab:performance"
+    )
+    print(latex_string)
 
     # NOTE: find the days with the most different economic cost:
     onestep_daily = onestep.cost_act.resample(rule="1D").mean()
@@ -114,10 +144,15 @@ if __name__ == "__main__":
             _d = d
     print(_d)
 
-    # 
+    # correlation 96-step open-loop loss with realized slack:
     ax = value_mhe["Ti_ol"].plot(drawstyle="steps-post")
     ax1 = ax.twinx()
     onestep_mhe["slack_act"].plot(drawstyle="steps-post", ax=ax1, color="k")
+    plt.show()
+    # stronger: correlation 96-step open-loop loss with rolling, 96-step realized slack
+    ax = value_mhe["Ti_ol"].plot(drawstyle="steps-post")
+    ax1 = ax.twinx()
+    value_mhe["slack_act"].plot(drawstyle="steps-post", ax=ax1, color="k")
     plt.show()
 
     """
@@ -127,6 +162,11 @@ if __name__ == "__main__":
     pearson_r = stats.pearsonr(
         value_mhe.Ti_ol.astype(float).values.flatten(), 
         onestep_mhe.slack_act.astype(float).values.flatten()
+    )
+
+    pearson_r = stats.pearsonr(
+        value_mhe.Ti_ol.astype(float).values.flatten(), 
+        value_mhe.slack_act.astype(float).values.flatten()
     )
 
     # 1-step dev.:

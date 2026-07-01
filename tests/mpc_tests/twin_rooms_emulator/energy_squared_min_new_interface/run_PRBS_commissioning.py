@@ -21,38 +21,30 @@ if __name__ == "__main__":
     
     _path = "results_local"
     base = Config()("base_config_scaled.json")
-    base["days"] = 31 + 28 + 31 + 30 + 31 
-    base["days"] = 28
+    #base["days"] = 31 + 28 + 31 + 30 + 31 
+    base["days"] = 14
     #meta = Config()("config_meta_only_mhe_shading.json")
     #meta = Config()("config_meta_test.json")
-    #meta = Config()("config_meta_only_mhe.json")
-    meta = Config()("config_meta_mhe_baseline_adaptive.json")
+    meta = Config()("config_meta_only_mhe.json")
+    #meta = Config()("config_meta_mhe_baseline_adaptive.json")
     x0 = np.array([
         295.15, 293.15
     ])
-    cfgs = {}
-    for i, (k, v) in enumerate(meta.items()):
-        print("###################################")
-        print(
-            "Running %s, %s out of %s" %
-            (k, str(i+1), str(len(meta)))
-        )
-        print("###################################")
-        cfg = deepcopy(base)
-        # fill missing:z
-        for _k, _v in v.items():
-            if _k != "cost":
-                cfg["controller"][_k] = _v
-        cfg["environment"]["config"]["maps"]["r"]["cost"] = v["cost"]
-        cfgs[k] = cfg
-        coord = Coordinator(
-            cfg
-        )
-        # deploy control:
-        coord.run(x0=x0)
-        coord.write_result(_path=_path)   
-        #quick_plot(coord)
-        #pprint(cfg)
+    v = meta["mhe_cost_free_rad_hist"]
+    cfg = deepcopy(base)
+    cfg["control"] = "PRBS"
+    for _k, _v in v.items():
+        if _k != "cost":
+            cfg["controller"][_k] = _v
+    cfg["environment"]["config"]["maps"]["r"]["cost"] = v["cost"]
+    coord = Coordinator(
+        cfg
+    )
+    # deploy control:
+    res = coord.run_PRBS()
+    coord.run_baseline_control(reset=False)
+    kpis = coord.get_custom_kpis()
+    coord.write_result(_path=_path)   
     print("tail")
     plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
     """
