@@ -23,6 +23,7 @@ if __name__ == "__main__":
     base = Config()("base_config_scaled.json")
     base["days"] = 31 + 28 + 31 + 30 + 31 
     base["days"] = 28
+    base["days"] = 365
     #meta = Config()("config_meta_only_mhe_shading.json")
     #meta = Config()("config_meta_test.json")
     #meta = Config()("config_meta_only_mhe.json")
@@ -54,7 +55,7 @@ if __name__ == "__main__":
         #quick_plot(coord)
         #pprint(cfg)
     print("tail")
-    plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
+    #plot_parameter_evolution(coord, "params_result/2R2C_params_jan.csv")
     """
     read_coords = {}
     for k, v in cfgs.items():

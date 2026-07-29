@@ -462,7 +462,7 @@ class Coordinator(object):
             self.concatenate_filtering_cols()
             try:
                 self.kpis = self.get_custom_kpis()
-                self.boptest_kpis = self.get_kpis()
+                self.boptest_kpis = self.env.get_kpis()
                 requests.put('{0}/stop/{1}'.format(self.env.url, self.env.testid))
             except KeyError:
                 assert isinstance(self.env, CustomGymEnv)
