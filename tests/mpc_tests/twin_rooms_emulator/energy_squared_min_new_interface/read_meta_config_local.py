@@ -24,7 +24,17 @@ if __name__ == "__main__":
     base = Config()("base_config_scaled.json")
     #base["days"] = 28
     base["days"] = 31 + 28 + 31 + 30 + 31 
-    base["days"] = 28
+    base["days"] = 365
+    #base["days"] = 2
+    stop_day = 182
+
+    starts = {
+        "adaptive_cost_free_rad": pd.Timedelta(days=14),
+        "baseline": pd.Timedelta(days=8),
+        "mhe": pd.Timedelta(days=1)
+    }
+
+    stop = pd.Timedelta(days=stop_day)
     #meta = Config()("config_meta_test.json")
     meta = Config()("config_meta_only_mhe.json")
     meta = Config()("config_meta_mhe_baseline_adaptive.json")
@@ -41,17 +51,18 @@ if __name__ == "__main__":
         cfg["environment"]["config"]["maps"]["r"]["cost"] = v["cost"]
 
         coord = Coordinator.read_result(cfg, _path=_path)
-        values[k] = get_value_function_error(coord)
+        values[k] = get_value_function_error(coord, stop=stop)
         read_coords[k] = coord
+        #kpis[k] = coord.kpis
+        kpis[k] = coord.get_custom_kpis(stop=stop)
         print(k + " kpis:")
-        print(coord.kpis)
-        kpis[k] = coord.kpis
+        print(kpis[k])
         #plt.show()
 
     coord_ad = read_coords["adaptive_cost_free_rad"]
-    fig, axes = quick_plot(coord_ad)
+    #fig, axes = quick_plot(coord_ad)
 
-    plot_parameter_evolution(coord_ad, "params_result/2R2C_params_jan.csv")
+    #plot_parameter_evolution(coord_ad, "params_result/2R2C_params_jan.csv")
 
     value_ad = values["adaptive_cost_free_rad"]
     value_mhe = values["mhe_cost_free_rad_hist"]
@@ -81,18 +92,19 @@ if __name__ == "__main__":
     """
 
     coord_mhe = read_coords["mhe_cost_free_rad_hist"]
-    onestep_mhe = one_step_cost_pred(coord_mhe)
+    onestep_mhe = one_step_cost_pred(coord_mhe, stop=stop)
     coord = read_coords["baseline_cost_hist"]
-    onestep = one_step_cost_pred(coord)
+    onestep = one_step_cost_pred(coord, stop=stop)
     coord = read_coords["adaptive_cost_free_rad"]
-    onestep_ad = one_step_cost_pred(coord)
+    onestep_ad = one_step_cost_pred(coord, stop=stop)
 
     # table 
     table = pd.DataFrame(
         index=["tdis [Kh]", "energy [kWh]", "peak power [kW]", "cost [EUR]"],
     )
     for k, coord in read_coords.items():
-        table.loc[:, k.split("_")[0]] = coord.kpis
+        #table.loc[:, k.split("_")[0]] = coord.kpis
+        table.loc[:, k.split("_")[0]] = kpis[k]
 
     table.loc["total_obj", "baseline"] = onestep.tot_cost.sum()
     table.loc["total_obj", "mhe"] = onestep_mhe.tot_cost.sum()

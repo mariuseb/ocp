@@ -24,6 +24,7 @@ if __name__ == "__main__":
     base["days"] = 31 + 28 + 31 + 30 + 31 
     base["days"] = 28
     base["days"] = 365
+    #base["days"] = 2
     #meta = Config()("config_meta_only_mhe_shading.json")
     #meta = Config()("config_meta_test.json")
     #meta = Config()("config_meta_only_mhe.json")

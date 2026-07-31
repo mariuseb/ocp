@@ -61,6 +61,44 @@ def quick_plot(coord, start=None, stop=None):
     return res
 """
 
+def get_cumulative_devs(df):
+    df["tot_cost"] = df["slack_act"] + \
+    df["cost_act"]
+    #df["tot_pred"] = np.nan
+    df["tot_pred"] = df["slack_pred"] + \
+        df["cost_pred"]
+    # cumulative:
+    df["cost_pred_cum"] = df["cost_pred"].cumsum()
+    df["cost_act_cum"] = df["cost_act"].cumsum()
+    df["cost_delta_cum"] = \
+        df["cost_act_cum"] - \
+            df["cost_pred_cum"]
+
+    df["cost_dev"] = df["cost_act"] - df["cost_pred"]
+    df["cost_dev_abs"] = df["cost_dev"].abs()
+    df["cost_dev_abs_cum"] = df["cost_dev_abs"].cumsum()
+
+    df["slack_pred_cum"] = df["slack_pred"].cumsum()
+    df["slack_act_cum"] = df["slack_act"].cumsum()
+    df["slack_delta_cum"] = \
+        df["slack_act_cum"] - \
+            df["slack_pred_cum"]
+    
+    df["slack_dev"] = df["slack_act"] - df["slack_pred"]
+    df["slack_dev_abs"] = df["slack_dev"].abs()
+    df["slack_dev_abs_cum"] = df["slack_dev_abs"].cumsum()
+    
+    df["tot_pred_cum"] = df["tot_pred"].cumsum()
+    df["tot_cost_cum"] = df["tot_cost"].cumsum()
+    df["tot_delta_cum"] = \
+        df["tot_cost_cum"] - \
+            df["tot_pred_cum"]
+
+    df["tot_dev"] = df["tot_cost"] - df["tot_pred"]
+    df["tot_dev_abs"] = df["tot_dev"].abs()
+    df["tot_dev_abs_cum"] = df["tot_dev_abs"].cumsum()
+    return df
+
 def quick_plot(coord, start=None, stop=None, title=""):
     
     if not hasattr(coord.res, "Prad_calc"):
@@ -99,13 +137,17 @@ def quick_plot(coord, start=None, stop=None, title=""):
     plt.show(block=False)
     return fig, axes
     
-def get_value_function_error(coord, N=None, slack_weight=1E2):
+def get_value_function_error(coord, N=None, slack_weight=1E2, start=None, stop=None):
     preds = coord.controller.preds
     if N is None:
         N = coord.controller.N
     else:
         assert N < coord.controller.N
     res = coord.res.copy()
+    
+    if stop is not None:
+        res = res.loc[:stop]
+
     res["Prad"] = res["Prad"].shift(-1)
     res["Pcoo"] = -res["Pcoo"].shift(-1)
     s_real = get_slack_viol(
@@ -124,7 +166,7 @@ def get_value_function_error(coord, N=None, slack_weight=1E2):
         value.loc[ndx, "Ti_ol"] = mean_squared_error(
             (res["Ti"].loc[ndx:stop_ndx].values - 289.15)/12, 
             (preds[i].loc[:N-1, "Ti"].values - 289.15)/12, 
-        )*1E3
+        )*slack_weight
         # power RMSE, compounded rollout (i.e., open-loop error):
         value.loc[ndx, "Prad_ol"] = mean_squared_error(
             res["Prad"].loc[ndx:stop_ndx].values/2.5E3, 
@@ -149,9 +191,21 @@ def get_value_function_error(coord, N=None, slack_weight=1E2):
              slack_weight*preds[i]["s1"].iloc[1]**2
         # slack realized:
         value.loc[ndx, "slack_act"] = s_real.loc[ndx:stop_ndx].sum()
-
     value["Prad_act"] = res["Prad"][:-N]/2.5E3
-    return value
+
+    if start is not None:
+        value_before_acc = value.copy()
+        value = value.loc[start:]
+
+    value = get_cumulative_devs(
+        value
+    )
+    #onestep = onestep.fillna(0)
+    #onestep.index = onestep.index.to_pydatetime()
+    value.index = pd.to_datetime("2024-01-01") + value.index
+    value_before_acc.index = pd.to_datetime("2024-01-01") + value_before_acc.index
+    #return onestep[:-1].astype(float)
+    return value.astype(float), value_before_acc.astype(float)
 
 
 def get_slack_viol(coord, res, slack_weight=1E2):
@@ -164,13 +218,18 @@ def get_slack_viol(coord, res, slack_weight=1E2):
     #lb_vio = slack_weight*(lb_vio/12)**2
     return slack_viol
 
-def one_step_cost_pred(coord, N=None, slack_weight=1E2):
+def one_step_cost_pred(coord, N=None, slack_weight=1E2, start=None, stop=None):
     preds = coord.controller.preds
     if N is None:
         N = coord.controller.N
     else:
         assert N < coord.controller.N
+    
     res = coord.res.copy()
+
+    if stop is not None:
+        res = res.loc[:stop]
+
     res["Prad"] = res["Prad"].shift(-1)
     res["Pcoo"] = -res["Pcoo"].shift(-1)
     onestep = pd.DataFrame(columns=[
@@ -182,7 +241,13 @@ def one_step_cost_pred(coord, N=None, slack_weight=1E2):
     #lb_vio = slack_weight*(lb_vio/12)**2
     #ub_vio = slack_weight*(ub_vio/12)**2
     #res = res[:-N]
-    for i, ndx in enumerate(res[:-N].index):
+    if preds != {}:
+        iter_res = res[:-N]
+    else:
+        iter_res = res
+
+    for i, ndx in enumerate(iter_res.index):
+    #for i, ndx in enumerate(res[:-N].index):
         """
         stop_ndx = res.index[i+N-1]
         onestep.loc[ndx, "Ti_ol"] = mean_squared_error(
@@ -194,28 +259,41 @@ def one_step_cost_pred(coord, N=None, slack_weight=1E2):
             preds[i].loc[:N-1, "Prad"].values/1E3, 
         )
         """
-        pred = preds[i]
-        next_ndx = res.index[i+1]
-        # Calculate 0-step predicted energy cost:
-        onestep.loc[ndx, "cost_pred"] = (
-            pred["Prad"].iloc[0]/2500 + pred["coo_219"].iloc[0]/2500
-        )*res["cost"].iloc[0]
+        try:
+            pred = preds[i]
+            next_ndx = res.index[i+1]
+            # Calculate 0-step predicted energy cost:
+            onestep.loc[ndx, "cost_pred"] = (
+                pred["Prad"].iloc[0]/2500 + pred["coo_219"].iloc[0]/2500
+            )*res["cost"].iloc[0]
+            # Calculate 1-step predicted slack term:
+            onestep.loc[next_ndx, "slack_pred"] = \
+                slack_weight*pred["s1"].iloc[1]**2
+        except KeyError:
+            onestep.loc[ndx, "cost_pred"] = np.nan
+            onestep.loc[ndx, "slack_pred"] = np.nan
         # Calculate 0-step actual energy cost:
         onestep.loc[ndx, "cost_act"] = (
             res.loc[ndx, "Prad"]/2500 + res.loc[ndx, "Pcoo"]/2500
         )*res["cost"].iloc[0]
-        # Calculate 1-step predicted slack term:
-        onestep.loc[next_ndx, "slack_pred"] = \
-             slack_weight*pred["s1"].iloc[1]**2
         #if pred["Prad"].iloc[0] > 100:
         #    print(pred)
     #onestep["Prad_act"] = res["Prad"][:-N]/2500
     onestep["slack_act"] = slack_viol
 
-    onestep = onestep.fillna(0)
-    onestep["tot_cost"] = onestep["slack_act"] + onestep["cost_act"]
-    onestep["tot_pred"] = onestep["slack_pred"] + onestep["cost_pred"]
-    return onestep[:-1].astype(float)
+    if start is not None:
+        onestep_before_acc = onestep.copy()
+        onestep = onestep.loc[start:]
+
+    onestep = get_cumulative_devs(
+        onestep
+    )
+    #onestep = onestep.fillna(0)
+    #onestep.index = onestep.index.to_pydatetime()
+    onestep.index = pd.to_datetime("2024-01-01") + onestep.index
+    onestep_before_acc.index = pd.to_datetime("2024-01-01") + onestep_before_acc.index
+    #return onestep[:-1].astype(float)
+    return onestep.astype(float), onestep_before_acc.astype(float)
 
 def plot_parameter_evolution(coord, PRBS_ref):
     params_PRBS = pd.read_csv(

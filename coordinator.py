@@ -202,7 +202,7 @@ class Coordinator(object):
         return lb_vio, ub_vio
 
 
-    def get_custom_kpis(self, start=None, return_discomf=False):
+    def get_custom_kpis(self, start=None, stop=None, return_discomf=False):
         """
         Get kpis for energy, cost, discomfort, peak.
         
@@ -211,8 +211,12 @@ class Coordinator(object):
         
         TODO: more modular
         """
-        if start is not None:
+        if start is not None and stop is not None:
+            res = self.res.loc[start:stop]
+        elif start is not None:
             res = self.res.loc[start:]
+        elif stop is not None:
+            res = self.res.loc[:stop]
         else:
             res = self.res
         
@@ -311,6 +315,12 @@ class Coordinator(object):
         res_ocp.index = pd.to_timedelta(
             res_ocp.index, unit="s"
         )
+        # get env result:
+        self.res = self.env.get_results(
+            n*self.dt
+        )
+        self.kpis = self.get_custom_kpis()
+        requests.put('{0}/stop/{1}'.format(self.env.url, self.env.testid))
         return res_ocp
 
 
@@ -556,6 +566,10 @@ class Coordinator(object):
         )
         self.res = d.pop("res")
         self.kpis = d.pop("kpis")
+        try:
+            self.boptest_kpis = d.pop("boptest_kpis")
+        except:
+            pass
         # set frames, dicts:
         for k, v in d.items():
             setattr(self.controller, k, v)

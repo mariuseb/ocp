@@ -101,6 +101,9 @@ class AbstractMPCAgent(metaclass=ABCMeta):
             self.actions = pd.DataFrame(
                 columns=[self.mpc.u()]
             )
+        self.comp_time = pd.DataFrame(
+            columns=["control", "est"]
+        )
             
         for n in range(self.mpc.delay):
             self.actions.loc[n,:] = 0
@@ -327,6 +330,9 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         #self.actions.loc[self.i+self.mpc.delay] = np.nan
         #self.actions.loc[self.i+self.mpc.delay, :] = u.values
         self.preds[self.i] = sol
+        self.comp_time.loc[self.i, "control"] = self.mpc.solver.stats()["t_wall_total"]
+        # set this pre-emptively: only override if doing parameter estimation:
+        self.comp_time.loc[self.i, "est"] = 0
         self.i += 1
         return u.round(5), False
     
@@ -728,6 +734,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
 
             # store solution:
             self.ests[k] = sol
+            # store time:
+            self.comp_time.loc[k, "est"] = self.estimator.solver.stats()["t_wall_total"]
             # only change parameters if estimator succeeded:
             if self.estimator.solver.stats()["success"]:
                 self.estimator.p0 = params.values
