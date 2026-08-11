@@ -232,6 +232,37 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         ubu[inds] = Ta_vals[orig_inds].reshape(bounds_shape)
         return lbu, ubu
 
+    def hammerstein_transform(
+        self,
+        u_prime
+    ):
+        if hasattr(self, "H_integrator"):
+            try:
+                u_val = np.array([
+                    self.hstein(
+                        np.array([1])*1E-8,
+                        ca.vertcat(
+                            u_prime[self.H_integrator.dae.z].values,
+                            #forecast[self.mpc.r_names].iloc[0].values,
+                            self.params
+                        )
+                    )]
+                )
+            except RuntimeError: # rootfinder fail:
+                if u_prime["Prad"] > 100:
+                    print("fail")
+                u_val = np.array([0]*self.H_integrator.nz)
+            u = u_prime.copy()
+            new_index = self.H_integrator.dae.u + list(u.index[self.H_integrator.nz:])
+            u.index = new_index
+            u.iloc[:self.H_integrator.nz] = u_val
+            u["coo_219"] = u["coo_219"]/5000
+            #u.loc[:] = u_val
+        # non-decomposed:
+        else:
+            u = u_prime
+        return u
+
     def predict(
         self,
         obs: npt.NDArray[Any],
