@@ -234,17 +234,20 @@ class AbstractMPCAgent(metaclass=ABCMeta):
 
     def hammerstein_transform(
         self,
-        u_prime
+        u_prime,
+        params=None
     ):
         if hasattr(self, "H_integrator"):
             try:
+                if params is None:
+                    params = self.params
                 u_val = np.array([
                     self.hstein(
                         np.array([1])*1E-8,
                         ca.vertcat(
                             u_prime[self.H_integrator.dae.z].values,
                             #forecast[self.mpc.r_names].iloc[0].values,
-                            self.params
+                            params
                         )
                     )]
                 )
