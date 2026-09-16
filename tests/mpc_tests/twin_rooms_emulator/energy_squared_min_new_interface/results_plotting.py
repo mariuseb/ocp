@@ -100,7 +100,7 @@ if __name__ == "__main__":
         columns=read_coords.keys()
     )
     for k, v in read_coords.items():
-        control[k] = v.res["rad_219"]
+        control[k] = v.res["rad_219"].shift(-1)
 
     control.rename(
         columns={
@@ -109,9 +109,14 @@ if __name__ == "__main__":
             "baseline_cost_hist": "fixed"
         },
         inplace=True
-    )   
+    )  
+    day = 0 
+    control_orig = control.loc[
+        pd.Timedelta(days=day):stop
+    ]
+    day = 15
     control = control.loc[
-        pd.Timedelta(days=15):stop
+        pd.Timedelta(days=day):stop
     ]
     
     ### morning operating point:
@@ -134,7 +139,8 @@ if __name__ == "__main__":
     )
     candidates.head(10)
         
-    #control = control.resample(rule="2h").mean()
+    #control = control.resample(rule="6h").mean()
+    #control = control.rolling("15min").mean()
     control = control.rolling("6h").mean()
     diff = pd.DataFrame(
         columns=["cont-per", "per-fixed", "cont-fixed"]
@@ -155,7 +161,7 @@ if __name__ == "__main__":
     ax.set_xlabel(r"Policy spread $d_{\max}$")
     ax.set_ylabel("Count")
     fig.tight_layout()
-    plt.show()
+    plt.show(block=False)
 
     active_diff.describe(
         percentiles=[0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
@@ -176,8 +182,9 @@ if __name__ == "__main__":
     
     exact_time = pd.Timedelta(days=20, hours=11, minutes=45)  
       
-    exact_time = candidates.index[1]
-    int_ndx = coord.res.index.get_loc(exact_time)
+    #exact_time = candidates.index[1]
+    #int_ndx = coord.res.index.get_loc(exact_time)
+    int_ndx = control_orig.index.get_loc(exact_time)
     p = coord.controller.p
     for k, v in read_coords.items():
         print(k)
@@ -409,7 +416,7 @@ if __name__ == "__main__":
             first_u_vals, second_u_vals
         )
 
-        U = us.to_numpy()
+        U = us.to_numpy().T
         U_plot = np.clip(U, 0.0, 1.0)
         
         #fig, ax = plt.subplots(figsize=(6, 5))
@@ -423,11 +430,24 @@ if __name__ == "__main__":
             vmin=0,
             vmax=1
         )
+        """
+        cf = ax.pcolormesh(
+            first_grid,
+            second_grid,
+            U_plot,
+            levels=np.linspace(0, 1, 11),
+            cmap="viridis",
+            vmin=0,
+            vmax=1
+        )
+        """
         values = coord.controller.preds[int_ndx].loc[
             0, [first["name"], second["name"]]
         ].values
         #eps = 0.1
- 
+        print(title + ":")
+        print("Ce: " + str(values[0]))
+        print("Ci: " + str(values[1]))
         ax.scatter(
             values[0],
             values[1],
@@ -450,13 +470,15 @@ if __name__ == "__main__":
         fig.colorbar(cf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
         return us, u_primes
 
-    ces = np.arange(0.1e7,1.1e8,1e7)
-    cis = np.arange(0.1e6,1.1e7,1e6)
+    ces = np.arange(0.1e7,1.1e8,0.5e7)
+    cis = np.arange(0.1e6,1.1e7,0.5e6)
+    #ces = np.arange(2.5e7,3.1e7,0.1e7)
+    #cis = np.arange(2.8e6,3.4e6,0.1e6)
     #ces = np.arange(1e6,1.1e7,1e6)
     #cis = np.arange(1e5,1.1e6,1e5)
     #ces = np.arange(1e8,1e9,1e8)
     #cis = np.arange(1e7,1e8,1e7)
-    Tes = np.arange(293.15,295.35,0.2)
+    Tes = np.arange(292.15,294.35,0.2)
     Tis = np.arange(293.15,295.35,0.2)
 
     #obs = sol[["Ti", "Te"]].iloc[0]
@@ -527,7 +549,7 @@ if __name__ == "__main__":
         us[k], u_primes[k] = sweep_params(
             first, 
             second,
-            v, 
+            v,
             int_ndx,
             axes[i],
             k,
