@@ -20,6 +20,8 @@ from ocp.tests.mpc_tests.twin_rooms_emulator.energy_squared_min_new_interface.ut
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
 from pathlib import Path
+from operating_point_plot import plot_operating_context
+
 rc('mathtext', default='regular')
 
 
@@ -30,12 +32,12 @@ if __name__ == "__main__":
     base = Config()("base_config_scaled.json")
     #base["days"] = 28
     #base["days"] = 31 + 28 + 31 + 30 + 31 
-    base["days"] = 365
-    #base["days"] = 28
+    #base["days"] = 365
+    base["days"] = 28
     #base["days"] = 2
     stop_day = 182
     #stop_day = 14
-    #stop_day = 28
+    stop_day = 28
 
     starts = {
         "adaptive_cost_free_rad": pd.Timedelta(days=8),
@@ -168,7 +170,6 @@ if __name__ == "__main__":
     )
 
     almost_one = active_diff[active_diff > 0.8]
-
     hard_6h = active_diff[active_diff > 0.4]
 
     """
@@ -180,9 +181,12 @@ if __name__ == "__main__":
     plt.show()
     """
     
+    # 'true' difference:
     exact_time = pd.Timedelta(days=20, hours=11, minutes=45)  
-      
-    #exact_time = candidates.index[1]
+    # same as:
+    exact_time = hard_6h.sort_values(ascending=False).index[0] - \
+        pd.Timedelta(hours=2, minutes=30)
+    # morning anticipation:
     #int_ndx = coord.res.index.get_loc(exact_time)
     int_ndx = control_orig.index.get_loc(exact_time)
     p = coord.controller.p
@@ -192,165 +196,62 @@ if __name__ == "__main__":
         print(pred.loc[0, p])
 
 
-    """
-    Try to reconstruct MPC solution at 'exact_time'.
-    """
+    start = pd.Timedelta(days=20)
+    #start = pd.Timedelta(days=48)
+    stop = start + pd.Timedelta(days=3)
     
-    """
-    mpc_agent = read_coords["baseline_cost_hist"].controller
-    params = mpc_agent.preds[int_ndx].loc[0, p]
-    res = read_coords["baseline_cost_hist"].res
-    u_star = res["rad_219"].loc[exact_time]
-    sol = mpc_agent.preds[int_ndx]
-    forecast = mpc_agent.forecasts[int_ndx]
-    lbx, ubx = mpc_agent.get_bounds_from_forecast(forecast)
-    # leave out lbu, ubu for now 
-    # take x0 from existing MPC solution:
-
-    reas = [1e-2,2e-2,params.loc["Rea"],3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,9e-2]
-    ries = [1e-3,2e-3,params.loc["Rie"],3e-3,4e-3,5e-3,6e-3,7e-3,8e-3,9e-3]
-
-    obs = sol[["Ti", "Te"]].iloc[0]
-
-    # keep first 6hs:
-
-    """
-    """
-    us = pd.DataFrame(columns=range(24))
-    new_params = params.copy()
-    for rea in reas:
-    
-        new_params["Rea"] = rea
-        new_sol, u_prime, x0, raw_sol = mpc_agent.mpc.solve(
-            forecast,
-            x0=obs,
-            lbx=lbx,
-            ubx=ubx,
-            params=new_params,
-            codegen=mpc_agent.mpc.codegen,
-            return_raw_sol=True, 
-            qp=False
-        )
-        for i in range(24):
-            u_prime.loc["Prad"] = new_sol.loc[i, "Prad"]
-            u_new = mpc_agent.hammerstein_transform(
-                u_prime
-            )["rad_219"]
-            us.loc[rea, i] = u_new
-
-    new_index = pd.TimedeltaIndex(us.columns*900, unit="s")
-    us.columns = new_index
-    us = us.T
-
-    us_2h = us.resample("2h").mean()
-
-    ax = us.plot(drawstyle="steps-post")
-    ax.set_ylabel("$u^{*}$")
-    ax.set_xlabel("$R_{ea}$")
-    plt.show()
-    us = pd.DataFrame()
-    new_params = params.copy()
-    for rea in reas:
-        new_params["Rea"] = rea
-        for rie in ries:
-            new_params["Rie"] = rie
-            new_sol, u_prime, x0, raw_sol = mpc_agent.mpc.solve(
-                forecast,
-                x0=obs,
-                lbx=lbx,
-                ubx=ubx,
-                params=new_params,
-                codegen=mpc_agent.mpc.codegen,
-                return_raw_sol=True, 
-                qp=False
-            )
-            u_new = mpc_agent.hammerstein_transform(
-                u_prime
-            )["rad_219"]
-            us.loc[rea, rie] = u_new
-
-    Rie_vals = us.columns.to_numpy()
-    Rea_vals = us.index.to_numpy()
-
-    Rie_grid, Rea_grid = np.meshgrid(Rie_vals, Rea_vals)
-
-    U = us.to_numpy()
-    U_plot = np.clip(U, 0.0, 1.0)
-
-    """
-    """
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111, projection="3d")
-
-    surf = ax.plot_surface(
-        Rie_grid,
-        Rea_grid,
-        U,
-        cmap="viridis",
-        edgecolor="none",
-        alpha=0.9
+    operating_point = pd.Timedelta(days=22) + pd.Timedelta(
+        hours=6,
+        minutes=15,
     )
 
-    fig, ax = plt.subplots(figsize=(6, 5))
-
-    cf = ax.contourf(
-        Rie_grid,
-        Rea_grid,
-        U_plot,
-        levels=np.linspace(0, 1, 11),
-        cmap="viridis",
-        vmin=0,
-        vmax=1
+    fig = plot_operating_context(
+        read_coords,
+        start=start,
+        stop=stop,
+        operating_point=exact_time,
+        #operating_point=operating_point,
+        #operating_point=None,
+        sampling="15min",
+        filename="OP22.pdf",
     )
-    
-    fixed_pred = read_coords["baseline_cost_hist"].controller.preds[int_ndx]
-    cont_pred = read_coords["mhe_cost_free_rad_hist"].controller.preds[int_ndx]
-    per_pred = read_coords["adaptive_cost_free_rad"].controller.preds[int_ndx]
-    u_stars = {}
-    for k, v in read_coords.items():
-        u_stars[k] = v.res.loc[exact_time, "rad_219"]
-
-    points = {
-        "Continuous": {
-            "color": "red",
-            "values": 
-                cont_pred.loc[0, ["Rie", "Rea"]].values
-        },
-        "Periodic": {
-            "color": "red",
-            "values": 
-                per_pred.loc[0, ["Rie", "Rea"]].values
-        },
-        "Fixed": {
-            "color": "red",
-            "values": 
-                fixed_pred.loc[0, ["Rie", "Rea"]].values
-        },
-    }
-    eps = 0.1
-    for orig, (k, v) in zip(read_coords.keys(), points.items()):
-        ax.scatter(
-            v["values"][0],
-            v["values"][1],
-            #u_stars[orig] + eps,
-            s=100,
-            marker="o",
-            color="black",
-            label=k
-        )
-
-    ax.set_xlabel(r"$R_{ie}$")
-    ax.set_ylabel(r"$R_{ea}$")
-    #ax.set_zlabel(r"$u^\star_{\mathrm{rad}}$")
-
-    #fig.colorbar(surf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
-    fig.colorbar(cf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
-
-    plt.show()
+    plt.show(block=False)
 
     """
 
-    def sweep_params(first, second, coord, int_ndx, ax, title, state=False):
+    exact_time = candidates.index[2]
+    start = pd.Timedelta(days=35)
+    #start = pd.Timedelta(days=48)
+    stop = start + pd.Timedelta(days=3)
+
+    fig = plot_operating_context(
+        read_coords,
+        start=start,
+        stop=stop,
+        operating_point=exact_time,
+        #operating_point=None,
+        sampling="15min",
+        filename="OP36.pdf",
+    )
+    plt.show(block=False)
+    
+    fig, axess = plt.subplots(6,1, sharex=True)
+    for i, (k, v) in enumerate(read_coords.items()):
+        _start = 2*i
+        _stop = _start + 2
+        axes = axess[_start:_stop]
+        quick_plot(
+            v, start=start, stop=stop, sampling="15min", axes=axes
+        )
+        for ax in axes:
+            ax.set_title(k)
+        #fig.suptitle(k)
+    plt.show(block=False)
+    print("head")
+    
+    """
+    
+    def sweep_params(first, second, coord, int_ndx, ax, title, alpha=1.0, H=1, state=False):
 
         us = pd.DataFrame()
         u_primes = pd.DataFrame()
@@ -358,6 +259,15 @@ if __name__ == "__main__":
         new_params = params.copy()
         first_values = first["values"]
         second_values = second["values"]
+        mpc_agent = coord.controller
+        forecast = mpc_agent.forecasts[int_ndx]
+        lbx, ubx = mpc_agent.get_bounds_from_forecast(forecast)
+        
+        # transform price:
+        mean = mpc_agent.preds[int_ndx]["cost"].mean()
+        new_price = mean + alpha*(mpc_agent.preds[int_ndx]["cost"] - mean)
+        forecast["cost"] = new_price.values
+
         for _first in first_values:
             if not state:
                 new_params[
@@ -387,9 +297,9 @@ if __name__ == "__main__":
                 else:
                     obs = np.array([_second, _first])
                     
-                mpc_agent = coord.controller
-                forecast = mpc_agent.forecasts[int_ndx]
-                lbx, ubx = mpc_agent.get_bounds_from_forecast(forecast)
+                #mpc_agent = coord.controller
+                #forecast = mpc_agent.forecasts[int_ndx]
+                #lbx, ubx = mpc_agent.get_bounds_from_forecast(forecast)
                 new_sol, u_prime, x0, raw_sol = mpc_agent.mpc.solve(
                     forecast,
                     x0=obs,
@@ -402,11 +312,19 @@ if __name__ == "__main__":
                     return_raw_sol=True, 
                     qp=False
                 )
+                """
                 u_new = mpc_agent.hammerstein_transform(
                     u_prime,
                     params=new_params
                 )["rad_219"]
-                us.loc[_first, _second] = u_new
+                """
+                u_new = pd.Series(name="rad_219")
+                for h in range(H):
+                    u_new.loc[k] = mpc_agent.hammerstein_transform(
+                        new_sol[mpc_agent.mpc.u_names].loc[h],
+                        params=new_params
+                    )["rad_219"]
+                us.loc[_first, _second] = u_new.mean()
                 u_primes.loc[_first, _second] = u_prime["Prad"]
 
         first_u_vals = us.index.to_numpy()
@@ -421,11 +339,18 @@ if __name__ == "__main__":
         
         #fig, ax = plt.subplots(figsize=(6, 5))
 
+        levels = [
+            0, 0.025, 0.05, 0.1, 0.2,
+            0.3, 0.4, 0.5, 0.6, 0.7,
+            0.8, 0.9, 1.0
+        ]
+
         cf = ax.contourf(
             first_grid,
             second_grid,
             U_plot,
-            levels=np.linspace(0, 1, 11),
+            #levels=np.linspace(0, 1, 11),
+            levels=levels,
             cmap="viridis",
             vmin=0,
             vmax=1
@@ -470,8 +395,10 @@ if __name__ == "__main__":
         fig.colorbar(cf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
         return us, u_primes
 
-    ces = np.arange(0.1e7,1.1e8,0.5e7)
-    cis = np.arange(0.1e6,1.1e7,0.5e6)
+    ces = np.arange(0.1e7,1.1e8,1e7)
+    cis = np.arange(0.1e6,1.1e7,1e6)
+    reas = [1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,9e-2]
+    ries = [1e-3,2e-3,3e-3,4e-3,5e-3,6e-3,7e-3,8e-3,9e-3]
     #ces = np.arange(2.5e7,3.1e7,0.1e7)
     #cis = np.arange(2.8e6,3.4e6,0.1e6)
     #ces = np.arange(1e6,1.1e7,1e6)
@@ -480,15 +407,52 @@ if __name__ == "__main__":
     #cis = np.arange(1e7,1e8,1e7)
     Tes = np.arange(292.15,294.35,0.2)
     Tis = np.arange(293.15,295.35,0.2)
-
-    #obs = sol[["Ti", "Te"]].iloc[0]
-
-    """
-
     Prads = np.arange(1500,2500,100)
-    ns = np.arange(0.1,1.1,0.1)
-    Prads = np.arange(1000,10000,1000)
-    ns = np.arange(0.1,2.8,0.3)
+    ns = np.arange(0.1,3.1,0.3)
+
+
+    ### Ci, Ce:
+    
+    first = {
+        "values": ces,
+        "name": "Ce",
+        "label": "$C_e$"
+    }
+    second = {
+        "values": cis,
+        "name": "Ci",
+        "label": "$C_i$"
+    }
+    
+    """
+    # Resampling open-loop planning:
+    fig, axes = plt.subplots(5,3, figsize=(18, 5))
+    #_fig, _axes = plt.subplots(1,3, figsize=(18, 5))
+    
+    for i, H in enumerate((1,2,4,8,32)):
+    #for i, H in enumerate((1,8)):
+    
+        us = {}
+        u_primes = {}
+        for j, (k, v) in enumerate(read_coords.items()):
+            # first, second, coord, int_ndx, ax, title
+            us[k], u_primes[k] = sweep_params(
+                first, 
+                second,
+                v, 
+                int_ndx,
+                axes[i,j],
+                k,
+                H=H,
+                state=False
+            )
+    plt.show(block=False)
+    print("tail")
+    
+    """
+    
+    """
+    ### Prad, n:
 
     first = {
         "values": Prads,
@@ -500,19 +464,49 @@ if __name__ == "__main__":
         "name": "n",
         "label": "$n$"
     }
-    obs = sol[["Ti", "Te"]].iloc[0]
+    
+    fig, axes = plt.subplots(7,3, figsize=(18, 5))
+    #for j, alpha in enumerate((0, 1, 2, 4, 8)):
+    #for j, alpha in enumerate((1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8)):
+    #for j, alpha in enumerate((0.0, 0.2, 0.4, 0.6, 0.8, 1.0)):
+    #for j, alpha in enumerate((0.8,0.84,0.88,0.92,0.96,1.0)):
+    for j, alpha in enumerate((0.88,0.89,0.90,0.91,0.92,0.93)):
+    #for j, alpha in enumerate((0.91,0.92,0.93,0.94,0.95,0.96,0.97)):
+    #for j, alpha in enumerate((0.97,0.98,0.99,1.0,1.01,1.02)):
+        #fig, axes = plt.subplots(1,3, figsize=(18, 5))
+        us = {}
+        u_primes = {}
+        for i, (k, v) in enumerate(read_coords.items()):
+            # first, second, coord, int_ndx, ax, title
+            us[k], u_primes[k] = sweep_params(
+                first, 
+                second,
+                v, 
+                int_ndx,
+                axes[j,i],
+                k,
+                alpha=alpha,
+                state=False
+            )
+        alpha_str = str(alpha)
+        axes[j,1].set_title("alpha=" + alpha_str)
+        print("tail")
+    plt.show(block=False)
     """
 
+    ### Rie, Rea:
+
     first = {
-        "values": ces,
-        "name": "Ce",
-        "label": "$C_e$"
+        "values": reas,
+        "name": "Rea",
+        "label": "$R_{ea}$"
     }
     second = {
-        "values": cis,
-        "name": "Ci",
-        "label": "$C_i$"
+        "values": ries,
+        "name": "Rie",
+        "label": "$R_{ie}$"
     }
+    
     fig, axes = plt.subplots(1,3, figsize=(18, 5))
     us = {}
     u_primes = {}
@@ -529,7 +523,9 @@ if __name__ == "__main__":
         )
     plt.show(block=False)
     print("tail")
-    # (Prad, n):
+    
+    
+    ### Ti, Te:
     
     first = {
         "values": Tes,
@@ -558,116 +554,11 @@ if __name__ == "__main__":
     plt.show(block=False)
     print("tail")
     
+    
     u_stars = {}
     for k, v in read_coords.items():
         u_stars[k] = v.res.loc[exact_time + pd.Timedelta(minutes=15), "rad_219"]
-    """
-    
-    Prads = np.arange(1000,10000,1000)
-    ns = np.arange(0.1,2.8,0.3)
-    obs = sol[["Ti", "Te"]].iloc[0]
-    us = pd.DataFrame()
-    new_params = params.copy()
-    for Prad in Prads:
-        new_params["Prad_nom"] = Prad
-        for n in ns:
-            new_params["n"] = n
-            new_sol, u_prime, x0, raw_sol = mpc_agent.mpc.solve(
-                forecast,
-                x0=obs,
-                lbx=lbx,
-                ubx=ubx,
-                params=new_params,
-                codegen=mpc_agent.mpc.codegen,
-                return_raw_sol=True, 
-                qp=False
-            )
-            u_new = mpc_agent.hammerstein_transform(
-                u_prime
-            )["rad_219"]
-            us.loc[Prad, n] = u_new
 
-    Prad_vals = us.columns.to_numpy()
-    n_vals = us.index.to_numpy()
-
-    Prad_grid, n_grid = np.meshgrid(Rie_vals, Rea_vals)
-
-    U = us.to_numpy()
-    U_plot = np.clip(U, 0.0, 1.0)
-    """
-
-    """
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111, projection="3d")
-
-    surf = ax.plot_surface(
-        Rie_grid,
-        Rea_grid,
-        U,
-        cmap="viridis",
-        edgecolor="none",
-        alpha=0.9
-    )
-
-    fig, ax = plt.subplots(figsize=(6, 5))
-
-    cf = ax.contourf(
-        Prad_grid,
-        n_grid,
-        U_plot,
-        levels=np.linspace(0, 1, 11),
-        cmap="viridis",
-        vmin=0,
-        vmax=1
-    )
-    
-    fixed_pred = read_coords["baseline_cost_hist"].controller.preds[int_ndx]
-    cont_pred = read_coords["mhe_cost_free_rad_hist"].controller.preds[int_ndx]
-    per_pred = read_coords["adaptive_cost_free_rad"].controller.preds[int_ndx]
-    u_stars = {}
-    for k, v in read_coords.items():
-        u_stars[k] = v.res.loc[exact_time, "rad_219"]
-
-    points = {
-        "Continuous": {
-            "color": "red",
-            "values": 
-                cont_pred.loc[0, ["Prad", "n"]].values
-        },
-        "Periodic": {
-            "color": "red",
-            "values": 
-                per_pred.loc[0, ["Prad", "n"]].values
-        },
-        "Fixed": {
-            "color": "red",
-            "values": 
-                fixed_pred.loc[0, ["Prad", "n"]].values
-        },
-    }
-    eps = 0.1
-    for orig, (k, v) in zip(read_coords.keys(), points.items()):
-        ax.scatter(
-            v["values"][0],
-            v["values"][1],
-            #u_stars[orig] + eps,
-            s=100,
-            marker="o",
-            color="black",
-            label=k
-        )
-
-    ax.set_xlabel(r"$P_{rad}$")
-    ax.set_ylabel(r"$n$")
-    #ax.set_zlabel(r"$u^\star_{\mathrm{rad}}$")
-
-    #fig.colorbar(surf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
-    fig.colorbar(cf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
-
-    plt.show()
-    """
-
-    
     # equivalence of MPC solution:
     """
     assert (new_sol == sol).all().all()
@@ -677,29 +568,6 @@ if __name__ == "__main__":
     assert (u_star.round(5) == u_new.round(5))
     """
     
-
-
-    start = pd.Timedelta(days=20)
-    #start = pd.Timedelta(days=48)
-    stop = start + pd.Timedelta(days=3)
-    fig, axess = plt.subplots(6,1, sharex=True)
-    for i, (k, v) in enumerate(read_coords.items()):
-        """
-        fig, axes = quick_plot(
-            v, start=start, stop=stop, sampling="1h"
-        )
-        """
-        _start = 2*i
-        _stop = _start + 2
-        axes = axess[_start:_stop]
-        quick_plot(
-            v, start=start, stop=stop, sampling="15min", axes=axes
-        )
-        for ax in axes:
-            ax.set_title(k)
-        #fig.suptitle(k)
-    plt.show(block=False)
-    print("head")
     """
     'Break-even' point w.r.t. n in N.
 
