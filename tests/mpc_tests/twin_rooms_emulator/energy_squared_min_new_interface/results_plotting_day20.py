@@ -158,12 +158,14 @@ if __name__ == "__main__":
     active = control.max(axis=1) > 0.05
     active_diff = diff["max-min"].loc[active]
 
+    """
     fig, ax = plt.subplots(figsize=(5, 3.5))
     ax.hist(active_diff, bins=np.linspace(0, 1, 21))
     ax.set_xlabel(r"Policy spread $d_{\max}$")
     ax.set_ylabel("Count")
     fig.tight_layout()
     plt.show(block=False)
+    """
 
     active_diff.describe(
         percentiles=[0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
@@ -174,6 +176,13 @@ if __name__ == "__main__":
     # need this:
     p = coord.controller.p
 
+    ######################## OP24 #################################
+    
+    exact_time = pd.Timedelta(days=24, hours=7, minutes=15)  
+    int_ndx = control_orig.index.get_loc(exact_time)
+    
+    ###############################################################
+
     """
     fig, axes = plt.subplots(2,1, sharex=True)
     ax = axes[0]
@@ -183,8 +192,10 @@ if __name__ == "__main__":
     plt.show()
     """
     
-    """
+    """ 
     # 'true' difference:
+    ######################## OP20 ################################
+    
     exact_time = pd.Timedelta(days=20, hours=11, minutes=45)  
     # same as:
     exact_time = hard_6h.sort_values(ascending=False).index[0] - \
@@ -197,6 +208,7 @@ if __name__ == "__main__":
         pred = v.controller.preds[int_ndx]
         print(pred.loc[0, p])
 
+    ##############################################################
 
     start = pd.Timedelta(days=20)
     #start = pd.Timedelta(days=48)
@@ -218,10 +230,13 @@ if __name__ == "__main__":
         filename="OP20.pdf",
     )
     plt.show(block=False)
-
+    
     """
-
-    exact_time = candidates.index[1]
+    
+    """
+    ############################# OP36 ###########################
+    
+    exact_time = candidates.index[2]
     int_ndx = control_orig.index.get_loc(exact_time)
     start = pd.Timedelta(days=35)
     #start = pd.Timedelta(days=48)
@@ -238,6 +253,10 @@ if __name__ == "__main__":
     )
     plt.show(block=False)
     
+    #############################################################
+    """
+    
+    
     """
     fig, axess = plt.subplots(6,1, sharex=True)
     for i, (k, v) in enumerate(read_coords.items()):
@@ -252,7 +271,7 @@ if __name__ == "__main__":
         #fig.suptitle(k)
     plt.show(block=False)
     print("head")
-    """ 
+    """
     
     def sweep_params(
         first,
@@ -548,8 +567,8 @@ if __name__ == "__main__":
     )
 
     # test version:
-    Prads = [1500, 2000]
-    ns = [1,2]
+    #Prads = [1500, 2000]
+    #ns = [1,2]
     
     #cis = [1e6,1e7]
     #ces = [1e7,1e8]
@@ -557,8 +576,8 @@ if __name__ == "__main__":
     #Tis = [290,295]
     #Tes = [290,295]
     
-    reas = [1e-2,2e-2]
-    ries = [1e-3,2e-3]
+    #reas = [1e-2,2e-2]
+    #ries = [1e-3,2e-3]
     
     ###
     
@@ -576,6 +595,9 @@ if __name__ == "__main__":
     
     """
     H-analysis:
+    """
+    
+    
     """
     first = {
         "values": reas,
@@ -623,6 +645,8 @@ if __name__ == "__main__":
             )
     plt.show(block=False)
     print("tail")
+    """
+    
     
     
     all_params ={
@@ -677,6 +701,108 @@ if __name__ == "__main__":
         }
     }
     
+    
+    """
+    alpha-analysis:
+    """
+    
+    
+    Prads = np.arange(1500,2600,100)
+    ns = np.arange(0.1,3.1,0.3)
+    
+    ### Prad, n:
+    first = {
+        "values": Prads,
+        "name": "Prad_nom",
+        "label": "$P_{rad}$"
+    }
+    second = {
+        "values": ns,
+        "name": "n",
+        "label": "$n$"
+    }
+    
+
+    for _, (_k, pairs) in enumerate(all_params.items()):
+        
+        fig, axes = plt.subplots(10,3, figsize=(18, 5))
+        
+        #for j, alpha in enumerate((0, 1, 2, 4, 8)):
+        #for j, alpha in enumerate((1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8)):
+        #for j, alpha in enumerate((0.0, 0.2, 0.4, 0.6, 0.8, 1.0)):
+        #for j, alpha in enumerate((0.8,0.84,0.88,0.92,0.96,1.0)):
+        #for j, alpha in enumerate((0.88,0.89,0.90,0.91,0.92,0.93)):
+        #for j, alpha in enumerate((0.91,0.92,0.93,0.94,0.95,0.96,0.97)):
+        #for j, alpha in enumerate((0.97,0.98,0.99,1.0,1.01,1.02)):
+        #for j, alpha in enumerate((0, 0.5, 1, 1.5, 2, 2.5, 3)):
+        
+        #for j, alpha in enumerate((0, 1, 2, 4, 8, 16, 32)):
+        for j, alpha in enumerate((2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5)):
+            #fig, axes = plt.subplots(1,3, figsize=(18, 5))
+            us = {}
+            u_primes = {}
+            for i, (k, v) in enumerate(read_coords.items()):
+                # first, second, coord, int_ndx, ax, title
+                
+                if _k == "Ts":
+                    state = True
+                else:
+                    state = False
+                
+                us[k], u_primes[k], cf = sweep_params(
+                    #first, 
+                    #second,
+                    pairs["first"], 
+                    pairs["second"],
+                    v, 
+                    int_ndx,
+                    axes[j,i],
+                    k,
+                    alpha=alpha,
+                    state=state
+                )
+            alpha_str = str(alpha)
+            axes[j,1].set_title("alpha=" + alpha_str)
+            print("tail")
+        plt.show(block=False)
+    
+    
+    ### go through all 24-hour horizons starting at 07:15
+    res = read_coords["baseline_cost_hist"].res
+    start = pd.Timedelta(days=0, hours=7, minutes=15)
+    cost_stats = pd.DataFrame(columns=["peak_diff", "point", "stddev", "eprsd", "_mean"])
+    for day in range(159):
+        stop = start + pd.Timedelta(hours=23, minutes=45)
+        cost = res["cost"].loc[start:stop]
+        cost_stats.loc[day, ["peak_diff"]] = (cost.max() - cost.min())
+        cost_stats.loc[day, ["point"]] = cost.loc[start]
+        cost_stats.loc[day, ["stddev"]] = cost.std()
+        cost_stats.loc[day, ["_mean"]] = cost.mean()
+        cost_stats.loc[day, ["eprsd"]] = cost.std()/cost.mean()
+        start = start + pd.Timedelta(hours=24)
+    
+    alphas = [1, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6]
+
+    op = cost_stats.loc[24]
+
+    for alpha in alphas:
+        pp = alpha * op.peak_diff
+        sd = alpha * op.stddev
+
+        pp_pct = (cost_stats.peak_diff <= pp).mean()
+        sd_pct = (cost_stats.stddev <= sd).mean()
+
+        print(alpha, pp, pp_pct, sd, sd_pct)
+    
+    eprsd_24 = cost_stats.loc[24, "stddev"] / cost_stats.loc[24, "_mean"]
+
+    for alpha in alphas:
+        eprsd = alpha * eprsd_24
+        percentile = (cost_stats.eprsd <= eprsd).mean()
+        print(alpha, eprsd, percentile)
+    
+    
+    # controller-parameter sensitivity at nominal points:
     fig, axes = plt.subplots(4,3, figsize=(10, 6.5))
     us = {}
     u_primes = {}
@@ -805,8 +931,8 @@ if __name__ == "__main__":
     
     plt.show(block=False)
     fig.savefig(
-        #"PS20.pdf",
-        "PS36.pdf",
+        "PS20.pdf",
+        #"PS36.pdf",
         bbox_inches="tight",
     )
     print("tail")
