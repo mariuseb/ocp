@@ -38,7 +38,7 @@
         "config": {   
             "url": "http://docker-web-1:8000",
             "testcase": "twin_rooms_emulator_validation",
-            "actions": ["oveHea_u"],
+            "actions": ["oveHea_u", "floor5Zone_Shading_oveRadGai219_u", "floor5Zone_Shading_oveConGai219_u", "floor5Zone_Shading_oveConLat219_u"],
             "observations": {
                             "floor5Zone_Shading_reaT219_y": [270,330],
                             "reaRadTSup219_y": [270,330]
@@ -56,12 +56,11 @@
                "Ti_ub": "UpperSetp[1]"
               },
         "u" : {
-               "rad_219": "oveHea",
-               "rad_220": "waterTRVSplitterManifold2Zone_val220_oveValRad",
-               "fan_220": "AHU220_oveFanSup",
-               "fan_219": "AHU219_oveFanSup",
-               "fan_ret_220": "AHU220_oveFanRet",
-               "fan_ret_219": "AHU219_oveFanRet"
+               "phi_h": "oveHea",
+               "int_gai_rad": "floor5Zone_Shading_oveRadGai219",
+               "int_gai_con": "floor5Zone_Shading_oveConGai219",
+               "int_gai_lat": "floor5Zone_Shading_oveConLat219",
+               "rad_220": "waterTRVSplitterManifold2Zone_val220_oveValRad"
             },
         "y": {
                 "Ti": "floor5Zone_Shading_reaT219",
@@ -72,13 +71,7 @@
                 "rad_flo_acc": "reaRadAccFlo219",
                 "Tret": "reaRadTRet219",
                 "Tsup": "reaRadTSup219",
-                "phi_int": "floor5Zone_Shading_reaAuxPow",
-                "Tsup_air": "AHU219_reaTSupAir",
-                "Tret_air": "AHU219_reaTRetAir",
-                "fan_220_y": "AHU220_reaFloSupAir",
-                "fan_219_y": "AHU219_reaFloSupAir",
-                "fan_ret_220_y": "AHU220_reaFloExtAir",
-                "fan_ret_219_y": "AHU219_reaFloExtAir"
+                "phi_int": "floor5Zone_Shading_reaAuxPow"
             }
         },
             "random_start_time": false,
