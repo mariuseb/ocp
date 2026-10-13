@@ -38,7 +38,7 @@
         "config": {   
             "url": "http://docker-web-1:8000",
             "testcase": "twin_rooms_emulator_validation",
-            "actions": ["oveHea_u", "floor5Zone_Shading_oveRadGai219_u", "floor5Zone_Shading_oveConGai219_u", "floor5Zone_Shading_oveConLat219_u"],
+            "actions": ["oveHea_u", "floor5Zone_Shading_oveRadGai219_u", "floor5Zone_Shading_oveConGai219_u", "floor5Zone_Shading_oveConLat219_u", "floor5Zone_Shading_oveGCorr_u", "floor5Zone_Shading_oveCorrTemp_u"],
             "observations": {
                             "floor5Zone_Shading_reaT219_y": [270,330],
                             "reaRadTSup219_y": [270,330]
@@ -57,6 +57,8 @@
               },
         "u" : {
                "phi_h": "oveHea",
+               "g_corr": "floor5Zone_Shading_oveGCorr",
+               "corr_temp": "floor5Zone_Shading_oveCorrTemp",
                "int_gai_rad": "floor5Zone_Shading_oveRadGai219",
                "int_gai_con": "floor5Zone_Shading_oveConGai219",
                "int_gai_lat": "floor5Zone_Shading_oveConLat219",

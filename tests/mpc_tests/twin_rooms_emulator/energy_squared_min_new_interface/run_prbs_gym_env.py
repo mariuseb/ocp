@@ -30,6 +30,7 @@ from ocp.ocp import ParamGuess
 from ocp.coordinator import Coordinator
 from ocp.config import Config, traverse_dict 
 #import l4casadi as l4c
+from sklearn.metrics import root_mean_squared_error
 from ocp.tests.utils import Bounds, get_boptest_config_path, get_opt_config_path, get_data_path
     
 def prepare_prbs(path, sampling_time="15min"):
@@ -99,11 +100,13 @@ if __name__ == "__main__":
     ove["int_gai_rad"] = (0.25*ove["phi_int_219_plugs"] + 0.4*ove["phi_int_219_lig"])/66.7
     ove["int_gai_con"] = (0.75*ove["phi_int_219_plugs"] + 0.6*ove["phi_int_219_lig"])/66.7
     ove["int_gai_lat"] = 0
+    ove["g_corr"] = ove["presence"]*100
+    ove["corr_temp"] = ove["T_207"] + 273.15
     #ove["int_gai_rad"] = 0
     #ove["int_gai_con"] = 0
 
     for n in range(N):
-        hea = ove[["phi_h", "int_gai_rad", "int_gai_con", "int_gai_lat"]].iloc[n]
+        hea = ove[["phi_h", "int_gai_rad", "int_gai_con", "int_gai_lat", "g_corr", "corr_temp"]].iloc[n]
         #hea = ove[["phi_h", "int_gai_lat"]].iloc[n]
         #hea = ove[["phi_h"]].iloc[n]
         #res.loc[n, acts] = hea.rename(env.maps.u)
