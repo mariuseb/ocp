@@ -1,20 +1,40 @@
 from utils import get_metno_data, get_stations, get_observations, read_data, sanitize_index
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 
 client_id = "791c9c51-f86a-4367-b0ce-bc13717c0f70"
 client_secret = "8769d748-d052-43cb-b3cf-c6ba1331c077"
 
 #data = read_data("data_20036")
-room = sanitize_index(
-  pd.read_csv("room_20036.csv", index_col=0)
-).drop(columns=["dt_index", "clean_date", "datetime_naive", "Excel Time"])
-ahu = sanitize_index(
-  pd.read_csv("AHU_20036.csv", index_col=0)
-).drop(columns=["dt_index", "clean_date", "datetime_naive", "Excel Time"])
+
 """
-Name map, model to MET API
+Prepare data for sysid. 
+
+Data is directly downloaded from AutoLogic BMS
 """
+
+rooms = ["20001", "20043", "20059", "20066", "20036"]
+AHUs = {
+  "360.001": ["20059", "20066", "20001"], 
+  "360.004": ["20043"]
+}
+
+room_dfs = {}
+for room in rooms:
+  df = read_data(
+    os.path.join("data_voldslokka", room)
+  )
+  room_dfs[room] = df
+
+
+fig, axes = plt.subplots(5,1, sharex=True)
+for room, ax in zip(room_dfs.keys(), axes):
+  ax.set_title(room)
+  room_dfs[room]["Klimagulvventil"].plot(ax=ax, drawstyle="steps-post")
+plt.show()
+
+
 
 data = pd.concat([room, ahu], axis=1)
 
