@@ -1,0 +1,16 @@
+{
+    "NS3031_alpha": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_1E2.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
+        "parameters": "params_result/2R2C_start.csv",
+        "adaptive": false,
+        "cost": "PriceElectricPowerHighlyDynamic"
+    },
+    "NS3031": {
+        "mpc_config_file": "mpc_configs/2R2C_MPC_cooling_cost_simpler_1E2.json",
+        "hammerstein_config_file": "mpc_configs/2R2C_MPC_NL_cooling.json",
+        "parameters": "params_result/2R2C_start.csv",
+        "adaptive": false,
+        "cost": "PriceElectricPowerDynamic"
+    }
+}

@@ -13,7 +13,7 @@ from ocp.config import Config, traverse_dict
 from copy import deepcopy
 from pprint import pprint
 from scipy import stats
-from utils import quick_plot, get_value_function_error, plot_parameter_evolution, one_step_cost_pred
+from utils import quick_plot, get_value_function_error_all_N, plot_parameter_evolution, one_step_cost_pred
 rc('mathtext', default='regular')
 
 
@@ -25,19 +25,27 @@ if __name__ == "__main__":
     #base["days"] = 28
     base["days"] = 31 + 28 + 31 + 30 + 31 
     base["days"] = 365
+    base["days"] = 28
     #base["days"] = 2
     stop_day = 182
 
     starts = {
         "adaptive_cost_free_rad": pd.Timedelta(days=14),
-        "baseline": pd.Timedelta(days=8),
-        "mhe": pd.Timedelta(days=1)
+        "onetime_cost_free_rad": pd.Timedelta(days=14),
+        "baseline_cost_hist": pd.Timedelta(days=8),
+        "mhe_cost_free_rad_hist": pd.Timedelta(days=1),
+        "NS3031": pd.Timedelta(days=1),
+        "adaptive_cost_free_rad_alpha": pd.Timedelta(days=14),
+        "onetime_cost_free_rad_alpha": pd.Timedelta(days=14),
+        "baseline_cost_hist_alpha": pd.Timedelta(days=8),
+        "mhe_cost_free_rad_hist_alpha": pd.Timedelta(days=1),
+        "NS3031_alpha": pd.Timedelta(days=1)
     }
 
     stop = pd.Timedelta(days=stop_day)
     #meta = Config()("config_meta_test.json")
     meta = Config()("config_meta_only_mhe.json")
-    meta = Config()("config_meta_mhe_baseline_adaptive.json")
+    meta = Config()("config_meta_mhe_baseline_adaptive_onetime_fixed.json")
     #meta = Config()("config_meta_mhe_baseline_shading.json")
     results = {}
     read_coords = {}
@@ -51,10 +59,19 @@ if __name__ == "__main__":
         cfg["environment"]["config"]["maps"]["r"]["cost"] = v["cost"]
 
         coord = Coordinator.read_result(cfg, _path=_path)
-        values[k] = get_value_function_error(coord, stop=stop)
+        #start = starts[k]
+        start = pd.Timedelta(days=14)
+        values[k] = get_value_function_error_all_N(
+            coord,
+            start=start,
+            stop=stop
+        )
         read_coords[k] = coord
         #kpis[k] = coord.kpis
-        kpis[k] = coord.get_custom_kpis(stop=stop)
+        kpis[k] = coord.get_custom_kpis(
+            start=start,
+            stop=stop
+        )
         print(k + " kpis:")
         print(kpis[k])
         #plt.show()

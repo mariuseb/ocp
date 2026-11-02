@@ -1,0 +1,84 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (1 - sha_219*eta_sha)*Ai*(phi_s/Ci) + alpha_int*phi_int*(1/Ci) + Prad/Ci - Pcoo/Ci + fan_219*1000*(Tsup_set_219 - Ti)/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "alg": {
+            "Prad": "Prad - Prad_nom*regNonZeroPower(rad_219, n, 1E-6)"
+        },
+        "w": {
+            "v1": "Ti - y1",
+            "v3": "Prad - y3"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "alpha_int",
+            "n",
+            "Prad_nom",
+            "eta_sha"
+        ],
+        "u": [
+            "rad_219",
+            "Pcoo",
+            "Tsup_set_219",
+            "sha_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "phi_int",
+            "fan_219",
+            "cost"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "z": [
+            "Prad"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y3", "Prad"]
+        ]
+    },
+        "bounds": {
+        "x": {
+            "lbx": [280,280],
+            "ubx": [340,340]
+        },
+        "z": {
+            "lbz": [-1E3],
+            "ubz": [1E4]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0] + dot(v3, v3)@R[1,1] + Q[0,0]*dot(s1, s1) + Q[1,1]*dot(s2, s2)",
+    "N": 96,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "print_time": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.print_level": 0,
+        "ipopt.max_iter": 30000,
+        "ipopt.ma57_automatic_scaling" : "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

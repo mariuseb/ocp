@@ -1,0 +1,58 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "sde": {
+            "all" :"Q"
+        },
+        "theta":
+         [
+            "Q"
+         ],
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "alpha_int",
+            "n",
+            "Prad_nom"
+        ],
+        "u": [
+            "Prad"
+        ],
+        "r": [
+            "Ta",
+            "phi_s"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "x0": [293.15, 293.15],
+    "z0": [],
+    "Q": [[1,0], [0,1]],
+    "R": [[1]],
+    "P0": [
+        [1e-16, 0],
+        [0, 1e-16]
+    ]
+}

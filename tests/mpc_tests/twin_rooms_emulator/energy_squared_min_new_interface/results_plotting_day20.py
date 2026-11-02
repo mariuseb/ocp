@@ -178,7 +178,8 @@ if __name__ == "__main__":
 
     ######################## OP24 #################################
     
-    exact_time = pd.Timedelta(days=24, hours=7, minutes=15)  
+    #exact_time = pd.Timedelta(days=24, hours=7, minutes=15)  
+    exact_time = pd.Timedelta(days=39, hours=7, minutes=15)  
     int_ndx = control_orig.index.get_loc(exact_time)
     
     ###############################################################
@@ -301,7 +302,7 @@ if __name__ == "__main__":
         mean = mpc_agent.preds[int_ndx]["cost"].mean()
         new_price = mean + alpha*(mpc_agent.preds[int_ndx]["cost"] - mean)
         forecast["cost"] = new_price.values
-
+        sols = {}
         for _first in first_values:
             if not state:
                 new_params[
@@ -353,13 +354,21 @@ if __name__ == "__main__":
                 )["rad_219"]
                 """
                 u_new = pd.Series(name="rad_219")
+                #u_new = pd.DataF(name="rad_219")
                 for h in range(H):
-                    u_new.loc[k] = mpc_agent.hammerstein_transform(
+                    u_new.loc[h] = mpc_agent.hammerstein_transform(
                         new_sol[mpc_agent.mpc.u_names].loc[h],
                         params=new_params
                     )["rad_219"]
-                us.loc[_first, _second] = u_new.mean()
+                    #print(u_new)
+
+                # TODO: if doing aggregated analyses:
+                #us.loc[_first, _second] = u_new.mean()
+                us.loc[_first, _second] = u_new.loc[0]
                 u_primes.loc[_first, _second] = u_prime["Prad"]
+                # store:
+                key = first["name"] + "=" + str(_first.round(2)) + "," + second["name"] + "=" + str(_second.round(2))
+                sols[key] = (new_sol, raw_sol, u_new)
 
         first_u_vals = us.index.to_numpy()
         second_u_vals = us.columns.to_numpy()
@@ -442,7 +451,7 @@ if __name__ == "__main__":
 
         #fig.colorbar(surf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
         #fig.colorbar(cf, ax=ax, label=r"$u^\star_{\mathrm{rad}}$")
-        return us, u_primes, cf
+        return us, u_primes, cf, sols, new_price
 
     ces = np.arange(0.1e7,1.1e8,1e7)
     cis = np.arange(0.1e6,1.1e7,1e6)
@@ -607,7 +616,7 @@ if __name__ == "__main__":
     second = {
         "values": ries,
         "name": "Rie",
-        "label": "$R_{ie$"
+        "label": "$R_{ie}$"
     }
     
     first = {
@@ -648,9 +657,36 @@ if __name__ == "__main__":
     """
     
     
+    """
+    "Rs": {
+        "first": {
+            "values": reas,
+            "name": "Rea",
+            "label": "$R_{ea} \\, [10^{-2} \\, \\mathrm{K/W}]$"                
+        },
+        "second": {
+            "values": ries,
+            "name": "Rie",
+            "label": "$R_{ie} \\, [10^{-3} \\, \\mathrm{K/W}]$"                    
+        }
+    },
+    "Ts": {
+        "first": {
+            "values": Tes,
+            "name": "Te",
+            "label": "$T_e \\, [^\\circ\\mathrm{C}]$"
+        },
+        "second": {
+            "values": Tis,
+            "name": "Ti",
+            "label": "$T_i \\, [^\\circ\\mathrm{C}]$"
+        }
+    },
+    """
     
     all_params ={
         "Cs": {
+            "alphas": [0,1,2,3,4,5],
             "first": {
                 "values": ces,
                 "name": "Ce",
@@ -663,31 +699,8 @@ if __name__ == "__main__":
                 "label": "$C_i \\, [10^{7} \\, \\mathrm{J/K}]$"
             }
         },
-        "Rs": {
-            "first": {
-                "values": reas,
-                "name": "Rea",
-                "label": "$R_{ea} \\, [10^{-2} \\, \\mathrm{K/W}]$"                
-            },
-            "second": {
-                "values": ries,
-                "name": "Rie",
-                "label": "$R_{ie} \\, [10^{-3} \\, \\mathrm{K/W}]$"                    
-            }
-        },
-        "Ts": {
-            "first": {
-                "values": Tes,
-                "name": "Te",
-                "label": "$T_e \\, [^\\circ\\mathrm{C}]$"
-            },
-            "second": {
-                "values": Tis,
-                "name": "Ti",
-                "label": "$T_i \\, [^\\circ\\mathrm{C}]$"
-            }
-        },
         "Prad": {
+            "alphas": [3.5, 3.6, 3.7, 3.8, 3.9, 4.0],
             "first": {
                 "values": Prads,
                 "name": "Prad_nom",
@@ -722,10 +735,16 @@ if __name__ == "__main__":
         "label": "$n$"
     }
     
+    sols = {}
+    prices = {}
+
+    for i, (k, v) in enumerate(read_coords.items()):
+        sols[k] = {}
 
     for _, (_k, pairs) in enumerate(all_params.items()):
         
-        fig, axes = plt.subplots(10,3, figsize=(18, 5))
+        #fig, axes = plt.subplots(10,3, figsize=(18, 5))
+        fig, axes = plt.subplots(6,3, figsize=(18, 5))
         
         #for j, alpha in enumerate((0, 1, 2, 4, 8)):
         #for j, alpha in enumerate((1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8)):
@@ -737,19 +756,20 @@ if __name__ == "__main__":
         #for j, alpha in enumerate((0, 0.5, 1, 1.5, 2, 2.5, 3)):
         
         #for j, alpha in enumerate((0, 1, 2, 4, 8, 16, 32)):
-        for j, alpha in enumerate((2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5)):
+        #for j, alpha in enumerate((2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5)):
+        alphas = pairs["alphas"]
+        for j, alpha in enumerate(alphas):
             #fig, axes = plt.subplots(1,3, figsize=(18, 5))
             us = {}
             u_primes = {}
             for i, (k, v) in enumerate(read_coords.items()):
                 # first, second, coord, int_ndx, ax, title
-                
                 if _k == "Ts":
                     state = True
                 else:
                     state = False
                 
-                us[k], u_primes[k], cf = sweep_params(
+                us[k], u_primes[k], cf, _sols, price = sweep_params(
                     #first, 
                     #second,
                     pairs["first"], 
@@ -758,15 +778,46 @@ if __name__ == "__main__":
                     int_ndx,
                     axes[j,i],
                     k,
+                    H=2,
                     alpha=alpha,
                     state=state
                 )
+                prices[alpha] = price
+                sols[k][_k + "alpha=" + str(alpha)] = _sols
+
             alpha_str = str(alpha)
             axes[j,1].set_title("alpha=" + alpha_str)
             print("tail")
         plt.show(block=False)
     
-    
+
+    keys = ["Pradalpha=3.5", "Pradalpha=3.6"]
+    strat = "adaptive_cost_free_rad"
+    _sols = sols[strat]
+    for key in keys:
+        for k, sol_pair in _sols[key].items():
+            #u0 = round(sol_pair[0]["Prad"].iloc[0], 2)
+            #u1 = round(sol_pair[0]["Prad"].iloc[1], 2)
+            u0 = round(sol_pair[2].iloc[0], 2)
+            u1 = round(sol_pair[2].iloc[1], 2)
+            print(key +  ", " + k + ": " "objective=" +  str(sol_pair[1]["f"]) + ", u0=" + str(u0) +  ", u1=" + str(u1))
+
+    start = exact_time - pd.Timedelta(minutes=30)
+    stop = exact_time + pd.Timedelta(minutes=30)
+
+    fig, axes = plt.subplots(11,1)
+    for i, (key, price) in enumerate(prices.items()):
+        #print(str(key) +  ":")
+        #print(price.iloc[0:2])
+        price.plot(ax=axes[i], drawstyle="steps-post")
+    plt.show()
+
+    fig, ax = plt.subplots(1,1)
+    for key in keys:
+        for k, sol_pair in _sols[key].items():
+            sol_pair[0]["Prad"].plot(ax=ax, drawstyle="steps-post")
+    plt.show()
+
     ### go through all 24-hour horizons starting at 07:15
     res = read_coords["baseline_cost_hist"].res
     start = pd.Timedelta(days=0, hours=7, minutes=15)

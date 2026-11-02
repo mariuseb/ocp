@@ -208,12 +208,12 @@ def get_value_function_error_all_N(
     """
 
     # Step-specific squared prediction errors.
-    temperature_error = np.empty((n_times, N_max - 1))
-    temperature_error_near_bound = np.empty((n_times, N_max - 1))
-    power_error = np.empty((n_times, N_max - 1))
-    wrong_side_error = np.empty((n_times, N_max - 1))
-    temperature_error_l1 = np.empty((n_times, N_max - 1))
-    power_error_l1 = np.empty((n_times, N_max - 1))
+    temperature_error = np.zeros((n_times, N_max - 1))
+    temperature_error_near_bound = np.zeros((n_times, N_max - 1))
+    power_error = np.zeros((n_times, N_max - 1))
+    wrong_side_error = np.zeros((n_times, N_max - 1))
+    temperature_error_l1 = np.zeros((n_times, N_max - 1))
+    power_error_l1 = np.zeros((n_times, N_max - 1))
     temperature_error_near_bound = np.full(
         (n_times, N_max - 1),
         np.nan
@@ -254,7 +254,7 @@ def get_value_function_error_all_N(
     #temperature_error = np.empty((n_times, N_max))
     #power_error = np.empty((n_times, N_max))
 
-    for i in range(n_times-1):
+    for i in range(n_times):
         pred = preds[i]
 
         # Power applies over stages 0, ..., N_max - 2.
@@ -304,8 +304,8 @@ def get_value_function_error_all_N(
         cost_dev[i] = np.abs(cost_act - cost_pred)
         cost_preds[i] = cost_pred
         cost_acts[i] = cost_act
-        slack_preds[i+1] = slack_pred
-        slack_dev[i+1] = np.abs(slack_act - slack_pred)
+        slack_preds[i] = slack_pred
+        slack_dev[i] = np.abs(slack_act - slack_pred)
         """
         total_dev[i] = np.abs(
             (cost_pred + slack_pred)

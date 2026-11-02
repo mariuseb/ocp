@@ -1,0 +1,63 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad/Ci - coo_219/Ci + fan_219*1000*(Tsup_set_219 - Ti)/Ci",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)"
+        },
+        "w": {
+            "v1": "Ti - y1"
+        },
+        "sde": {
+            "all" :"Q"
+        },
+        "theta":
+         [
+            "Q"
+         ],
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "alpha_int",
+            "n",
+            "Prad_nom"
+        ],
+        "u": [
+            "Prad",
+            "coo_219",
+            "Tsup_set_219"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "phi_int",
+            "fan_219",
+            "cost"
+        ],
+        "x": [
+            "Ti",
+            "Te"
+        ],
+        "y": [
+            ["y1", "Ti"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "x0": [293.15, 293.15],
+    "z0": [],
+    "Q": [[1,0], [0,1]],
+    "R": [[1]],
+    "P0": [
+        [1e-16, 0],
+        [0, 1e-16]
+    ]
+}

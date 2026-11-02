@@ -364,9 +364,11 @@ class AbstractMPCAgent(metaclass=ABCMeta):
         #self.actions.loc[self.i+self.mpc.delay] = np.nan
         #self.actions.loc[self.i+self.mpc.delay, :] = u.values
         self.preds[self.i] = sol
-        self.comp_time.loc[self.i, "control"] = self.mpc.solver.stats()["t_wall_total"]
+        # TODO: measure:
+        #self.comp_time.loc[self.i, "control"] = self.mpc.solver.stats()["t_wall_total"]
         # set this pre-emptively: only override if doing parameter estimation:
-        self.comp_time.loc[self.i, "est"] = 0
+        # TODO: measure:
+        #self.comp_time.loc[self.i, "est"] = 0
         self.i += 1
         return u.round(5), False
     
@@ -769,7 +771,8 @@ class AbstractAdaptiveAgent(AbstractMPCAgent, metaclass=ABCMeta):
             # store solution:
             self.ests[k] = sol
             # store time:
-            self.comp_time.loc[k, "est"] = self.estimator.solver.stats()["t_wall_total"]
+            # TODO: measure:
+            #self.comp_time.loc[k, "est"] = self.estimator.solver.stats()["t_wall_total"]
             # only change parameters if estimator succeeded:
             if self.estimator.solver.stats()["success"]:
                 self.estimator.p0 = params.values
@@ -898,7 +901,23 @@ class AdaptiveMPCAgent(AbstractAdaptiveAgent):
             k: int
         ):
         return ((k+1) % self.adapt_frequency == 0) and ((k+1) >= self.adapt_N)
-            
+
+class OnetimeAdaptiveMPCAgent(AdaptiveMPCAgent):
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        self.identified = False
+        super().__init__(*args, **kwargs)
+    
+
+    def re_estimation_clause(self, k: int) -> bool:
+        if not self.identified and (k + 1) >= self.adapt_N:
+            self.identified = True
+            return True
+        return False
+
             
 class MheMPCAgent(AbstractAdaptiveAgent):
     def __init__(

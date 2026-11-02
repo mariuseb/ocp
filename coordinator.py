@@ -5,7 +5,7 @@ import os
 from ocp.config import Config
 from ocp.customGymEnv import CustomGymEnv, DataEnv
 from ocp.boptestGymEnv import BoptestGymEnv
-from ocp.mpc_agent import MPCAgent, AdaptiveMPCAgent, MheMPCAgent, PredictiveAdaptiveAgent
+from ocp.mpc_agent import MPCAgent, AdaptiveMPCAgent, MheMPCAgent, PredictiveAdaptiveAgent, OnetimeAdaptiveMPCAgent
 from typing import Union, Sequence
 from ocp.config import convert_json_to_native_types, get_json_hash
 from copy import deepcopy
@@ -125,6 +125,13 @@ class Coordinator(object):
             else:
                 if config["adaptive_type"] == "deterministic":
                     return AdaptiveMPCAgent(
+                        *args,
+                        **kwargs,
+                        adapt_frequency=config["adapt_frequency"],
+                        adapt_N=config["adaptive_N"]
+                    )
+                elif config["adaptive_type"] == "onetime":
+                    return OnetimeAdaptiveMPCAgent(
                         *args,
                         **kwargs,
                         adapt_frequency=config["adapt_frequency"],

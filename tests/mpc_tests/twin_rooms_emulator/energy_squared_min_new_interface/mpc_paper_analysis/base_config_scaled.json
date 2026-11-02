@@ -1,0 +1,73 @@
+{
+    "days": 28,
+    "sampling_time": "15min",
+    "controller": {
+        "timezone": "Europe/Oslo",
+        "temp_conv": 273.15,
+        "sampling_time": "15min",
+        "scaling": {
+            "x_nom": 12,
+            "x_nom_b": 289.15,
+            "u_nom": [2.5E3,2.5E3,12],
+            "u_nom_b": [0,0,289.15],
+            "r_nom": [12,2.5E3,2.5E3,1,1],
+            "r_nom_b": [289.15,0,0,0,0],
+            "z_nom": [2.5E3],
+            "z_nom_b": [0],
+            "y_nom": [12,2.5E3],
+            "y_nom_b": [289.15,0],
+            "slack": true
+        },
+        "filter_config_file": "ekf_configs/2R2C_EKF_cooling.json",
+        "filter_type": "ocp.kalman.ExtendedKalmanFilter",
+        "filter_obs": true
+    },
+    "environment": {
+        "type": "BoptestGymEnv",
+        "config": {   
+            "url": "http://docker-web-1:8000",
+            "testcase": "twin_rooms_emulator",
+            "actions": ["waterTRVSplitterManifold2Zone_val219_oveValRad_u", "AHU219_oveCoo_u", "oveTsupSet219_u"],
+            "observations": {
+                            "floor5Zone_Shading_reaT219_y": [270,330]
+
+                            }, 
+            "predictive_period": 0, 
+            "regressive_period": null, 
+      "maps" : {
+        "r" : {"Ta": "TDryBul",
+               "phi_s": "HGloHor",
+               "cost": "PriceElectricPowerHighlyDynamic",
+               "dh_cost": "PriceDistrictHeatingPower",
+               "phi_int": "reaAuxPow",
+               "dh_emissions": "EmissionsDistrictHeatingPower",
+               "Ti_lb": "LowerSetp[1]",
+               "Ti_ub": "UpperSetp[1]"
+              },
+        "u" : {
+               "rad_219": "waterTRVSplitterManifold2Zone_val219_oveValRad",
+               "coo_219": "AHU219_oveCoo",
+               "Tsup_set_219": "oveTsupSet219"
+            },
+            "y": {
+                "Ti": "floor5Zone_Shading_reaT219",
+                "Ti_220": "floor5Zone_Shading_reaT220",
+                "fan_219": "AHU219_reaFloSupAir",
+                "Prad": "reaRadHeaPow219",
+                "Qrad": "reaRadHeaEne219",
+                "Pcoo": "reaAHUCoo219",
+                "Pvent": "reaVenHeaPow219",
+                "rad_flo": "reaRadFlow219",
+                "Tret": "reaRadTRet219",
+                "Tsup": "reaRadTSup219"
+            }
+        },
+            "random_start_time": false,
+            "max_episode_length": 86400,
+            "warmup_period": 0,
+            "step_period": 900,
+            "start_time": 0
+        }
+    }
+}
+

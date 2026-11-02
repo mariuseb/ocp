@@ -1,0 +1,86 @@
+{
+    "model": {
+        "ode": {
+            "Ti": "(Te - Ti)/(Rie*Ci) + (Ta - Ti)/(Ria*Ci) + Ai*(phi_s/Ci) + rho_int*((int_con+int_lat+int_rad)/Ci) + (1/Ci)*ahu_reaFloSupAir*cp_air*(oveTSupSet - Ti)",
+            "Te": "(Ti - Te)/(Rie*Ce) + (Ta - Te)/(Rea*Ce)",
+            "CO2_in": "n_air*c*(CO2_out - CO2_in) + c_occ*n_occ"
+        },
+        "alg": {
+            "ahu_reaTRetAir": "(ahu_reaTRetAir - Ti)",
+            "Pvent": "Pvent*eta_hex1 - (m_flow_air_nom_sup*regNonZeroPower(ahu_pump_sup, n, 0.01)*cp_air*(oveTSupSet-ahu_reaTHeaRec))",
+            "ahu_reaTHeaRec": "(Ta + (ahu_reaTRetAir - Ta)*eta_hex2 - ahu_reaTHeaRec)",
+            "ahu_reaFloSupAir": "ahu_reaFloSupAir - m_flow_air_nom_sup*regNonZeroPower(ahu_pump_sup, n, 0.01)",
+            "ahu_reaFloExtAir": "ahu_reaFloExtAir - m_flow_air_nom_ret*regNonZeroPower(ahu_pump_ret, n2, 0.01)",
+            "n_air": "n_air - (n_mech + n_nat + n_inf)",
+            "n_mech": "n_mech - ahu_reaFloExtAir",
+            "n_nat": "n_nat - m_flow_air_nom_sup*regNonZeroPower(ahu_pump_sup-ahu_pump_ret, n, 0.01)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ria",
+            "rho_int",
+            "Ci",
+            "Ce",
+            "Ai",
+            "m_flow_air_nom_sup",
+            "m_flow_air_nom_ret",
+            "cp_air",
+            "eta_hex1",
+            "eta_hex2",
+            "n",
+            "n2",
+            "c",
+            "CO2_out",
+            "n_inf",
+            "c_occ"
+        ],
+        "z": [
+            "ahu_reaTRetAir",
+            "Pvent",
+            "ahu_reaTHeaRec",
+            "ahu_reaFloSupAir", 
+            "ahu_reaFloExtAir", 
+            "n_air",
+            "n_mech",
+            "n_nat"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "int_con",
+            "int_lat",
+            "int_rad",
+            "n_occ"
+        ],
+        "u": [
+             "ahu_pump_ret",
+             "ahu_pump_sup",
+             "oveTSupSet"
+        ],
+        "x": [
+            "Ti",
+            "Te",
+            "CO2_in"
+        ],
+        "y": [
+            ["y1", "Ti"],
+            ["y2", "Pvent"],
+            ["y3", "ahu_reaTHeaRec"],
+            ["y4", "ahu_reaFloSupAir"],
+            ["y5", "ahu_reaFloExtAir"],
+            ["y6", "ahu_reaTRetAir"],
+            ["y7", "CO2_in"]
+        ]
+    },
+    "dt": 900,
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        },
+    "Q": [1,1,1,1,1,1,1,1,1,1,1],
+    "R": [1,1,1,1,1,1,1]
+}

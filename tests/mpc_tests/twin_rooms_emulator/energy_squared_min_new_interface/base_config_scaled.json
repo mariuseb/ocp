@@ -1,5 +1,5 @@
 {
-    "days": 7,
+    "days": 28,
     "sampling_time": "15min",
     "controller": {
         "timezone": "Europe/Oslo",
@@ -37,7 +37,7 @@
       "maps" : {
         "r" : {"Ta": "TDryBul",
                "phi_s": "HGloHor",
-               "cost": "PriceElectricPowerDynamic",
+               "cost": "PriceElectricPowerHighlyDynamic",
                "dh_cost": "PriceDistrictHeatingPower",
                "phi_int": "reaAuxPow",
                "dh_emissions": "EmissionsDistrictHeatingPower",
