@@ -1,0 +1,63 @@
+{
+    "model": {
+        "ode": {
+            "u_val": "a11*u_val + a12*x2 + b1*u_val_set",
+            "x2": "a21*u_val + a22*x2 + b2*u_val_set"
+        },
+        "w": {
+            "v1": "model_out - y1"
+        },
+        "alg": {
+            "model_out": "model_out - m_flow_nom*(u_val + d*u_val_set)"
+        },
+        "p": [
+            "a11",
+            "a12",
+            "a21", 
+            "a22",
+            "b1",
+            "b2",
+            "c1",
+            "c2",
+            "d",
+            "m_flow_nom"
+        ],
+        "z": [
+            "model_out"
+          ],
+        "u": [
+            "u_val_set"
+        ],
+        "x": [
+          "u_val",
+          "x2"
+        ],
+        "y": [
+            ["y1", "c1*u_val"]
+        ]
+    },
+    "bounds": {
+        "z": {
+            "lbz": [-0.01],
+            "ubz": [0.01]
+        }
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma86",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

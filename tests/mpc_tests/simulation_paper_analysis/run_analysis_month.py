@@ -25,10 +25,14 @@ BASE_CONFIG = 'base_config_scaled.json'
 #META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_alpha.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_reduced_no_alpha.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_no_alpha.json'
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial.json'
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial_alpha.json'
+META_CONFIG = "config_meta_mhe_baseline_adaptive_fixed_constant.json"
 RESULTS_DIR = 'results_revised'
-OUTPUT_DIR = Path('paper_figures/year_test')
-START = pd.Timedelta(days=15)
+OUTPUT_DIR = Path('paper_figures/year')
+START = pd.Timedelta(days=22)
 STOP = pd.Timedelta(days=28)
+STOP = pd.Timedelta(days=292)
 STOP = pd.Timedelta(days=365)
 
 # Explicit event chosen for the paper; change only after inspecting ranking.
@@ -41,24 +45,95 @@ events = {
         {
             "morning_interior": 
                 {
-                    "require_interior": True,
+                    #"require_interior": True,
+                    #"require_all_interior": False,
+                    "require_interior": False,
+                    "require_all_interior": True,
                     "morning": (6,8),
-                    "index": 11,
+                    #"index": 11,
+                    "index": 0,
                     "window": "15min"
                 },
             "anticipatory":
                 {
                     "require_interior": False,
+                    "require_all_interior": False,
                     "morning": (1,5),
                     "index": 0,
                     "window": "6h"
                     #"days": range(15,28)
                 },
+            "unrestricted":
+                {
+                    "require_all_interior": True,
+                    "require_interior": False,
+                    "morning": None,
+                    "index": 0,
+                    "window": "15min"
+                    #"days": range(15,28)
+                },
         },
     "alpha": {
-
-    }
-
+            "morning_interior": 
+                {
+                    #"require_interior": True,
+                    #"require_all_interior": False,
+                    "require_interior": False,
+                    "require_all_interior": True,
+                    "morning": (6,8),
+                    #"index": 11,
+                    "index": 0,
+                    "window": "15min"
+                },
+            "anticipatory":
+                {
+                    "require_interior": False,
+                    "require_all_interior": False,
+                    "morning": (1,5),
+                    "index": 0,
+                    "window": "6h"
+                    #"days": range(15,28)
+                },
+            "unrestricted":
+                {
+                    "require_all_interior": True,
+                    "require_interior": False,
+                    "morning": None,
+                    "index": 0,
+                    "window": "15min"
+                    #"days": range(15,28)
+                },
+        },
+    "const": {
+            "morning_interior": 
+                {
+                    "require_interior": False,
+                    #"require_all_interior": False,
+                    "require_all_interior": True,
+                    #"index": 11,
+                    "morning": None,
+                    "index": -1,
+                    "window": "15min"
+                },
+            "anticipatory":
+                {
+                    "require_interior": False,
+                    "require_all_interior": False,
+                    "morning": (1,5),
+                    "index": 0,
+                    "window": "6h"
+                    #"days": range(15,28)
+                },
+            "unrestricted":
+                {
+                    "require_all_interior": True,
+                    "require_interior": False,
+                    "morning": None,
+                    "index": 0,
+                    "window": "15min"
+                    #"days": range(15,28)
+                },
+        },
 }
 
 def save(fig, filename):
@@ -82,67 +157,127 @@ def main():
         print(k + " kpis:")
         print(kpis[k])
     
-    prices = coords['mhe_cost_free_rad_hist'].res.cost.copy()
-    alpha = "non_alpha"
+    #alpha = "alpha"
+    #suffix = "" if alpha != "alpha" else "_alpha"
+    suffix = "_const"
+
+    prices = coords['mhe_cost_free_rad_hist' + suffix].res.cost.copy()
+
+    alpha = "const"
+    _events = events[alpha]
+
     point = "anticipatory"
+    point = "unrestricted"
     point = "morning_interior"
-    kwargs = {
-        "require_interior": events[alpha][point]["require_interior"],
-        "morning": events[alpha][point]["morning"],
-        "window": events[alpha][point]["window"],
-        #"days": events[alpha][point]["days"]
-    }
-    index = events[alpha][point]["index"]
 
-    ranking = rank_policy_spread(
-        controls, 
-        START,
-        STOP,
-        #window='6h',
-        prices=prices,
-        **kwargs
-    )
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    ranking.head(50).to_csv(OUTPUT_DIR / 'event_candidates.csv')
-    #"header=['policy_spread'])
+    points = list(_events.keys())
 
-    policy_fig = policy_spread_distribution(controls, START, STOP)
-    save(policy_fig, 'policy_spread.pdf')
+    for point in points:
+        kwargs = {
+            "require_interior": events[alpha][point]["require_interior"],
+            "require_all_interior": events[alpha][point]["require_all_interior"],
+            "morning": events[alpha][point]["morning"],
+            "window": events[alpha][point]["window"],
+            #"days": events[alpha][point]["days"]
+        }
+        index = events[alpha][point]["index"]
 
-    EVENT = Event(
-        point,
-        ranking.index[index],
-        ''
-    )
+        ranking = rank_policy_spread(
+            #controls, 
+            controls[[
+                "mhe_cost_free_rad_hist" + suffix,
+                "baseline_cost_hist" + suffix,
+                "adaptive_cost_free_rad" + suffix
+            ]],
+            START,
+            STOP,
+            #window='6h',
+            prices=prices,
+            **kwargs
+        )
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        ranking.head(50).to_csv(OUTPUT_DIR / 'event_candidates.csv')
+        #"header=['policy_spread'])
 
-    window_start = max(START, EVENT.time - pd.Timedelta(days=1))
-    window_stop = min(STOP, EVENT.time + pd.Timedelta(days=2))
-    op_fig, axes = operating_context(
-        coords, window_start, window_stop, EVENT.time
-    )
-    save(op_fig, 'operating_context.pdf')
+        policy_fig = policy_spread_distribution(controls, START, STOP)
+        save(policy_fig, 'policy_spread.pdf')
 
-    fig, res = sensitivity_figure(
-        coords,
-        EVENT.time,
-        grid_points=10,
-        progress_every=10,
-        strict=False
-    )
-    save(
-        fig,
-        "sensitivity.pdf",
-    )
-    (OUTPUT_DIR / 'selection.json').write_text(json.dumps({
-        'base_config': BASE_CONFIG, 'meta_config': META_CONFIG,
-        'results_dir': RESULTS_DIR,
-        'evaluation_start': str(START), 'evaluation_stop': str(STOP),
-        'event_name': EVENT.name, 'event_time': str(EVENT.time),
-        'event_reason': EVENT.reason,
-        'ranking_criterion': '6h trailing rolling mean, max-min across controllers, active > 0.05',
-        'controller_names': list(coords),
-    }, indent=2))
-    print(f'Figures and selection metadata written to {OUTPUT_DIR}')
+        EVENT = Event(
+            point,
+            ranking.index[index],
+            ''
+        )
+
+        window_start = max(START, EVENT.time - pd.Timedelta(days=1))
+        window_stop = min(STOP, EVENT.time + pd.Timedelta(days=2))
+        op_fig, axes = operating_context(
+            coords, window_start, window_stop, EVENT.time
+        )
+        save(
+            op_fig, 
+            alpha + "_" + point + "_operating_context.pdf"
+        )
+        alpha_bool = (alpha == "alpha")
+
+        CONTROLLER_ORDER = (
+            'mhe_cost_free_rad_hist', 'adaptive_cost_free_rad',
+            'onetime_cost_free_rad', 'baseline_cost_hist', 'NS3031',
+        )
+        LABELS = {
+            'mhe_cost_free_rad_hist': 'Continuous',
+            'adaptive_cost_free_rad': 'Periodic',
+            'onetime_cost_free_rad': 'One-time',
+            'baseline_cost_hist': 'Fixed',
+            'NS3031': 'Initial guess',
+        }
+        CONTROLLER_ORDER = (
+            'mhe_cost_free_rad_hist', 'adaptive_cost_free_rad',
+            'baseline_cost_hist', 'NS3031',
+        )
+        LABELS = {
+            'mhe_cost_free_rad_hist': 'Continuous',
+            'adaptive_cost_free_rad': 'Periodic',
+            'baseline_cost_hist': 'Fixed',
+            'NS3031': 'Initial guess',
+        }
+
+        #if alpha_bool:
+        CONTROLLER_ORDER = [controller + suffix for controller in CONTROLLER_ORDER]
+        _LABELS = {}
+        for k, v in LABELS.items():
+            _LABELS[k + suffix] = v
+        LABELS = _LABELS
+
+        fig, res = sensitivity_figure(
+            coords,
+            EVENT.time,
+            grid_points=10,
+            progress_every=10,
+            strict=False,
+            controller_order=CONTROLLER_ORDER,
+            labels=LABELS,
+            alpha=alpha_bool
+        )
+        """
+        save(
+            fig,
+            "sensitivity.pdf",
+        )
+        """
+        save(
+            fig,
+            alpha + "_" + point + "_sensitivity.pdf"
+        )
+        (OUTPUT_DIR / 'selection.json').write_text(json.dumps({
+            'base_config': BASE_CONFIG, 'meta_config': META_CONFIG,
+            'results_dir': RESULTS_DIR,
+            'evaluation_start': str(START), 'evaluation_stop': str(STOP),
+            'event_name': EVENT.name, 'event_time': str(EVENT.time),
+            'event_reason': EVENT.reason,
+            'ranking_criterion': '6h trailing rolling mean, max-min across controllers, active > 0.05',
+            'controller_names': list(coords),
+        }, indent=2))
+        print(f'Figures and selection metadata written to {OUTPUT_DIR}')
 
 
 if __name__ == '__main__':

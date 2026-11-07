@@ -22,19 +22,32 @@ from figures import (policy_spread_distribution, operating_context,
 
 BASE_CONFIG = 'base_config_scaled.json'
 #META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_no_alpha.json'
-META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed.json'
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_alpha.json'
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_no_alpha.json'
+META_CONFIG = 'config_meta_mhe_baseline_adaptive.json'
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial.json'
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial_alpha.json'
+META_CONFIG = "config_meta_mhe_baseline_adaptive_fixed_constant.json"
 RESULTS_DIR = 'results_revised'
-OUTPUT_DIR = Path('paper_figures/month_test')
+OUTPUT_DIR = Path('paper_figures/year_test')
 START = pd.Timedelta(days=14)
-STOP = pd.Timedelta(days=28)
+START = pd.Timedelta(days=22)
+STOP = pd.Timedelta(days=365)
 
-name_map = {
-    "baseline_cost_hist_alpha": "Fixed",
-    "adaptive_cost_free_rad_alpha": "Periodic",
-    "mhe_cost_free_rad_hist_alpha": "Continuous",
-    "onetime_cost_free_rad_alpha": "One-time",
-    "NS3031_alpha": "Initial guess",
+NAME_MAP = {
+    "baseline_cost_hist": "Fixed",
+    "adaptive_cost_free_rad": "Periodic",
+    "mhe_cost_free_rad_hist": "Continuous",
+    "onetime_cost_free_rad": "One-time",
+    "NS3031": "Initial guess",
 }
+
+def get_name_map(suffix=""):
+    return {
+        f"{key}{suffix}": value
+        for key, value in NAME_MAP.items()
+    }
+
 
 def save(fig, filename):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -63,12 +76,25 @@ def main():
     metrics = one_step_metrics(
         coords, start=START, stop=STOP
     )
+    #alpha = ""
+    #alpha_str = "_alpha" if alpha else ""
+    alpha_str = "_const"
+    NAME_MAP = get_name_map(alpha_str)
+
+
+    save(
+        cumulative_prediction_deviation(
+            metrics,
+            name_map=NAME_MAP
+        ), 
+        'cumulative_prediction_deviation' + alpha_str + '.pdf'
+    )
     save(
         cumulative_one_step_objective(
             metrics,
-            name_map=name_map
+            name_map=NAME_MAP
         ), 
-        'cumulative_1_step_objective_deviation.pdf'
+        'cumulative_objective_realization' + alpha_str + '.pdf'
     )
     errors_by_N = prediction_errors_over_N(
         coords, 
@@ -79,9 +105,9 @@ def main():
         #cumulative_prediction_deviation(metrics), 
         cumulative_errors_over_N(
             errors_by_N,
-            name_map=name_map
+            name_map=NAME_MAP
         ), 
-        'cumulative_errors_over_N.pdf'
+        'cumulative_errors_over_N'  + alpha_str + '.pdf'
     )
 
 

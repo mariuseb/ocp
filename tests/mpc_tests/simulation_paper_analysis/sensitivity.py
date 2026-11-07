@@ -197,9 +197,9 @@ def _sweep(ctx, first, second, xs, ys, *, controller_name, strict=True, progress
 
 def sensitivity_figure(coords, event_time, *, figsize=(17, 11),
                        state_delta=1.0, grid_points=11, range_margin=.25,
-                       controller_order=None, nominal_tolerance=1e-3,
+                       controller_order=None, labels=None, nominal_tolerance=1e-3,
                        strict=True, sample=pd.Timedelta(minutes=15),
-                       progress_every=50, results_df=None):
+                       progress_every=50, results_df=None, alpha=False):
     """Re-solve and plot first-action policy sensitivity, 4 rows x 5 columns.
 
     strict=True raises on nominal mismatches, missing parameters, and failed
@@ -209,6 +209,15 @@ def sensitivity_figure(coords, event_time, *, figsize=(17, 11),
     solves, including failures. Optionally pass an existing DataFrame to
     populate it in-place during computation (e.g. for breakpoint inspection).
     """
+    """
+    if alpha:
+        CONTROLLER_ORDER = [controller + "_alpha" for controller in CONTROLLER_ORDER]
+        _LABELS = {}
+        for k, v in LABELS.items():
+            _LABELS[k + "_alpha"] = v
+        LABELS = _LABELS
+    """
+
     if results_df is None:
         results_df = pd.DataFrame()
     if results_df is not None:
@@ -268,6 +277,7 @@ def sensitivity_figure(coords, event_time, *, figsize=(17, 11),
     fig, axes = plt.subplots(4, len(order), figsize=figsize, squeeze=False)
     cmap = plt.get_cmap('viridis')
     norm = BoundaryNorm(LEVELS, cmap.N, clip=True)
+    labels = labels or LABELS
     for col, name in enumerate(order):
         axes[0, col].set_title(LABELS.get(name, name), fontsize=11)
 

@@ -28,7 +28,8 @@ if __name__ == "__main__":
     #meta = Config()("config_meta_test.json")
     #meta = Config()("config_meta_only_mhe.json")
     #meta = Config()("config_meta_test.json")
-    meta = Config()("config_meta_mhe_baseline_adaptive_onetime_fixed_no_alpha.json")
+    #meta = Config()("config_meta_mhe_baseline_adaptive_fixed_constant.json")
+    meta = Config()("config_meta_mhe_baseline_adaptive_initial_alpha.json")
     x0 = np.array([
         295.15, 293.15
     ])

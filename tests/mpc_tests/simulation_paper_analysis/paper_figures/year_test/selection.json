@@ -1,0 +1,18 @@
+{
+  "base_config": "base_config_scaled.json",
+  "meta_config": "config_meta_mhe_baseline_adaptive_onetime_fixed_alpha.json",
+  "results_dir": "results_revised",
+  "evaluation_start": "22 days 00:00:00",
+  "evaluation_stop": "292 days 00:00:00",
+  "event_name": "unrestricted",
+  "event_time": "56 days 14:45:00",
+  "event_reason": "",
+  "ranking_criterion": "6h trailing rolling mean, max-min across controllers, active > 0.05",
+  "controller_names": [
+    "mhe_cost_free_rad_hist_alpha",
+    "adaptive_cost_free_rad_alpha",
+    "onetime_cost_free_rad_alpha",
+    "baseline_cost_hist_alpha",
+    "NS3031_alpha"
+  ]
+}

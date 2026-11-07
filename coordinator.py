@@ -244,14 +244,18 @@ class Coordinator(object):
         # global peak:
         peak = max(Prad_calc.max(), (abs(Pcoo)/1000).iloc[1:].max())
         # cost in EUR:
-        cost = (Prad_calc*res.cost).sum() + (abs(Pcoo)/1000*res.cost).sum()
+        heating_cost = (Prad_calc*res.cost).sum()
+        cooling_cost = (abs(Pcoo)/1000*res.cost).sum()
+        cost = heating_cost + cooling_cost
         kpis = pd.DataFrame(
             index=["tdis [Kh]",
                 "energy [kWh]",
                 "peak power [kW]",
+                "heating cost [EUR]",
+                "cooling cost [EUR]",
                 "cost [EUR]"
             ],
-            data=[tdis, ener_tot, peak, cost],
+            data=[tdis, ener_tot, peak, heating_cost, cooling_cost, cost],
             columns=["value"]
         )
         if not return_discomf:
@@ -443,8 +447,8 @@ class Coordinator(object):
                 # store control actions (remember causality):
                 self.env._res.loc[time - self.dt, action.index] = action.values
 
-                if k == 128:
-                    print(k)
+                #if k == 128:
+                #    print(k)
 
                 self.controller.adaptive_callback(
                     k, 

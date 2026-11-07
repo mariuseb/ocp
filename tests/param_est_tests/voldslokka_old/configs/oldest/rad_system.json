@@ -1,0 +1,50 @@
+{
+    "model": {
+        "ode": {
+            "Tsup": "(Tset_sup - Tsup)/(Rsup*Csup)*m_flow_bool + (Tsup - Ti)/(Rsup*Csup)*(1-m_flow_bool)",
+            "Tret": "(Tret_sup - Tsup)/(Rret*Cret) + (Tret - Ti)/(Rsup*Csup)*(1-m_flow_bool)"
+        },
+        "alg": {
+            "Tset_sup": "Tset_sup - T_set_sup_b - T_set_sup_a*Ta",
+            "Tret": "Tret"
+        },
+        "w": {
+            "v1": "m_flow - y1"
+        },
+        "p": [
+            "Tsup_b",
+            "Tsup_a"
+        ],
+        "u": [
+            "u_val",
+            "Ta",
+            "Ti",
+            "m_flow_bool"
+        ],
+        "z": [
+          "Tset_sup",
+          "Tset_ret"
+        ],
+        "y": [
+            ["y1", "m_flow"]
+        ]
+    },
+    "objective": "dot(v1, v1)@R[0,0]",
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 3,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.ma57_pre_alloc": 10,
+        "ipopt.ma57_automatic_scaling" : "yes"
+    },
+    "codegen": true
+}

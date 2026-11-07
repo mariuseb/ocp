@@ -52,6 +52,7 @@ def rank_policy_spread(
     morning=None,
     #days=None,
     require_interior=False,
+    require_all_interior=False,
     prices=None,
     N=96,
 ):
@@ -79,6 +80,8 @@ def rank_policy_spread(
     """
     if require_interior:
         mask &= ((frame > 0.2) & (frame < 0.8)).any(axis=1)
+    if require_all_interior:
+        mask &= ((frame > 0.2) & (frame < 0.8)).all(axis=1)
 
     ranked = pd.DataFrame({'spread': spread[mask]})
 

@@ -1,0 +1,17 @@
+{
+  "base_config": "base_config_scaled.json",
+  "meta_config": "config_meta_mhe_baseline_adaptive_fixed_constant.json",
+  "results_dir": "results_revised",
+  "evaluation_start": "22 days 00:00:00",
+  "evaluation_stop": "365 days 00:00:00",
+  "event_name": "unrestricted",
+  "event_time": "66 days 07:45:00",
+  "event_reason": "",
+  "ranking_criterion": "6h trailing rolling mean, max-min across controllers, active > 0.05",
+  "controller_names": [
+    "mhe_cost_free_rad_hist_const",
+    "adaptive_cost_free_rad_const",
+    "baseline_cost_hist_const",
+    "NS3031_const"
+  ]
+}

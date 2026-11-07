@@ -1062,7 +1062,8 @@ class OCP(metaclass=ABCMeta):
                 varlist = getattr(self.dae, varname + "_names")
                 #varname = name[0]
                 if varname == "r":
-                    print(name)
+                    #print(name)
+                    pass
             elif varname == "sl":
                 varlist = getattr(self, "slack_names")
             offset = 0
