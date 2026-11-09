@@ -12,7 +12,8 @@ C_CONTEXT = "tab:green"
 C_COST = "goldenrod"
 C_PRAD = "r"
 C_PRAD_PRED = "#9467BD"
-C_VALVE = "b"
+C_VALVE = "r"
+C_COO = "b"
 C_SOLAR = "m"
 C_BOUND = "k"
 C_TK = "k"
@@ -435,6 +436,38 @@ def plot_operating_context(
             ax=ax_u,
             drawstyle="steps-post",
             color=C_VALVE,
+            linestyle="--",
+            linewidth=0.75,
+            legend=False,
+        )
+
+        coo = (
+            (res.coo_219/5000)
+            .shift(-1)
+            .resample(rule=sampling)
+            .mean()
+        )
+
+        coo.plot(
+            ax=ax_u,
+            drawstyle="steps-post",
+            color=C_COO,
+            linestyle="--",
+            linewidth=0.75,
+            legend=False,
+        )
+        
+        Tsup_air = (
+            (res.AHU219_reaTSupAir_y - 273.15)
+            .shift(-1)
+            .resample(rule=sampling)
+            .mean()
+        )
+        ax1_u = ax_u.twinx()
+        Tsup_air.plot(
+            ax=ax1_u,
+            drawstyle="steps-post",
+            color=C_TI,
             linestyle="--",
             linewidth=0.75,
             legend=False,

@@ -26,8 +26,8 @@ BASE_CONFIG = 'base_config_scaled.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_reduced_no_alpha.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_no_alpha.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial.json'
-META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial_alpha.json'
 META_CONFIG = "config_meta_mhe_baseline_adaptive_fixed_constant.json"
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial_alpha.json'
 RESULTS_DIR = 'results_revised'
 OUTPUT_DIR = Path('paper_figures/year')
 START = pd.Timedelta(days=22)
@@ -159,7 +159,8 @@ def main():
     
     #alpha = "alpha"
     #suffix = "" if alpha != "alpha" else "_alpha"
-    suffix = "_const"
+    #ssuffix = "_const"
+    suffix = "_" + META_CONFIG.rstrip(".json").split("_")[-1]
 
     prices = coords['mhe_cost_free_rad_hist' + suffix].res.cost.copy()
 

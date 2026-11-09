@@ -358,7 +358,8 @@ class Coordinator(object):
             )
         # get env result:
         self.res = self.env.get_results(
-            self.days*24*int(3600/self.dt)*self.dt
+            self.env.start_time + self.days*24*int(3600/self.dt)*self.dt,
+            ts=self.env.start_time
         )
         try:
             self.kpis = self.get_custom_kpis()
@@ -619,9 +620,11 @@ class Coordinator(object):
         res["Prad_calc"] = (res.Qrad.diff(1)/1000).shift(-1) 
         res["Prad_model"] = np.nan
         res["Ti_model"] = np.nan
+        res["Tsup_set_model"] = np.nan
         for i, df in obj.controller.preds.items():
             #res["Prad_model"][i] = df["Prad"][0]
             #res["Ti_model"][i+1] = df["Ti"][1]
             res.loc[res.index[i], "Prad_model"] = df.loc[0, "Prad"]
+            res.loc[res.index[i], "Tsup_set_model"] = df.loc[0, "Tsup_set_219"]
             res.loc[res.index[i+1], "Ti_model"] = df.loc[1, "Ti"]
         return res

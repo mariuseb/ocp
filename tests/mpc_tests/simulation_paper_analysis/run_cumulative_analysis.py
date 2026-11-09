@@ -26,12 +26,15 @@ META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_alpha.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_onetime_fixed_no_alpha.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive.json'
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial.json'
+META_CONFIG = "config_meta_mhe_baseline_adaptive_fixed_const.json"
 META_CONFIG = 'config_meta_mhe_baseline_adaptive_initial_alpha.json'
-META_CONFIG = "config_meta_mhe_baseline_adaptive_fixed_constant.json"
+META_CONFIG = 'config_meta_mhe_baseline_adaptive_alpha.json'
+META_CONFIG = "config_meta_mhe_baseline_adaptive_const.json"
+META_CONFIG = 'config_meta_mhe_baseline_adaptive.json'
 RESULTS_DIR = 'results_revised'
 OUTPUT_DIR = Path('paper_figures/year_test')
 START = pd.Timedelta(days=14)
-START = pd.Timedelta(days=22)
+START = pd.Timedelta(days=15)
 STOP = pd.Timedelta(days=365)
 
 NAME_MAP = {
@@ -76,26 +79,46 @@ def main():
     metrics = one_step_metrics(
         coords, start=START, stop=STOP
     )
+    deltas = pd.DataFrame(columns=metrics.keys())
+    for k, v in metrics.items():
+        deltas[k] = metrics[k]["tot_cost_cum"].diff(1)
+
+    EVENT = Event(
+        "",
+        pd.Timedelta("176 days 14:15:00"),
+        #pd.Timedelta("0 days 14:15:00"),
+        ''
+    )
+
+    window_start = max(START, EVENT.time - pd.Timedelta(days=1))
+    window_stop = min(STOP, EVENT.time + pd.Timedelta(days=2))
+    op_fig, axes = operating_context(
+        coords, window_start, window_stop, EVENT.time
+    )
+    plt.show()
+
     #alpha = ""
     #alpha_str = "_alpha" if alpha else ""
-    alpha_str = "_const"
-    NAME_MAP = get_name_map(alpha_str)
-
-
+    suffix = "_" + META_CONFIG.rstrip(".json").split("_")[-1]
+    if suffix == "_adaptive":
+        suffix = ""
+    NAME_MAP = get_name_map(suffix)
+    
     save(
         cumulative_prediction_deviation(
             metrics,
             name_map=NAME_MAP
         ), 
-        'cumulative_prediction_deviation' + alpha_str + '.pdf'
+        'cumulative_prediction_deviation' + suffix + '.pdf'
     )
     save(
         cumulative_one_step_objective(
             metrics,
             name_map=NAME_MAP
         ), 
-        'cumulative_objective_realization' + alpha_str + '.pdf'
+        'cumulative_objective_realization' + suffix + '.pdf'
     )
+    
     errors_by_N = prediction_errors_over_N(
         coords, 
         start=START,
@@ -107,7 +130,7 @@ def main():
             errors_by_N,
             name_map=NAME_MAP
         ), 
-        'cumulative_errors_over_N'  + alpha_str + '.pdf'
+        'cumulative_errors_over_N'  + suffix + '.pdf'
     )
 
 

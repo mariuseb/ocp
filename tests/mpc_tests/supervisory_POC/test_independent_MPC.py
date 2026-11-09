@@ -1,5 +1,6 @@
 #from ast import Param
 from ocp.mpc import MPC
+from ocp.ocp import get_scale
 import numpy as np
 import json
 import casadi as ca
@@ -29,6 +30,8 @@ if __name__ == "__main__":
         "params_1st_week_n_occ.csv", 
         index_col=0
     ).squeeze()
+    p_scale = get_scale(params.values)
+    p_scale[-1] = 1
     data = pd.read_csv(
         "test_forecast.csv", 
         index_col=0
@@ -42,6 +45,7 @@ if __name__ == "__main__":
         "u_nom": [1000],
         "r_nom": [12,1000,1],
         "r_nom_b": [289.15,0,0],
+        "p_nom": p_scale,
         "slack": True
     }
     mpcs = {}

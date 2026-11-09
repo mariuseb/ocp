@@ -54,6 +54,8 @@ class MPC(OCP):
     
     (Arguments as listed for OCP)
     """
+
+
     def __init__(self, **kwargs):
         
         #ref = kwargs.pop("ref", False)
@@ -105,7 +107,6 @@ class MPC(OCP):
         # TOOD: add settings:
         self.prepare_solver()
     
-        
         
     def add_path_constraints_symbolically(self):
         """
@@ -227,15 +228,16 @@ class MPC(OCP):
             if peak_var: # TODO: there can be more than one:
                 result = peak_var.group(1)
                 # add helper variable to replace 'peak'-op
-                aux_peak_var_name = self.add_auxiliary_constraints_for_peak(
+                aux_peak_var_name, aux_peak_var_hist = self.add_auxiliary_constraints_for_peak(
                      result
                 )  
                 obj_string = obj_string.replace(
                     "peak(" + result + ")", 
-                    aux_peak_var_name
+                    f"""({aux_peak_var_name} - {aux_peak_var_hist})"""
                 )     
             matchers = self.dae.all_names
-            symbols = set([s for s in matchers if s in self.obj_string])
+            #symbols = set([s for s in matchers if s in self.obj_string])
+            symbols = set([s for s in matchers if s in obj_string])
             #symbols = set(re.findall("|".join(self.dae.all_names), self.obj_string))
             vals = dict()
             for symbol in symbols:
@@ -290,13 +292,26 @@ class MPC(OCP):
         """
         # create the var:
         aux_peak_var_name = name + "_max"
+        aux_peak_hist_name = name + "_hist"
+        # TODO: make sure historical variable exists in model
         aux_peak_var = ca.MX.sym(aux_peak_var_name)
+        #aux_peak_hist = ca.MX.sym(aux_peak_hist_name)
         setattr(self, aux_peak_var_name, aux_peak_var)
-        self.nlp["x"] = ca.vertcat(self.nlp["x"], aux_peak_var)
+        #setattr(self, aux_peak_hist_name, aux_peak_hist)
+        self.nlp["x"] = ca.vertcat(
+            self.nlp["x"], aux_peak_var
+        )
+        #self.nlp["x"] = ca.vertcat(
+        #    self.nlp["x"], aux_peak_hist
+        #)
         aux_constr = []
         for n in range(self.N):
             expr_str =  f"""0 <= {aux_peak_var_name} - {name}[{str(n)}]"""
             aux_constr.append(expr_str)
+        # Prad_max >= Prad_hist:
+        expr_str =  f"""0 <= {aux_peak_var_name} - {aux_peak_hist_name}"""
+        aux_constr.append(expr_str)
+
         if self._ocp is None:
             self._ocp = {
                 "h": aux_constr
@@ -311,6 +326,7 @@ class MPC(OCP):
         Make modular:
         """
         self.max_vars.append(aux_peak_var_name)
+        #self.max_vars.append(aux_peak_hist_name)
         dim = 1
         self.nlp_parser.vars[aux_peak_var_name] = {
                             "range":
@@ -334,7 +350,7 @@ class MPC(OCP):
         
         #self.prepare_h()
         #self.add_h()
-        return aux_peak_var_name
+        return aux_peak_var_name, aux_peak_hist_name
         
     #def get_nlp_obj(self, u, slack):
     def get_nlp_obj(self, u, z, ref=False, slack=False):

@@ -53,6 +53,7 @@
                 "Ti": "floor5Zone_Shading_reaT219",
                 "Ti_220": "floor5Zone_Shading_reaT220",
                 "fan_219": "AHU219_reaFloSupAir",
+                "u_hex": "AHU219_reaUhex",
                 "Prad": "reaRadHeaPow219",
                 "Qrad": "reaRadHeaEne219",
                 "Pcoo": "reaAHUCoo219",

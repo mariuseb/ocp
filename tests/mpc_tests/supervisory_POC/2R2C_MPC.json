@@ -10,7 +10,9 @@
             "Ci",
             "Ce",
             "Ai",
-            "Prad_nom"
+            "Prad_nom",
+            "Prad_hist",
+            "c_peak"
         ],
         "u": [
             "Prad"
@@ -18,7 +20,8 @@
         "r": [
             "Ta",
             "phi_s",
-            "cost"
+            "cost",
+            "lam"
         ],
         "x": [
             "Ti",
@@ -35,7 +38,7 @@
             "ubx": [340,340]
         }
     },
-    "objective": "dot(cost, Prad) + 1E2*dot(sl, sl)",
+    "objective": "dot(cost, Prad) + dot(lam, Prad) + 1E2*dot(sl, sl)",
     "N": 96,
     "delay": 0,
     "dt": 900,

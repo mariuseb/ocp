@@ -1,0 +1,82 @@
+{
+    "model": {
+        "ode": {
+            "Ti1": "(Te1 - Ti1)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad1/Ci",
+            "Te1": "(Ti1 - Te1)/(Rie*Ce) + (Ta - Te1)/(Rea*Ce)",
+            "Ti2": "(Te2 - Ti2)/(Rie*Ci) + Ai*(phi_s/Ci) + Prad2/Ci",
+            "Te2": "(Ti2 - Te2)/(Rie*Ce) + (Ta - Te2)/(Rea*Ce)"
+        },
+        "alg": {
+            "Prad": "Prad - (Prad1 + Prad2)"
+        },
+        "p": [
+            "Rie",
+            "Rea",
+            "Ci",
+            "Ce",
+            "Ai",
+            "Prad_nom",
+            "Prad_hist",
+            "c_peak"
+        ],
+        "u": [
+            "Prad1",
+            "Prad2"
+        ],
+        "z": [
+            "Prad"
+        ],
+        "r": [
+            "Ta",
+            "phi_s",
+            "cost"
+        ],
+        "x": [
+            "Ti1",
+            "Te1",
+            "Ti2",
+            "Te2"
+        ]
+    },
+    "bounds": {
+        "u": {
+            "lbu": [0,0],
+            "ubu": [2000,2000]
+        },
+        "z": {
+            "lbz": [0],
+            "ubz": [4000]
+        },
+        "x": {
+            "lbx": [280,280,280,280],
+            "ubx": [340,340,340,340]
+        }
+    },
+    "objective": "dot(cost, Prad1) + dot(cost, Prad2) + 1E2*dot(sl, sl)",
+    "N": 96,
+    "delay": 0,
+    "dt": 900,
+    "method": "multiple_shooting",
+    "integrator": 
+        {
+        "name": "IRK",
+        "method": "legendre",
+        "degree": 1,
+        "n_steps": 1
+        }
+    ,
+    "solver": "",
+    "opt": {
+        "verbose": false,
+        "ipopt.linear_solver": "ma57",
+        "ipopt.print_level": 5,
+        "ipopt.ma57_pre_alloc": 10, 
+        "ipopt.ma57_automatic_scaling": "yes", 
+        "ipopt.max_cpu_time": 300,
+        "ipopt.max_iter": 3000,
+        "print_time": false,
+        "ipopt.check_derivatives_for_naninf": "yes",
+        "ipopt.hessian_approximation": "exact"
+    },
+    "codegen": false
+}

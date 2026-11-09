@@ -10,7 +10,9 @@
             "Ci",
             "Ce",
             "Ai",
-            "Prad_nom"
+            "Prad_nom",
+            "Prad_hist",
+            "c_peak"
         ],
         "u": [
             "Prad"
@@ -35,7 +37,7 @@
             "ubx": [340,340]
         }
     },
-    "objective": "peak(Prad) + dot(cost, Prad) + 1E2*dot(sl, sl)",
+    "objective": "c_peak*peak(Prad) + dot(cost, Prad) + 1E2*dot(sl, sl)",
     "N": 96,
     "delay": 0,
     "dt": 900,
